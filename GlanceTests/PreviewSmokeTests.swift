@@ -284,6 +284,20 @@ final class PreviewSmokeTests: XCTestCase {
 		)
 	}
 
+	func testSevenZipPreviewRejectsMalformedUnencodedHeaderDuringPreflight() throws {
+		let sevenZipURL = try writeDataFile(
+			named: "malformed-header.7z",
+			data: sevenZipSignatureHeader(nextHeader: Data([0x01, 0x99]))
+		)
+
+		XCTAssertThrowsError(
+			try SevenZipPreview(maxArchiveFileSize: 1_024, maxEntryCount: 10)
+				.createPreviewVC(file: File(url: sevenZipURL))
+		) { error in
+			XCTAssertEqual(String(describing: error), "malformedHeader")
+		}
+	}
+
 	private func writeFile(named name: String, contents: String) throws -> URL {
 		let fileURL = temporaryDirectory.appendingPathComponent(name)
 		try FileManager.default.createDirectory(
@@ -387,14 +401,17 @@ final class PreviewSmokeTests: XCTestCase {
 	}
 
 	private func sevenZipUnencodedFileInfoHeader(numFiles: UInt8) -> Data {
+		sevenZipSignatureHeader(nextHeader: Data([0x01, 0x05, numFiles]))
+	}
+
+	private func sevenZipSignatureHeader(nextHeader: Data) -> Data {
 		var data = Data([0x37, 0x7A, 0xBC, 0xAF, 0x27, 0x1C, 0x00, 0x04])
 		data.append(Data(repeating: 0, count: 4))
 		appendLittleEndianUInt64(0, to: &data)
 
-		let header = Data([0x01, 0x05, numFiles])
-		appendLittleEndianUInt64(UInt64(header.count), to: &data)
+		appendLittleEndianUInt64(UInt64(nextHeader.count), to: &data)
 		data.append(Data(repeating: 0, count: 4))
-		data.append(header)
+		data.append(nextHeader)
 		return data
 	}
 

@@ -119,6 +119,7 @@ private enum SevenZipPreviewError: LocalizedError {
 }
 
 private enum SevenZipPreflightError: Error {
+	case encodedHeader
 	case malformedHeader
 }
 
@@ -136,8 +137,13 @@ private struct SevenZipMetadataPreflight {
 	func validate() throws {
 		do {
 			try validateUnencodedHeader()
-		} catch is SevenZipPreflightError {
-			return
+		} catch let error as SevenZipPreflightError {
+			switch error {
+				case .encodedHeader:
+					return
+				case .malformedHeader:
+					throw error
+			}
 		}
 	}
 
@@ -177,10 +183,14 @@ private struct SevenZipMetadataPreflight {
 			endOffset: end.partialValue
 		)
 		let headerType = try reader.readByte()
-		guard headerType == 0x01 else {
-			return
+		switch headerType {
+			case 0x01:
+				try validateHeader(reader: &reader)
+			case 0x17:
+				throw SevenZipPreflightError.encodedHeader
+			default:
+				throw SevenZipPreflightError.malformedHeader
 		}
-		try validateHeader(reader: &reader)
 	}
 
 	private func validateHeader(reader: inout SevenZipMetadataReader) throws {
@@ -194,8 +204,11 @@ private struct SevenZipMetadataPreflight {
 			try skipStreamInfo(reader: &reader)
 			type = try reader.readByte()
 		}
-		guard type == 0x05 else {
+		if type == 0x00 {
 			return
+		}
+		guard type == 0x05 else {
+			throw SevenZipPreflightError.malformedHeader
 		}
 
 		let numFiles = try reader.readMultiByteInteger()
