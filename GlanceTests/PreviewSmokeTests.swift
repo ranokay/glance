@@ -60,13 +60,14 @@ final class PreviewSmokeTests: XCTestCase {
 		XCTAssertThrowsError(try JupyterPreview().createPreviewVC(file: File(url: invalidURL)))
 	}
 
-	func testWebPreviewViewIsVisibleImmediatelyAfterLoading() throws {
+	func testWebPreviewViewBecomesVisibleAfterLoading() throws {
 		let previewVC = WebPreviewVC(html: "<p>Visible content</p>")
 
 		previewVC.loadViewIfNeeded()
 
 		let webView = try XCTUnwrap(previewVC.view.subviews.compactMap { $0 as? WKWebView }.first)
 		XCTAssertFalse(webView.isHidden)
+		waitForWebViewToBecomeVisible(webView)
 		XCTAssertEqual(webView.alphaValue, 1)
 	}
 
@@ -324,6 +325,17 @@ final class PreviewSmokeTests: XCTestCase {
 			(object as? WKWebView)?.isLoading == false
 		}
 		wait(for: [loadExpectation], timeout: timeout)
+	}
+
+	private func waitForWebViewToBecomeVisible(_ webView: WKWebView, timeout: TimeInterval = 15) {
+		let visibleExpectation = XCTNSPredicateExpectation(
+			predicate: NSPredicate { _, _ in
+				webView.alphaValue == 1
+			},
+			object: webView
+		)
+		let result = XCTWaiter.wait(for: [visibleExpectation], timeout: timeout)
+		XCTAssertEqual(result, .completed)
 	}
 
 	private func runProcess(_ executable: String, arguments: [String], in directory: URL? = nil) throws {
