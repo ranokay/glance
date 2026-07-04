@@ -2,8 +2,9 @@ import Foundation
 import WebKit
 import XCTest
 
+@MainActor
 final class PreviewSmokeTests: XCTestCase {
-	private var temporaryDirectory: URL!
+	nonisolated(unsafe) private var temporaryDirectory: URL!
 
 	override func setUpWithError() throws {
 		try super.setUpWithError()
@@ -58,6 +59,39 @@ final class PreviewSmokeTests: XCTestCase {
 
 		XCTAssertTrue(previewVC is WebPreviewVC)
 		XCTAssertThrowsError(try JupyterPreview().createPreviewVC(file: File(url: invalidURL)))
+	}
+
+	func testJupyterKaTeXStylesheetReferencesOnlyBundledWOFF2Fonts() throws {
+		let bundle = WebPreviewVC.resourceBundle
+		let stylesheetURL = try XCTUnwrap(
+			bundle.url(forResource: "jupyter-katex.min", withExtension: "css")
+		)
+		let stylesheet = try String(contentsOf: stylesheetURL, encoding: .utf8)
+		let fontReferences = try katexFontReferences(in: stylesheet)
+
+		XCTAssertFalse(fontReferences.isEmpty)
+		for fontReference in fontReferences {
+			XCTAssertEqual(fontReference.pathExtension, "woff2")
+			XCTAssertNotNil(
+				bundle.url(
+					forResource: fontReference.deletingPathExtension().lastPathComponent,
+					withExtension: fontReference.pathExtension
+				),
+				"Missing bundled KaTeX font: \(fontReference.lastPathComponent)"
+			)
+		}
+
+		let resourceURL = try XCTUnwrap(bundle.resourceURL)
+		let bundledFallbackFonts = try FileManager.default
+			.contentsOfDirectory(at: resourceURL, includingPropertiesForKeys: nil)
+			.filter {
+				$0.lastPathComponent.hasPrefix("KaTeX_")
+					&& ["ttf", "woff"].contains($0.pathExtension)
+			}
+		XCTAssertTrue(
+			bundledFallbackFonts.isEmpty,
+			"Unexpected KaTeX fallback fonts: \(bundledFallbackFonts.map(\.lastPathComponent))"
+		)
 	}
 
 	func testWebPreviewViewBecomesVisibleAfterLoading() throws {
@@ -331,25 +365,19 @@ final class PreviewSmokeTests: XCTestCase {
 	}
 
 	private func waitForWebViewToFinishLoading(_ webView: WKWebView, timeout: TimeInterval = 5) {
-		guard webView.isLoading else {
-			return
+		let deadline = Date().addingTimeInterval(timeout)
+		while webView.isLoading, Date() < deadline {
+			RunLoop.current.run(mode: .default, before: Date().addingTimeInterval(0.01))
 		}
-
-		let loadExpectation = keyValueObservingExpectation(for: webView, keyPath: "loading") { object, _ in
-			(object as? WKWebView)?.isLoading == false
-		}
-		wait(for: [loadExpectation], timeout: timeout)
+		XCTAssertFalse(webView.isLoading)
 	}
 
 	private func waitForWebViewToBecomeVisible(_ webView: WKWebView, timeout: TimeInterval = 15) {
-		let visibleExpectation = XCTNSPredicateExpectation(
-			predicate: NSPredicate { _, _ in
-				webView.alphaValue == 1
-			},
-			object: webView
-		)
-		let result = XCTWaiter.wait(for: [visibleExpectation], timeout: timeout)
-		XCTAssertEqual(result, .completed)
+		let deadline = Date().addingTimeInterval(timeout)
+		while webView.alphaValue != 1, Date() < deadline {
+			RunLoop.current.run(mode: .default, before: Date().addingTimeInterval(0.01))
+		}
+		XCTAssertEqual(webView.alphaValue, 1)
 	}
 
 	private func runProcess(_ executable: String, arguments: [String], in directory: URL? = nil) throws {
@@ -371,6 +399,26 @@ final class PreviewSmokeTests: XCTestCase {
 				encoding: .utf8
 			) ?? ""
 			throw ProcessError(command: ([executable] + arguments).joined(separator: " "), output: output)
+		}
+	}
+
+	private func katexFontReferences(in stylesheet: String) throws -> [URL] {
+		let expression = try NSRegularExpression(pattern: #"url\(([^)]+)\)"#)
+		let matches = expression.matches(
+			in: stylesheet,
+			range: NSRange(stylesheet.startIndex..<stylesheet.endIndex, in: stylesheet)
+		)
+
+		return matches.compactMap { match -> URL? in
+			guard let range = Range(match.range(at: 1), in: stylesheet) else {
+				return nil
+			}
+			let rawReference = String(stylesheet[range])
+				.trimmingCharacters(in: CharacterSet(charactersIn: #""' "#))
+			guard rawReference.hasPrefix("KaTeX_") else {
+				return nil
+			}
+			return URL(fileURLWithPath: rawReference)
 		}
 	}
 

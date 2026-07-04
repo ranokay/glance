@@ -1,5 +1,9 @@
 # Xcode
 project.xcworkspace/
+!Glance.xcodeproj/project.xcworkspace/
+!Glance.xcodeproj/project.xcworkspace/xcshareddata/
+!Glance.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/
+!Glance.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
 xcuserdata/
 build/
 .DS_Store

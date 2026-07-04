@@ -1,5 +1,4 @@
 import Cocoa
-import Foundation
 
 let feedbackURL = URL(string: "https://github.com/chamburr/glance/issues")!
 let licenseURL = URL(string: "https://github.com/chamburr/glance/blob/main/LICENSE.md")!
@@ -7,6 +6,7 @@ let privacyPolicyURL = URL(string: "https://github.com/chamburr/glance/blob/main
 let websiteURL = URL(string: "https://github.com/chamburr/glance")!
 
 /// Used as a subclass for the menu item in Interface Builder
+@MainActor
 final class SupportedFilesMenuItem: NSMenuItem {
 	required init(coder decoder: NSCoder) {
 		super.init(coder: decoder)
@@ -18,6 +18,7 @@ final class SupportedFilesMenuItem: NSMenuItem {
 }
 
 /// Used as a subclass for the menu item in Interface Builder
+@MainActor
 final class SettingsMenuItem: NSMenuItem {
 	required init(coder decoder: NSCoder) {
 		super.init(coder: decoder)
@@ -29,6 +30,7 @@ final class SettingsMenuItem: NSMenuItem {
 }
 
 /// Used as a subclass for the menu item in Interface Builder
+@MainActor
 final class FeedbackMenuItem: NSMenuItem {
 	required init(coder decoder: NSCoder) {
 		super.init(coder: decoder)
@@ -40,6 +42,7 @@ final class FeedbackMenuItem: NSMenuItem {
 }
 
 /// Used as a subclass for the menu item in Interface Builder
+@MainActor
 final class LicenseMenuItem: NSMenuItem {
 	required init(coder decoder: NSCoder) {
 		super.init(coder: decoder)
@@ -51,6 +54,7 @@ final class LicenseMenuItem: NSMenuItem {
 }
 
 /// Used as a subclass for the menu item in Interface Builder
+@MainActor
 final class PrivacyPolicyMenuItem: NSMenuItem {
 	required init(coder decoder: NSCoder) {
 		super.init(coder: decoder)
@@ -62,6 +66,7 @@ final class PrivacyPolicyMenuItem: NSMenuItem {
 }
 
 /// Used as a subclass for the menu item in Interface Builder
+@MainActor
 final class WebsiteMenuItem: NSMenuItem {
 	required init(coder decoder: NSCoder) {
 		super.init(coder: decoder)

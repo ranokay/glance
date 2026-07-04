@@ -1,5 +1,5 @@
 [tools]
-go = "1.26.3"
+go = "1.26.4"
 swiftformat = "0.61.1"
 swiftlint = "0.63.3"
 
@@ -73,12 +73,7 @@ APP_NAME="${APP_NAME:-Glance}"
 echo "Cleaning build artifacts..."
 rm -rf build
 rm -rf "$HOME/Library/Developer/Xcode/DerivedData/$APP_NAME"-*
-rm -f HTMLConverter/htmlconverter-amd64.a \
-	HTMLConverter/htmlconverter-arm64.a \
-	HTMLConverter/htmlconverter.a \
-	HTMLConverter/htmlconverter-amd64.h \
-	HTMLConverter/htmlconverter-arm64.h \
-	HTMLConverter/htmlconverter.h
+rm -f HTMLConverter/htmlconverter*.a HTMLConverter/htmlconverter*.h
 echo "Clean complete"
 '''
 

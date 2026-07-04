@@ -1,6 +1,7 @@
 import Cocoa
 
 @main
+@MainActor
 class AppDelegate: NSObject, NSApplicationDelegate {
 	private var mainWindowController: NSWindowController?
 	private var statusItem: NSStatusItem?
@@ -79,7 +80,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 	}
 
 	@objc private func openMainWindow() {
-		NSApp.activate(ignoringOtherApps: true)
+		NSApp.activate()
 
 		if let window = existingMainWindow() {
 			window.deminiaturize(nil)
@@ -96,7 +97,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 	}
 
 	@objc private func openSupportedFilesWindow() {
-		NSApp.activate(ignoringOtherApps: true)
+		NSApp.activate()
 		SupportedFilesWC.shared.showSupportedFilesWindow()
 	}
 
@@ -151,7 +152,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
 	@objc private func windowWillClose(_: Notification) {
 		// Defer so the closing window is no longer visible when we check
-		DispatchQueue.main.async { [weak self] in
+		Task { @MainActor [weak self] in
 			self?.updateDockIconVisibility()
 		}
 	}
