@@ -8,8 +8,9 @@ description = "Build the application incrementally in the build directory"
 run = '''
 set -e
 APP_NAME="${APP_NAME:-Glance}"
+XCODE_DESTINATION="${XCODE_DESTINATION:-platform=macOS,arch=arm64}"
 echo "Building Quick Look extension..."
-xcodebuild -scheme "$APP_NAME" -configuration Release -derivedDataPath build build
+xcodebuild -scheme "$APP_NAME" -configuration Release -destination "$XCODE_DESTINATION" -derivedDataPath build build
 echo "Build complete"
 '''
 
@@ -109,7 +110,8 @@ description = "Run Xcode tests"
 run = '''
 set -e
 APP_NAME="${APP_NAME:-Glance}"
-xcodebuild test -scheme "$APP_NAME" -configuration Debug -derivedDataPath build -quiet
+XCODE_DESTINATION="${XCODE_DESTINATION:-platform=macOS,arch=arm64}"
+xcodebuild test -scheme "$APP_NAME" -configuration Debug -destination "$XCODE_DESTINATION" -derivedDataPath build -quiet
 '''
 
 [tasks.lint]
