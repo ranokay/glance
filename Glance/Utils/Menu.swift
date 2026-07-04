@@ -11,9 +11,13 @@ final class SupportedFilesMenuItem: NSMenuItem {
 	required init(coder decoder: NSCoder) {
 		super.init(coder: decoder)
 
-		onAction = { _ in
-			SupportedFilesWC.shared.showSupportedFilesWindow()
-		}
+		target = self
+		action = #selector(openSupportedFilesWindow)
+	}
+
+	@objc
+	private func openSupportedFilesWindow() {
+		SupportedFilesWC.shared.showSupportedFilesWindow()
 	}
 }
 
@@ -23,9 +27,13 @@ final class SettingsMenuItem: NSMenuItem {
 	required init(coder decoder: NSCoder) {
 		super.init(coder: decoder)
 
-		onAction = { _ in
-			SettingsWC.shared.showSettingsWindow()
-		}
+		target = self
+		action = #selector(openSettingsWindow)
+	}
+
+	@objc
+	private func openSettingsWindow() {
+		SettingsWC.shared.showSettingsWindow()
 	}
 }
 
@@ -35,9 +43,13 @@ final class FeedbackMenuItem: NSMenuItem {
 	required init(coder decoder: NSCoder) {
 		super.init(coder: decoder)
 
-		onAction = { _ in
-			feedbackURL.open()
-		}
+		target = self
+		action = #selector(openFeedback)
+	}
+
+	@objc
+	private func openFeedback() {
+		feedbackURL.open()
 	}
 }
 
@@ -47,9 +59,13 @@ final class LicenseMenuItem: NSMenuItem {
 	required init(coder decoder: NSCoder) {
 		super.init(coder: decoder)
 
-		onAction = { _ in
-			licenseURL.open()
-		}
+		target = self
+		action = #selector(openLicense)
+	}
+
+	@objc
+	private func openLicense() {
+		licenseURL.open()
 	}
 }
 
@@ -59,9 +75,13 @@ final class PrivacyPolicyMenuItem: NSMenuItem {
 	required init(coder decoder: NSCoder) {
 		super.init(coder: decoder)
 
-		onAction = { _ in
-			privacyPolicyURL.open()
-		}
+		target = self
+		action = #selector(openPrivacyPolicy)
+	}
+
+	@objc
+	private func openPrivacyPolicy() {
+		privacyPolicyURL.open()
 	}
 }
 
@@ -71,8 +91,12 @@ final class WebsiteMenuItem: NSMenuItem {
 	required init(coder decoder: NSCoder) {
 		super.init(coder: decoder)
 
-		onAction = { _ in
-			websiteURL.open()
-		}
+		target = self
+		action = #selector(openWebsite)
+	}
+
+	@objc
+	private func openWebsite() {
+		websiteURL.open()
 	}
 }

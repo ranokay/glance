@@ -41,13 +41,24 @@ class FileTreeNode: NSObject {
 	@objc var children = [String: FileTreeNode]()
 
 	/// Number of child nodes (required for rendering the tree in an `NSOutlineView`)
-	@objc var childrenCount: Int { children.values.count }
+	@objc var childrenCount: Int {
+		children.values.count
+	}
+
 	/// List of child nodes (required for rendering the tree in an `NSOutlineView`)
-	@objc var childrenList: [FileTreeNode] { Array(children.values) }
+	@objc var childrenList: [FileTreeNode] {
+		Array(children.values)
+	}
+
 	/// Whether the node has any children (required for rendering the tree in an `NSOutlineView`)
-	@objc var hasChildren: Bool { !children.isEmpty }
+	@objc var hasChildren: Bool {
+		!children.isEmpty
+	}
+
 	/// Whether the node is a leaf (has no children) — used by `NSTreeController`'s `leafKeyPath`
-	@objc var isLeaf: Bool { children.isEmpty }
+	@objc var isLeaf: Bool {
+		children.isEmpty
+	}
 
 	convenience init(name: String, size: Int, isDirectory: Bool) {
 		self.init(name: name, size: size, isDirectory: isDirectory, dateModified: nil)
@@ -101,7 +112,8 @@ class FileTree {
 			if isLastPathPart {
 				if let currentNode {
 					// Node already exists (i.e. directory has been created implicitly in a previous
-					// function call): Update the directory node with the missing `dateModified` info
+					// function call): Update the directory node with the missing `dateModified`
+					// info
 					currentNode.dateModified = dateModified
 				} else {
 					_ = try createNode(

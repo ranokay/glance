@@ -2,8 +2,8 @@ import Foundation
 import SWCompression
 
 class SevenZipPreview: Preview {
-	static let defaultMaxArchiveFileSize = 200 * 1_024 * 1_024
-	static let defaultMaxMetadataHeaderSize = 8 * 1_024 * 1_024
+	static let defaultMaxArchiveFileSize = 200 * 1024 * 1024
+	static let defaultMaxMetadataHeaderSize = 8 * 1024 * 1024
 	static let defaultMaxEntryCount = 50_000
 
 	let byteCountFormatter = ByteCountFormatter()
@@ -151,7 +151,7 @@ private struct SevenZipMetadataPreflight {
 		guard data.count >= 32 else {
 			return
 		}
-		guard Array(data[0..<6]) == [0x37, 0x7A, 0xBC, 0xAF, 0x27, 0x1C] else {
+		guard Array(data[0 ..< 6]) == [0x37, 0x7A, 0xBC, 0xAF, 0x27, 0x1C] else {
 			return
 		}
 		guard let nextHeaderOffset = littleEndianUInt64(at: 12),
@@ -258,7 +258,7 @@ private struct SevenZipMetadataPreflight {
 
 		var type = try reader.readByte()
 		if type == 0x09 {
-			for _ in 0..<numPackStreams {
+			for _ in 0 ..< numPackStreams {
 				_ = try reader.readMultiByteInteger()
 			}
 			type = try reader.readByte()
@@ -273,7 +273,8 @@ private struct SevenZipMetadataPreflight {
 		}
 	}
 
-	private func skipCoderInfo(reader: inout SevenZipMetadataReader) throws -> SevenZipCoderSummary {
+	private func skipCoderInfo(reader: inout SevenZipMetadataReader) throws
+		-> SevenZipCoderSummary {
 		let coderInfoType = try reader.readByte()
 		guard coderInfoType == 0x0B else {
 			throw SevenZipPreflightError.malformedHeader
@@ -286,7 +287,7 @@ private struct SevenZipMetadataPreflight {
 		}
 
 		var outputStreamsByFolder = [Int]()
-		for _ in 0..<numFolders {
+		for _ in 0 ..< numFolders {
 			outputStreamsByFolder.append(try skipFolder(reader: &reader))
 		}
 
@@ -296,7 +297,7 @@ private struct SevenZipMetadataPreflight {
 		}
 
 		for outputStreams in outputStreamsByFolder {
-			for _ in 0..<outputStreams {
+			for _ in 0 ..< outputStreams {
 				_ = try reader.readMultiByteInteger()
 			}
 		}
@@ -319,7 +320,7 @@ private struct SevenZipMetadataPreflight {
 		var totalInputStreams = 0
 		var totalOutputStreams = 0
 
-		for _ in 0..<numCoders {
+		for _ in 0 ..< numCoders {
 			let flags = try reader.readByte()
 			guard flags & 0xC0 == 0 else {
 				throw SevenZipPreflightError.malformedHeader
@@ -349,7 +350,7 @@ private struct SevenZipMetadataPreflight {
 			throw SevenZipPreflightError.malformedHeader
 		}
 		let numBindPairs = totalOutputStreams - 1
-		for _ in 0..<numBindPairs {
+		for _ in 0 ..< numBindPairs {
 			_ = try reader.readMultiByteInteger()
 			_ = try reader.readMultiByteInteger()
 		}
@@ -359,7 +360,7 @@ private struct SevenZipMetadataPreflight {
 		}
 		let numPackedStreams = totalInputStreams - numBindPairs
 		if numPackedStreams != 1 {
-			for _ in 0..<numPackedStreams {
+			for _ in 0 ..< numPackedStreams {
 				_ = try reader.readMultiByteInteger()
 			}
 		}
@@ -378,7 +379,7 @@ private struct SevenZipMetadataPreflight {
 		if type == 0x0D {
 			totalUnpackStreams = 0
 			unpackStreamsByFolder.removeAll(keepingCapacity: true)
-			for _ in 0..<coderInfo.numFolders {
+			for _ in 0 ..< coderInfo.numFolders {
 				let numStreams = try validatedMetadataCount(reader.readMultiByteInteger())
 				totalUnpackStreams = try validatedMetadataCount(
 					checkedAdd(totalUnpackStreams, numStreams)
@@ -390,7 +391,7 @@ private struct SevenZipMetadataPreflight {
 
 		if type == 0x09 {
 			for numStreams in unpackStreamsByFolder where numStreams > 0 {
-				for _ in 0..<(numStreams - 1) {
+				for _ in 0 ..< (numStreams - 1) {
 					_ = try reader.readMultiByteInteger()
 				}
 			}
@@ -430,7 +431,7 @@ private struct SevenZipMetadataPreflight {
 		}
 
 		var value: UInt64 = 0
-		for index in 0..<8 {
+		for index in 0 ..< 8 {
 			value |= UInt64(data[offset + index]) << (8 * index)
 		}
 		return value
@@ -469,7 +470,7 @@ private struct SevenZipMetadataReader {
 		var mask: UInt8 = 0x80
 		var value: UInt64 = 0
 
-		for index in 0..<8 {
+		for index in 0 ..< 8 {
 			if firstByte & mask == 0 {
 				value |= UInt64(firstByte & (mask &- 1)) << (8 * index)
 				return try checkedInt(value)
@@ -493,10 +494,10 @@ private struct SevenZipMetadataReader {
 
 		let byteCount = (count + 7) / 8
 		var definedCount = 0
-		for byteIndex in 0..<byteCount {
+		for byteIndex in 0 ..< byteCount {
 			let byte = try readByte()
 			let bitsInByte = min(8, count - byteIndex * 8)
-			for bitIndex in 0..<bitsInByte where byte & (UInt8(0x80) >> bitIndex) != 0 {
+			for bitIndex in 0 ..< bitsInByte where byte & (UInt8(0x80) >> bitIndex) != 0 {
 				definedCount += 1
 			}
 		}
@@ -511,7 +512,7 @@ private struct SevenZipMetadataReader {
 	}
 
 	mutating func skipChecksums(count: Int) throws {
-		for _ in 0..<count {
+		for _ in 0 ..< count {
 			try skip(4)
 		}
 	}

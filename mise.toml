@@ -112,6 +112,15 @@ APP_NAME="${APP_NAME:-Glance}"
 xcodebuild test -scheme "$APP_NAME" -configuration Debug -derivedDataPath build -quiet
 '''
 
+[tasks.lint]
+description = "Run source formatting and lint checks"
+run = '''
+set -e
+git diff --check
+swiftformat . --lint
+swiftlint lint --quiet
+'''
+
 [tasks.test]
 description = "Run all tests"
 run = '''
@@ -124,6 +133,7 @@ mise run test:xcode
 description = "Run tests and build the release app from a clean build directory"
 run = '''
 set -e
+mise run lint
 mise run test
 mise run clean
 mise run build

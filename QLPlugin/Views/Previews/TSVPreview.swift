@@ -2,8 +2,8 @@ import Foundation
 import SwiftCSV
 
 class TSVPreview: Preview {
-	static let defaultMaxFileSize = 25 * 1_024 * 1_024
-	static let defaultMaxRows = 5_000
+	static let defaultMaxFileSize = 25 * 1024 * 1024
+	static let defaultMaxRows = 5000
 	static let defaultMaxColumns = 512
 
 	private let maxFileSize: Int

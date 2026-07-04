@@ -40,7 +40,9 @@ final class SettingsWC: NSWindowController {
 	// MARK: - Content Setup
 
 	private func setUpContent() {
-		guard let contentView = window?.contentView else { return }
+		guard let contentView = window?.contentView else {
+			return
+		}
 
 		hideDockIconCheckbox.target = self
 		hideDockIconCheckbox.action = #selector(hideDockIconChanged)
@@ -56,7 +58,7 @@ final class SettingsWC: NSWindowController {
 		let stackView = NSStackView(views: [
 			sectionLabel("General"),
 			hideDockIconCheckbox,
-			descriptionLabel
+			descriptionLabel,
 		])
 		stackView.orientation = .vertical
 		stackView.alignment = .leading
@@ -77,7 +79,8 @@ final class SettingsWC: NSWindowController {
 		hideDockIconCheckbox.state = AppSettingsStore.shared.hideDockIcon ? .on : .off
 	}
 
-	@objc private func hideDockIconChanged(_ sender: NSButton) {
+	@objc
+	private func hideDockIconChanged(_ sender: NSButton) {
 		AppSettingsStore.shared.hideDockIcon = sender.state == .on
 		if let appDelegate = NSApp.delegate as? AppDelegate {
 			appDelegate.updateDockIconVisibility()

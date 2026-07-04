@@ -6,7 +6,7 @@ class TARPreview: Preview {
 	let byteCountFormatter = ByteCountFormatter()
 	private let maxEntryCount = 50_000
 	private let maxMetadataEntrySize: Int64 = 1_048_576
-	private let maxGzippedUncompressedScanSize: Int64 = 200 * 1_024 * 1_024
+	private let maxGzippedUncompressedScanSize: Int64 = 200 * 1024 * 1024
 
 	required init() {}
 
@@ -53,7 +53,8 @@ class TARPreview: Preview {
 			let uncompressedPrefix = scanResult.isTruncated ? "at least " : ""
 			labelText += """
 
-			Uncompressed: \(uncompressedPrefix)\(byteCountFormatter.string(fromByteCount: scanResult.uncompressedByteCount))
+			Uncompressed: \(uncompressedPrefix)\(byteCountFormatter
+				.string(fromByteCount: scanResult.uncompressedByteCount))
 			"""
 			if scanResult.isTruncated {
 				labelText += "\nPreview truncated after scanning \(byteCountFormatter.string(fromByteCount: scanResult.uncompressedByteCount))"
@@ -64,7 +65,10 @@ class TARPreview: Preview {
 			labelText += "\nPreview truncated after \(maxEntryCount) entries"
 		}
 
-		return OutlinePreviewVC(rootNodes: scanResult.fileTree.root.childrenList, labelText: labelText)
+		return OutlinePreviewVC(
+			rootNodes: scanResult.fileTree.root.childrenList,
+			labelText: labelText
+		)
 	}
 }
 
@@ -165,7 +169,7 @@ private final class GzipTarByteReader: TarByteReader {
 			throw TARPreviewError.gzipReadFailed(path: path, message: gzipErrorMessage())
 		}
 
-		data.removeSubrange(Int(readCount)..<data.count)
+		data.removeSubrange(Int(readCount) ..< data.count)
 		return data
 	}
 
@@ -176,7 +180,7 @@ private final class GzipTarByteReader: TarByteReader {
 
 		var remaining = count
 		while remaining > 0 {
-			let chunkSize = Int(min(remaining, 64 * 1_024))
+			let chunkSize = Int(min(remaining, 64 * 1024))
 			let data = try read(upToCount: chunkSize)
 			guard !data.isEmpty else {
 				throw TARPreviewError.truncatedArchive
@@ -192,7 +196,10 @@ private final class GzipTarByteReader: TarByteReader {
 		self.gzipFile = nil
 		let result = gzclose(gzipFile)
 		guard result == Z_OK else {
-			throw TARPreviewError.gzipReadFailed(path: path, message: "zlib close failed with status \(result)")
+			throw TARPreviewError.gzipReadFailed(
+				path: path,
+				message: "zlib close failed with status \(result)"
+			)
 		}
 	}
 
@@ -267,22 +274,31 @@ private final class TarHeaderScanner {
 					if try shouldStopBeforeSkipping(paddedPayloadSize) {
 						break scanLoop
 					}
-					if let payload = try readMetadataPayload(size: payloadSize, paddedSize: paddedPayloadSize) {
+					if let payload = try readMetadataPayload(
+						size: payloadSize,
+						paddedSize: paddedPayloadSize
+					) {
 						globalPAX = TarPAXHeaders(data: payload)
 					}
 				case .localPAX:
 					if try shouldStopBeforeSkipping(paddedPayloadSize) {
 						break scanLoop
 					}
-					if let payload = try readMetadataPayload(size: payloadSize, paddedSize: paddedPayloadSize) {
+					if let payload = try readMetadataPayload(
+						size: payloadSize,
+						paddedSize: paddedPayloadSize
+					) {
 						pendingLocalPAX = TarPAXHeaders(data: payload)
 					}
 				case .longName:
 					if try shouldStopBeforeSkipping(paddedPayloadSize) {
 						break scanLoop
 					}
-					pendingLongName = try readMetadataPayload(size: payloadSize, paddedSize: paddedPayloadSize)
-						.flatMap(Self.stringFromMetadataPayload)
+					pendingLongName = try readMetadataPayload(
+						size: payloadSize,
+						paddedSize: paddedPayloadSize
+					)
+					.flatMap(Self.stringFromMetadataPayload)
 				case .longLinkName:
 					if try shouldStopBeforeSkipping(paddedPayloadSize) {
 						break scanLoop
@@ -329,7 +345,8 @@ private final class TarHeaderScanner {
 				path: path,
 				isDirectory: isDirectory,
 				size: isDirectory ? 0 : clampedSize(payloadSize),
-				dateModified: pendingLocalPAX.modificationTime ?? globalPAX.modificationTime ?? header.modificationTime
+				dateModified: pendingLocalPAX.modificationTime ?? globalPAX
+					.modificationTime ?? header.modificationTime
 			)
 		} catch {
 			Log.parse.error("\(error.localizedDescription, privacy: .private)")
@@ -418,18 +435,18 @@ private struct TarHeader {
 			throw TARPreviewError.invalidHeader
 		}
 
-		let storedChecksum = try data.tarOctalInteger(in: 148..<156)
+		let storedChecksum = try data.tarOctalInteger(in: 148 ..< 156)
 		let computedChecksum = data.tarChecksum()
 		guard storedChecksum == computedChecksum else {
 			throw TARPreviewError.invalidHeader
 		}
 
-		let name = data.tarString(in: 0..<100)
-		let prefix = data.tarString(in: 345..<500)
+		let name = data.tarString(in: 0 ..< 100)
+		let prefix = data.tarString(in: 345 ..< 500)
 		path = prefix.isEmpty ? name : "\(prefix)/\(name)"
-		size = try data.tarOctalInteger(in: 124..<136)
+		size = try data.tarOctalInteger(in: 124 ..< 136)
 
-		let modificationTimestamp = try data.tarOctalInteger(in: 136..<148)
+		let modificationTimestamp = try data.tarOctalInteger(in: 136 ..< 148)
 		modificationTime = modificationTimestamp > 0
 			? Date(timeIntervalSince1970: TimeInterval(modificationTimestamp))
 			: nil
@@ -495,7 +512,7 @@ private struct TarPAXHeaders {
 			guard let spaceIndex = bytes[offset...].firstIndex(of: UInt8(ascii: " ")) else {
 				break
 			}
-			let lengthText = String(decoding: bytes[offset..<spaceIndex], as: UTF8.self)
+			let lengthText = String(decoding: bytes[offset ..< spaceIndex], as: UTF8.self)
 			guard let length = Int(lengthText), length > 0 else {
 				break
 			}
@@ -504,7 +521,7 @@ private struct TarPAXHeaders {
 				break
 			}
 
-			let recordBytes = bytes[(spaceIndex + 1)..<recordEnd].dropLast()
+			let recordBytes = bytes[(spaceIndex + 1) ..< recordEnd].dropLast()
 			if let equalsIndex = recordBytes.firstIndex(of: UInt8(ascii: "=")) {
 				let key = String(decoding: recordBytes[..<equalsIndex], as: UTF8.self)
 				let value = String(decoding: recordBytes[(equalsIndex + 1)...], as: UTF8.self)
@@ -522,17 +539,17 @@ private struct TarPAXHeaders {
 }
 
 extension Data {
-	fileprivate var isZeroTarBlock: Bool {
+	var isZeroTarBlock: Bool {
 		count == 512 && allSatisfy { $0 == 0 }
 	}
 
-	fileprivate func tarString(in range: Range<Int>) -> String {
+	func tarString(in range: Range<Int>) -> String {
 		let bytes = Array(self[range])
 		let endIndex = bytes.firstIndex(of: 0) ?? bytes.count
 		return String(decoding: bytes[..<endIndex], as: UTF8.self)
 	}
 
-	fileprivate func tarOctalInteger(in range: Range<Int>) throws -> Int64 {
+	func tarOctalInteger(in range: Range<Int>) throws -> Int64 {
 		let bytes = Array(self[range])
 		if let firstByte = bytes.first, firstByte & 0x80 != 0 {
 			return try tarBase256Integer(bytes: bytes)
@@ -551,15 +568,16 @@ extension Data {
 		return value
 	}
 
-	fileprivate func tarChecksum() -> Int64 {
+	func tarChecksum() -> Int64 {
 		enumerated().reduce(0) { partialResult, byte in
-			partialResult + Int64(byte.offset >= 148 && byte.offset < 156 ? UInt8(ascii: " ") : byte.element)
+			partialResult +
+				Int64(byte.offset >= 148 && byte.offset < 156 ? UInt8(ascii: " ") : byte.element)
 		}
 	}
 
 	private func tarBase256Integer(bytes: [UInt8]) throws -> Int64 {
 		var bytes = bytes
-		bytes[0] &= 0x7f
+		bytes[0] &= 0x7F
 
 		var value: Int64 = 0
 		for byte in bytes {

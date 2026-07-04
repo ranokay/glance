@@ -37,9 +37,13 @@ class File {
 
 	var isArchive: Bool {
 		let path = url.path(percentEncoded: false).lowercased()
-		return path.hasSuffix(".tar.gz") || archiveExtensions.contains(url.pathExtension.lowercased())
+		return path.hasSuffix(".tar.gz") || archiveExtensions
+			.contains(url.pathExtension.lowercased())
 	}
-	var size: Int { attributes[.size] as? Int ?? 0 }
+
+	var size: Int {
+		attributes[.size] as? Int ?? 0
+	}
 
 	/// Looks for a file at the provided URL and saves its metadata as object properties.
 	init(url: URL) throws {

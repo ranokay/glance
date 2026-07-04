@@ -7,7 +7,7 @@ final class PreviewSupportTests: XCTestCase {
 		XCTAssertEqual(Set(ids).count, ids.count)
 	}
 
-	func testSupportedPreviewRegistryMatchesAliasesAndFallbacks() throws {
+	func testSupportedPreviewRegistryMatchesAliasesAndFallbacks() {
 		let cases: [(path: String, expectedID: String?, expectedType: PreviewFileType)] = [
 			("/tmp/archive.tar.gz", "archive.extension.tar-gz", .tar),
 			("/tmp/ARCHIVE.TAR.GZ", "archive.extension.tar-gz", .tar),

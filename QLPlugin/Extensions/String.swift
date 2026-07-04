@@ -1,8 +1,12 @@
 import Foundation
 
+private final class RegularExpressionCache: @unchecked Sendable {
+	let storage = NSCache<NSString, NSRegularExpression>()
+}
+
 extension String {
 	/// Cache for compiled regular expressions to avoid recompilation on every call
-	private nonisolated(unsafe) static let regexCache = NSCache<NSString, NSRegularExpression>()
+	private static let regexCache = RegularExpressionCache()
 
 	/// Returns all matches and capturing groups for the provided regular expression applied to the
 	/// string
@@ -10,13 +14,13 @@ extension String {
 	/// Source: https://stackoverflow.com/a/40040472/6767508
 	func matchRegex(regex pattern: String) -> [[String]] {
 		let regex: NSRegularExpression
-		if let cached = Self.regexCache.object(forKey: pattern as NSString) {
+		if let cached = Self.regexCache.storage.object(forKey: pattern as NSString) {
 			regex = cached
 		} else {
 			guard let compiled = try? NSRegularExpression(pattern: pattern, options: []) else {
 				return []
 			}
-			Self.regexCache.setObject(compiled, forKey: pattern as NSString)
+			Self.regexCache.storage.setObject(compiled, forKey: pattern as NSString)
 			regex = compiled
 		}
 

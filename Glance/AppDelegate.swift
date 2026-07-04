@@ -27,8 +27,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		updateDockIconVisibility()
 	}
 
-	func applicationShouldTerminateAfterLastWindowClosed(_: NSApplication) -> Bool { false }
-
+	func applicationShouldTerminateAfterLastWindowClosed(_: NSApplication) -> Bool {
+		false
+	}
 
 	private func setUpStatusItem() {
 		let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
@@ -79,7 +80,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		return menu
 	}
 
-	@objc private func openMainWindow() {
+	@objc
+	private func openMainWindow() {
 		NSApp.activate()
 
 		if let window = existingMainWindow() {
@@ -96,20 +98,24 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		}
 	}
 
-	@objc private func openSupportedFilesWindow() {
+	@objc
+	private func openSupportedFilesWindow() {
 		NSApp.activate()
 		SupportedFilesWC.shared.showSupportedFilesWindow()
 	}
 
-	@objc private func openGitHubRepository() {
+	@objc
+	private func openGitHubRepository() {
 		websiteURL.open()
 	}
 
-	@objc private func openSettingsWindow() {
+	@objc
+	private func openSettingsWindow() {
 		SettingsWC.shared.showSettingsWindow()
 	}
 
-	@objc private func quitGlance() {
+	@objc
+	private func quitGlance() {
 		NSApp.terminate(nil)
 	}
 
@@ -123,7 +129,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 	}
 
 	private func cacheMainWindowController() {
-		guard mainWindowController?.window == nil else { return }
+		guard mainWindowController?.window == nil else {
+			return
+		}
 
 		mainWindowController = NSApp.windows.first {
 			$0.contentViewController is ViewController
@@ -146,11 +154,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		NSApp.setActivationPolicy(hasVisibleWindows ? .regular : .accessory)
 	}
 
-	@objc private func windowDidBecomeMain(_: Notification) {
+	@objc
+	private func windowDidBecomeMain(_: Notification) {
 		updateDockIconVisibility()
 	}
 
-	@objc private func windowWillClose(_: Notification) {
+	@objc
+	private func windowWillClose(_: Notification) {
 		// Defer so the closing window is no longer visible when we check
 		Task { @MainActor [weak self] in
 			self?.updateDockIconVisibility()

@@ -77,7 +77,10 @@ class ZIPPreview: Preview {
 		let labelText = """
 		Compressed: \(byteCountFormatter.string(for: file.size) ?? "--")
 		Uncompressed: \(byteCountFormatter.string(for: uncompressedSize) ?? "--")
-		Compression ratio: \(compressionRatioText(compressed: compressedSize, uncompressed: uncompressedSize)) %
+		Compression ratio: \(compressionRatioText(
+			compressed: compressedSize,
+			uncompressed: uncompressedSize
+		)) %
 		"""
 
 		return OutlinePreviewVC(rootNodes: fileTree.root.childrenList, labelText: labelText)
@@ -96,7 +99,10 @@ enum ZIPPreviewError: LocalizedError {
 					comment: ""
 				)
 			case .metadataSizeLimitExceeded:
-				NSLocalizedString("ZIP archive metadata is too large to preview safely", comment: "")
+				NSLocalizedString(
+					"ZIP archive metadata is too large to preview safely",
+					comment: ""
+				)
 		}
 	}
 }

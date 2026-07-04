@@ -5,5 +5,11 @@
 --maxwidth 100
 --tabwidth 4
 --exclude build
+--decimalgrouping 3,5
+--funcattributes preserve
+--modifierorder override,isolated,nonisolated,nonisolated(unsafe),private,fileprivate,internal,package,public,open,private(set),fileprivate(set),internal(set),package(set),public(set),open(set),final,dynamic,optional,required,convenience,indirect,lazy,weak,unowned,unowned(safe),unowned(unsafe),static,class,borrowing,consuming,mutating,nonmutating,prefix,infix,postfix,async
+--storedvarattributes same-line
+--typeattributes prev-line
 
 --disable hoistTry
+--disable wrapMultilineStatementBraces

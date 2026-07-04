@@ -74,9 +74,13 @@ class DateTransformer: ValueTransformer {
 		dateFormatter.doesRelativeDateFormatting = true
 	}
 
-	override class func transformedValueClass() -> AnyClass { NSString.self }
+	override class func transformedValueClass() -> AnyClass {
+		NSString.self
+	}
 
-	override class func allowsReverseTransformation() -> Bool { false }
+	override class func allowsReverseTransformation() -> Bool {
+		false
+	}
 
 	override func transformedValue(_ value: Any?) -> Any? {
 		guard let date = value as? Date else {
@@ -99,9 +103,13 @@ class IconTransformer: ValueTransformer {
 		contentsOfFile: "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/GenericDocumentIcon.icns"
 	)
 
-	override class func transformedValueClass() -> AnyClass { NSImage.self }
+	override class func transformedValueClass() -> AnyClass {
+		NSImage.self
+	}
 
-	override class func allowsReverseTransformation() -> Bool { false }
+	override class func allowsReverseTransformation() -> Bool {
+		false
+	}
 
 	override func transformedValue(_ value: Any?) -> Any? {
 		guard let isDirectoryNumber = value as? NSNumber else {
@@ -118,9 +126,13 @@ class SizeTransformer: ValueTransformer {
 	let byteCountFormatter = ByteCountFormatter()
 	let fallbackValue = "--"
 
-	override class func transformedValueClass() -> AnyClass { NSString.self }
+	override class func transformedValueClass() -> AnyClass {
+		NSString.self
+	}
 
-	override class func allowsReverseTransformation() -> Bool { false }
+	override class func allowsReverseTransformation() -> Bool {
+		false
+	}
 
 	override func transformedValue(_ value: Any?) -> Any? {
 		guard let size = value as? NSNumber else {

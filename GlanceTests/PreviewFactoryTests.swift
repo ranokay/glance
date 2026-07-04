@@ -29,8 +29,10 @@ final class PreviewFactoryTests: XCTestCase {
 
 		for testCase in cases {
 			let fileURL = URL(fileURLWithPath: testCase.path)
-			XCTAssertTrue(
-				PreviewVCFactory.getPreviewInitializer(fileURL: fileURL) == testCase.expected,
+			let actual = PreviewVCFactory.getPreviewInitializer(fileURL: fileURL)
+			XCTAssertEqual(
+				actual.map(ObjectIdentifier.init),
+				testCase.expected.map(ObjectIdentifier.init),
 				testCase.path
 			)
 		}

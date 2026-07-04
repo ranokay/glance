@@ -117,6 +117,15 @@ func TestConvertNotebookToHTML(t *testing.T) {
 	assert.True(t, strings.HasSuffix(actualTrimmed, `</div>`))
 }
 
+func TestConvertNotebookToHTMLSanitizesMarkdownCells(t *testing.T) {
+	source := `{"cells":[{"cell_type":"markdown","metadata":{},"source":["<script>alert(\"bad\")</script>\n","[bad](javascript:alert(\"bad\"))"]}],"metadata":{},"nbformat":4,"nbformat_minor":4}` // nolint:lll
+	actual := convertToGoString(convertNotebookToHTML(convertToCString(source)))
+	actualLower := strings.ToLower(actual)
+
+	assert.NotContains(t, actualLower, "<script")
+	assert.NotContains(t, actualLower, "javascript:")
+}
+
 func TestConvertNotebookToHTMLInvalid(t *testing.T) {
 	source := "This is not a valid JSON file."
 	actual := convertToGoString(convertNotebookToHTML(convertToCString(source)))

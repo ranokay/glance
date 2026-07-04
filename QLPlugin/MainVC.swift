@@ -14,6 +14,7 @@ extension PreviewError: LocalizedError {
 	}
 }
 
+@MainActor
 class MainVC: NSViewController, QLPreviewingController {
 	/// Max size of files to render
 	let maxFileSize = 10_000_000 // 10 MB
@@ -46,61 +47,70 @@ class MainVC: NSViewController, QLPreviewingController {
 		at fileUrl: URL,
 		completionHandler handler: @escaping @Sendable (Error?) -> Void
 	) {
-		DispatchQueue.main.async {
-			// Only preview files when the containing app is running
-			if NSRunningApplication.runningApplications(
-				withBundleIdentifier: Self.containingAppBundleID
-			).isEmpty {
-				Log.general.info("Glance app is not running, declining preview")
-				let error = NSError(
-					domain: "com.chamburr.Glance.QLPlugin",
-					code: 1,
-					userInfo: [NSLocalizedDescriptionKey: "Glance app is not running"]
-				)
-				handler(error)
-				return
-			}
-
-			// Read information about the file to preview
-			var file: File
-			do {
-				file = try File(url: fileUrl)
-			} catch {
-				Log.general.error(
-					"Could not obtain information about file \(fileUrl.path, privacy: .private): \(error.localizedDescription, privacy: .private)"
-				)
-				handler(error)
-				return
-			}
-
-			// Skip preview if the file is too large
-			if !file.isDirectory, !file.isArchive, file.size > self.maxFileSize {
-				// Log error and fall back to default preview (by calling the completion handler
-				// with the error)
-				let error = PreviewError.fileSizeError(path: file.path)
-				Log.general
-					.error("Skipping file preview: \(error.localizedDescription, privacy: .private)")
-				handler(error)
-				return
-			}
-
-			// Render file preview
-			Log.general.info("Generating preview for file \(file.path, privacy: .private)")
-			do {
-				try self.previewFile(file: file)
-			} catch {
-				// Log error and fall back to default preview (by calling the completion handler
-				// with the error)
-				Log.general.error(
-					"Could not generate preview for file \(file.path, privacy: .private): \(error.localizedDescription, privacy: .private)"
-				)
-				handler(error)
-				return
-			}
-
-			// Hide preview loading spinner
-			handler(nil)
+		Task { @MainActor in
+			self.preparePreviewOnMainActor(at: fileUrl, completionHandler: handler)
 		}
+	}
+
+	private func preparePreviewOnMainActor(
+		at fileUrl: URL,
+		completionHandler handler: @escaping @Sendable (Error?) -> Void
+	) {
+		// Only preview files when the containing app is running
+		if NSRunningApplication.runningApplications(
+			withBundleIdentifier: Self.containingAppBundleID
+		).isEmpty {
+			Log.general.info("Glance app is not running, declining preview")
+			let error = NSError(
+				domain: "com.chamburr.Glance.QLPlugin",
+				code: 1,
+				userInfo: [NSLocalizedDescriptionKey: "Glance app is not running"]
+			)
+			handler(error)
+			return
+		}
+
+		// Read information about the file to preview
+		var file: File
+		do {
+			file = try File(url: fileUrl)
+		} catch {
+			Log.general.error(
+				"Could not obtain information about file \(fileUrl.path, privacy: .private): \(error.localizedDescription, privacy: .private)"
+			)
+			handler(error)
+			return
+		}
+
+		// Skip preview if the file is too large
+		if !file.isDirectory, !file.isArchive, file.size > maxFileSize {
+			// Log error and fall back to default preview (by calling the completion handler
+			// with the error)
+			let error = PreviewError.fileSizeError(path: file.path)
+			Log.general
+				.error(
+					"Skipping file preview: \(error.localizedDescription, privacy: .private)"
+				)
+			handler(error)
+			return
+		}
+
+		// Render file preview
+		Log.general.info("Generating preview for file \(file.path, privacy: .private)")
+		do {
+			try previewFile(file: file)
+		} catch {
+			// Log error and fall back to default preview (by calling the completion handler
+			// with the error)
+			Log.general.error(
+				"Could not generate preview for file \(file.path, privacy: .private): \(error.localizedDescription, privacy: .private)"
+			)
+			handler(error)
+			return
+		}
+
+		// Hide preview loading spinner
+		handler(nil)
 	}
 
 	/// Generates a preview of the selected file and adds the corresponding child view controller.

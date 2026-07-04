@@ -20,8 +20,7 @@ enum PreviewSupport {
 
 		// Use the registry's codeLexer when available
 		if let entry = SupportedPreviewRegistry.entry(matching: fileURL),
-		   let lexer = entry.codeLexer
-		{
+		   let lexer = entry.codeLexer {
 			return lexer
 		}
 

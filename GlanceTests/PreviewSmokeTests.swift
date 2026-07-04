@@ -125,19 +125,22 @@ final class PreviewSmokeTests: XCTestCase {
 				document.body.dataset.bad || ''
 			].join('|')
 			"""
-			) { result, error in
-				XCTAssertNil(error)
-				let renderedState = result as? String
-				let renderedStateParts = renderedState?.split(separator: "|", omittingEmptySubsequences: false) ?? []
-				XCTAssertEqual(renderedStateParts.count, 5)
-				XCTAssertEqual(renderedStateParts.first.map(String.init), "Visible content")
-				let styleSheetCount = Int(renderedStateParts.dropFirst().first ?? "0") ?? 0
-				XCTAssertGreaterThan(styleSheetCount, 0)
-				XCTAssertEqual(renderedStateParts.dropFirst(2).first.map(String.init), "true")
-				XCTAssertEqual(renderedStateParts.dropFirst(3).first.map(String.init), "true")
-				XCTAssertEqual(renderedStateParts.dropFirst(4).first.map(String.init), "")
-				expectation.fulfill()
-			}
+		) { result, error in
+			XCTAssertNil(error)
+			let renderedState = result as? String
+			let renderedStateParts = renderedState?.split(
+				separator: "|",
+				omittingEmptySubsequences: false
+			) ?? []
+			XCTAssertEqual(renderedStateParts.count, 5)
+			XCTAssertEqual(renderedStateParts.first.map(String.init), "Visible content")
+			let styleSheetCount = Int(renderedStateParts.dropFirst().first ?? "0") ?? 0
+			XCTAssertGreaterThan(styleSheetCount, 0)
+			XCTAssertEqual(renderedStateParts.dropFirst(2).first.map(String.init), "true")
+			XCTAssertEqual(renderedStateParts.dropFirst(3).first.map(String.init), "true")
+			XCTAssertEqual(renderedStateParts.dropFirst(4).first.map(String.init), "")
+			expectation.fulfill()
+		}
 
 		wait(for: [expectation], timeout: 5)
 	}
@@ -162,7 +165,10 @@ final class PreviewSmokeTests: XCTestCase {
 	}
 
 	func testTSVPreviewToleratesMalformedQuotesAsCellText() throws {
-		let fileURL = try writeFile(named: "malformed.tsv", contents: "name\tvalue\n\"unterminated\tvalue\n")
+		let fileURL = try writeFile(
+			named: "malformed.tsv",
+			contents: "name\tvalue\n\"unterminated\tvalue\n"
+		)
 
 		let previewVC = try XCTUnwrap(
 			TSVPreview().createPreviewVC(file: File(url: fileURL)) as? TablePreviewVC
@@ -215,7 +221,11 @@ final class PreviewSmokeTests: XCTestCase {
 		_ = try writeFile(named: "zip-root/folder/nested file.txt", contents: "nested")
 		_ = try writeFile(named: "zip-root/__MACOSX/._nested file.txt", contents: "metadata")
 		let zipURL = temporaryDirectory.appendingPathComponent("archive.zip")
-		try runProcess("/usr/bin/zip", arguments: ["-qry", zipURL.path, "folder", "__MACOSX"], in: zipRoot)
+		try runProcess(
+			"/usr/bin/zip",
+			arguments: ["-qry", zipURL.path, "folder", "__MACOSX"],
+			in: zipRoot
+		)
 
 		let previewVC = try XCTUnwrap(
 			ZIPPreview().createPreviewVC(file: File(url: zipURL)) as? OutlinePreviewVC
@@ -242,8 +252,14 @@ final class PreviewSmokeTests: XCTestCase {
 		_ = try writeFile(named: "tar-root/folder/unicode-\u{00E9}.txt", contents: "unicode")
 		let tarURL = temporaryDirectory.appendingPathComponent("archive.tar")
 		let tgzURL = temporaryDirectory.appendingPathComponent("archive.tgz")
-		try runProcess("/usr/bin/tar", arguments: ["-cf", tarURL.path, "-C", tarRoot.path, "folder"])
-		try runProcess("/usr/bin/tar", arguments: ["-czf", tgzURL.path, "-C", tarRoot.path, "folder"])
+		try runProcess(
+			"/usr/bin/tar",
+			arguments: ["-cf", tarURL.path, "-C", tarRoot.path, "folder"]
+		)
+		try runProcess(
+			"/usr/bin/tar",
+			arguments: ["-czf", tgzURL.path, "-C", tarRoot.path, "folder"]
+		)
 
 		let tarPreviewVC = try XCTUnwrap(
 			TARPreview().createPreviewVC(file: File(url: tarURL)) as? OutlinePreviewVC
@@ -263,13 +279,16 @@ final class PreviewSmokeTests: XCTestCase {
 		XCTAssertTrue(FileManager.default.createFile(atPath: largeFileURL.path, contents: nil))
 		let largeFileHandle = try FileHandle(forWritingTo: largeFileURL)
 		let chunk = Data(repeating: 0, count: 1_000_000)
-		for _ in 0..<12 {
+		for _ in 0 ..< 12 {
 			try largeFileHandle.write(contentsOf: chunk)
 		}
 		try largeFileHandle.close()
 
 		let tarURL = temporaryDirectory.appendingPathComponent("large.tar")
-		try runProcess("/usr/bin/tar", arguments: ["-cf", tarURL.path, "-C", tarRoot.path, "large.bin"])
+		try runProcess(
+			"/usr/bin/tar",
+			arguments: ["-cf", tarURL.path, "-C", tarRoot.path, "large.bin"]
+		)
 
 		let previewVC = try XCTUnwrap(
 			TARPreview().createPreviewVC(file: File(url: tarURL)) as? OutlinePreviewVC
@@ -298,7 +317,10 @@ final class PreviewSmokeTests: XCTestCase {
 	}
 
 	func testSevenZipPreviewRejectsFilesOverConfiguredSizeBeforeParsing() throws {
-		let sevenZipURL = try writeDataFile(named: "oversized.7z", data: Data(repeating: 0, count: 2))
+		let sevenZipURL = try writeDataFile(
+			named: "oversized.7z",
+			data: Data(repeating: 0, count: 2)
+		)
 
 		XCTAssertThrowsError(
 			try SevenZipPreview(maxArchiveFileSize: 1, maxEntryCount: 10)
@@ -313,7 +335,7 @@ final class PreviewSmokeTests: XCTestCase {
 		)
 
 		XCTAssertThrowsError(
-			try SevenZipPreview(maxArchiveFileSize: 1_024, maxEntryCount: 1)
+			try SevenZipPreview(maxArchiveFileSize: 1024, maxEntryCount: 1)
 				.createPreviewVC(file: File(url: sevenZipURL))
 		)
 	}
@@ -325,7 +347,7 @@ final class PreviewSmokeTests: XCTestCase {
 		)
 
 		XCTAssertThrowsError(
-			try SevenZipPreview(maxArchiveFileSize: 1_024, maxEntryCount: 10)
+			try SevenZipPreview(maxArchiveFileSize: 1024, maxEntryCount: 10)
 				.createPreviewVC(file: File(url: sevenZipURL))
 		) { error in
 			XCTAssertEqual(String(describing: error), "malformedHeader")
@@ -380,7 +402,11 @@ final class PreviewSmokeTests: XCTestCase {
 		XCTAssertEqual(webView.alphaValue, 1)
 	}
 
-	private func runProcess(_ executable: String, arguments: [String], in directory: URL? = nil) throws {
+	private func runProcess(
+		_ executable: String,
+		arguments: [String],
+		in directory: URL? = nil
+	) throws {
 		let process = Process()
 		process.executableURL = URL(fileURLWithPath: executable)
 		process.arguments = arguments
@@ -398,7 +424,10 @@ final class PreviewSmokeTests: XCTestCase {
 				data: outputPipe.fileHandleForReading.readDataToEndOfFile(),
 				encoding: .utf8
 			) ?? ""
-			throw ProcessError(command: ([executable] + arguments).joined(separator: " "), output: output)
+			throw ProcessError(
+				command: ([executable] + arguments).joined(separator: " "),
+				output: output
+			)
 		}
 	}
 
@@ -406,7 +435,7 @@ final class PreviewSmokeTests: XCTestCase {
 		let expression = try NSRegularExpression(pattern: #"url\(([^)]+)\)"#)
 		let matches = expression.matches(
 			in: stylesheet,
-			range: NSRange(stylesheet.startIndex..<stylesheet.endIndex, in: stylesheet)
+			range: NSRange(stylesheet.startIndex ..< stylesheet.endIndex, in: stylesheet)
 		)
 
 		return matches.compactMap { match -> URL? in
@@ -422,13 +451,17 @@ final class PreviewSmokeTests: XCTestCase {
 		}
 	}
 
-	private func tarHeader(name: String, sizeField: [UInt8], typeFlag: UInt8 = UInt8(ascii: "0")) -> Data {
+	private func tarHeader(
+		name: String,
+		sizeField: [UInt8],
+		typeFlag: UInt8 = UInt8(ascii: "0")
+	) -> Data {
 		var header = Data(repeating: 0, count: 512)
 		write(Array(name.utf8), to: &header, at: 0, maxLength: 100)
 		write(sizeField, to: &header, at: 124, maxLength: 12)
 		header[156] = typeFlag
 
-		for index in 148..<156 {
+		for index in 148 ..< 156 {
 			header[index] = UInt8(ascii: " ")
 		}
 		let checksum = header.reduce(0) { $0 + Int($1) }
@@ -441,7 +474,7 @@ final class PreviewSmokeTests: XCTestCase {
 		var bytes = [UInt8](repeating: 0, count: 12)
 		var remaining = UInt64(bitPattern: value)
 		for index in stride(from: 11, through: 0, by: -1) {
-			bytes[index] = UInt8(remaining & 0xff)
+			bytes[index] = UInt8(remaining & 0xFF)
 			remaining >>= 8
 		}
 		bytes[0] |= 0x80
@@ -464,8 +497,8 @@ final class PreviewSmokeTests: XCTestCase {
 	}
 
 	private func appendLittleEndianUInt64(_ value: UInt64, to data: inout Data) {
-		for index in 0..<8 {
-			data.append(UInt8((value >> (8 * index)) & 0xff))
+		for index in 0 ..< 8 {
+			data.append(UInt8((value >> (8 * index)) & 0xFF))
 		}
 	}
 

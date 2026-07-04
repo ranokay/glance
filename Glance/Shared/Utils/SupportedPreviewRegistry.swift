@@ -57,7 +57,9 @@ struct SupportedPreviewType: Equatable {
 
 	func matchesSearch(_ query: String) -> Bool {
 		let normalizedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-		guard !normalizedQuery.isEmpty else { return true }
+		guard !normalizedQuery.isEmpty else {
+			return true
+		}
 
 		return ([displayName, group.title] + searchTokens)
 			.map { $0.lowercased() }
@@ -103,78 +105,233 @@ enum SupportedPreviewRegistry {
 			searchTokens: ["tar", "gzip", "archive"]
 		),
 		extensionEntry("7z", group: .archive, previewFileType: .sevenZip, searchTokens: ["7-zip"]),
-		extensionEntry("ear", group: .archive, previewFileType: .zip, searchTokens: ["java", "archive"]),
-		extensionEntry("jar", group: .archive, previewFileType: .zip, searchTokens: ["java", "archive"]),
+		extensionEntry(
+			"ear",
+			group: .archive,
+			previewFileType: .zip,
+			searchTokens: ["java", "archive"]
+		),
+		extensionEntry(
+			"jar",
+			group: .archive,
+			previewFileType: .zip,
+			searchTokens: ["java", "archive"]
+		),
 		extensionEntry("tar", group: .archive, previewFileType: .tar, searchTokens: ["archive"]),
-		extensionEntry("tgz", group: .archive, previewFileType: .tar, searchTokens: ["gzip", "tar"]),
-		extensionEntry("war", group: .archive, previewFileType: .zip, searchTokens: ["java", "archive"]),
+		extensionEntry(
+			"tgz",
+			group: .archive,
+			previewFileType: .tar,
+			searchTokens: ["gzip", "tar"]
+		),
+		extensionEntry(
+			"war",
+			group: .archive,
+			previewFileType: .zip,
+			searchTokens: ["java", "archive"]
+		),
 		extensionEntry("zip", group: .archive, previewFileType: .zip, searchTokens: ["archive"]),
 
-		extensionEntry("md", group: .markdown, previewFileType: .markdown, searchTokens: ["markdown"]),
+		extensionEntry(
+			"md",
+			group: .markdown,
+			previewFileType: .markdown,
+			searchTokens: ["markdown"]
+		),
 		extensionEntry("markdown", group: .markdown, previewFileType: .markdown),
 		extensionEntry("mdown", group: .markdown, previewFileType: .markdown),
 		extensionEntry("mkdn", group: .markdown, previewFileType: .markdown),
 		extensionEntry("mkd", group: .markdown, previewFileType: .markdown),
-		extensionEntry("rmd", group: .markdown, previewFileType: .markdown, searchTokens: ["R Markdown"]),
-		extensionEntry("qmd", group: .markdown, previewFileType: .markdown, searchTokens: ["Quarto"]),
+		extensionEntry(
+			"rmd",
+			group: .markdown,
+			previewFileType: .markdown,
+			searchTokens: ["R Markdown"]
+		),
+		extensionEntry(
+			"qmd",
+			group: .markdown,
+			previewFileType: .markdown,
+			searchTokens: ["Quarto"]
+		),
 
-		extensionEntry("ipynb", group: .jupyter, previewFileType: .jupyter, searchTokens: ["notebook"]),
+		extensionEntry(
+			"ipynb",
+			group: .jupyter,
+			previewFileType: .jupyter,
+			searchTokens: ["notebook"]
+		),
 
 		extensionEntry("tab", group: .tsv, previewFileType: .tsv),
 		extensionEntry("tsv", group: .tsv, previewFileType: .tsv),
 
-		fileNameEntry(".bashrc", group: .code, codeLexer: ".bashrc", searchTokens: ["bash", "shell"]),
-		fileNameEntry(".dockerignore", group: .code, codeLexer: "bash", searchTokens: ["Docker", "ignore"]),
-		fileNameEntry(".editorconfig", group: .code, codeLexer: "ini", searchTokens: ["EditorConfig", "ini"]),
+		fileNameEntry(
+			".bashrc",
+			group: .code,
+			codeLexer: ".bashrc",
+			searchTokens: ["bash", "shell"]
+		),
+		fileNameEntry(
+			".dockerignore",
+			group: .code,
+			codeLexer: "bash",
+			searchTokens: ["Docker", "ignore"]
+		),
+		fileNameEntry(
+			".editorconfig",
+			group: .code,
+			codeLexer: "ini",
+			searchTokens: ["EditorConfig", "ini"]
+		),
 		elrcEntry(),
 		fileNameEntry(".gitattributes", group: .code, codeLexer: "bash", searchTokens: ["git"]),
 		fileNameEntry(".gitconfig", group: .code, codeLexer: "ini", searchTokens: ["git", "ini"]),
-		fileNameEntry(".gitignore", group: .code, codeLexer: "bash", searchTokens: ["git", "ignore"]),
-		fileNameEntry(".npmignore", group: .code, codeLexer: "bash", searchTokens: ["npm", "ignore"]),
+		fileNameEntry(
+			".gitignore",
+			group: .code,
+			codeLexer: "bash",
+			searchTokens: ["git", "ignore"]
+		),
+		fileNameEntry(
+			".npmignore",
+			group: .code,
+			codeLexer: "bash",
+			searchTokens: ["npm", "ignore"]
+		),
 		fileNameEntry(".vimrc", group: .code, codeLexer: ".vimrc", searchTokens: ["vim"]),
 		fileNameEntry(".zprofile", group: .code, codeLexer: "zsh", searchTokens: ["zsh", "shell"]),
-		fileNameEntry(".zsh_history", group: .code, codeLexer: "txt", searchTokens: ["zsh", "shell"]),
+		fileNameEntry(
+			".zsh_history",
+			group: .code,
+			codeLexer: "txt",
+			searchTokens: ["zsh", "shell"]
+		),
 		fileNameEntry(".zshrc", group: .code, codeLexer: ".zshrc", searchTokens: ["zsh", "shell"]),
-		fileNameEntry("Dockerfile", group: .code, codeLexer: "Dockerfile", searchTokens: ["Docker"]),
+		fileNameEntry(
+			"Dockerfile",
+			group: .code,
+			codeLexer: "Dockerfile",
+			searchTokens: ["Docker"]
+		),
 		fileNameEntry("Gemfile", group: .code, codeLexer: "Gemfile", searchTokens: ["Ruby"]),
-		fileNameEntry("GNUmakefile", group: .code, codeLexer: "Makefile", searchTokens: ["Makefile"]),
+		fileNameEntry(
+			"GNUmakefile",
+			group: .code,
+			codeLexer: "Makefile",
+			searchTokens: ["Makefile"]
+		),
 		fileNameEntry("Makefile", group: .code, codeLexer: "Makefile", searchTokens: ["make"]),
-		fileNameEntry("PKGBUILD", group: .code, codeLexer: "PKGBUILD", searchTokens: ["Arch Linux"]),
-		fileNameEntry("Rakefile", group: .code, codeLexer: "Rakefile", searchTokens: ["Ruby", "Rake"]),
+		fileNameEntry(
+			"PKGBUILD",
+			group: .code,
+			codeLexer: "PKGBUILD",
+			searchTokens: ["Arch Linux"]
+		),
+		fileNameEntry(
+			"Rakefile",
+			group: .code,
+			codeLexer: "Rakefile",
+			searchTokens: ["Ruby", "Rake"]
+		),
 
-		extensionEntry("alfredappearance", group: .code, codeLexer: "json", searchTokens: ["Alfred", "JSON"]),
+		extensionEntry(
+			"alfredappearance",
+			group: .code,
+			codeLexer: "json",
+			searchTokens: ["Alfred", "JSON"]
+		),
 		extensionEntry("ass", group: .code, codeLexer: "txt", searchTokens: ["subtitle"]),
 		extensionEntry("cjs", group: .code, codeLexer: "js", searchTokens: ["JavaScript"]),
 		extensionEntry("cls", group: .code, codeLexer: "tex", searchTokens: ["TeX", "LaTeX"]),
 		extensionEntry("csproj", group: .code, codeLexer: "xml", searchTokens: ["C#", "XML"]),
-		extensionEntry("entitlements", group: .code, codeLexer: "xml", searchTokens: ["Xcode", "XML"]),
+		extensionEntry(
+			"entitlements",
+			group: .code,
+			codeLexer: "xml",
+			searchTokens: ["Xcode", "XML"]
+		),
 		extensionEntry("hbs", group: .code, codeLexer: "handlebars", searchTokens: ["Handlebars"]),
 		extensionEntry("iml", group: .code, codeLexer: "xml", searchTokens: ["IntelliJ", "XML"]),
 		extensionEntry("liquid", group: .code, codeLexer: "twig", searchTokens: ["Liquid", "Twig"]),
 		extensionEntry("lrc", group: .code, codeLexer: "txt", searchTokens: ["lyrics"]),
 		extensionEntry("mjs", group: .code, codeLexer: "js", searchTokens: ["JavaScript"]),
-		extensionEntry("mobileconfig", group: .code, codeLexer: "xml", searchTokens: ["configuration", "XML"]),
-		extensionEntry("modulemap", group: .code, codeLexer: "hcl", searchTokens: ["Clang", "module map"]),
+		extensionEntry(
+			"mobileconfig",
+			group: .code,
+			codeLexer: "xml",
+			searchTokens: ["configuration", "XML"]
+		),
+		extensionEntry(
+			"modulemap",
+			group: .code,
+			codeLexer: "hcl",
+			searchTokens: ["Clang", "module map"]
+		),
 		extensionEntry("nfo", group: .code, codeLexer: "txt", searchTokens: ["text"]),
 		extensionEntry("njk", group: .code, codeLexer: "twig", searchTokens: ["Nunjucks", "Twig"]),
 		extensionEntry("pbxproj", group: .code, codeLexer: "txt", searchTokens: ["Xcode"]),
-		extensionEntry("plist", group: .code, codeLexer: "xml", searchTokens: ["property list", "XML"]),
+		extensionEntry(
+			"plist",
+			group: .code,
+			codeLexer: "xml",
+			searchTokens: ["property list", "XML"]
+		),
 		extensionEntry("props", group: .code, codeLexer: "xml", searchTokens: ["MSBuild", "XML"]),
-		extensionEntry("resolved", group: .code, codeLexer: "json", searchTokens: ["Swift Package Manager", "lockfile"]),
-		extensionEntry("scpt", group: .code, codeLexer: "applescript", searchTokens: ["AppleScript"]),
-		extensionEntry("scptd", group: .code, codeLexer: "applescript", searchTokens: ["AppleScript"]),
+		extensionEntry(
+			"resolved",
+			group: .code,
+			codeLexer: "json",
+			searchTokens: ["Swift Package Manager", "lockfile"]
+		),
+		extensionEntry(
+			"scpt",
+			group: .code,
+			codeLexer: "applescript",
+			searchTokens: ["AppleScript"]
+		),
+		extensionEntry(
+			"scptd",
+			group: .code,
+			codeLexer: "applescript",
+			searchTokens: ["AppleScript"]
+		),
 		extensionEntry("sln", group: .code, codeLexer: "txt", searchTokens: ["Visual Studio"]),
 		extensionEntry("spf", group: .code, codeLexer: "xml", searchTokens: ["Sequel Pro", "XML"]),
-		extensionEntry("sptheme", group: .code, codeLexer: "xml", searchTokens: ["Sequel Pro", "XML"]),
+		extensionEntry(
+			"sptheme",
+			group: .code,
+			codeLexer: "xml",
+			searchTokens: ["Sequel Pro", "XML"]
+		),
 		extensionEntry("srt", group: .code, codeLexer: "txt", searchTokens: ["SubRip", "subtitle"]),
-		extensionEntry("storyboard", group: .code, codeLexer: "xml", searchTokens: ["Xcode", "XML"]),
-		extensionEntry("strings", group: .code, codeLexer: "c", searchTokens: ["Xcode", "localization"]),
-		extensionEntry("stringsdict", group: .code, codeLexer: "xml", searchTokens: ["Xcode", "localization", "XML"]),
+		extensionEntry(
+			"storyboard",
+			group: .code,
+			codeLexer: "xml",
+			searchTokens: ["Xcode", "XML"]
+		),
+		extensionEntry(
+			"strings",
+			group: .code,
+			codeLexer: "c",
+			searchTokens: ["Xcode", "localization"]
+		),
+		extensionEntry(
+			"stringsdict",
+			group: .code,
+			codeLexer: "xml",
+			searchTokens: ["Xcode", "localization", "XML"]
+		),
 		extensionEntry("sty", group: .code, codeLexer: "tex", searchTokens: ["TeX", "LaTeX"]),
 		extensionEntry("targets", group: .code, codeLexer: "xml", searchTokens: ["MSBuild", "XML"]),
 		extensionEntry("ttml", group: .code, codeLexer: "xml", searchTokens: ["Timed Text", "XML"]),
 		extensionEntry("vtt", group: .code, codeLexer: "txt", searchTokens: ["WebVTT", "subtitle"]),
-		extensionEntry("webmanifest", group: .code, codeLexer: "json", searchTokens: ["web app manifest", "JSON"]),
+		extensionEntry(
+			"webmanifest",
+			group: .code,
+			codeLexer: "json",
+			searchTokens: ["web app manifest", "JSON"]
+		),
 		extensionEntry("xcscheme", group: .code, codeLexer: "xml", searchTokens: ["Xcode", "XML"]),
 		extensionEntry("xib", group: .code, codeLexer: "xml", searchTokens: ["Xcode", "XML"]),
 		extensionEntry("xmp", group: .code, codeLexer: "xml", searchTokens: ["XML"]),
@@ -187,7 +344,7 @@ enum SupportedPreviewRegistry {
 			previewFileType: .code,
 			codeLexer: nil,
 			matchRule: .defaultTextFallback
-		)
+		),
 	]
 
 	static func entries(in group: SupportedPreviewGroup) -> [SupportedPreviewType] {
@@ -266,7 +423,7 @@ enum SupportedPreviewRegistry {
 			codeLexer: "elisp",
 			matchRule: .any([
 				.fileName(".elrc"),
-				.fileExtension("elrc")
+				.fileExtension("elrc"),
 			])
 		)
 	}
