@@ -255,7 +255,7 @@ private final class TarHeaderScanner {
 			}
 			try addScannedBytes(512)
 
-			if headerData.isZeroTarBlock {
+			if isZeroTarBlock(headerData) {
 				let endMarkerData = try readExactly(512, allowEmptyAtEOF: true)
 				if !endMarkerData.isEmpty {
 					try addScannedBytes(512)
@@ -431,22 +431,22 @@ private struct TarHeader {
 	let entryType: TarEntryType
 
 	init(data: Data) throws {
-		guard data.count == 512, !data.isZeroTarBlock else {
+		guard data.count == 512, !isZeroTarBlock(data) else {
 			throw TARPreviewError.invalidHeader
 		}
 
-		let storedChecksum = try data.tarOctalInteger(in: 148 ..< 156)
-		let computedChecksum = data.tarChecksum()
+		let storedChecksum = try tarOctalInteger(data, in: 148 ..< 156)
+		let computedChecksum = tarChecksum(data)
 		guard storedChecksum == computedChecksum else {
 			throw TARPreviewError.invalidHeader
 		}
 
-		let name = data.tarString(in: 0 ..< 100)
-		let prefix = data.tarString(in: 345 ..< 500)
+		let name = tarString(data, in: 0 ..< 100)
+		let prefix = tarString(data, in: 345 ..< 500)
 		path = prefix.isEmpty ? name : "\(prefix)/\(name)"
-		size = try data.tarOctalInteger(in: 124 ..< 136)
+		size = try tarOctalInteger(data, in: 124 ..< 136)
 
-		let modificationTimestamp = try data.tarOctalInteger(in: 136 ..< 148)
+		let modificationTimestamp = try tarOctalInteger(data, in: 136 ..< 148)
 		modificationTime = modificationTimestamp > 0
 			? Date(timeIntervalSince1970: TimeInterval(modificationTimestamp))
 			: nil
@@ -538,54 +538,52 @@ private struct TarPAXHeaders {
 	}
 }
 
-extension Data {
-	var isZeroTarBlock: Bool {
-		count == 512 && allSatisfy { $0 == 0 }
+private func isZeroTarBlock(_ data: Data) -> Bool {
+	data.count == 512 && data.allSatisfy { $0 == 0 }
+}
+
+private func tarString(_ data: Data, in range: Range<Int>) -> String {
+	let bytes = Array(data[range])
+	let endIndex = bytes.firstIndex(of: 0) ?? bytes.count
+	return String(decoding: bytes[..<endIndex], as: UTF8.self)
+}
+
+private func tarOctalInteger(_ data: Data, in range: Range<Int>) throws -> Int64 {
+	let bytes = Array(data[range])
+	if let firstByte = bytes.first, firstByte & 0x80 != 0 {
+		return try tarBase256Integer(bytes: bytes)
 	}
 
-	func tarString(in range: Range<Int>) -> String {
-		let bytes = Array(self[range])
-		let endIndex = bytes.firstIndex(of: 0) ?? bytes.count
-		return String(decoding: bytes[..<endIndex], as: UTF8.self)
+	let text = String(
+		decoding: bytes.filter { $0 != 0 && $0 != UInt8(ascii: " ") },
+		as: UTF8.self
+	)
+	guard !text.isEmpty else {
+		return 0
 	}
+	guard let value = Int64(text, radix: 8) else {
+		throw TARPreviewError.invalidHeader
+	}
+	return value
+}
 
-	func tarOctalInteger(in range: Range<Int>) throws -> Int64 {
-		let bytes = Array(self[range])
-		if let firstByte = bytes.first, firstByte & 0x80 != 0 {
-			return try tarBase256Integer(bytes: bytes)
-		}
+private func tarChecksum(_ data: Data) -> Int64 {
+	data.enumerated().reduce(0) { partialResult, byte in
+		partialResult +
+			Int64(byte.offset >= 148 && byte.offset < 156 ? UInt8(ascii: " ") : byte.element)
+	}
+}
 
-		let text = String(
-			decoding: bytes.filter { $0 != 0 && $0 != UInt8(ascii: " ") },
-			as: UTF8.self
-		)
-		guard !text.isEmpty else {
-			return 0
-		}
-		guard let value = Int64(text, radix: 8) else {
+private func tarBase256Integer(bytes: [UInt8]) throws -> Int64 {
+	var bytes = bytes
+	bytes[0] &= 0x7F
+
+	var value: Int64 = 0
+	for byte in bytes {
+		guard value <= (Int64.max - Int64(byte)) / 256 else {
 			throw TARPreviewError.invalidHeader
 		}
-		return value
+		value = value * 256 + Int64(byte)
 	}
-
-	func tarChecksum() -> Int64 {
-		enumerated().reduce(0) { partialResult, byte in
-			partialResult +
-				Int64(byte.offset >= 148 && byte.offset < 156 ? UInt8(ascii: " ") : byte.element)
-		}
-	}
-
-	private func tarBase256Integer(bytes: [UInt8]) throws -> Int64 {
-		var bytes = bytes
-		bytes[0] &= 0x7F
-
-		var value: Int64 = 0
-		for byte in bytes {
-			guard value <= (Int64.max - Int64(byte)) / 256 else {
-				throw TARPreviewError.invalidHeader
-			}
-			value = value * 256 + Int64(byte)
-		}
-		return value
-	}
+	return value
 }

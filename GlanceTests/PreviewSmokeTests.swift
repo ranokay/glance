@@ -4,24 +4,7 @@ import XCTest
 
 @MainActor
 final class PreviewSmokeTests: XCTestCase {
-	nonisolated(unsafe) private var temporaryDirectory: URL!
-
-	override func setUpWithError() throws {
-		try super.setUpWithError()
-		temporaryDirectory = FileManager.default.temporaryDirectory
-			.appendingPathComponent("GlancePreviewTests-\(UUID().uuidString)", isDirectory: true)
-		try FileManager.default.createDirectory(
-			at: temporaryDirectory,
-			withIntermediateDirectories: true
-		)
-	}
-
-	override func tearDownWithError() throws {
-		if let temporaryDirectory {
-			try? FileManager.default.removeItem(at: temporaryDirectory)
-		}
-		try super.tearDownWithError()
-	}
+	private var temporaryDirectoryURL: URL?
 
 	func testCodePreviewHandlesEmptyAndUnicodeSource() throws {
 		let fileURL = try writeFile(named: "unicode.swift", contents: "let cafe = \"\u{2615}\"\n")
@@ -216,6 +199,7 @@ final class PreviewSmokeTests: XCTestCase {
 	}
 
 	func testZIPPreviewHandlesNestedEntriesAndIgnoresResourceForkFolder() throws {
+		let temporaryDirectory = try temporaryDirectory()
 		let zipRoot = temporaryDirectory.appendingPathComponent("zip-root", isDirectory: true)
 		try FileManager.default.createDirectory(at: zipRoot, withIntermediateDirectories: true)
 		_ = try writeFile(named: "zip-root/folder/nested file.txt", contents: "nested")
@@ -246,6 +230,7 @@ final class PreviewSmokeTests: XCTestCase {
 	}
 
 	func testTARPreviewHandlesTarAndGzippedTarArchives() throws {
+		let temporaryDirectory = try temporaryDirectory()
 		let tarRoot = temporaryDirectory.appendingPathComponent("tar-root", isDirectory: true)
 		try FileManager.default.createDirectory(at: tarRoot, withIntermediateDirectories: true)
 		_ = try writeFile(named: "tar-root/folder/nested file.txt", contents: "nested")
@@ -273,6 +258,7 @@ final class PreviewSmokeTests: XCTestCase {
 	}
 
 	func testTARPreviewSkipsLargeFilePayloadsWhileBuildingTree() throws {
+		let temporaryDirectory = try temporaryDirectory()
 		let tarRoot = temporaryDirectory.appendingPathComponent("large-tar-root", isDirectory: true)
 		try FileManager.default.createDirectory(at: tarRoot, withIntermediateDirectories: true)
 		let largeFileURL = tarRoot.appendingPathComponent("large.bin")
@@ -355,7 +341,7 @@ final class PreviewSmokeTests: XCTestCase {
 	}
 
 	private func writeFile(named name: String, contents: String) throws -> URL {
-		let fileURL = temporaryDirectory.appendingPathComponent(name)
+		let fileURL = try temporaryDirectory().appendingPathComponent(name)
 		try FileManager.default.createDirectory(
 			at: fileURL.deletingLastPathComponent(),
 			withIntermediateDirectories: true
@@ -365,13 +351,31 @@ final class PreviewSmokeTests: XCTestCase {
 	}
 
 	private func writeDataFile(named name: String, data: Data) throws -> URL {
-		let fileURL = temporaryDirectory.appendingPathComponent(name)
+		let fileURL = try temporaryDirectory().appendingPathComponent(name)
 		try FileManager.default.createDirectory(
 			at: fileURL.deletingLastPathComponent(),
 			withIntermediateDirectories: true
 		)
 		try data.write(to: fileURL, options: .atomic)
 		return fileURL
+	}
+
+	private func temporaryDirectory() throws -> URL {
+		if let temporaryDirectoryURL {
+			return temporaryDirectoryURL
+		}
+
+		let directoryURL = FileManager.default.temporaryDirectory
+			.appendingPathComponent("GlancePreviewTests-\(UUID().uuidString)", isDirectory: true)
+		try FileManager.default.createDirectory(
+			at: directoryURL,
+			withIntermediateDirectories: true
+		)
+		temporaryDirectoryURL = directoryURL
+		addTeardownBlock {
+			try? FileManager.default.removeItem(at: directoryURL)
+		}
+		return directoryURL
 	}
 
 	private func node(named name: String, in nodes: [FileTreeNode]) -> FileTreeNode? {

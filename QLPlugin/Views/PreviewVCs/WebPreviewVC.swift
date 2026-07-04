@@ -1,6 +1,7 @@
 import Cocoa
 import WebKit
 
+@MainActor
 class WebPreviewVC: NSViewController, PreviewVC, WKNavigationDelegate {
 	private let html: String
 	private let stylesheets: [Stylesheet]
@@ -60,11 +61,9 @@ class WebPreviewVC: NSViewController, PreviewVC, WKNavigationDelegate {
 		fatalError("init(coder:) has not been implemented")
 	}
 
-	deinit {
-		MainActor.assumeIsolated {
-			webView?.navigationDelegate = nil
-			webView?.stopLoading()
-		}
+	isolated deinit {
+		webView?.navigationDelegate = nil
+		webView?.stopLoading()
 	}
 
 	override func viewDidLoad() {
