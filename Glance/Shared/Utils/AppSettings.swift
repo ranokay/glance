@@ -3,13 +3,13 @@ import Foundation
 struct AppSettingsStore {
 	static let sharedDefaultsSuiteName = "group.com.chamburr.glance"
 
-	static let sharedDefaults: UserDefaults = {
+	nonisolated(unsafe) static let sharedDefaults: UserDefaults = {
 		guard let defaults = UserDefaults(suiteName: sharedDefaultsSuiteName) else {
 			fatalError("Failed to create UserDefaults with app group suite '\(sharedDefaultsSuiteName)'. Check that the app group is correctly configured.")
 		}
 		return defaults
 	}()
-	static let shared = AppSettingsStore(
+	nonisolated(unsafe) static let shared = AppSettingsStore(
 		defaults: sharedDefaults,
 		standardDefaults: .standard
 	)

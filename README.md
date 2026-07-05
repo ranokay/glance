@@ -11,7 +11,8 @@
 > This repository is a fork of [chamburr/glance](https://github.com/chamburr/glance) with additional maintenance and distribution work.
 > Compared with upstream, this fork includes:
 >
-> - macOS 14+ modernization
+> - macOS 15+ modernization
+> - Apple Silicon-only builds
 > - newer Quick Look and WebKit fixes
 > - `.toml`, `.ttml`, and `.elrc` source-code previews
 > - expanded archive support
@@ -24,7 +25,7 @@
 
 ## About
 
-This is a fork of the [original Glance plugin](https://github.com/samuelmeuli/glance). Unfortunately, the owner seems to have discarded the project a while ago, and the app is largely broken on newer macOS systems. The aim of this fork is to revive the project and maintain it for future updates. Current builds target macOS 14 or newer and include fixes for newer macOS releases.
+This is a fork of the [original Glance plugin](https://github.com/samuelmeuli/glance). Unfortunately, the owner seems to have discarded the project a while ago, and the app is largely broken on newer macOS systems. The aim of this fork is to revive the project and maintain it for future updates. Current builds target Apple Silicon Macs running macOS 15 or newer and include fixes for newer macOS releases.
 
 ## Installation
 
@@ -70,9 +71,9 @@ Alternatively, you can install Glance directly. The installation is slightly com
 - Some plugins still use the deprecated Quick Look Generator API and might stop working in the future.
 - Glance can easily be extended to support other file types.
 
-**Why isn't the app available on older macOS versions?**
+**Why isn't the app available on older macOS versions or Intel Macs?**
 
-The app uses modern Quick Look, WebKit, and archive dependencies that now require macOS 14 or newer.
+The app uses modern Quick Look, WebKit, and archive dependencies that now require macOS 15 or newer. This fork intentionally ships Apple Silicon-only builds.
 
 **Why are images in my Markdown files not loading?**
 

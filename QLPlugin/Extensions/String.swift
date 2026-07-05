@@ -2,7 +2,7 @@ import Foundation
 
 extension String {
 	/// Cache for compiled regular expressions to avoid recompilation on every call
-	private static let regexCache = NSCache<NSString, NSRegularExpression>()
+	private nonisolated(unsafe) static let regexCache = NSCache<NSString, NSRegularExpression>()
 
 	/// Returns all matches and capturing groups for the provided regular expression applied to the
 	/// string

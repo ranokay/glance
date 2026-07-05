@@ -1,5 +1,4 @@
 import Cocoa
-import Foundation
 
 /// Source: Gifski
 /// v2.7.0
@@ -40,10 +39,12 @@ final class ObjectAssociation<T: Any> {
 	}
 }
 
+@MainActor
 extension NSMenuItem {
 	typealias ActionClosure = (NSMenuItem) -> Void
 
 	private enum AssociatedKeys {
+		@MainActor
 		static let onActionClosure = ObjectAssociation<ActionClosure>()
 	}
 

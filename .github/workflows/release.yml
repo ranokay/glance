@@ -19,15 +19,20 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Assert Apple Silicon runner
+        run: |
+          set -euo pipefail
+          if [ "$(uname -m)" != "arm64" ]; then
+            echo "Release builds must run on Apple Silicon, got $(uname -m)" >&2
+            exit 1
+          fi
+
       - name: Install mise
         run: |
           set -euo pipefail
           MISE_VERSION="2026.6.0"
-          case "$(uname -m)" in
-            arm64) MISE_ARCH="arm64"; MISE_SHA256="8830cf720025583bfbc5ca77bcf15958bf6efb4743fb84be6b572fd85d3a6cd0" ;;
-            x86_64) MISE_ARCH="x64"; MISE_SHA256="fc2630a1cd4a9e16d097cc5d4feec8d868c8a014a9a419cdb41f817da022e8b2" ;;
-            *) echo "Unsupported architecture: $(uname -m)" >&2; exit 1 ;;
-          esac
+          MISE_ARCH="arm64"
+          MISE_SHA256="8830cf720025583bfbc5ca77bcf15958bf6efb4743fb84be6b572fd85d3a6cd0"
 
           MISE_TARBALL="mise-v${MISE_VERSION}-macos-${MISE_ARCH}.tar.gz"
           curl -fsSLO "https://github.com/jdx/mise/releases/download/v${MISE_VERSION}/${MISE_TARBALL}"
@@ -58,6 +63,43 @@ jobs:
           set -euo pipefail
           mise run clean
           mise run build
+
+      - name: Verify Apple Silicon artifacts
+        run: |
+          set -euo pipefail
+
+          APP_PATH="build/Build/Products/Release/Glance.app"
+          test -d "$APP_PATH"
+          lipo -info HTMLConverter/htmlconverter.a | tee /tmp/htmlconverter-lipo.txt
+          if grep -q "x86_64" /tmp/htmlconverter-lipo.txt; then
+            echo "HTMLConverter archive contains x86_64" >&2
+            exit 1
+          fi
+          if ! grep -q "arm64" /tmp/htmlconverter-lipo.txt; then
+            echo "HTMLConverter archive does not contain arm64" >&2
+            exit 1
+          fi
+
+          found_macho=0
+          while IFS= read -r -d '' candidate; do
+            if info="$(lipo -info "$candidate" 2>/dev/null)"; then
+              found_macho=1
+              echo "$info"
+              if echo "$info" | grep -q "x86_64"; then
+                echo "Bundle artifact contains x86_64: $candidate" >&2
+                exit 1
+              fi
+              if ! echo "$info" | grep -q "arm64"; then
+                echo "Bundle artifact does not contain arm64: $candidate" >&2
+                exit 1
+              fi
+            fi
+          done < <(find "$APP_PATH" -type f -print0)
+
+          if [ "$found_macho" -eq 0 ]; then
+            echo "No Mach-O artifacts found in $APP_PATH" >&2
+            exit 1
+          fi
 
       - name: Package DMG
         env:

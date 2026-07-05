@@ -1,7 +1,9 @@
---swiftversion 5.9
+--swiftversion 6.0
 
 --indent tab
 --indentcase true
 --maxwidth 100
 --tabwidth 4
+--exclude build
+
 --disable hoistTry

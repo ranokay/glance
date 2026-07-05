@@ -42,9 +42,9 @@ class MainVC: NSViewController, QLPreviewingController {
 
 	/// Function responsible for generating file previews. It's called for previews in Finder,
 	/// Spotlight, Quick Look and any other UI elements which implement the API.
-	func preparePreviewOfFile(
+	nonisolated func preparePreviewOfFile(
 		at fileUrl: URL,
-		completionHandler handler: @escaping (Error?) -> Void
+		completionHandler handler: @escaping @Sendable (Error?) -> Void
 	) {
 		DispatchQueue.main.async {
 			// Only preview files when the containing app is running

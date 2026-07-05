@@ -1,5 +1,4 @@
 import Cocoa
-import Foundation
 import WebKit
 
 class WebPreviewVC: NSViewController, PreviewVC, WKNavigationDelegate {
@@ -9,7 +8,7 @@ class WebPreviewVC: NSViewController, PreviewVC, WKNavigationDelegate {
 	private let previewNonce = UUID().uuidString.replacingOccurrences(of: "-", with: "")
 	private var webView: WKWebView?
 
-	static let resourceBundle: Bundle = {
+	nonisolated static let resourceBundle: Bundle = {
 		let embeddedPluginBundle = Bundle.main.builtInPlugInsURL
 			.flatMap { Bundle(url: $0.appendingPathComponent("QLPlugin.appex")) }
 		let candidates = [
@@ -62,8 +61,10 @@ class WebPreviewVC: NSViewController, PreviewVC, WKNavigationDelegate {
 	}
 
 	deinit {
-		webView?.navigationDelegate = nil
-		webView?.stopLoading()
+		MainActor.assumeIsolated {
+			webView?.navigationDelegate = nil
+			webView?.stopLoading()
+		}
 	}
 
 	override func viewDidLoad() {

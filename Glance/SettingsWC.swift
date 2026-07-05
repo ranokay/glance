@@ -32,7 +32,7 @@ final class SettingsWC: NSWindowController {
 
 	func showSettingsWindow() {
 		syncState()
-		NSApp.activate(ignoringOtherApps: true)
+		NSApp.activate()
 		showWindow(nil)
 		window?.makeKeyAndOrderFront(nil)
 	}
