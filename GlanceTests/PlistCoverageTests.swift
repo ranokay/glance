@@ -4,6 +4,7 @@ final class PlistCoverageTests: XCTestCase {
 	func testQuickLookInfoPlistContainsRepresentativeSupportedContentTypes() throws {
 		let supportedTypes = try quickLookSupportedContentTypes()
 		let requiredTypes = [
+			"public.folder",
 			"org.7-zip.7-zip-archive",
 			"com.sun.java-archive",
 			"com.sun.web-application-archive",

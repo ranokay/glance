@@ -36,4 +36,15 @@ final class PreviewFactoryTests: XCTestCase {
 			)
 		}
 	}
+
+	func testFactoryPrioritizesDirectoriesOverFileExtensions() {
+		for path in ["/tmp/folder", "/tmp/archive.zip"] {
+			let fileURL = URL(fileURLWithPath: path, isDirectory: true)
+			XCTAssertTrue(
+				PreviewVCFactory.getPreviewInitializer(fileURL: fileURL, isDirectory: true)
+					== DirectoryPreview.self,
+				path
+			)
+		}
+	}
 }

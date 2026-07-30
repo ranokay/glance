@@ -8,6 +8,7 @@ Features:
 • Full compatibility with Dark Mode
 
 Supported file types:
+• Folders (expandable trees up to 500 items and 5 levels)
 • Source code (.cpp, .elrc, .ini, .js, .json, .py, .swift, .toml, .ttml, .yml and many more)
 • Markdown (.md, .markdown, .mdown, .mkdn, .mkd, .Rmd, .qmd)
 • Archive (.7z, .ear, .jar, .tar, .tar.gz, .tgz, .war, .zip)

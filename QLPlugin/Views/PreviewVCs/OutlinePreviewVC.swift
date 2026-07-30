@@ -3,6 +3,7 @@ import Cocoa
 class OutlinePreviewVC: NSViewController, PreviewVC {
 	@objc dynamic var rootNodes: [FileTreeNode]
 	private let labelText: String?
+	private let expandAll: Bool
 
 	@objc dynamic var customSortDescriptors = [NSSortDescriptor(key: "name", ascending: true)]
 
@@ -10,24 +11,51 @@ class OutlinePreviewVC: NSViewController, PreviewVC {
 	@IBOutlet private var outlineView: NSOutlineView!
 	@IBOutlet private var label: NSTextField!
 
+	nonisolated private static let resourceBundle: Bundle = {
+		let embeddedPluginBundle = Bundle.main.builtInPlugInsURL
+			.flatMap { Bundle(url: $0.appendingPathComponent("QLPlugin.appex")) }
+		let candidates = [
+			Bundle(for: OutlinePreviewVC.self),
+			Bundle(identifier: "com.chamburr.Glance.QLPlugin"),
+			embeddedPluginBundle,
+			Bundle.main,
+		].compactMap { $0 }
+
+		return candidates.first {
+			$0.url(forResource: "OutlinePreviewVC", withExtension: "nib") != nil
+		} ?? Bundle(for: OutlinePreviewVC.self)
+	}()
+
 	private static let registerValueTransformersOnce: Void = {
 		ValueTransformer.setValueTransformer(DateTransformer(), forName: .dateTransformerName)
 		ValueTransformer.setValueTransformer(IconTransformer(), forName: .iconTransformerName)
 		ValueTransformer.setValueTransformer(SizeTransformer(), forName: .sizeTransformerName)
 	}()
 
-	required convenience init(rootNodes: [FileTreeNode], labelText: String?) {
-		self.init(nibName: nil, bundle: nil, rootNodes: rootNodes, labelText: labelText)
+	required convenience init(
+		rootNodes: [FileTreeNode],
+		labelText: String?,
+		expandAll: Bool = false
+	) {
+		self.init(
+			nibName: NSNib.Name("OutlinePreviewVC"),
+			bundle: Self.resourceBundle,
+			rootNodes: rootNodes,
+			labelText: labelText,
+			expandAll: expandAll
+		)
 	}
 
 	init(
 		nibName nibNameOrNil: NSNib.Name?,
 		bundle nibBundleOrNil: Bundle?,
 		rootNodes: [FileTreeNode],
-		labelText: String?
+		labelText: String?,
+		expandAll: Bool = false
 	) {
 		self.rootNodes = rootNodes
 		self.labelText = labelText
+		self.expandAll = expandAll
 		super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
 		_ = Self.registerValueTransformersOnce
 	}
@@ -40,7 +68,11 @@ class OutlinePreviewVC: NSViewController, PreviewVC {
 	override func viewDidLoad() {
 		super.viewDidLoad()
 		setUpView()
-		expandSingleRootItem()
+		if expandAll {
+			expandAllItems()
+		} else {
+			expandSingleRootItem()
+		}
 	}
 
 	private func setUpView() {
@@ -59,6 +91,10 @@ class OutlinePreviewVC: NSViewController, PreviewVC {
 		if root.children?.count == 1, let firstChild = root.children?.first {
 			outlineView.expandItem(firstChild)
 		}
+	}
+
+	private func expandAllItems() {
+		outlineView.expandItem(nil, expandChildren: true)
 	}
 }
 

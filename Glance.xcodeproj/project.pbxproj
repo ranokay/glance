@@ -46,6 +46,9 @@
 		C0DE00000000000000000320 /* WebPreviewVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E022BE32452181F000EFCD3 /* WebPreviewVC.swift */; };
 		C0DE00000000000000000321 /* TablePreviewVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E08A50D2454372200B7FF53 /* TablePreviewVC.swift */; };
 		C0DE00000000000000000322 /* OutlinePreviewVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E022BEB245253B3000EFCD3 /* OutlinePreviewVC.swift */; };
+		D1A000000000000000000002 /* DirectoryPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A000000000000000000001 /* DirectoryPreview.swift */; };
+		D1A000000000000000000003 /* DirectoryPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A000000000000000000001 /* DirectoryPreview.swift */; };
+		D1A000000000000000000005 /* DirectoryPreviewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A000000000000000000004 /* DirectoryPreviewTests.swift */; };
 		7E022BE52452181F000EFCD3 /* WebPreviewVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E022BE32452181F000EFCD3 /* WebPreviewVC.swift */; };
 		7E022BE62452181F000EFCD3 /* WebPreviewVC.xib in Resources */ = {isa = PBXBuildFile; fileRef = 7E022BE42452181F000EFCD3 /* WebPreviewVC.xib */; };
 		7E022BED245253B3000EFCD3 /* OutlinePreviewVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E022BEB245253B3000EFCD3 /* OutlinePreviewVC.swift */; };
@@ -177,6 +180,8 @@
 		C0DE00000000000000000103 /* PreviewFactoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewFactoryTests.swift; sourceTree = "<group>"; };
 		C0DE00000000000000000104 /* PreviewSmokeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewSmokeTests.swift; sourceTree = "<group>"; };
 		C0DE00000000000000000105 /* PlistCoverageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlistCoverageTests.swift; sourceTree = "<group>"; };
+		D1A000000000000000000001 /* DirectoryPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DirectoryPreview.swift; sourceTree = "<group>"; };
+		D1A000000000000000000004 /* DirectoryPreviewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DirectoryPreviewTests.swift; sourceTree = "<group>"; };
 		7E022BE32452181F000EFCD3 /* WebPreviewVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebPreviewVC.swift; sourceTree = "<group>"; };
 		7E022BE42452181F000EFCD3 /* WebPreviewVC.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = WebPreviewVC.xib; sourceTree = "<group>"; };
 		7E022BEB245253B3000EFCD3 /* OutlinePreviewVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutlinePreviewVC.swift; sourceTree = "<group>"; };
@@ -292,6 +297,7 @@
 		10779C0E26218B2B008A903C /* GlanceTests */ = {
 			isa = PBXGroup;
 			children = (
+				D1A000000000000000000004 /* DirectoryPreviewTests.swift */,
 				C0DE00000000000000000102 /* FileTests.swift */,
 				C0DE00000000000000000101 /* FileTreeTests.swift */,
 				C0DE00000000000000000105 /* PlistCoverageTests.swift */,
@@ -338,6 +344,7 @@
 		7E1DC52C240E9A3700D0A061 /* Previews */ = {
 			isa = PBXGroup;
 			children = (
+				D1A000000000000000000001 /* DirectoryPreview.swift */,
 				103654F32F72623D006F2538 /* SevenZipPreview.swift */,
 				7E1DC529240E6FDE00D0A061 /* CodePreview.swift */,
 				7EB7491824228549007265A4 /* JupyterPreview.swift */,
@@ -760,6 +767,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D1A000000000000000000003 /* DirectoryPreview.swift in Sources */,
+				D1A000000000000000000005 /* DirectoryPreviewTests.swift in Sources */,
 				C0DE00000000000000000315 /* CodePreview.swift in Sources */,
 				C0DE00000000000000000303 /* Date.swift in Sources */,
 				C0DE00000000000000000302 /* Log.swift in Sources */,
@@ -797,6 +806,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D1A000000000000000000002 /* DirectoryPreview.swift in Sources */,
 				7EB36488244B65D900D7F96F /* String.swift in Sources */,
 				7EAC01EC240D220B009505D0 /* File.swift in Sources */,
 				7E458AED2439176B0091BD0F /* Date.swift in Sources */,
