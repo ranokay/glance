@@ -229,6 +229,7 @@
 				<string>org.n8gray.bat</string> <!-- .bat, .cmd -->
 				<string>dyn.ah62d4rv4ge80e2py</string> <!-- .bat -->
 				<string>dyn.ah62d4rv4ge80g5pe</string> <!-- .cmd -->
+				<string>com.microsoft.ini</string> <!-- .ini -->
 				<string>org.n8gray.ini-source</string> <!-- .ini -->
 				<string>dyn.ah62d4rv4ge80w5xm</string> <!-- .ini -->
 				<string>org.n8gray.jsp-source</string> <!-- .jsp -->
