@@ -55,6 +55,11 @@
 		D3A000000000000000000002 /* FolderSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3A000000000000000000001 /* FolderSearch.swift */; };
 		D3A000000000000000000003 /* FolderSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3A000000000000000000001 /* FolderSearch.swift */; };
 		D3A000000000000000000005 /* FolderSearchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3A000000000000000000004 /* FolderSearchTests.swift */; };
+		D4A000000000000000000002 /* NestedPreviewProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4A000000000000000000001 /* NestedPreviewProvider.swift */; };
+		D4A000000000000000000003 /* NestedPreviewProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4A000000000000000000001 /* NestedPreviewProvider.swift */; };
+		D4A000000000000000000005 /* NestedPreviewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4A000000000000000000004 /* NestedPreviewTests.swift */; };
+		D4A000000000000000000006 /* MainVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 102D56C426206A36000B5C0E /* MainVC.swift */; };
+		D4A000000000000000000007 /* Stats.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E21C88C2438CAA500818EB2 /* Stats.swift */; };
 		7E022BE52452181F000EFCD3 /* WebPreviewVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E022BE32452181F000EFCD3 /* WebPreviewVC.swift */; };
 		7E022BE62452181F000EFCD3 /* WebPreviewVC.xib in Resources */ = {isa = PBXBuildFile; fileRef = 7E022BE42452181F000EFCD3 /* WebPreviewVC.xib */; };
 		7E022BED245253B3000EFCD3 /* OutlinePreviewVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E022BEB245253B3000EFCD3 /* OutlinePreviewVC.swift */; };
@@ -192,6 +197,8 @@
 		D2A000000000000000000004 /* DirectoryThumbnailTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DirectoryThumbnailTests.swift; sourceTree = "<group>"; };
 		D3A000000000000000000001 /* FolderSearch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderSearch.swift; sourceTree = "<group>"; };
 		D3A000000000000000000004 /* FolderSearchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderSearchTests.swift; sourceTree = "<group>"; };
+		D4A000000000000000000001 /* NestedPreviewProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NestedPreviewProvider.swift; sourceTree = "<group>"; };
+		D4A000000000000000000004 /* NestedPreviewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NestedPreviewTests.swift; sourceTree = "<group>"; };
 		7E022BE32452181F000EFCD3 /* WebPreviewVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebPreviewVC.swift; sourceTree = "<group>"; };
 		7E022BE42452181F000EFCD3 /* WebPreviewVC.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = WebPreviewVC.xib; sourceTree = "<group>"; };
 		7E022BEB245253B3000EFCD3 /* OutlinePreviewVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutlinePreviewVC.swift; sourceTree = "<group>"; };
@@ -310,6 +317,7 @@
 				D1A000000000000000000004 /* DirectoryPreviewTests.swift */,
 				D2A000000000000000000004 /* DirectoryThumbnailTests.swift */,
 				D3A000000000000000000004 /* FolderSearchTests.swift */,
+				D4A000000000000000000004 /* NestedPreviewTests.swift */,
 				C0DE00000000000000000102 /* FileTests.swift */,
 				C0DE00000000000000000101 /* FileTreeTests.swift */,
 				C0DE00000000000000000105 /* PlistCoverageTests.swift */,
@@ -337,6 +345,7 @@
 		7E1DC51D240E68AF00D0A061 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				D4A000000000000000000001 /* NestedPreviewProvider.swift */,
 				7E1DC527240E6F4A00D0A061 /* PreviewVCFactory.swift */,
 				7E1DC51E240E6CE300D0A061 /* PreviewVC.swift */,
 				7E616BB324499A380043F7AB /* PreviewVCs */,
@@ -787,6 +796,10 @@
 				D2A000000000000000000005 /* DirectoryThumbnailTests.swift in Sources */,
 				D3A000000000000000000003 /* FolderSearch.swift in Sources */,
 				D3A000000000000000000005 /* FolderSearchTests.swift in Sources */,
+				D4A000000000000000000003 /* NestedPreviewProvider.swift in Sources */,
+				D4A000000000000000000005 /* NestedPreviewTests.swift in Sources */,
+				D4A000000000000000000006 /* MainVC.swift in Sources */,
+				D4A000000000000000000007 /* Stats.swift in Sources */,
 				C0DE00000000000000000315 /* CodePreview.swift in Sources */,
 				C0DE00000000000000000303 /* Date.swift in Sources */,
 				C0DE00000000000000000302 /* Log.swift in Sources */,
@@ -827,6 +840,7 @@
 				D1A000000000000000000002 /* DirectoryPreview.swift in Sources */,
 				D2A000000000000000000002 /* DirectoryThumbnailLoader.swift in Sources */,
 				D3A000000000000000000002 /* FolderSearch.swift in Sources */,
+				D4A000000000000000000002 /* NestedPreviewProvider.swift in Sources */,
 				7EB36488244B65D900D7F96F /* String.swift in Sources */,
 				7EAC01EC240D220B009505D0 /* File.swift in Sources */,
 				7E458AED2439176B0091BD0F /* Date.swift in Sources */,

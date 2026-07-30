@@ -3,6 +3,13 @@ import Cocoa
 @MainActor
 protocol OutlinePreviewCommandHandling: AnyObject {
 	func focusFolderSearch() -> Bool
+	func activateOutlineSelection() -> Bool
+}
+
+@MainActor
+protocol OutlinePreviewInteractionDelegate: AnyObject {
+	func outlinePreview(_ preview: OutlinePreviewVC, didSelect node: FileTreeNode?)
+	func outlinePreview(_ preview: OutlinePreviewVC, requestPreviewOf node: FileTreeNode)
 }
 
 final class OutlinePreviewView: NSView {
@@ -15,12 +22,28 @@ final class OutlinePreviewView: NSView {
 		if isFindCommand, commandHandler?.focusFolderSearch() == true {
 			return true
 		}
+		let isSpace = modifiers.isEmpty && event.charactersIgnoringModifiers == " "
+		if isSpace, commandHandler?.activateOutlineSelection() == true {
+			return true
+		}
 		return super.performKeyEquivalent(with: event)
 	}
 }
 
 class OutlinePreviewVC: NSViewController, PreviewVC, NSSearchFieldDelegate {
 	@objc dynamic var rootNodes: [FileTreeNode]
+	private(set) var previewStatusText: String
+	var previewStatusDidChange: (@MainActor (String) -> Void)?
+	private(set) var currentSearchQuery = ""
+	private(set) var selectedNode: FileTreeNode?
+	weak var interactionDelegate: OutlinePreviewInteractionDelegate? {
+		didSet {
+			if isViewLoaded {
+				setUpInteraction()
+			}
+		}
+	}
+
 	private let labelText: String?
 	private let expandAll: Bool
 	private let showsFileThumbnails: Bool
@@ -33,7 +56,6 @@ class OutlinePreviewVC: NSViewController, PreviewVC, NSSearchFieldDelegate {
 
 	@IBOutlet private var treeController: NSTreeController!
 	@IBOutlet private var outlineView: NSOutlineView!
-	@IBOutlet private var label: NSTextField!
 	@IBOutlet private var outlineTopConstraint: NSLayoutConstraint!
 
 	nonisolated static let resourceBundle: Bundle = {
@@ -90,6 +112,7 @@ class OutlinePreviewVC: NSViewController, PreviewVC, NSSearchFieldDelegate {
 	) {
 		self.rootNodes = rootNodes
 		self.labelText = labelText
+		previewStatusText = labelText ?? ""
 		self.expandAll = expandAll
 		self.showsFileThumbnails = showsFileThumbnails
 		self.searchEnabled = searchEnabled
@@ -110,6 +133,7 @@ class OutlinePreviewVC: NSViewController, PreviewVC, NSSearchFieldDelegate {
 		super.viewDidLoad()
 		setUpView()
 		setUpSearch()
+		setUpInteraction()
 		if expandAll {
 			expandAllItems()
 		} else {
@@ -135,9 +159,7 @@ class OutlinePreviewVC: NSViewController, PreviewVC, NSSearchFieldDelegate {
 
 	private func setUpView() {
 		display(rootNodes: rootNodes)
-
-		// Add label
-		label.stringValue = labelText ?? ""
+		(view as? OutlinePreviewView)?.commandHandler = self
 	}
 
 	private func setUpSearch() {
@@ -162,7 +184,6 @@ class OutlinePreviewVC: NSViewController, PreviewVC, NSSearchFieldDelegate {
 			scrollView.topAnchor.constraint(equalTo: searchField.bottomAnchor, constant: 6),
 		])
 		self.searchField = searchField
-		(view as? OutlinePreviewView)?.commandHandler = self
 	}
 
 	func controlTextDidChange(_ notification: Notification) {
@@ -194,15 +215,16 @@ class OutlinePreviewVC: NSViewController, PreviewVC, NSSearchFieldDelegate {
 		guard searchEnabled else {
 			return
 		}
+		currentSearchQuery = query
 		let result = FolderSearch.filter(rootNodes: rootNodes, query: query)
 		display(rootNodes: result.rootNodes)
 		if let matchCount = result.matchCount {
-			label.stringValue = FolderSearch.statusText(
+			updateStatus(FolderSearch.statusText(
 				matchCount: matchCount,
 				isTruncated: searchItemLimitReached
-			)
+			))
 		} else {
-			label.stringValue = labelText ?? ""
+			updateStatus(labelText ?? "")
 		}
 		expandAllItems()
 		requestVisibleThumbnails()
@@ -215,6 +237,52 @@ class OutlinePreviewVC: NSViewController, PreviewVC, NSSearchFieldDelegate {
 		view.window?.makeFirstResponder(searchField)
 		searchField.currentEditor()?.selectAll(nil)
 		return true
+	}
+
+	func activateOutlineSelection() -> Bool {
+		guard interactionDelegate != nil,
+		      outlineView.selectedRow >= 0,
+		      let node = treeNode(at: outlineView.selectedRow),
+		      !node.isSymbolicLink
+		else {
+			return false
+		}
+
+		if node.isDirectory, !node.isPackage {
+			guard let item = outlineView.item(atRow: outlineView.selectedRow) else {
+				return false
+			}
+			if outlineView.isItemExpanded(item) {
+				outlineView.collapseItem(item)
+			} else {
+				outlineView.expandItem(item)
+			}
+			return true
+		}
+
+		interactionDelegate?.outlinePreview(self, requestPreviewOf: node)
+		return true
+	}
+
+	private func setUpInteraction() {
+		guard interactionDelegate != nil else {
+			return
+		}
+		outlineView.delegate = self
+		outlineView.selectionHighlightStyle = .regular
+		outlineView.allowsEmptySelection = true
+		outlineView.target = self
+		outlineView.doubleAction = #selector(outlineSelectionWasDoubleClicked)
+	}
+
+	@objc
+	private func outlineSelectionWasDoubleClicked() {
+		_ = activateOutlineSelection()
+	}
+
+	private func updateStatus(_ status: String) {
+		previewStatusText = status
+		previewStatusDidChange?(status)
 	}
 
 	private func display(rootNodes: [FileTreeNode]) {
@@ -322,6 +390,14 @@ class OutlinePreviewVC: NSViewController, PreviewVC, NSSearchFieldDelegate {
 }
 
 extension OutlinePreviewVC: OutlinePreviewCommandHandling {}
+extension OutlinePreviewVC: PreviewStatusProviding {}
+
+extension OutlinePreviewVC: NSOutlineViewDelegate {
+	func outlineViewSelectionDidChange(_: Notification) {
+		selectedNode = treeNode(at: outlineView.selectedRow)
+		interactionDelegate?.outlinePreview(self, didSelect: selectedNode)
+	}
+}
 
 /// `ValueTransformer` which formats the provided date.
 class DateTransformer: ValueTransformer {

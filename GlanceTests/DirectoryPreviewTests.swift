@@ -67,10 +67,7 @@ final class DirectoryPreviewTests: XCTestCase {
 
 		XCTAssertEqual(Set(previewVC.rootNodes.map(\.name)), Set(["a.txt", "b.txt"]))
 		previewVC.loadViewIfNeeded()
-		XCTAssertTrue(
-			allSubviews(of: NSTextField.self, in: previewVC.view)
-				.contains { $0.stringValue == "2+ items" }
-		)
+		XCTAssertEqual(previewVC.previewStatusText, "2+ items")
 	}
 
 	func testPreviewStopsAtConfiguredDepth() throws {
@@ -171,10 +168,5 @@ final class DirectoryPreviewTests: XCTestCase {
 			return matchingView
 		}
 		return view.subviews.lazy.compactMap { self.firstSubview(of: View.self, in: $0) }.first
-	}
-
-	private func allSubviews<View: NSView>(of _: View.Type, in view: NSView) -> [View] {
-		let currentView = (view as? View).map { [$0] } ?? []
-		return currentView + view.subviews.flatMap { self.allSubviews(of: View.self, in: $0) }
 	}
 }

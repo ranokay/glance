@@ -68,15 +68,15 @@ final class FolderSearchTests: XCTestCase {
 
 		previewVC.applySearchQuery("resume")
 		XCTAssertEqual(outlineView.numberOfRows, 2)
-		XCTAssertTrue(hasLabel("1 match in first 500 items", in: previewVC.view))
+		XCTAssertEqual(previewVC.previewStatusText, "1 match in first 500 items")
 
 		previewVC.applySearchQuery("missing")
 		XCTAssertEqual(outlineView.numberOfRows, 0)
-		XCTAssertTrue(hasLabel("No matches", in: previewVC.view))
+		XCTAssertEqual(previewVC.previewStatusText, "No matches")
 
 		previewVC.applySearchQuery("")
 		XCTAssertEqual(outlineView.numberOfRows, 3)
-		XCTAssertTrue(hasLabel("500+ items", in: previewVC.view))
+		XCTAssertEqual(previewVC.previewStatusText, "500+ items")
 	}
 
 	func testArchiveOutlineKeepsExistingLayoutWithoutSearch() throws {
@@ -88,7 +88,7 @@ final class FolderSearchTests: XCTestCase {
 
 		XCTAssertTrue(allSubviews(of: NSSearchField.self, in: previewVC.view).isEmpty)
 		XCTAssertNotEqual(outlineView.rowHeight, 28)
-		XCTAssertTrue(hasLabel("1 file", in: previewVC.view))
+		XCTAssertEqual(previewVC.previewStatusText, "1 file")
 	}
 
 	func testSearchFocusSelectsFieldAndEscapeClearsItAndReturnsToOutline() throws {
@@ -136,10 +136,6 @@ final class FolderSearchTests: XCTestCase {
 			searchEnabled: searchEnabled,
 			searchItemLimitReached: searchItemLimitReached
 		)
-	}
-
-	private func hasLabel(_ text: String, in view: NSView) -> Bool {
-		allSubviews(of: NSTextField.self, in: view).contains { $0.stringValue == text }
 	}
 
 	private func firstSubview<View: NSView>(of _: View.Type, in view: NSView) -> View? {

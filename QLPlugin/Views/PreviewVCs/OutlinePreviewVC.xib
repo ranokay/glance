@@ -7,7 +7,6 @@
     <objects>
         <customObject id="-2" userLabel="File's Owner" customClass="OutlinePreviewVC" customModule="QLPlugin" customModuleProvider="target">
             <connections>
-                <outlet property="label" destination="7b9-nX-pMc" id="ELE-wZ-ZEz"/>
                 <outlet property="outlineView" destination="2wT-Jc-MDD" id="EvP-P0-FRL"/>
                 <outlet property="outlineTopConstraint" destination="C2C-u0-DcL" id="D3A-ot-Cst"/>
                 <outlet property="treeController" destination="Bni-mu-PmG" id="OsI-dd-NSA"/>
@@ -189,23 +188,12 @@
                         <autoresizingMask key="autoresizingMask"/>
                     </tableHeaderView>
                 </scrollView>
-                <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="7b9-nX-pMc">
-                    <rect key="frame" x="8" y="10" width="784" height="16"/>
-                    <textFieldCell key="cell" lineBreakMode="clipping" alignment="center" title="Label" id="yFi-98-HeS">
-                        <font key="font" usesAppearanceFont="YES"/>
-                        <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
-                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
-                    </textFieldCell>
-                </textField>
             </subviews>
             <constraints>
-                <constraint firstAttribute="trailing" secondItem="7b9-nX-pMc" secondAttribute="trailing" constant="10" id="8vF-uS-cC7"/>
+                <constraint firstAttribute="bottom" secondItem="ERb-fS-phW" secondAttribute="bottom" id="D4A-sc-Btm"/>
                 <constraint firstItem="ERb-fS-phW" firstAttribute="top" secondItem="Hz6-mo-xeY" secondAttribute="top" id="C2C-u0-DcL"/>
                 <constraint firstItem="ERb-fS-phW" firstAttribute="leading" secondItem="Hz6-mo-xeY" secondAttribute="leading" id="Ust-av-8g2"/>
-                <constraint firstItem="7b9-nX-pMc" firstAttribute="leading" secondItem="Hz6-mo-xeY" secondAttribute="leading" constant="10" id="fS3-vR-Fyd"/>
                 <constraint firstAttribute="trailing" secondItem="ERb-fS-phW" secondAttribute="trailing" id="hAK-fY-QJd"/>
-                <constraint firstItem="7b9-nX-pMc" firstAttribute="top" secondItem="ERb-fS-phW" secondAttribute="bottom" constant="10" id="mjh-ww-C2Y"/>
-                <constraint firstAttribute="bottom" secondItem="7b9-nX-pMc" secondAttribute="bottom" constant="10" id="xQc-4b-xNq"/>
             </constraints>
             <point key="canvasLocation" x="293" y="232"/>
         </customView>
