@@ -1,4 +1,5 @@
 import Foundation
+import UniformTypeIdentifiers
 
 enum DirectoryPreviewError: LocalizedError {
 	case directoryReadError(path: String, message: String)
@@ -72,7 +73,8 @@ class DirectoryPreview: Preview {
 		return OutlinePreviewVC(
 			rootNodes: scanResult.fileTree.root.childrenList,
 			labelText: labelText,
-			expandAll: true
+			expandAll: true,
+			showsFileThumbnails: true
 		)
 	}
 
@@ -119,6 +121,7 @@ class DirectoryPreview: Preview {
 					.isDirectoryKey,
 					.isPackageKey,
 					.isSymbolicLinkKey,
+					.contentTypeKey,
 				],
 				options: [.skipsHiddenFiles]
 			)
@@ -163,6 +166,7 @@ class DirectoryPreview: Preview {
 					.isDirectoryKey,
 					.isPackageKey,
 					.isSymbolicLinkKey,
+					.contentTypeKey,
 				])
 			} catch {
 				Log.general.error(
@@ -180,7 +184,11 @@ class DirectoryPreview: Preview {
 					path: itemRelativePath,
 					isDirectory: isDirectory,
 					size: isDirectory ? 0 : resourceValues.fileSize ?? 0,
-					dateModified: resourceValues.contentModificationDate
+					dateModified: resourceValues.contentModificationDate,
+					fileURL: itemURL,
+					isPackage: resourceValues.isPackage ?? false,
+					isSymbolicLink: resourceValues.isSymbolicLink ?? false,
+					contentTypeIdentifier: resourceValues.contentType?.identifier
 				)
 				itemCount += 1
 			} catch {

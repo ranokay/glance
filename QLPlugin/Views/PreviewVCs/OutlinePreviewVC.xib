@@ -54,7 +54,7 @@
                                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                         <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyDown" image="NSActionTemplate" id="27y-M6-wJQ"/>
                                                         <connections>
-                                                            <binding destination="axo-St-AXO" name="value" keyPath="objectValue.isDirectory" id="Iby-Wf-LIy">
+                                                            <binding destination="axo-St-AXO" name="value" keyPath="objectValue" id="Iby-Wf-LIy">
                                                                 <dictionary key="options">
                                                                     <bool key="NSConditionallySetsEnabled" value="NO"/>
                                                                     <string key="NSValueTransformerName">IconTransformer</string>

@@ -1,4 +1,4 @@
-import Foundation
+import Cocoa
 
 enum FileTreeError {
 	case notADirectoryError(pathParts: [String.SubSequence], pathPartIndex: Int)
@@ -37,27 +37,58 @@ class FileTreeNode: NSObject {
 	@objc let size: Int
 	@objc let isDirectory: Bool
 	@objc var dateModified: Date?
+	@objc var fileURL: URL?
+	@objc var isPackage: Bool
+	@objc var isSymbolicLink: Bool
+	@objc var contentTypeIdentifier: String?
+	@objc dynamic var icon: NSImage?
 	/// Child nodes of a directory
 	@objc var children = [String: FileTreeNode]()
 
 	/// Number of child nodes (required for rendering the tree in an `NSOutlineView`)
-	@objc var childrenCount: Int { children.values.count }
+	@objc var childrenCount: Int {
+		children.values.count
+	}
+
 	/// List of child nodes (required for rendering the tree in an `NSOutlineView`)
-	@objc var childrenList: [FileTreeNode] { Array(children.values) }
+	@objc var childrenList: [FileTreeNode] {
+		Array(children.values)
+	}
+
 	/// Whether the node has any children (required for rendering the tree in an `NSOutlineView`)
-	@objc var hasChildren: Bool { !children.isEmpty }
+	@objc var hasChildren: Bool {
+		!children.isEmpty
+	}
+
 	/// Whether the node is a leaf (has no children) — used by `NSTreeController`'s `leafKeyPath`
-	@objc var isLeaf: Bool { children.isEmpty }
+	@objc var isLeaf: Bool {
+		children.isEmpty
+	}
 
 	convenience init(name: String, size: Int, isDirectory: Bool) {
 		self.init(name: name, size: size, isDirectory: isDirectory, dateModified: nil)
 	}
 
-	init(name: String, size: Int, isDirectory: Bool, dateModified: Date?) {
+	init(
+		name: String,
+		size: Int,
+		isDirectory: Bool,
+		dateModified: Date?,
+		fileURL: URL? = nil,
+		isPackage: Bool = false,
+		isSymbolicLink: Bool = false,
+		contentTypeIdentifier: String? = nil,
+		icon: NSImage? = nil
+	) {
 		self.name = name
 		self.size = size
 		self.isDirectory = isDirectory
 		self.dateModified = dateModified
+		self.fileURL = fileURL
+		self.isPackage = isPackage
+		self.isSymbolicLink = isSymbolicLink
+		self.contentTypeIdentifier = contentTypeIdentifier
+		self.icon = icon
 	}
 }
 
@@ -83,7 +114,16 @@ class FileTree {
 	/// Parses the provided file/directory's path and creates a new `FileTreeNode` at the correct
 	/// position in the tree. If a file/directory's parent directory doesn't exist yet, it will
 	/// be created (with `dateModified` set to `nil`).
-	func addNode(path: String, isDirectory: Bool, size: Int, dateModified: Date?) throws {
+	func addNode(
+		path: String,
+		isDirectory: Bool,
+		size: Int,
+		dateModified: Date?,
+		fileURL: URL? = nil,
+		isPackage: Bool = false,
+		isSymbolicLink: Bool = false,
+		contentTypeIdentifier: String? = nil
+	) throws {
 		let pathParts = path.split(separator: "/", omittingEmptySubsequences: true)
 		guard !pathParts.isEmpty else {
 			return
@@ -101,15 +141,24 @@ class FileTree {
 			if isLastPathPart {
 				if let currentNode {
 					// Node already exists (i.e. directory has been created implicitly in a previous
-					// function call): Update the directory node with the missing `dateModified` info
+					// function call): Update the directory node with the missing `dateModified`
+					// info
 					currentNode.dateModified = dateModified
+					currentNode.fileURL = fileURL
+					currentNode.isPackage = isPackage
+					currentNode.isSymbolicLink = isSymbolicLink
+					currentNode.contentTypeIdentifier = contentTypeIdentifier
 				} else {
 					_ = try createNode(
 						parentNode: parentNode,
 						name: name,
 						size: size,
 						isDirectory: isDirectory,
-						dateModified: dateModified
+						dateModified: dateModified,
+						fileURL: fileURL,
+						isPackage: isPackage,
+						isSymbolicLink: isSymbolicLink,
+						contentTypeIdentifier: contentTypeIdentifier
 					)
 				}
 			} else {
@@ -127,7 +176,11 @@ class FileTree {
 						name: name,
 						size: 0,
 						isDirectory: true,
-						dateModified: nil
+						dateModified: nil,
+						fileURL: nil,
+						isPackage: false,
+						isSymbolicLink: false,
+						contentTypeIdentifier: nil
 					)
 				}
 			}
@@ -139,7 +192,11 @@ class FileTree {
 		name: String,
 		size: Int,
 		isDirectory: Bool,
-		dateModified: Date?
+		dateModified: Date?,
+		fileURL: URL?,
+		isPackage: Bool,
+		isSymbolicLink: Bool,
+		contentTypeIdentifier: String?
 	) throws -> FileTreeNode {
 		guard nodeCount < maxNodeCount else {
 			throw FileTreeError.nodeCountLimitExceeded(maxNodeCount: maxNodeCount)
@@ -148,7 +205,11 @@ class FileTree {
 			name: name,
 			size: size,
 			isDirectory: isDirectory,
-			dateModified: dateModified
+			dateModified: dateModified,
+			fileURL: fileURL,
+			isPackage: isPackage,
+			isSymbolicLink: isSymbolicLink,
+			contentTypeIdentifier: contentTypeIdentifier
 		)
 		parentNode.children[name] = node
 		nodeCount += 1

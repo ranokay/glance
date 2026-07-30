@@ -4,6 +4,8 @@ class OutlinePreviewVC: NSViewController, PreviewVC {
 	@objc dynamic var rootNodes: [FileTreeNode]
 	private let labelText: String?
 	private let expandAll: Bool
+	private let showsFileThumbnails: Bool
+	private var thumbnailLoader: DirectoryThumbnailLoader?
 
 	@objc dynamic var customSortDescriptors = [NSSortDescriptor(key: "name", ascending: true)]
 
@@ -11,7 +13,7 @@ class OutlinePreviewVC: NSViewController, PreviewVC {
 	@IBOutlet private var outlineView: NSOutlineView!
 	@IBOutlet private var label: NSTextField!
 
-	nonisolated private static let resourceBundle: Bundle = {
+	nonisolated static let resourceBundle: Bundle = {
 		let embeddedPluginBundle = Bundle.main.builtInPlugInsURL
 			.flatMap { Bundle(url: $0.appendingPathComponent("QLPlugin.appex")) }
 		let candidates = [
@@ -19,7 +21,7 @@ class OutlinePreviewVC: NSViewController, PreviewVC {
 			Bundle(identifier: "com.chamburr.Glance.QLPlugin"),
 			embeddedPluginBundle,
 			Bundle.main,
-		].compactMap { $0 }
+		].compactMap(\.self)
 
 		return candidates.first {
 			$0.url(forResource: "OutlinePreviewVC", withExtension: "nib") != nil
@@ -35,14 +37,16 @@ class OutlinePreviewVC: NSViewController, PreviewVC {
 	required convenience init(
 		rootNodes: [FileTreeNode],
 		labelText: String?,
-		expandAll: Bool = false
+		expandAll: Bool = false,
+		showsFileThumbnails: Bool = false
 	) {
 		self.init(
 			nibName: NSNib.Name("OutlinePreviewVC"),
 			bundle: Self.resourceBundle,
 			rootNodes: rootNodes,
 			labelText: labelText,
-			expandAll: expandAll
+			expandAll: expandAll,
+			showsFileThumbnails: showsFileThumbnails
 		)
 	}
 
@@ -51,11 +55,17 @@ class OutlinePreviewVC: NSViewController, PreviewVC {
 		bundle nibBundleOrNil: Bundle?,
 		rootNodes: [FileTreeNode],
 		labelText: String?,
-		expandAll: Bool = false
+		expandAll: Bool = false,
+		showsFileThumbnails: Bool = false,
+		thumbnailLoader: DirectoryThumbnailLoader? = nil
 	) {
 		self.rootNodes = rootNodes
 		self.labelText = labelText
 		self.expandAll = expandAll
+		self.showsFileThumbnails = showsFileThumbnails
+		self.thumbnailLoader = showsFileThumbnails
+			? thumbnailLoader ?? DirectoryThumbnailLoader()
+			: nil
 		super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
 		_ = Self.registerValueTransformersOnce
 	}
@@ -73,6 +83,22 @@ class OutlinePreviewVC: NSViewController, PreviewVC {
 		} else {
 			expandSingleRootItem()
 		}
+		setUpThumbnailLoading()
+	}
+
+	override func viewDidLayout() {
+		super.viewDidLayout()
+		configureVisibleFolderRows()
+		requestVisibleThumbnails()
+	}
+
+	override func viewWillDisappear() {
+		super.viewWillDisappear()
+		thumbnailLoader?.cancelAll()
+	}
+
+	deinit {
+		NotificationCenter.default.removeObserver(self)
 	}
 
 	private func setUpView() {
@@ -96,6 +122,92 @@ class OutlinePreviewVC: NSViewController, PreviewVC {
 	private func expandAllItems() {
 		outlineView.expandItem(nil, expandChildren: true)
 	}
+
+	private func setUpThumbnailLoading() {
+		guard showsFileThumbnails,
+		      let clipView = outlineView.enclosingScrollView?.contentView
+		else {
+			return
+		}
+		outlineView.rowHeight = 28
+		clipView.postsBoundsChangedNotifications = true
+		NotificationCenter.default.addObserver(
+			self,
+			selector: #selector(outlineViewportDidChange),
+			name: NSView.boundsDidChangeNotification,
+			object: clipView
+		)
+		NotificationCenter.default.addObserver(
+			self,
+			selector: #selector(outlineViewportDidChange),
+			name: NSOutlineView.itemDidExpandNotification,
+			object: outlineView
+		)
+		requestVisibleThumbnails()
+	}
+
+	@objc
+	private func outlineViewportDidChange() {
+		configureVisibleFolderRows()
+		requestVisibleThumbnails()
+	}
+
+	private func configureVisibleFolderRows() {
+		guard showsFileThumbnails else {
+			return
+		}
+		for row in visibleRowIndexes() {
+			guard let cellView = outlineView.view(
+				atColumn: 0,
+				row: row,
+				makeIfNecessary: true
+			) as? NSTableCellView else {
+				continue
+			}
+			cellView.imageView?.frame = NSRect(x: 3, y: 2, width: 24, height: 24)
+			if let textField = cellView.textField {
+				textField.frame.origin.x = 31
+				textField.frame.size.width = max(0, cellView.bounds.width - 31)
+			}
+		}
+	}
+
+	private func requestVisibleThumbnails() {
+		guard let thumbnailLoader else {
+			return
+		}
+		let scale = view.window?.backingScaleFactor ?? NSScreen.main?.backingScaleFactor ?? 2
+		for row in visibleRowIndexes() {
+			guard let treeNode = treeNode(at: row) else {
+				continue
+			}
+			thumbnailLoader.requestThumbnail(for: treeNode, scale: scale) { [weak self] node in
+				self?.reloadIcon(for: node)
+			}
+		}
+	}
+
+	private func visibleRowIndexes() -> Range<Int> {
+		let visibleRows = outlineView.rows(in: outlineView.visibleRect)
+		guard visibleRows.location != NSNotFound else {
+			return 0 ..< 0
+		}
+		return visibleRows.location ..< NSMaxRange(visibleRows)
+	}
+
+	private func treeNode(at row: Int) -> FileTreeNode? {
+		(outlineView.item(atRow: row) as? NSTreeNode)?.representedObject as? FileTreeNode
+	}
+
+	private func reloadIcon(for node: FileTreeNode) {
+		for row in visibleRowIndexes() where treeNode(at: row) === node {
+			outlineView.reloadData(
+				forRowIndexes: IndexSet(integer: row),
+				columnIndexes: IndexSet(integer: 0)
+			)
+			return
+		}
+	}
 }
 
 /// `ValueTransformer` which formats the provided date.
@@ -110,9 +222,13 @@ class DateTransformer: ValueTransformer {
 		dateFormatter.doesRelativeDateFormatting = true
 	}
 
-	override class func transformedValueClass() -> AnyClass { NSString.self }
+	override class func transformedValueClass() -> AnyClass {
+		NSString.self
+	}
 
-	override class func allowsReverseTransformation() -> Bool { false }
+	override class func allowsReverseTransformation() -> Bool {
+		false
+	}
 
 	override func transformedValue(_ value: Any?) -> Any? {
 		guard let date = value as? Date else {
@@ -125,8 +241,17 @@ class DateTransformer: ValueTransformer {
 	}
 }
 
-/// `ValueTransformer` which returns the correct icon depending on whether the current row
-/// represents a file or directory.
+protocol FileIconProviding {
+	func icon(for fileURL: URL) -> NSImage
+}
+
+final class WorkspaceFileIconProvider: FileIconProviding {
+	func icon(for fileURL: URL) -> NSImage {
+		NSWorkspace.shared.icon(forFile: fileURL.path)
+	}
+}
+
+/// `ValueTransformer` which returns a thumbnail, file-specific icon, or generic fallback icon.
 class IconTransformer: ValueTransformer {
 	private static let directoryIcon = NSImage(
 		contentsOfFile: "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/GenericFolderIcon.icns"
@@ -134,17 +259,36 @@ class IconTransformer: ValueTransformer {
 	private static let fileIcon = NSImage(
 		contentsOfFile: "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/GenericDocumentIcon.icns"
 	)
+	private let fileIconProvider: FileIconProviding
 
-	override class func transformedValueClass() -> AnyClass { NSImage.self }
+	override convenience init() {
+		self.init(fileIconProvider: WorkspaceFileIconProvider())
+	}
 
-	override class func allowsReverseTransformation() -> Bool { false }
+	init(fileIconProvider: FileIconProviding) {
+		self.fileIconProvider = fileIconProvider
+		super.init()
+	}
+
+	override class func transformedValueClass() -> AnyClass {
+		NSImage.self
+	}
+
+	override class func allowsReverseTransformation() -> Bool {
+		false
+	}
 
 	override func transformedValue(_ value: Any?) -> Any? {
-		guard let isDirectoryNumber = value as? NSNumber else {
+		guard let node = value as? FileTreeNode else {
 			return nil
 		}
-		let isDirectory = Bool(truncating: isDirectoryNumber)
-		return isDirectory ? Self.directoryIcon : Self.fileIcon
+		if let icon = node.icon {
+			return icon
+		}
+		if let fileURL = node.fileURL {
+			return fileIconProvider.icon(for: fileURL)
+		}
+		return node.isDirectory ? Self.directoryIcon : Self.fileIcon
 	}
 }
 
@@ -154,9 +298,13 @@ class SizeTransformer: ValueTransformer {
 	let byteCountFormatter = ByteCountFormatter()
 	let fallbackValue = "--"
 
-	override class func transformedValueClass() -> AnyClass { NSString.self }
+	override class func transformedValueClass() -> AnyClass {
+		NSString.self
+	}
 
-	override class func allowsReverseTransformation() -> Bool { false }
+	override class func allowsReverseTransformation() -> Bool {
+		false
+	}
 
 	override func transformedValue(_ value: Any?) -> Any? {
 		guard let size = value as? NSNumber else {
