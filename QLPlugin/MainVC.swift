@@ -24,6 +24,7 @@ class MainVC: NSViewController, QLPreviewingController {
 
 	let stats = Stats()
 	var nestedPreviewProvider: NestedPreviewProviding = DefaultNestedPreviewProvider()
+	var openWithService = OpenWithService()
 	private(set) var currentPreviewController: PreviewVC?
 	private(set) var topLevelPreviewController: PreviewVC?
 	private(set) var folderPreviewController: OutlinePreviewVC?
@@ -34,6 +35,8 @@ class MainVC: NSViewController, QLPreviewingController {
 	private(set) var utilityBarView = NSView()
 	private(set) var backButton = NSButton()
 	private(set) var statusLabel = NSTextField(labelWithString: "")
+	private(set) var openWithButton = NSPopUpButton()
+	private(set) var openWithTargetURL: URL?
 	private var baseStatusText = ""
 	private var statusResetTask: Task<Void, Never>?
 
@@ -92,6 +95,13 @@ class MainVC: NSViewController, QLPreviewingController {
 		statusLabel.translatesAutoresizingMaskIntoConstraints = false
 		utilityBarView.addSubview(statusLabel)
 
+		openWithButton = NSPopUpButton(frame: .zero, pullsDown: true)
+		openWithButton.bezelStyle = .inline
+		openWithButton.target = self
+		openWithButton.action = #selector(openWithSelectionChanged(_:))
+		openWithButton.translatesAutoresizingMaskIntoConstraints = false
+		utilityBarView.addSubview(openWithButton)
+
 		NSLayoutConstraint.activate([
 			separator.topAnchor.constraint(equalTo: utilityBarView.topAnchor),
 			separator.leadingAnchor.constraint(equalTo: utilityBarView.leadingAnchor),
@@ -105,10 +115,16 @@ class MainVC: NSViewController, QLPreviewingController {
 				constant: 8
 			),
 			statusLabel.trailingAnchor.constraint(
-				lessThanOrEqualTo: utilityBarView.trailingAnchor,
+				lessThanOrEqualTo: openWithButton.leadingAnchor,
 				constant: -8
 			),
+			openWithButton.trailingAnchor.constraint(
+				equalTo: utilityBarView.trailingAnchor,
+				constant: -8
+			),
+			openWithButton.centerYAnchor.constraint(equalTo: utilityBarView.centerYAnchor),
 		])
+		refreshOpenWithMenu()
 	}
 
 	/// Function responsible for generating file previews. It's called for previews in Finder,
@@ -210,6 +226,7 @@ class MainVC: NSViewController, QLPreviewingController {
 		bindStatus(to: previewVC)
 		show(previewVC)
 		backButton.isHidden = true
+		updateOpenWithTarget()
 	}
 
 	private func show(_ previewVC: PreviewVC) {
@@ -257,6 +274,77 @@ class MainVC: NSViewController, QLPreviewingController {
 		}
 	}
 
+	private func updateOpenWithTarget() {
+		let selectedFolderNodeIsOpenable = selectedFolderNode.map {
+			!$0.isSymbolicLink && (!$0.isDirectory || $0.isPackage)
+		} == true
+		if let topLevelFile, !topLevelFile.isDirectory {
+			openWithTargetURL = topLevelFile.url
+		} else if let selectedFolderNode, selectedFolderNodeIsOpenable {
+			openWithTargetURL = selectedFolderNode.fileURL
+		} else {
+			openWithTargetURL = nil
+		}
+		refreshOpenWithMenu()
+	}
+
+	private func refreshOpenWithMenu() {
+		let menu = NSMenu()
+		let titleItem = NSMenuItem(title: "Open With…", action: nil, keyEquivalent: "")
+		titleItem.isEnabled = false
+		menu.addItem(titleItem)
+
+		let applications = openWithTargetURL.map(openWithService.applications(for:)) ?? []
+		if !applications.isEmpty {
+			menu.addItem(.separator())
+		}
+		for application in applications {
+			let menuItem = NSMenuItem(
+				title: application.displayName,
+				action: nil,
+				keyEquivalent: ""
+			)
+			menuItem.representedObject = application.applicationURL as NSURL
+			menuItem.image = application.icon
+			menuItem.image?.size = NSSize(width: 16, height: 16)
+			if application.isDefault {
+				menuItem.state = .on
+				menuItem.toolTip = "Default application"
+			}
+			menu.addItem(menuItem)
+		}
+
+		openWithButton.menu = menu
+		openWithButton.isEnabled = openWithTargetURL != nil && !applications.isEmpty
+		openWithButton.selectItem(at: 0)
+	}
+
+	@objc
+	private func openWithSelectionChanged(_ sender: NSPopUpButton) {
+		guard let applicationURL = sender.selectedItem?.representedObject as? URL else {
+			return
+		}
+		openWithApplication(at: applicationURL)
+	}
+
+	func openWithApplication(at applicationURL: URL) {
+		guard let fileURL = openWithTargetURL else {
+			return
+		}
+		openWithService.open(fileURL: fileURL, with: applicationURL) { [weak self] error in
+			guard let error else {
+				return
+			}
+			Log.general.error(
+				"Could not open \(fileURL.path, privacy: .private) with \(applicationURL.path, privacy: .private): \(error.localizedDescription, privacy: .private)"
+			)
+			self?
+				.showTransientError(
+					"Couldn’t open with \(applicationURL.deletingPathExtension().lastPathComponent)"
+				)
+		}
+	}
+
 	private func showNestedPreview(for node: FileTreeNode) {
 		guard nestedPreviewController == nil, let folderPreviewController else {
 			return
@@ -299,13 +387,17 @@ class MainVC: NSViewController, QLPreviewingController {
 		topLevelPreviewController = nil
 		folderPreviewController = nil
 		nestedPreviewController = nil
+		topLevelFile = nil
 		selectedFolderNode = nil
+		openWithTargetURL = nil
+		refreshOpenWithMenu()
 	}
 }
 
 extension MainVC: OutlinePreviewInteractionDelegate {
 	func outlinePreview(_: OutlinePreviewVC, didSelect node: FileTreeNode?) {
 		selectedFolderNode = node
+		updateOpenWithTarget()
 	}
 
 	func outlinePreview(_: OutlinePreviewVC, requestPreviewOf node: FileTreeNode) {

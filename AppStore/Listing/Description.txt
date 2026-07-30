@@ -6,6 +6,7 @@ Features:
 • Beautiful file previews for various file types
 • Previews visible in Quick Look, Finder and Spotlight
 • Searchable folder trees with Finder-style icons and progressive media thumbnails
+• In-place folder file previews and a compatible-app Open With chooser
 • Full compatibility with Dark Mode
 
 Supported file types:

@@ -47,7 +47,8 @@ Alternatively, you can install Glance directly. The installation is slightly com
 - **Folders**: searchable, expandable trees with Finder-style icons and progressive image, video,
   and PDF thumbnails, limited to 500 items and 5 levels. Double-click a file or package to preview
   it in place; Space does the same when the Quick Look host forwards that key (some hosts reserve
-  Space, so double-click remains the reliable fallback).
+  Space, so double-click remains the reliable fallback). The utility bar can open the top-level or
+  selected item once with any compatible app without changing its macOS default.
 
 - **Source code** (with [Chroma](https://github.com/alecthomas/chroma) syntax highlighting): `.cpp`, `.elrc`, `.ini`, `.js`, `.json`, `.py`, `.swift`, `.toml`, `.ttml`, `.yml` and many more
 
