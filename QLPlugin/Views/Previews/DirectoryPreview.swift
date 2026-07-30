@@ -74,7 +74,9 @@ class DirectoryPreview: Preview {
 			rootNodes: scanResult.fileTree.root.childrenList,
 			labelText: labelText,
 			expandAll: true,
-			showsFileThumbnails: true
+			showsFileThumbnails: true,
+			searchEnabled: true,
+			searchItemLimitReached: scanResult.isTruncated
 		)
 	}
 

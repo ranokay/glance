@@ -1,17 +1,40 @@
 import Cocoa
 
-class OutlinePreviewVC: NSViewController, PreviewVC {
+@MainActor
+protocol OutlinePreviewCommandHandling: AnyObject {
+	func focusFolderSearch() -> Bool
+}
+
+final class OutlinePreviewView: NSView {
+	weak var commandHandler: OutlinePreviewCommandHandling?
+
+	override func performKeyEquivalent(with event: NSEvent) -> Bool {
+		let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+		let isFindCommand = modifiers == .command
+			&& event.charactersIgnoringModifiers?.lowercased() == "f"
+		if isFindCommand, commandHandler?.focusFolderSearch() == true {
+			return true
+		}
+		return super.performKeyEquivalent(with: event)
+	}
+}
+
+class OutlinePreviewVC: NSViewController, PreviewVC, NSSearchFieldDelegate {
 	@objc dynamic var rootNodes: [FileTreeNode]
 	private let labelText: String?
 	private let expandAll: Bool
 	private let showsFileThumbnails: Bool
+	private let searchEnabled: Bool
+	private let searchItemLimitReached: Bool
 	private var thumbnailLoader: DirectoryThumbnailLoader?
+	private var searchField: NSSearchField?
 
 	@objc dynamic var customSortDescriptors = [NSSortDescriptor(key: "name", ascending: true)]
 
 	@IBOutlet private var treeController: NSTreeController!
 	@IBOutlet private var outlineView: NSOutlineView!
 	@IBOutlet private var label: NSTextField!
+	@IBOutlet private var outlineTopConstraint: NSLayoutConstraint!
 
 	nonisolated static let resourceBundle: Bundle = {
 		let embeddedPluginBundle = Bundle.main.builtInPlugInsURL
@@ -38,7 +61,9 @@ class OutlinePreviewVC: NSViewController, PreviewVC {
 		rootNodes: [FileTreeNode],
 		labelText: String?,
 		expandAll: Bool = false,
-		showsFileThumbnails: Bool = false
+		showsFileThumbnails: Bool = false,
+		searchEnabled: Bool = false,
+		searchItemLimitReached: Bool = false
 	) {
 		self.init(
 			nibName: NSNib.Name("OutlinePreviewVC"),
@@ -46,7 +71,9 @@ class OutlinePreviewVC: NSViewController, PreviewVC {
 			rootNodes: rootNodes,
 			labelText: labelText,
 			expandAll: expandAll,
-			showsFileThumbnails: showsFileThumbnails
+			showsFileThumbnails: showsFileThumbnails,
+			searchEnabled: searchEnabled,
+			searchItemLimitReached: searchItemLimitReached
 		)
 	}
 
@@ -57,12 +84,16 @@ class OutlinePreviewVC: NSViewController, PreviewVC {
 		labelText: String?,
 		expandAll: Bool = false,
 		showsFileThumbnails: Bool = false,
+		searchEnabled: Bool = false,
+		searchItemLimitReached: Bool = false,
 		thumbnailLoader: DirectoryThumbnailLoader? = nil
 	) {
 		self.rootNodes = rootNodes
 		self.labelText = labelText
 		self.expandAll = expandAll
 		self.showsFileThumbnails = showsFileThumbnails
+		self.searchEnabled = searchEnabled
+		self.searchItemLimitReached = searchItemLimitReached
 		self.thumbnailLoader = showsFileThumbnails
 			? thumbnailLoader ?? DirectoryThumbnailLoader()
 			: nil
@@ -78,6 +109,7 @@ class OutlinePreviewVC: NSViewController, PreviewVC {
 	override func viewDidLoad() {
 		super.viewDidLoad()
 		setUpView()
+		setUpSearch()
 		if expandAll {
 			expandAllItems()
 		} else {
@@ -102,13 +134,92 @@ class OutlinePreviewVC: NSViewController, PreviewVC {
 	}
 
 	private func setUpView() {
-		// Add file tree to `treeController`
-		for node in rootNodes {
-			treeController.addObject(node)
-		}
+		display(rootNodes: rootNodes)
 
 		// Add label
 		label.stringValue = labelText ?? ""
+	}
+
+	private func setUpSearch() {
+		guard searchEnabled,
+		      let scrollView = outlineView.enclosingScrollView
+		else {
+			return
+		}
+
+		let searchField = NSSearchField()
+		searchField.translatesAutoresizingMaskIntoConstraints = false
+		searchField.placeholderString = "Search folder"
+		searchField.delegate = self
+		searchField.sendsSearchStringImmediately = true
+		view.addSubview(searchField)
+		outlineTopConstraint.isActive = false
+		NSLayoutConstraint.activate([
+			searchField.topAnchor.constraint(equalTo: view.topAnchor, constant: 6),
+			searchField.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 8),
+			searchField.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -8),
+			searchField.heightAnchor.constraint(equalToConstant: 24),
+			scrollView.topAnchor.constraint(equalTo: searchField.bottomAnchor, constant: 6),
+		])
+		self.searchField = searchField
+		(view as? OutlinePreviewView)?.commandHandler = self
+	}
+
+	func controlTextDidChange(_ notification: Notification) {
+		guard let searchField = notification.object as? NSSearchField,
+		      searchField === self.searchField
+		else {
+			return
+		}
+		applySearchQuery(searchField.stringValue)
+	}
+
+	func control(
+		_ control: NSControl,
+		textView _: NSTextView,
+		doCommandBy commandSelector: Selector
+	) -> Bool {
+		guard control === searchField,
+		      commandSelector == #selector(NSResponder.cancelOperation(_:))
+		else {
+			return false
+		}
+		searchField?.stringValue = ""
+		applySearchQuery("")
+		view.window?.makeFirstResponder(outlineView)
+		return true
+	}
+
+	func applySearchQuery(_ query: String) {
+		guard searchEnabled else {
+			return
+		}
+		let result = FolderSearch.filter(rootNodes: rootNodes, query: query)
+		display(rootNodes: result.rootNodes)
+		if let matchCount = result.matchCount {
+			label.stringValue = FolderSearch.statusText(
+				matchCount: matchCount,
+				isTruncated: searchItemLimitReached
+			)
+		} else {
+			label.stringValue = labelText ?? ""
+		}
+		expandAllItems()
+		requestVisibleThumbnails()
+	}
+
+	func focusFolderSearch() -> Bool {
+		guard let searchField else {
+			return false
+		}
+		view.window?.makeFirstResponder(searchField)
+		searchField.currentEditor()?.selectAll(nil)
+		return true
+	}
+
+	private func display(rootNodes: [FileTreeNode]) {
+		treeController.content = rootNodes
+		treeController.rearrangeObjects()
 	}
 
 	/// If the root contains a single item, this function expands its children.
@@ -209,6 +320,8 @@ class OutlinePreviewVC: NSViewController, PreviewVC {
 		}
 	}
 }
+
+extension OutlinePreviewVC: OutlinePreviewCommandHandling {}
 
 /// `ValueTransformer` which formats the provided date.
 class DateTransformer: ValueTransformer {
