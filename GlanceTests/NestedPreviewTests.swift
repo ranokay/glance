@@ -67,6 +67,24 @@ final class NestedPreviewTests: XCTestCase {
 		XCTAssertFalse(try XCTUnwrap(nativePreview.previewView).shouldCloseWithWindow)
 	}
 
+	func testProviderRejectsOversizedSupportedNestedFiles() throws {
+		let markdownURL = try writeFile(named: "Oversized.md", contents: "")
+		let fileHandle = try FileHandle(forWritingTo: markdownURL)
+		try fileHandle.truncate(atOffset: UInt64(PreviewPolicy.maximumFileSize + 1))
+		try fileHandle.close()
+		let markdownNode = node(named: markdownURL.lastPathComponent, type: .plainText)
+		markdownNode.fileURL = markdownURL
+
+		XCTAssertThrowsError(
+			try DefaultNestedPreviewProvider().makePreviewController(for: markdownNode)
+		) { error in
+			guard case let PreviewError.fileSizeError(path) = error else {
+				return XCTFail("Expected the shared preview size error, got \(error)")
+			}
+			XCTAssertEqual(path, markdownURL.path)
+		}
+	}
+
 	func testOutlineSelectionTogglesDirectoriesPreviewsPackagesAndIgnoresSymlinks() throws {
 		let child = node(named: "child.txt", type: .plainText)
 		let directory = node(named: "Folder", type: .folder, isDirectory: true)
@@ -115,7 +133,7 @@ final class NestedPreviewTests: XCTestCase {
 			folderNode.children[fillerNode.name] = fillerNode
 		}
 		let previewVC = makeOutline(rootNodes: [folderNode])
-		let nestedController = StubPreviewVC()
+		let nestedController = StubPreviewVC(statusText: "Nested preview")
 		let provider = StubNestedPreviewProvider(result: .success(nestedController))
 		let mainVC = MainVC()
 		mainVC.nestedPreviewProvider = provider
@@ -138,6 +156,9 @@ final class NestedPreviewTests: XCTestCase {
 		XCTAssertIdentical(mainVC.currentPreviewController, nestedController)
 		XCTAssertFalse(mainVC.backButton.isHidden)
 		XCTAssertTrue(previewVC.view.isHidden)
+		XCTAssertEqual(mainVC.statusLabel.stringValue, "Nested preview")
+		nestedController.updateStatus("Nested preview ready")
+		XCTAssertEqual(mainVC.statusLabel.stringValue, "Nested preview ready")
 
 		mainVC.showFolderPreview()
 
@@ -150,6 +171,9 @@ final class NestedPreviewTests: XCTestCase {
 		XCTAssertEqual(clipView.bounds.origin, retainedScrollOrigin)
 		XCTAssertFalse(previewVC.view.isHidden)
 		XCTAssertTrue(mainVC.backButton.isHidden)
+		XCTAssertEqual(mainVC.statusLabel.stringValue, "1 items")
+		nestedController.updateStatus("Stale nested status")
+		XCTAssertEqual(mainVC.statusLabel.stringValue, "1 items")
 	}
 
 	func testFailedNestedPreviewLeavesFolderVisibleAndShowsNonmodalError() throws {
@@ -292,8 +316,25 @@ private final class StubNestedPreviewProvider: NestedPreviewProviding {
 	}
 }
 
-private final class StubPreviewVC: NSViewController, PreviewVC {
+private final class StubPreviewVC: NSViewController, PreviewVC, PreviewStatusProviding {
+	private(set) var previewStatusText: String
+	var previewStatusDidChange: (@MainActor (String) -> Void)?
 	private(set) var tearDownCallCount = 0
+
+	init(statusText: String = "") {
+		previewStatusText = statusText
+		super.init(nibName: nil, bundle: nil)
+	}
+
+	@available(*, unavailable)
+	required init?(coder _: NSCoder) {
+		fatalError("init(coder:) has not been implemented")
+	}
+
+	func updateStatus(_ status: String) {
+		previewStatusText = status
+		previewStatusDidChange?(status)
+	}
 
 	func tearDown() {
 		tearDownCallCount += 1

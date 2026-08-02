@@ -41,7 +41,9 @@ struct DefaultNestedPreviewProvider: NestedPreviewProviding {
 
 		switch route(for: node) {
 			case let .glance(previewType):
-				return try previewType.init().createPreviewVC(file: File(url: fileURL))
+				let file = try File(url: fileURL)
+				try PreviewPolicy.validateFileSize(file)
+				return try previewType.init().createPreviewVC(file: file)
 			case .native:
 				let previewVC = NativePreviewVC(fileURL: fileURL)
 				previewVC.loadViewIfNeeded()

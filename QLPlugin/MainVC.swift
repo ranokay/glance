@@ -15,9 +15,6 @@ extension PreviewError: LocalizedError {
 }
 
 class MainVC: NSViewController, QLPreviewingController {
-	/// Max size of files to render
-	let maxFileSize = 10_000_000 // 10 MB
-
 	/// Bundle ID of the containing app. When the app isn't running, the QL extension
 	/// declines to preview and lets macOS fall back to the system handler.
 	private static let containingAppBundleID = "com.chamburr.Glance"
@@ -39,6 +36,7 @@ class MainVC: NSViewController, QLPreviewingController {
 	private(set) var openWithTargetURL: URL?
 	private var baseStatusText = ""
 	private var statusResetTask: Task<Void, Never>?
+	private weak var boundStatusProvider: (any PreviewStatusProviding)?
 
 	override func loadView() {
 		view = NSView(frame: NSRect(x: 0, y: 0, width: 800, height: 500))
@@ -156,10 +154,11 @@ class MainVC: NSViewController, QLPreviewingController {
 			}
 
 			// Skip preview if the file is too large
-			if !file.isDirectory, !file.isArchive, file.size > self.maxFileSize {
+			do {
+				try PreviewPolicy.validateFileSize(file)
+			} catch {
 				// Log error and fall back to default preview (by calling the completion handler
 				// with the error)
-				let error = PreviewError.fileSizeError(path: file.path)
 				Log.general
 					.error(
 						"Skipping file preview: \(error.localizedDescription, privacy: .private)"
@@ -239,10 +238,13 @@ class MainVC: NSViewController, QLPreviewingController {
 	}
 
 	private func bindStatus(to previewVC: PreviewVC) {
+		boundStatusProvider?.previewStatusDidChange = nil
+		boundStatusProvider = nil
 		guard let statusProvider = previewVC as? PreviewStatusProviding else {
 			setBaseStatus("")
 			return
 		}
+		boundStatusProvider = statusProvider
 		setBaseStatus(statusProvider.previewStatusText)
 		statusProvider.previewStatusDidChange = { [weak self] status in
 			self?.setBaseStatus(status)
@@ -352,6 +354,7 @@ class MainVC: NSViewController, QLPreviewingController {
 			folderPreviewController.view.isHidden = true
 			nestedPreviewController = previewVC
 			currentPreviewController = previewVC
+			bindStatus(to: previewVC)
 			show(previewVC)
 			backButton.isHidden = false
 		} catch {
@@ -372,12 +375,15 @@ class MainVC: NSViewController, QLPreviewingController {
 		nestedPreviewController.removeFromParent()
 		self.nestedPreviewController = nil
 		currentPreviewController = folderPreviewController
+		bindStatus(to: folderPreviewController)
 		folderPreviewController.view.isHidden = false
 		backButton.isHidden = true
 	}
 
 	private func clearPreviewControllers() {
 		statusResetTask?.cancel()
+		boundStatusProvider?.previewStatusDidChange = nil
+		boundStatusProvider = nil
 		for child in children {
 			(child as? PreviewVC)?.tearDown()
 			child.view.removeFromSuperview()

@@ -1,5 +1,15 @@
 import Cocoa
 
+enum PreviewPolicy {
+	static let maximumFileSize = 10_000_000 // 10 MB
+
+	static func validateFileSize(_ file: File) throws {
+		guard file.isDirectory || file.isArchive || file.size <= maximumFileSize else {
+			throw PreviewError.fileSizeError(path: file.path)
+		}
+	}
+}
+
 /// View controller for rendering previews of a specific file type.
 protocol PreviewVC: NSViewController {
 	func tearDown()

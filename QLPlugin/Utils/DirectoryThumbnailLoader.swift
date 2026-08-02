@@ -78,6 +78,7 @@ final class DirectoryThumbnailLoader {
 	}
 
 	private struct ActiveRequest {
+		let requestID: UUID
 		let token: DirectoryThumbnailToken
 		let node: FileTreeNode
 		let completion: (FileTreeNode) -> Void
@@ -166,14 +167,16 @@ final class DirectoryThumbnailLoader {
 		while activeRequests.count < maxConcurrentRequests, !pendingRequests.isEmpty {
 			let pendingRequest = pendingRequests.removeFirst()
 			let fileURL = pendingRequest.fileURL
+			let requestID = UUID()
 			let token = generator.generateThumbnail(
 				for: fileURL,
 				size: Self.thumbnailSize,
 				scale: pendingRequest.scale
 			) { [weak self] image in
-				self?.finishRequest(for: fileURL, image: image)
+				self?.finishRequest(for: fileURL, requestID: requestID, image: image)
 			}
 			activeRequests[fileURL] = ActiveRequest(
+				requestID: requestID,
 				token: token,
 				node: pendingRequest.node,
 				completion: pendingRequest.completion
@@ -181,10 +184,13 @@ final class DirectoryThumbnailLoader {
 		}
 	}
 
-	private func finishRequest(for fileURL: URL, image: NSImage?) {
-		guard let activeRequest = activeRequests.removeValue(forKey: fileURL) else {
+	private func finishRequest(for fileURL: URL, requestID: UUID, image: NSImage?) {
+		guard let activeRequest = activeRequests[fileURL],
+		      activeRequest.requestID == requestID
+		else {
 			return
 		}
+		activeRequests.removeValue(forKey: fileURL)
 		if let image {
 			cachedImages[fileURL] = image
 			activeRequest.node.icon = image

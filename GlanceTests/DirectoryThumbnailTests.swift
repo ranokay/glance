@@ -145,6 +145,29 @@ final class DirectoryThumbnailTests: XCTestCase {
 		XCTAssertEqual(generator.generatedURLs.first, imageNode.fileURL)
 	}
 
+	func testLateCancelledCallbackDoesNotReplaceAReissuedRequestForTheSameURL() {
+		let generator = ControllableThumbnailGenerator()
+		let loader = DirectoryThumbnailLoader(generator: generator)
+		let imageNode = node(type: .png, path: "reissued.png")
+		var updatedNodes = [FileTreeNode]()
+
+		loader.requestThumbnail(for: imageNode, scale: 2) { updatedNodes.append($0) }
+		loader.cancelAll()
+		loader.requestThumbnail(for: imageNode, scale: 2) { updatedNodes.append($0) }
+		XCTAssertEqual(generator.outstandingRequests.count, 2)
+
+		let staleImage = NSImage(size: NSSize(width: 16, height: 16))
+		generator.completeFirst(with: staleImage)
+		XCTAssertNil(imageNode.icon)
+		XCTAssertTrue(updatedNodes.isEmpty)
+		XCTAssertEqual(generator.outstandingRequests.count, 1)
+
+		let currentImage = NSImage(size: NSSize(width: 32, height: 32))
+		generator.completeFirst(with: currentImage)
+		XCTAssertIdentical(imageNode.icon, currentImage)
+		XCTAssertEqual(updatedNodes.count, 1)
+	}
+
 	func testOutlineRequestsThumbnailsOnlyForVisibleRows() {
 		let generator = ControllableThumbnailGenerator()
 		let loader = DirectoryThumbnailLoader(generator: generator, maxConcurrentRequests: 4)
