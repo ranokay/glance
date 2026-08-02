@@ -54,6 +54,10 @@ final class WindowAppearanceTests: XCTestCase {
 			SupportedFilesWC.sections.first { $0.title == "Tab-separated Values" }?.details,
 			".tab, .tsv"
 		)
+		XCTAssertEqual(
+			SupportedFilesWC.sections.first { $0.title == "Folders" }?.details,
+			"Recursive trees with icons and thumbnails, up to 500 items and 5 levels"
+		)
 	}
 
 	func testSupportedFileDetailsWrapAndExposeAccessibilityLabels() throws {

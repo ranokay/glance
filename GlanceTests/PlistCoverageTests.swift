@@ -91,6 +91,55 @@ final class PlistCoverageTests: XCTestCase {
 		XCTAssertFalse(miseContents.contains("= \"latest\""))
 	}
 
+	func testReleaseMetadataUsesVersion1_5_9Build19() throws {
+		let projectContents = try String(
+			contentsOf: repositoryRoot()
+				.appendingPathComponent("Glance.xcodeproj", isDirectory: true)
+				.appendingPathComponent("project.pbxproj"),
+			encoding: .utf8
+		)
+		let readmeContents = try String(
+			contentsOf: repositoryRoot().appendingPathComponent("README.md"),
+			encoding: .utf8
+		)
+		let listingContents = try String(
+			contentsOf: repositoryRoot()
+				.appendingPathComponent("AppStore", isDirectory: true)
+				.appendingPathComponent("Listing", isDirectory: true)
+				.appendingPathComponent("Description.txt"),
+			encoding: .utf8
+		)
+
+		XCTAssertEqual(
+			projectContents.components(separatedBy: "MARKETING_VERSION = 1.5.9;").count - 1,
+			4
+		)
+		XCTAssertEqual(
+			projectContents.components(separatedBy: "CURRENT_PROJECT_VERSION = 19;").count - 1,
+			4
+		)
+		XCTAssertTrue(readmeContents.contains("Version 1.5.9 (build 19)"))
+		XCTAssertTrue(readmeContents.contains("Version **1.5.9** (build **19**)"))
+		XCTAssertTrue(listingContents.contains("Version 1.5.9"))
+	}
+
+	func testUserFacingRepositoryLinksPointToMaintainedFork() throws {
+		let repositoryURL = "https://github.com/ranokay/glance"
+		let menuContents = try String(
+			contentsOf: repositoryRoot()
+				.appendingPathComponent("Glance", isDirectory: true)
+				.appendingPathComponent("Utils", isDirectory: true)
+				.appendingPathComponent("Menu.swift"),
+			encoding: .utf8
+		)
+
+		XCTAssertTrue(menuContents.contains("\(repositoryURL)/issues"))
+		XCTAssertTrue(menuContents.contains("\(repositoryURL)/blob/main/LICENSE.md"))
+		XCTAssertTrue(menuContents.contains("\(repositoryURL)/blob/main/PRIVACY.md"))
+		XCTAssertTrue(menuContents.contains("\(repositoryURL)\""))
+		XCTAssertFalse(menuContents.contains("github.com/chamburr/glance"))
+	}
+
 	private func quickLookSupportedContentTypes() throws -> [String] {
 		let plistURL = repositoryRoot()
 			.appendingPathComponent("QLPlugin", isDirectory: true)

@@ -175,4 +175,4 @@ jobs:
             "dist/Glance-${VERSION}.dmg.sha256" \
             --repo "$GITHUB_REPOSITORY" \
             --title "Glance ${VERSION}" \
-            --notes "Unsigned and unnotarized macOS DMG for Glance ${VERSION}. You may need to remove quarantine after installing."
+            --notes "Glance ${VERSION} for Apple silicon Macs running macOS 26 or later. This DMG is unsigned and unnotarized, so you may need to remove quarantine after installing. Verify the download with the attached SHA-256 checksum."

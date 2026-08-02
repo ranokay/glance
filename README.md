@@ -3,6 +3,7 @@
 	<h1>Glance</h1>
 	<p><strong>All-in-one Quick Look plugin</strong></p>
 	<p>Glance provides Quick Look previews for files that macOS doesn't support out of the box.</p>
+	<p><strong>Version 1.5.9 (build 19)</strong> · macOS 26 or later · Apple silicon</p>
 	<p><a href="#installation">Installation Steps</a></p>
 	<p><img src="./AppStore/Listing/Screenshots/Screenshot1.jpg" alt=""></p>
 </div>
@@ -12,45 +13,51 @@
 > Compared with upstream, this fork includes:
 >
 > - native macOS 26 Liquid Glass controls and adaptive window materials
-> - Apple Silicon-only builds
+> - Apple silicon-only builds
+> - recursive folder previews with Finder-style icons and progressive thumbnails
+> - in-place previews for nested folder items
+> - a sandbox-safe Open With chooser that preserves default app associations
 > - newer Quick Look and WebKit fixes
-> - `.toml`, `.ttml`, and `.elrc` source-code previews
+> - `.ini`, `.toml`, `.ttml`, and `.elrc` source-code previews
 > - expanded archive support
 > - safer bundled WebKit rendering
-> - a `mise` build/test workflow
-> - expanded tests
+> - pinned `mise` build and test tooling with expanded automated coverage
 > - downloadable unsigned DMGs from this fork's GitHub Releases
 > - Settings controls for hiding the Dock icon
+>
 > Release DMGs are unsigned and unnotarized, so users may still need the quarantine-removal command shown in the installation steps.
 
 ## About
 
-This is a fork of the [original Glance plugin](https://github.com/samuelmeuli/glance). Unfortunately, the owner seems to have discarded the project a while ago, and the app is largely broken on newer macOS systems. The aim of this fork is to revive the project and maintain it for future updates. Current builds target Apple Silicon Macs running macOS 26 or newer and use the native macOS design system.
+Glance extends the native Quick Look experience in Finder, Spotlight, and the Space-bar preview window. This maintained fork builds on [chamburr/glance](https://github.com/chamburr/glance) and the [original Glance plugin](https://github.com/samuelmeuli/glance), modernizing the app for current macOS releases while retaining local, lightweight previews.
+
+Version **1.5.9** (build **19**) requires an Apple silicon Mac running macOS 26 or later. It uses native macOS materials and controls without stacking custom glass effects inside Quick Look's own window chrome.
 
 ## Installation
 
-You can install Glance through Homebrew using `brew install --cask chamburr/tap/glance`.
+This maintained fork is distributed through [GitHub Releases](https://github.com/ranokay/glance/releases). The upstream Homebrew cask installs a separate upstream build and does not track releases from this fork.
 
-If you previously installed Glance from the official tap, uninstall it first with `brew uninstall --cask glance-chamburr`.
+Release DMGs are currently unsigned and unnotarized. To install Glance:
 
-Alternatively, you can install Glance directly. The installation is slightly complex as the package is not notarized. The steps are as follows:
+1. Download the latest `Glance-<version>.dmg`, open it, and drag Glance.app to Applications.
+2. Open Terminal and remove the download quarantine attribute:
 
-1. Download the `.dmg` file from [releases](https://github.com/ranokay/glance/releases), open the file and drag Glance.app to Applications.
-2. Open a terminal and run the following command.
-	```sh
-	xattr -rd com.apple.quarantine /Applications/Glance.app
-	```
-3. Launch Glance. Enjoy!
+   ```sh
+   xattr -rd com.apple.quarantine /Applications/Glance.app
+   ```
+
+3. Launch Glance once so macOS can register its Quick Look extension.
+4. Keep Glance running while using its previews. You can hide its Dock icon in Settings; Glance remains available from the menu bar.
 
 ## Supported file types
 
-- **Folders**: expandable trees with Finder-style icons and progressive image, video,
-  and PDF thumbnails, limited to 500 items and 5 levels. Double-click a file or package to preview
-  it in place; Space does the same when the Quick Look host forwards that key (some hosts reserve
-  Space, so double-click remains the reliable fallback). The utility bar can open the top-level or
-  selected item once with any compatible app without changing its macOS default.
+- **Folders**: recursive, expandable trees with Finder-style icons and progressive image, video,
+  and PDF thumbnails. Folder traversal skips hidden items and is bounded to 500 items and five
+  levels. Double-click a file or package to preview it in place; Space does the same when the Quick
+  Look host forwards that key. The utility bar can open the top-level file or a selected nested item
+  once with any compatible app without changing its macOS default.
 
-- **Source code** (with [Chroma](https://github.com/alecthomas/chroma) syntax highlighting): `.cpp`, `.elrc`, `.ini`, `.js`, `.json`, `.py`, `.swift`, `.toml`, `.ttml`, `.yml` and many more
+- **Source code and text** (with [Chroma](https://github.com/alecthomas/chroma) syntax highlighting): `.cpp`, `.elrc`, `.ini`, `.js`, `.json`, `.py`, `.swift`, `.toml`, `.ttml`, `.yml`, common extensionless configuration files, and many more
 
   <p><img src="./AppStore/Assets/Screenshots/ScreenshotSourceCode.png" alt="" width="600"></p>
 
@@ -75,30 +82,39 @@ Alternatively, you can install Glance directly. The installation is slightly com
 **There are existing Quick Look apps for some of the supported file types. Why create another one?**
 
 - Glance combines the features of many plugins into one and provides consistent and beautiful previews.
-- Glance is fully compatible with Dark Mode.
+- Glance follows light and dark appearance, window activation, Reduce Transparency, and Increase Contrast.
 - Some plugins still use the deprecated Quick Look Generator API and might stop working in the future.
 - Glance can easily be extended to support other file types.
 
 **Why isn't the app available on older macOS versions or Intel Macs?**
 
-The app uses the macOS 26 AppKit design system and intentionally ships Apple Silicon-only builds.
+The app uses the macOS 26 AppKit design system and intentionally ships Apple silicon-only builds.
+
+**Why must Glance remain running?**
+
+The containing app provides the sandbox-safe Open With bridge and keeps the extension available. Glance can stay unobtrusive in the menu bar with its Dock icon hidden.
 
 **Why are images in my Markdown files not loading?**
 
 Glance blocks remote assets. Furthermore, the app only has access to the file that's being previewed. Local image files referenced from Markdown are therefore not loaded.
 
+**Does Open With change my default application?**
+
+No. Glance opens the selected file once with the chosen compatible app. It does not modify Launch Services or the file type's default application association.
+
 **Why isn't [file type] supported?**
 
-Feel free to [open an issue](https://github.com/chamburr/glance/issues/new) or [contribute](#contributing)! When opening an issue, please describe what kind of preview you'd expect for your file.
+Feel free to [open an issue](https://github.com/ranokay/glance/issues/new) or [contribute](#contributing)! When opening an issue, please describe what kind of preview you'd expect for your file.
 
 Please note that macOS doesn't allow the handling of some file types (e.g. `.plist`, `.ts` and `.xml`).
 
 **How do I disable Glance for a file type?**
 
 Glance doesn't currently support disabling individual file types.
+
 **You claim to support [file type], but previews aren't showing up.**
 
-Please note that Glance skips previews for large files to avoid slowing down your Mac.
+Glance skips non-archive files larger than 10 MB to avoid slowing down your Mac. Folder previews are separately bounded to 500 visible items and five levels.
 
 It's possible that your file's extension or [UTI](https://en.wikipedia.org/wiki/Uniform_Type_Identifier) isn't associated with Glance. You can easily verify this:
 
@@ -108,10 +124,11 @@ It's possible that your file's extension or [UTI](https://en.wikipedia.org/wiki/
 
 ## Contributing
 
-Suggestions and contributions are always welcome! Please discuss larger changes (e.g. adding support for a new file type) via issue before submitting a pull request.
+Suggestions and contributions are always welcome! Please discuss larger changes (e.g. adding support for a new file type) in a [fork issue](https://github.com/ranokay/glance/issues) before submitting a pull request.
 
-Xcode and [mise-en-place](https://mise.jdx.dev/) need to be installed to build the app
-locally. From the repository root, run `mise install` once to install the pinned tools.
+Building requires Xcode 26 on an Apple silicon Mac running macOS 26, plus
+[mise-en-place](https://mise.jdx.dev/). From the repository root, run `mise install` once to install
+the pinned Go, SwiftFormat, and SwiftLint versions.
 Common local commands are:
 
 - `mise run test` to run the Go and Xcode test suites
@@ -122,10 +139,10 @@ Common local commands are:
 
 To add previews for a new file extension, please follow these steps:
 
-1. Create a new class for your file type in [this directory](./QLPlugin/Views/Previews/). It should implement the `Preview` protocol. See the other files in the directory for examples.
-2. Match the file extension to your class in [`PreviewVCFactory.swift`](./QLPlugin/Views/PreviewVCFactory.swift).
-3. Find your file's UTI by running `mdls -name kMDItemContentType /path/to/your/file`. Add it to `QLSupportedContentTypes` in [`Info.plist`](./QLPlugin/Info.plist).
-4. Update [`README.md`](README.md), the sections in [`SupportedFilesWC.swift`](Glance/SupportedFilesWC.swift), the [App Store description](AppStore/Listing/Description.txt) and [`Credits.rtf`](Glance/Credits.rtf) (if you introduced a new library).
+1. Create a new class in [`QLPlugin/Views/Previews`](./QLPlugin/Views/Previews/) that implements the `Preview` protocol.
+2. Add its match rule to [`SupportedPreviewRegistry.swift`](./Glance/Shared/Utils/SupportedPreviewRegistry.swift) and map its preview type in [`PreviewVCFactory.swift`](./QLPlugin/Views/PreviewVCFactory.swift).
+3. Find the file's UTI with `mdls -name kMDItemContentType /path/to/your/file`, then add it to `QLSupportedContentTypes` in [`QLPlugin/Info.plist`](./QLPlugin/Info.plist).
+4. Update this README, [`SupportedFilesWC.swift`](Glance/SupportedFilesWC.swift), the [App Store description](AppStore/Listing/Description.txt), and [`Credits.rtf`](Glance/Credits.rtf) if a new library was introduced.
 
 ## License
 

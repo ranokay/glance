@@ -1,1 +1,1 @@
-glance,quick,look,quicklook,plugin,preview,finder,spotlight,file,thumbnail
+quicklook,preview,finder,spotlight,folder,archive,markdown,source,notebook,openwith
