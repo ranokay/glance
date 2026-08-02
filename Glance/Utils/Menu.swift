@@ -1,78 +1,10 @@
 import Cocoa
 
-let feedbackURL = URL(string: "https://github.com/chamburr/glance/issues")!
-let licenseURL = URL(string: "https://github.com/chamburr/glance/blob/main/LICENSE.md")!
-let privacyPolicyURL = URL(string: "https://github.com/chamburr/glance/blob/main/PRIVACY.md")!
-let websiteURL = URL(string: "https://github.com/chamburr/glance")!
-
-/// Used as a subclass for the menu item in Interface Builder
-@MainActor
-final class SupportedFilesMenuItem: NSMenuItem {
-	required init(coder decoder: NSCoder) {
-		super.init(coder: decoder)
-
-		onAction = { _ in
-			SupportedFilesWC.shared.showSupportedFilesWindow()
-		}
-	}
-}
-
-/// Used as a subclass for the menu item in Interface Builder
-@MainActor
-final class SettingsMenuItem: NSMenuItem {
-	required init(coder decoder: NSCoder) {
-		super.init(coder: decoder)
-
-		onAction = { _ in
-			SettingsWC.shared.showSettingsWindow()
-		}
-	}
-}
-
-/// Used as a subclass for the menu item in Interface Builder
-@MainActor
-final class FeedbackMenuItem: NSMenuItem {
-	required init(coder decoder: NSCoder) {
-		super.init(coder: decoder)
-
-		onAction = { _ in
-			feedbackURL.open()
-		}
-	}
-}
-
-/// Used as a subclass for the menu item in Interface Builder
-@MainActor
-final class LicenseMenuItem: NSMenuItem {
-	required init(coder decoder: NSCoder) {
-		super.init(coder: decoder)
-
-		onAction = { _ in
-			licenseURL.open()
-		}
-	}
-}
-
-/// Used as a subclass for the menu item in Interface Builder
-@MainActor
-final class PrivacyPolicyMenuItem: NSMenuItem {
-	required init(coder decoder: NSCoder) {
-		super.init(coder: decoder)
-
-		onAction = { _ in
-			privacyPolicyURL.open()
-		}
-	}
-}
-
-/// Used as a subclass for the menu item in Interface Builder
-@MainActor
-final class WebsiteMenuItem: NSMenuItem {
-	required init(coder decoder: NSCoder) {
-		super.init(coder: decoder)
-
-		onAction = { _ in
-			websiteURL.open()
-		}
-	}
+enum AppLinks {
+	static let feedback = URL(string: "https://github.com/ranokay/glance/issues")!
+	static let license = URL(string: "https://github.com/ranokay/glance/blob/main/LICENSE.md")!
+	static let privacyPolicy = URL(
+		string: "https://github.com/ranokay/glance/blob/main/PRIVACY.md"
+	)!
+	static let website = URL(string: "https://github.com/ranokay/glance")!
 }

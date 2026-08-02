@@ -20,6 +20,8 @@ final class PreviewSupportTests: XCTestCase {
 			("/tmp/archive.7z", "archive.extension.7z", .sevenZip),
 			("/tmp/.elrc", "code.extension.elrc", .code),
 			("/tmp/config.elrc", "code.extension.elrc", .code),
+			("/tmp/config.ini", "code.extension.ini", .code),
+			("/tmp/CONFIG.INI", "code.extension.ini", .code),
 			("/tmp/Makefile", "code.filename.makefile", .code),
 			("/tmp/example.unknownext", "code.other-source-text", .code),
 			("/tmp/plain.gz", nil, .unsupported),
@@ -63,6 +65,7 @@ final class PreviewSupportTests: XCTestCase {
 			("/tmp/archive.gz", .unsupported),
 			("/tmp/.elrc", .code),
 			("/tmp/config.elrc", .code),
+			("/tmp/config.ini", .code),
 			("/tmp/source.swift", .code),
 		]
 
@@ -130,6 +133,7 @@ final class PreviewSupportTests: XCTestCase {
 			("entitlements", "xml"),
 			("hbs", "handlebars"),
 			("iml", "xml"),
+			("ini", "ini"),
 			("mjs", "js"),
 			("plist", "xml"),
 			("props", "xml"),

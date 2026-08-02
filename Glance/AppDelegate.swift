@@ -5,6 +5,11 @@ import Cocoa
 class AppDelegate: NSObject, NSApplicationDelegate {
 	private var mainWindowController: NSWindowController?
 	private var statusItem: NSStatusItem?
+	private let openWithBridgeServer = OpenWithBridgeServer()
+
+	func applicationWillFinishLaunching(_: Notification) {
+		openWithBridgeServer.start()
+	}
 
 	func applicationDidFinishLaunching(_: Notification) {
 		setUpStatusItem()
@@ -27,8 +32,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		updateDockIconVisibility()
 	}
 
-	func applicationShouldTerminateAfterLastWindowClosed(_: NSApplication) -> Bool { false }
+	func applicationShouldTerminateAfterLastWindowClosed(_: NSApplication) -> Bool {
+		false
+	}
 
+	func application(_: NSApplication, open urls: [URL]) {
+		for url in urls where openWithBridgeServer.canHandle(url) {
+			openWithBridgeServer.handle(url)
+		}
+	}
 
 	private func setUpStatusItem() {
 		let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
@@ -47,28 +59,28 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		let menu = NSMenu()
 		menu.addItem(NSMenuItem(
 			title: "Open Glance",
-			action: #selector(openMainWindow),
+			action: #selector(openMainWindow(_:)),
 			keyEquivalent: ""
 		))
 		menu.addItem(NSMenuItem(
 			title: "Supported Files",
-			action: #selector(openSupportedFilesWindow),
+			action: #selector(openSupportedFilesWindow(_:)),
 			keyEquivalent: ""
 		))
 		menu.addItem(NSMenuItem(
 			title: "Open GitHub Repository",
-			action: #selector(openGitHubRepository),
+			action: #selector(openWebsite(_:)),
 			keyEquivalent: ""
 		))
 		menu.addItem(NSMenuItem(
 			title: "Settings\u{2026}",
-			action: #selector(openSettingsWindow),
+			action: #selector(openSettingsWindow(_:)),
 			keyEquivalent: ""
 		))
 		menu.addItem(.separator())
 		menu.addItem(NSMenuItem(
 			title: "Quit Glance",
-			action: #selector(quitGlance),
+			action: #selector(quitGlance(_:)),
 			keyEquivalent: "q"
 		))
 
@@ -79,7 +91,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		return menu
 	}
 
-	@objc private func openMainWindow() {
+	@objc
+	private func openMainWindow(_: Any?) {
 		NSApp.activate()
 
 		if let window = existingMainWindow() {
@@ -96,20 +109,39 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		}
 	}
 
-	@objc private func openSupportedFilesWindow() {
+	@objc
+	func openSupportedFilesWindow(_: Any?) {
 		NSApp.activate()
 		SupportedFilesWC.shared.showSupportedFilesWindow()
 	}
 
-	@objc private func openGitHubRepository() {
-		websiteURL.open()
+	@objc
+	func openWebsite(_: Any?) {
+		AppLinks.website.open()
 	}
 
-	@objc private func openSettingsWindow() {
+	@objc
+	func openLicense(_: Any?) {
+		AppLinks.license.open()
+	}
+
+	@objc
+	func openPrivacyPolicy(_: Any?) {
+		AppLinks.privacyPolicy.open()
+	}
+
+	@objc
+	func openFeedback(_: Any?) {
+		AppLinks.feedback.open()
+	}
+
+	@objc
+	func openSettingsWindow(_: Any?) {
 		SettingsWC.shared.showSettingsWindow()
 	}
 
-	@objc private func quitGlance() {
+	@objc
+	private func quitGlance(_: Any?) {
 		NSApp.terminate(nil)
 	}
 
@@ -123,7 +155,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 	}
 
 	private func cacheMainWindowController() {
-		guard mainWindowController?.window == nil else { return }
+		guard mainWindowController?.window == nil else {
+			return
+		}
 
 		mainWindowController = NSApp.windows.first {
 			$0.contentViewController is ViewController
@@ -146,11 +180,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		NSApp.setActivationPolicy(hasVisibleWindows ? .regular : .accessory)
 	}
 
-	@objc private func windowDidBecomeMain(_: Notification) {
+	@objc
+	private func windowDidBecomeMain(_: Notification) {
 		updateDockIconVisibility()
 	}
 
-	@objc private func windowWillClose(_: Notification) {
+	@objc
+	private func windowWillClose(_: Notification) {
 		// Defer so the closing window is no longer visible when we check
 		Task { @MainActor [weak self] in
 			self?.updateDockIconVisibility()

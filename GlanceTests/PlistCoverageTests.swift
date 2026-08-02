@@ -4,6 +4,7 @@ final class PlistCoverageTests: XCTestCase {
 	func testQuickLookInfoPlistContainsRepresentativeSupportedContentTypes() throws {
 		let supportedTypes = try quickLookSupportedContentTypes()
 		let requiredTypes = [
+			"public.folder",
 			"org.7-zip.7-zip-archive",
 			"com.sun.java-archive",
 			"com.sun.web-application-archive",
@@ -12,6 +13,7 @@ final class PlistCoverageTests: XCTestCase {
 			"public.zip-archive",
 			"org.jupyter.ipynb",
 			"public.jupyter-notebook",
+			"com.microsoft.ini",
 			"public.markdown",
 			"net.daringfireball.markdown",
 			"public.tab-separated-values-text",
@@ -31,6 +33,111 @@ final class PlistCoverageTests: XCTestCase {
 		let supportedTypes = try quickLookSupportedContentTypes()
 
 		XCTAssertEqual(Set(supportedTypes).count, supportedTypes.count)
+	}
+
+	func testAppInfoPlistRegistersOpenWithBridgeURLScheme() throws {
+		let plistURL = repositoryRoot()
+			.appendingPathComponent("Glance", isDirectory: true)
+			.appendingPathComponent("Info.plist")
+		let data = try Data(contentsOf: plistURL)
+		guard
+			let plist = try PropertyListSerialization.propertyList(
+				from: data,
+				options: [],
+				format: nil
+			) as? [String: Any],
+			let urlTypes = plist["CFBundleURLTypes"] as? [[String: Any]]
+		else {
+			throw PlistCoverageError.missingURLTypes(plistURL)
+		}
+		let urlSchemes = urlTypes.flatMap {
+			$0["CFBundleURLSchemes"] as? [String] ?? []
+		}
+
+		XCTAssertTrue(urlSchemes.contains(OpenWithBridgeConstants.requestScheme))
+	}
+
+	func testProjectAndReleaseWorkflowRequireMacOS26() throws {
+		let projectContents = try String(
+			contentsOf: repositoryRoot()
+				.appendingPathComponent("Glance.xcodeproj", isDirectory: true)
+				.appendingPathComponent("project.pbxproj"),
+			encoding: .utf8
+		)
+		let workflowContents = try String(
+			contentsOf: repositoryRoot()
+				.appendingPathComponent(".github", isDirectory: true)
+				.appendingPathComponent("workflows", isDirectory: true)
+				.appendingPathComponent("release.yml"),
+			encoding: .utf8
+		)
+
+		XCTAssertTrue(projectContents.contains("MACOSX_DEPLOYMENT_TARGET = 26.0;"))
+		XCTAssertTrue(projectContents.contains("MACOSX_DEPLOYMENT_TARGET:-26.0"))
+		XCTAssertFalse(projectContents.contains("MACOSX_DEPLOYMENT_TARGET = 15.0;"))
+		XCTAssertTrue(workflowContents.contains("runs-on: macos-26"))
+		XCTAssertTrue(workflowContents.contains("Release builds require Xcode 26"))
+	}
+
+	func testMiseUsesDeterministicToolVersions() throws {
+		let miseContents = try String(
+			contentsOf: repositoryRoot().appendingPathComponent("mise.toml"),
+			encoding: .utf8
+		)
+
+		XCTAssertTrue(miseContents.contains("go = \"1.26.5\""))
+		XCTAssertTrue(miseContents.contains("swiftformat = \"0.61.1\""))
+		XCTAssertTrue(miseContents.contains("swiftlint = \"0.63.3\""))
+		XCTAssertFalse(miseContents.contains("= \"latest\""))
+	}
+
+	func testReleaseMetadataUsesVersion1_5_9Build19() throws {
+		let projectContents = try String(
+			contentsOf: repositoryRoot()
+				.appendingPathComponent("Glance.xcodeproj", isDirectory: true)
+				.appendingPathComponent("project.pbxproj"),
+			encoding: .utf8
+		)
+		let readmeContents = try String(
+			contentsOf: repositoryRoot().appendingPathComponent("README.md"),
+			encoding: .utf8
+		)
+		let listingContents = try String(
+			contentsOf: repositoryRoot()
+				.appendingPathComponent("AppStore", isDirectory: true)
+				.appendingPathComponent("Listing", isDirectory: true)
+				.appendingPathComponent("Description.txt"),
+			encoding: .utf8
+		)
+
+		XCTAssertEqual(
+			projectContents.components(separatedBy: "MARKETING_VERSION = 1.5.9;").count - 1,
+			4
+		)
+		XCTAssertEqual(
+			projectContents.components(separatedBy: "CURRENT_PROJECT_VERSION = 19;").count - 1,
+			4
+		)
+		XCTAssertTrue(readmeContents.contains("Version 1.5.9 (build 19)"))
+		XCTAssertTrue(readmeContents.contains("Version **1.5.9** (build **19**)"))
+		XCTAssertTrue(listingContents.contains("Version 1.5.9"))
+	}
+
+	func testUserFacingRepositoryLinksPointToMaintainedFork() throws {
+		let repositoryURL = "https://github.com/ranokay/glance"
+		let menuContents = try String(
+			contentsOf: repositoryRoot()
+				.appendingPathComponent("Glance", isDirectory: true)
+				.appendingPathComponent("Utils", isDirectory: true)
+				.appendingPathComponent("Menu.swift"),
+			encoding: .utf8
+		)
+
+		XCTAssertTrue(menuContents.contains("\(repositoryURL)/issues"))
+		XCTAssertTrue(menuContents.contains("\(repositoryURL)/blob/main/LICENSE.md"))
+		XCTAssertTrue(menuContents.contains("\(repositoryURL)/blob/main/PRIVACY.md"))
+		XCTAssertTrue(menuContents.contains("\(repositoryURL)\""))
+		XCTAssertFalse(menuContents.contains("github.com/chamburr/glance"))
 	}
 
 	private func quickLookSupportedContentTypes() throws -> [String] {
@@ -63,11 +170,14 @@ final class PlistCoverageTests: XCTestCase {
 
 private enum PlistCoverageError: LocalizedError {
 	case missingSupportedContentTypes(URL)
+	case missingURLTypes(URL)
 
 	var errorDescription: String? {
 		switch self {
 			case let .missingSupportedContentTypes(plistURL):
 				"Could not read QLSupportedContentTypes from \(plistURL.path)"
+			case let .missingURLTypes(plistURL):
+				"Could not read CFBundleURLTypes from \(plistURL.path)"
 		}
 	}
 }

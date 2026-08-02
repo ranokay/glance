@@ -46,6 +46,27 @@
 		C0DE00000000000000000320 /* WebPreviewVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E022BE32452181F000EFCD3 /* WebPreviewVC.swift */; };
 		C0DE00000000000000000321 /* TablePreviewVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E08A50D2454372200B7FF53 /* TablePreviewVC.swift */; };
 		C0DE00000000000000000322 /* OutlinePreviewVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E022BEB245253B3000EFCD3 /* OutlinePreviewVC.swift */; };
+		D1A000000000000000000002 /* DirectoryPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A000000000000000000001 /* DirectoryPreview.swift */; };
+		D1A000000000000000000003 /* DirectoryPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A000000000000000000001 /* DirectoryPreview.swift */; };
+		D1A000000000000000000005 /* DirectoryPreviewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A000000000000000000004 /* DirectoryPreviewTests.swift */; };
+		D2A000000000000000000002 /* DirectoryThumbnailLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2A000000000000000000001 /* DirectoryThumbnailLoader.swift */; };
+		D2A000000000000000000003 /* DirectoryThumbnailLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2A000000000000000000001 /* DirectoryThumbnailLoader.swift */; };
+		D2A000000000000000000005 /* DirectoryThumbnailTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2A000000000000000000004 /* DirectoryThumbnailTests.swift */; };
+		D4A000000000000000000002 /* NestedPreviewProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4A000000000000000000001 /* NestedPreviewProvider.swift */; };
+		D4A000000000000000000003 /* NestedPreviewProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4A000000000000000000001 /* NestedPreviewProvider.swift */; };
+		D4A000000000000000000005 /* NestedPreviewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4A000000000000000000004 /* NestedPreviewTests.swift */; };
+		D4A000000000000000000006 /* MainVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 102D56C426206A36000B5C0E /* MainVC.swift */; };
+		D4A000000000000000000007 /* Stats.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E21C88C2438CAA500818EB2 /* Stats.swift */; };
+		D5A000000000000000000002 /* OpenWithService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5A000000000000000000001 /* OpenWithService.swift */; };
+		D5A000000000000000000003 /* OpenWithService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5A000000000000000000001 /* OpenWithService.swift */; };
+		D5A000000000000000000005 /* OpenWithTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5A000000000000000000004 /* OpenWithTests.swift */; };
+		D6A000000000000000000002 /* OpenWithBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6A000000000000000000001 /* OpenWithBridge.swift */; };
+		D6A000000000000000000003 /* OpenWithBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6A000000000000000000001 /* OpenWithBridge.swift */; };
+		D6A000000000000000000004 /* OpenWithBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6A000000000000000000001 /* OpenWithBridge.swift */; };
+		F1A000000000000000000002 /* WindowAppearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A000000000000000000001 /* WindowAppearance.swift */; };
+		F1A000000000000000000003 /* WindowAppearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A000000000000000000001 /* WindowAppearance.swift */; };
+		F2A000000000000000000002 /* WindowAppearanceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2A000000000000000000001 /* WindowAppearanceTests.swift */; };
+		F3A000000000000000000001 /* SupportedFilesWC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ED140652450C671007A7C70 /* SupportedFilesWC.swift */; };
 		7E022BE52452181F000EFCD3 /* WebPreviewVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E022BE32452181F000EFCD3 /* WebPreviewVC.swift */; };
 		7E022BE62452181F000EFCD3 /* WebPreviewVC.xib in Resources */ = {isa = PBXBuildFile; fileRef = 7E022BE42452181F000EFCD3 /* WebPreviewVC.xib */; };
 		7E022BED245253B3000EFCD3 /* OutlinePreviewVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E022BEB245253B3000EFCD3 /* OutlinePreviewVC.swift */; };
@@ -64,7 +85,6 @@
 		7E413F802418DD6200CFBB1D /* TSVPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E413F7F2418DD6200CFBB1D /* TSVPreview.swift */; };
 		7E458AED2439176B0091BD0F /* Date.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E21C89024390E3100818EB2 /* Date.swift */; };
 		7E458AF0243944810091BD0F /* URL.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E458AEF243944810091BD0F /* URL.swift */; };
-		7E458AF22439474E0091BD0F /* NSMenuItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E458AF12439474E0091BD0F /* NSMenuItem.swift */; };
 		7E458AF52439481F0091BD0F /* Menu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E458AF42439481F0091BD0F /* Menu.swift */; };
 		7E45F899244DA45500BFB869 /* FileTree.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E45F898244DA45500BFB869 /* FileTree.swift */; };
 		7E616BB0244997420043F7AB /* SwiftCSV in Frameworks */ = {isa = PBXBuildFile; productRef = 7E616BAF244997420043F7AB /* SwiftCSV */; };
@@ -116,7 +136,6 @@
 		7ECC8CF2240CB4CC000D6970 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ECC8CF1240CB4CC000D6970 /* AppDelegate.swift */; };
 		7ECC8CF4240CB4CC000D6970 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ECC8CF3240CB4CC000D6970 /* ViewController.swift */; };
 		7ECC8CF6240CB4CC000D6970 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7ECC8CF5240CB4CC000D6970 /* Assets.xcassets */; };
-		7ED140622450B36D007A7C70 /* SupportedFilesWC.xib in Resources */ = {isa = PBXBuildFile; fileRef = 7ED140602450B36D007A7C70 /* SupportedFilesWC.xib */; };
 		7ED140642450C4A7007A7C70 /* Credits.rtf in Resources */ = {isa = PBXBuildFile; fileRef = 7ED140632450C4A7007A7C70 /* Credits.rtf */; };
 		7ED140662450C671007A7C70 /* SupportedFilesWC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ED140652450C671007A7C70 /* SupportedFilesWC.swift */; };
 		7EE0465C246EB5DE006172D9 /* AppIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EE0465B246EB5DE006172D9 /* AppIcon.swift */; };
@@ -177,6 +196,17 @@
 		C0DE00000000000000000103 /* PreviewFactoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewFactoryTests.swift; sourceTree = "<group>"; };
 		C0DE00000000000000000104 /* PreviewSmokeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewSmokeTests.swift; sourceTree = "<group>"; };
 		C0DE00000000000000000105 /* PlistCoverageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlistCoverageTests.swift; sourceTree = "<group>"; };
+		D1A000000000000000000001 /* DirectoryPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DirectoryPreview.swift; sourceTree = "<group>"; };
+		D1A000000000000000000004 /* DirectoryPreviewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DirectoryPreviewTests.swift; sourceTree = "<group>"; };
+		D2A000000000000000000001 /* DirectoryThumbnailLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DirectoryThumbnailLoader.swift; sourceTree = "<group>"; };
+		D2A000000000000000000004 /* DirectoryThumbnailTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DirectoryThumbnailTests.swift; sourceTree = "<group>"; };
+		D4A000000000000000000001 /* NestedPreviewProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NestedPreviewProvider.swift; sourceTree = "<group>"; };
+		D4A000000000000000000004 /* NestedPreviewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NestedPreviewTests.swift; sourceTree = "<group>"; };
+		D5A000000000000000000001 /* OpenWithService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenWithService.swift; sourceTree = "<group>"; };
+		D5A000000000000000000004 /* OpenWithTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenWithTests.swift; sourceTree = "<group>"; };
+		D6A000000000000000000001 /* OpenWithBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenWithBridge.swift; sourceTree = "<group>"; };
+		F1A000000000000000000001 /* WindowAppearance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowAppearance.swift; sourceTree = "<group>"; };
+		F2A000000000000000000001 /* WindowAppearanceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowAppearanceTests.swift; sourceTree = "<group>"; };
 		7E022BE32452181F000EFCD3 /* WebPreviewVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebPreviewVC.swift; sourceTree = "<group>"; };
 		7E022BE42452181F000EFCD3 /* WebPreviewVC.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = WebPreviewVC.xib; sourceTree = "<group>"; };
 		7E022BEB245253B3000EFCD3 /* OutlinePreviewVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutlinePreviewVC.swift; sourceTree = "<group>"; };
@@ -196,7 +226,6 @@
 		7E42B61C245857D9008D7116 /* htmlconverter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = htmlconverter.h; path = HTMLConverter/htmlconverter.h; sourceTree = "<group>"; };
 		7E42B61D245857D9008D7116 /* htmlconverter.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = htmlconverter.a; path = HTMLConverter/htmlconverter.a; sourceTree = "<group>"; };
 		7E458AEF243944810091BD0F /* URL.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URL.swift; sourceTree = "<group>"; };
-		7E458AF12439474E0091BD0F /* NSMenuItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSMenuItem.swift; sourceTree = "<group>"; };
 		7E458AF42439481F0091BD0F /* Menu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Menu.swift; sourceTree = "<group>"; };
 		7E45F898244DA45500BFB869 /* FileTree.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileTree.swift; sourceTree = "<group>"; };
 		7E616BB1244998650043F7AB /* MainVC.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = MainVC.xib; sourceTree = "<group>"; };
@@ -248,7 +277,6 @@
 		7ECC8CF5240CB4CC000D6970 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		7ECC8CFA240CB4CC000D6970 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		7ECC8CFB240CB4CC000D6970 /* Glance.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Glance.entitlements; sourceTree = "<group>"; };
-		7ED140602450B36D007A7C70 /* SupportedFilesWC.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = SupportedFilesWC.xib; sourceTree = "<group>"; };
 		7ED140632450C4A7007A7C70 /* Credits.rtf */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.rtf; path = Credits.rtf; sourceTree = "<group>"; };
 		7ED140652450C671007A7C70 /* SupportedFilesWC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SupportedFilesWC.swift; sourceTree = "<group>"; };
 		7EE0465B246EB5DE006172D9 /* AppIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIcon.swift; sourceTree = "<group>"; };
@@ -292,6 +320,11 @@
 		10779C0E26218B2B008A903C /* GlanceTests */ = {
 			isa = PBXGroup;
 			children = (
+				D1A000000000000000000004 /* DirectoryPreviewTests.swift */,
+				D2A000000000000000000004 /* DirectoryThumbnailTests.swift */,
+				D4A000000000000000000004 /* NestedPreviewTests.swift */,
+				D5A000000000000000000004 /* OpenWithTests.swift */,
+				F2A000000000000000000001 /* WindowAppearanceTests.swift */,
 				C0DE00000000000000000102 /* FileTests.swift */,
 				C0DE00000000000000000101 /* FileTreeTests.swift */,
 				C0DE00000000000000000105 /* PlistCoverageTests.swift */,
@@ -306,6 +339,7 @@
 		7E1DC51C240E674300D0A061 /* Utils */ = {
 			isa = PBXGroup;
 			children = (
+				D2A000000000000000000001 /* DirectoryThumbnailLoader.swift */,
 				7EAC01EB240D220B009505D0 /* File.swift */,
 				7E45F898244DA45500BFB869 /* FileTree.swift */,
 				7E1B16912455D93E00E2B84D /* HTMLRenderer.swift */,
@@ -317,6 +351,8 @@
 		7E1DC51D240E68AF00D0A061 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				D4A000000000000000000001 /* NestedPreviewProvider.swift */,
+				D5A000000000000000000001 /* OpenWithService.swift */,
 				7E1DC527240E6F4A00D0A061 /* PreviewVCFactory.swift */,
 				7E1DC51E240E6CE300D0A061 /* PreviewVC.swift */,
 				7E616BB324499A380043F7AB /* PreviewVCs */,
@@ -338,6 +374,7 @@
 		7E1DC52C240E9A3700D0A061 /* Previews */ = {
 			isa = PBXGroup;
 			children = (
+				D1A000000000000000000001 /* DirectoryPreview.swift */,
 				103654F32F72623D006F2538 /* SevenZipPreview.swift */,
 				7E1DC529240E6FDE00D0A061 /* CodePreview.swift */,
 				7EB7491824228549007265A4 /* JupyterPreview.swift */,
@@ -354,6 +391,8 @@
 			children = (
 				7EE10F82244F6774007214D8 /* Log.swift */,
 				77CBD1B8E3D86A3D965DD6D0 /* AppSettings.swift */,
+				D6A000000000000000000001 /* OpenWithBridge.swift */,
+				F1A000000000000000000001 /* WindowAppearance.swift */,
 				A19F4D4526218B2B008A903C /* PreviewSupport.swift */,
 				7E21C88C2438CAA500818EB2 /* Stats.swift */,
 				0E5E45E8BA05C598C36B7211 /* SupportedPreviewRegistry.swift */,
@@ -382,7 +421,6 @@
 			isa = PBXGroup;
 			children = (
 				7E458AEF243944810091BD0F /* URL.swift */,
-				7E458AF12439474E0091BD0F /* NSMenuItem.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -543,7 +581,6 @@
 				7E3DF744242CBE7F00DE7CD6 /* Main.storyboard */,
 				7ECC8CF1240CB4CC000D6970 /* AppDelegate.swift */,
 				7ECC8CF3240CB4CC000D6970 /* ViewController.swift */,
-				7ED140602450B36D007A7C70 /* SupportedFilesWC.xib */,
 				7ED140652450C671007A7C70 /* SupportedFilesWC.swift */,
 				3048855925A27D336EC30FC7 /* SettingsWC.swift */,
 				7EE0465B246EB5DE006172D9 /* AppIcon.swift */,
@@ -720,7 +757,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				7ED140622450B36D007A7C70 /* SupportedFilesWC.xib in Resources */,
 				7ECC8CF6240CB4CC000D6970 /* Assets.xcassets in Resources */,
 				7E21C88B2438818100818EB2 /* Main.storyboard in Resources */,
 				7ED140642450C4A7007A7C70 /* Credits.rtf in Resources */,
@@ -751,7 +787,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "cd \"$PROJECT_DIR/HTMLConverter\"\nset -e\nif [ \"$(uname -m)\" != \"arm64\" ]; then\n\techo \"Apple Silicon is required to build HTMLConverter\" >&2\n\texit 1\nfi\n[ ! -d /opt/homebrew ] || eval \"$(/opt/homebrew/bin/brew shellenv)\"\nMISE_BIN=\"${MISE_BIN:-}\"\nif [ -z \"$MISE_BIN\" ]; then\n\tif command -v mise >/dev/null 2>&1; then\n\t\tMISE_BIN=\"$(command -v mise)\"\n\telif [ -x \"$HOME/.local/bin/mise\" ]; then\n\t\tMISE_BIN=\"$HOME/.local/bin/mise\"\n\telif [ -x \"/opt/homebrew/bin/mise\" ]; then\n\t\tMISE_BIN=\"/opt/homebrew/bin/mise\"\n\telif [ -x \"/usr/local/bin/mise\" ]; then\n\t\tMISE_BIN=\"/usr/local/bin/mise\"\n\tfi\nfi\nif [ -z \"$MISE_BIN\" ]; then\n\techo \"mise is required to build HTMLConverter with the pinned Go toolchain\" >&2\n\texit 1\nfi\nexport MISE_TRUSTED_CONFIG_PATHS=\"$PROJECT_DIR${MISE_TRUSTED_CONFIG_PATHS:+:$MISE_TRUSTED_CONFIG_PATHS}\"\nrm -f htmlconverter*.a htmlconverter*.h\nexport MACOSX_DEPLOYMENT_TARGET=\"${MACOSX_DEPLOYMENT_TARGET:-15.0}\"\nexport CGO_CFLAGS=\"-mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET} ${CGO_CFLAGS}\"\nexport CGO_LDFLAGS=\"-mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET} ${CGO_LDFLAGS}\"\n# Force rebuilds so cached Go objects use the selected macOS deployment target.\nGOOS=darwin GOARCH=arm64 CGO_ENABLED=1 \"$MISE_BIN\" exec -- go build -a --buildmode=c-archive -ldflags \"-s -w\" -o ./htmlconverter.a\n";
+			shellScript = "cd \"$PROJECT_DIR/HTMLConverter\"\nset -e\nif [ \"$(uname -m)\" != \"arm64\" ]; then\n\techo \"Apple Silicon is required to build HTMLConverter\" >&2\n\texit 1\nfi\n[ ! -d /opt/homebrew ] || eval \"$(/opt/homebrew/bin/brew shellenv)\"\nMISE_BIN=\"${MISE_BIN:-}\"\nif [ -z \"$MISE_BIN\" ]; then\n\tif command -v mise >/dev/null 2>&1; then\n\t\tMISE_BIN=\"$(command -v mise)\"\n\telif [ -x \"$HOME/.local/bin/mise\" ]; then\n\t\tMISE_BIN=\"$HOME/.local/bin/mise\"\n\telif [ -x \"/opt/homebrew/bin/mise\" ]; then\n\t\tMISE_BIN=\"/opt/homebrew/bin/mise\"\n\telif [ -x \"/usr/local/bin/mise\" ]; then\n\t\tMISE_BIN=\"/usr/local/bin/mise\"\n\tfi\nfi\nif [ -z \"$MISE_BIN\" ]; then\n\techo \"mise is required to build HTMLConverter with the pinned Go toolchain\" >&2\n\texit 1\nfi\nexport MISE_TRUSTED_CONFIG_PATHS=\"$PROJECT_DIR${MISE_TRUSTED_CONFIG_PATHS:+:$MISE_TRUSTED_CONFIG_PATHS}\"\nrm -f htmlconverter*.a htmlconverter*.h\nexport MACOSX_DEPLOYMENT_TARGET=\"${MACOSX_DEPLOYMENT_TARGET:-26.0}\"\nexport CGO_CFLAGS=\"-mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET} ${CGO_CFLAGS}\"\nexport CGO_LDFLAGS=\"-mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET} ${CGO_LDFLAGS}\"\n# Force rebuilds so cached Go objects use the selected macOS deployment target.\nGOOS=darwin GOARCH=arm64 CGO_ENABLED=1 \"$MISE_BIN\" exec -- go build -a --buildmode=c-archive -ldflags \"-s -w\" -o ./htmlconverter.a\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -760,6 +796,20 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D1A000000000000000000003 /* DirectoryPreview.swift in Sources */,
+				D1A000000000000000000005 /* DirectoryPreviewTests.swift in Sources */,
+				D2A000000000000000000003 /* DirectoryThumbnailLoader.swift in Sources */,
+				D2A000000000000000000005 /* DirectoryThumbnailTests.swift in Sources */,
+				D4A000000000000000000003 /* NestedPreviewProvider.swift in Sources */,
+				D4A000000000000000000005 /* NestedPreviewTests.swift in Sources */,
+				D4A000000000000000000006 /* MainVC.swift in Sources */,
+				D4A000000000000000000007 /* Stats.swift in Sources */,
+				D5A000000000000000000003 /* OpenWithService.swift in Sources */,
+				D5A000000000000000000005 /* OpenWithTests.swift in Sources */,
+				D6A000000000000000000004 /* OpenWithBridge.swift in Sources */,
+				F1A000000000000000000003 /* WindowAppearance.swift in Sources */,
+				F2A000000000000000000002 /* WindowAppearanceTests.swift in Sources */,
+				F3A000000000000000000001 /* SupportedFilesWC.swift in Sources */,
 				C0DE00000000000000000315 /* CodePreview.swift in Sources */,
 				C0DE00000000000000000303 /* Date.swift in Sources */,
 				C0DE00000000000000000302 /* Log.swift in Sources */,
@@ -797,6 +847,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D1A000000000000000000002 /* DirectoryPreview.swift in Sources */,
+				D2A000000000000000000002 /* DirectoryThumbnailLoader.swift in Sources */,
+				D4A000000000000000000002 /* NestedPreviewProvider.swift in Sources */,
+				D5A000000000000000000002 /* OpenWithService.swift in Sources */,
+				D6A000000000000000000002 /* OpenWithBridge.swift in Sources */,
 				7EB36488244B65D900D7F96F /* String.swift in Sources */,
 				7EAC01EC240D220B009505D0 /* File.swift in Sources */,
 				7E458AED2439176B0091BD0F /* Date.swift in Sources */,
@@ -839,8 +894,9 @@
 				7E21C88D2438CAA500818EB2 /* Stats.swift in Sources */,
 				A19F4D4326218B2B008A903C /* PreviewSupport.swift in Sources */,
 				1B0D39C0B31C21309338CCF4 /* SupportedPreviewRegistry.swift in Sources */,
+				D6A000000000000000000003 /* OpenWithBridge.swift in Sources */,
+				F1A000000000000000000002 /* WindowAppearance.swift in Sources */,
 				7ECC8CF2240CB4CC000D6970 /* AppDelegate.swift in Sources */,
-				7E458AF22439474E0091BD0F /* NSMenuItem.swift in Sources */,
 				7ED140662450C671007A7C70 /* SupportedFilesWC.swift in Sources */,
 				E978FD0ADCD5765A54672E67 /* SettingsWC.swift in Sources */,
 				7E21C89124390E3100818EB2 /* Date.swift in Sources */,
@@ -926,7 +982,7 @@
 				CODE_SIGN_ENTITLEMENTS = QLPlugin/QLPlugin.entitlements;
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 18;
+				CURRENT_PROJECT_VERSION = 19;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -940,7 +996,7 @@
 				LIBRARY_SEARCH_PATHS = (
 					"$(PROJECT_DIR)/HTMLConverter",
 				);
-				MARKETING_VERSION = 1.5.8;
+				MARKETING_VERSION = 1.5.9;
 				PRODUCT_BUNDLE_IDENTIFIER = com.chamburr.Glance.QLPlugin;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -957,7 +1013,7 @@
 				CODE_SIGN_ENTITLEMENTS = QLPlugin/QLPlugin.entitlements;
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 18;
+				CURRENT_PROJECT_VERSION = 19;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -971,7 +1027,7 @@
 				LIBRARY_SEARCH_PATHS = (
 					"$(PROJECT_DIR)/HTMLConverter",
 				);
-				MARKETING_VERSION = 1.5.8;
+				MARKETING_VERSION = 1.5.9;
 				PRODUCT_BUNDLE_IDENTIFIER = com.chamburr.Glance.QLPlugin;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1034,7 +1090,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 
@@ -1092,7 +1148,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 
@@ -1112,7 +1168,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 18;
+				CURRENT_PROJECT_VERSION = 19;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1121,7 +1177,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.5.8;
+				MARKETING_VERSION = 1.5.9;
 				PRODUCT_BUNDLE_IDENTIFIER = com.chamburr.Glance;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1138,7 +1194,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 18;
+				CURRENT_PROJECT_VERSION = 19;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1147,7 +1203,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.5.8;
+				MARKETING_VERSION = 1.5.9;
 				PRODUCT_BUNDLE_IDENTIFIER = com.chamburr.Glance;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1210,7 +1266,7 @@
 			repositoryURL = "https://github.com/tsolomko/SWCompression";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 4.9.0;
+				minimumVersion = 4.9.1;
 			};
 		};
 		7E616BAE244997420043F7AB /* XCRemoteSwiftPackageReference "SwiftCSV" */ = {

@@ -4,6 +4,7 @@ final class PreviewFactoryTests: XCTestCase {
 	func testFactoryReturnsPreviewForEveryPreviewFamilyAlias() {
 		let cases: [(path: String, expected: Preview.Type?)] = [
 			("/tmp/source.swift", CodePreview.self),
+			("/tmp/config.ini", CodePreview.self),
 			("/tmp/.elrc", CodePreview.self),
 			("/tmp/config.elrc", CodePreview.self),
 			("/tmp/readme.md", MarkdownPreview.self),
@@ -32,6 +33,17 @@ final class PreviewFactoryTests: XCTestCase {
 			XCTAssertTrue(
 				PreviewVCFactory.getPreviewInitializer(fileURL: fileURL) == testCase.expected,
 				testCase.path
+			)
+		}
+	}
+
+	func testFactoryPrioritizesDirectoriesOverFileExtensions() {
+		for path in ["/tmp/folder", "/tmp/archive.zip"] {
+			let fileURL = URL(fileURLWithPath: path, isDirectory: true)
+			XCTAssertTrue(
+				PreviewVCFactory.getPreviewInitializer(fileURL: fileURL, isDirectory: true)
+					== DirectoryPreview.self,
+				path
 			)
 		}
 	}

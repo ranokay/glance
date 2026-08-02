@@ -36,6 +36,9 @@
 					- public.xml (.xml)
 				-->
 
+				<!-- Directory -->
+				<string>public.folder</string>
+
 				<!-- Archive -->
 				<string>org.7-zip.7-zip-archive</string> <!-- .7z -->
 				<string>com.sun.java-archive</string> <!-- .jar (Java) -->
@@ -229,6 +232,7 @@
 				<string>org.n8gray.bat</string> <!-- .bat, .cmd -->
 				<string>dyn.ah62d4rv4ge80e2py</string> <!-- .bat -->
 				<string>dyn.ah62d4rv4ge80g5pe</string> <!-- .cmd -->
+				<string>com.microsoft.ini</string> <!-- .ini -->
 				<string>org.n8gray.ini-source</string> <!-- .ini -->
 				<string>dyn.ah62d4rv4ge80w5xm</string> <!-- .ini -->
 				<string>org.n8gray.jsp-source</string> <!-- .jsp -->
@@ -321,6 +325,6 @@
 		<string>$(PRODUCT_MODULE_NAME).MainVC</string>
 	</dict>
 	<key>NSHumanReadableCopyright</key>
-	<string>Copyright © 2025 Han Cen. All rights reserved.</string>
+	<string>Copyright © 2020–2026 Glance contributors.</string>
 </dict>
 </plist>
