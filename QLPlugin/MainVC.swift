@@ -50,11 +50,6 @@ class MainVC: NSViewController, QLPreviewingController {
 	}
 
 	private func setUpView() {
-		// Draw border around previews, in similar style to macOS's default previews
-		view.wantsLayer = true
-		view.layer?.borderWidth = 1
-		view.layer?.borderColor = NSColor.tertiaryLabelColor.cgColor
-
 		contentContainerView.translatesAutoresizingMaskIntoConstraints = false
 		utilityBarView.translatesAutoresizingMaskIntoConstraints = false
 		view.addSubview(contentContainerView)
@@ -335,8 +330,9 @@ class MainVC: NSViewController, QLPreviewingController {
 			guard let error else {
 				return
 			}
+			let nsError = error as NSError
 			Log.general.error(
-				"Could not open \(fileURL.path, privacy: .private) with \(applicationURL.path, privacy: .private): \(error.localizedDescription, privacy: .private)"
+				"Could not open \(fileURL.path, privacy: .private) with \(applicationURL.path, privacy: .private): \(nsError.domain, privacy: .public) \(nsError.code, privacy: .public) \(error.localizedDescription, privacy: .private)"
 			)
 			self?
 				.showTransientError(

@@ -119,7 +119,6 @@ final class NestedPreviewTests: XCTestCase {
 		mainVC.nestedPreviewProvider = provider
 		mainVC.loadViewIfNeeded()
 		mainVC.installTopLevelPreview(previewVC, file: try File(url: folderURL))
-		previewVC.applySearchQuery("file")
 		previewVC.customSortDescriptors = [NSSortDescriptor(key: "name", ascending: false)]
 		let outlineView = try XCTUnwrap(firstSubview(of: NSOutlineView.self, in: previewVC.view))
 		let fileRow = try XCTUnwrap(row(named: fileNode.name, in: outlineView))
@@ -142,7 +141,6 @@ final class NestedPreviewTests: XCTestCase {
 
 		XCTAssertIdentical(mainVC.currentPreviewController, previewVC)
 		XCTAssertIdentical(mainVC.folderPreviewController, previewVC)
-		XCTAssertEqual(previewVC.currentSearchQuery, "file")
 		XCTAssertIdentical(previewVC.selectedNode, retainedSelection)
 		XCTAssertFalse(previewVC.customSortDescriptors[0].ascending)
 		XCTAssertTrue(outlineView.isItemExpanded(retainedFolderItem))
@@ -199,8 +197,7 @@ final class NestedPreviewTests: XCTestCase {
 			rootNodes: rootNodes,
 			labelText: "\(rootNodes.count) items",
 			expandAll: true,
-			showsFileThumbnails: true,
-			searchEnabled: true
+			showsFileThumbnails: true
 		)
 	}
 

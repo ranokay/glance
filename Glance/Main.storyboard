@@ -26,11 +26,18 @@
                                             </connections>
                                         </menuItem>
                                         <menuItem isSeparatorItem="YES" id="M7t-VH-La0"/>
-                                        <menuItem title="Supported Files" id="z6h-I9-Mnc" customClass="SupportedFilesMenuItem" customModule="Glance" customModuleProvider="target">
+                                        <menuItem title="Supported Files" id="z6h-I9-Mnc">
                                             <modifierMask key="keyEquivalentModifierMask"/>
+                                            <connections>
+                                                <action selector="openSupportedFilesWindow:" target="Voe-Tx-rLC" id="A01-SF-001"/>
+                                            </connections>
                                         </menuItem>
                                         <menuItem isSeparatorItem="YES" id="VOq-y0-SEH"/>
-                                        <menuItem title="Settings…" keyEquivalent="," id="BOF-NM-1cW" customClass="SettingsMenuItem" customModule="Glance" customModuleProvider="target"/>
+                                        <menuItem title="Settings…" keyEquivalent="," id="BOF-NM-1cW">
+                                            <connections>
+                                                <action selector="openSettingsWindow:" target="Voe-Tx-rLC" id="A01-ST-002"/>
+                                            </connections>
+                                        </menuItem>
                                         <menuItem isSeparatorItem="YES" id="wFC-TO-SCJ"/>
                                         <menuItem title="Services" id="NMo-om-nkz">
                                             <modifierMask key="keyEquivalentModifierMask"/>
@@ -336,18 +343,30 @@
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <menu key="submenu" title="Help" systemMenu="help" id="F2S-fz-NVQ">
                                     <items>
-                                        <menuItem title="Website" id="f7A-U6-axm" customClass="WebsiteMenuItem" customModule="Glance" customModuleProvider="target">
+                                        <menuItem title="Website" id="f7A-U6-axm">
                                             <modifierMask key="keyEquivalentModifierMask"/>
+                                            <connections>
+                                                <action selector="openWebsite:" target="Voe-Tx-rLC" id="A01-WB-003"/>
+                                            </connections>
                                         </menuItem>
-                                        <menuItem title="License" id="wVn-yr-O4t" customClass="LicenseMenuItem" customModule="Glance" customModuleProvider="target">
+                                        <menuItem title="License" id="wVn-yr-O4t">
                                             <modifierMask key="keyEquivalentModifierMask"/>
+                                            <connections>
+                                                <action selector="openLicense:" target="Voe-Tx-rLC" id="A01-LC-004"/>
+                                            </connections>
                                         </menuItem>
-                                        <menuItem title="Privacy Policy" id="d7Z-4V-EBe" customClass="PrivacyPolicyMenuItem" customModule="Glance" customModuleProvider="target">
+                                        <menuItem title="Privacy Policy" id="d7Z-4V-EBe">
                                             <modifierMask key="keyEquivalentModifierMask"/>
+                                            <connections>
+                                                <action selector="openPrivacyPolicy:" target="Voe-Tx-rLC" id="A01-PP-005"/>
+                                            </connections>
                                         </menuItem>
                                         <menuItem isSeparatorItem="YES" id="Hdo-k9-f9B"/>
-                                        <menuItem title="Submit Feedback" id="z27-18-yV2" customClass="FeedbackMenuItem" customModule="Glance" customModuleProvider="target">
+                                        <menuItem title="Submit Feedback" id="z27-18-yV2">
                                             <modifierMask key="keyEquivalentModifierMask"/>
+                                            <connections>
+                                                <action selector="openFeedback:" target="Voe-Tx-rLC" id="A01-FB-006"/>
+                                            </connections>
                                         </menuItem>
                                     </items>
                                 </menu>
@@ -647,7 +666,6 @@
                                                 <constraint firstAttribute="trailing" secondItem="43y-hB-GSd" secondAttribute="trailing" constant="20" id="rXC-Rd-aLm"/>
                                             </constraints>
                                         </view>
-                                        <color key="fillColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                                     </box>
                                     <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="NwG-sY-j2S">
                                         <rect key="frame" x="459" y="-7" width="182" height="32"/>

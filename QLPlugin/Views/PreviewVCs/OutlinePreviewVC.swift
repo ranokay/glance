@@ -2,7 +2,6 @@ import Cocoa
 
 @MainActor
 protocol OutlinePreviewCommandHandling: AnyObject {
-	func focusFolderSearch() -> Bool
 	func activateOutlineSelection() -> Bool
 }
 
@@ -17,11 +16,6 @@ final class OutlinePreviewView: NSView {
 
 	override func performKeyEquivalent(with event: NSEvent) -> Bool {
 		let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
-		let isFindCommand = modifiers == .command
-			&& event.charactersIgnoringModifiers?.lowercased() == "f"
-		if isFindCommand, commandHandler?.focusFolderSearch() == true {
-			return true
-		}
 		let isSpace = modifiers.isEmpty && event.charactersIgnoringModifiers == " "
 		if isSpace, commandHandler?.activateOutlineSelection() == true {
 			return true
@@ -30,11 +24,10 @@ final class OutlinePreviewView: NSView {
 	}
 }
 
-class OutlinePreviewVC: NSViewController, PreviewVC, NSSearchFieldDelegate {
+class OutlinePreviewVC: NSViewController, PreviewVC {
 	@objc dynamic var rootNodes: [FileTreeNode]
 	private(set) var previewStatusText: String
 	var previewStatusDidChange: (@MainActor (String) -> Void)?
-	private(set) var currentSearchQuery = ""
 	private(set) var selectedNode: FileTreeNode?
 	weak var interactionDelegate: OutlinePreviewInteractionDelegate? {
 		didSet {
@@ -47,16 +40,12 @@ class OutlinePreviewVC: NSViewController, PreviewVC, NSSearchFieldDelegate {
 	private let labelText: String?
 	private let expandAll: Bool
 	private let showsFileThumbnails: Bool
-	private let searchEnabled: Bool
-	private let searchItemLimitReached: Bool
 	private var thumbnailLoader: DirectoryThumbnailLoader?
-	private var searchField: NSSearchField?
 
 	@objc dynamic var customSortDescriptors = [NSSortDescriptor(key: "name", ascending: true)]
 
 	@IBOutlet private var treeController: NSTreeController!
 	@IBOutlet private var outlineView: NSOutlineView!
-	@IBOutlet private var outlineTopConstraint: NSLayoutConstraint!
 
 	nonisolated static let resourceBundle: Bundle = {
 		let embeddedPluginBundle = Bundle.main.builtInPlugInsURL
@@ -83,9 +72,7 @@ class OutlinePreviewVC: NSViewController, PreviewVC, NSSearchFieldDelegate {
 		rootNodes: [FileTreeNode],
 		labelText: String?,
 		expandAll: Bool = false,
-		showsFileThumbnails: Bool = false,
-		searchEnabled: Bool = false,
-		searchItemLimitReached: Bool = false
+		showsFileThumbnails: Bool = false
 	) {
 		self.init(
 			nibName: NSNib.Name("OutlinePreviewVC"),
@@ -93,9 +80,7 @@ class OutlinePreviewVC: NSViewController, PreviewVC, NSSearchFieldDelegate {
 			rootNodes: rootNodes,
 			labelText: labelText,
 			expandAll: expandAll,
-			showsFileThumbnails: showsFileThumbnails,
-			searchEnabled: searchEnabled,
-			searchItemLimitReached: searchItemLimitReached
+			showsFileThumbnails: showsFileThumbnails
 		)
 	}
 
@@ -106,8 +91,6 @@ class OutlinePreviewVC: NSViewController, PreviewVC, NSSearchFieldDelegate {
 		labelText: String?,
 		expandAll: Bool = false,
 		showsFileThumbnails: Bool = false,
-		searchEnabled: Bool = false,
-		searchItemLimitReached: Bool = false,
 		thumbnailLoader: DirectoryThumbnailLoader? = nil
 	) {
 		self.rootNodes = rootNodes
@@ -115,8 +98,6 @@ class OutlinePreviewVC: NSViewController, PreviewVC, NSSearchFieldDelegate {
 		previewStatusText = labelText ?? ""
 		self.expandAll = expandAll
 		self.showsFileThumbnails = showsFileThumbnails
-		self.searchEnabled = searchEnabled
-		self.searchItemLimitReached = searchItemLimitReached
 		self.thumbnailLoader = showsFileThumbnails
 			? thumbnailLoader ?? DirectoryThumbnailLoader()
 			: nil
@@ -132,7 +113,6 @@ class OutlinePreviewVC: NSViewController, PreviewVC, NSSearchFieldDelegate {
 	override func viewDidLoad() {
 		super.viewDidLoad()
 		setUpView()
-		setUpSearch()
 		setUpInteraction()
 		if expandAll {
 			expandAllItems()
@@ -160,83 +140,6 @@ class OutlinePreviewVC: NSViewController, PreviewVC, NSSearchFieldDelegate {
 	private func setUpView() {
 		display(rootNodes: rootNodes)
 		(view as? OutlinePreviewView)?.commandHandler = self
-	}
-
-	private func setUpSearch() {
-		guard searchEnabled,
-		      let scrollView = outlineView.enclosingScrollView
-		else {
-			return
-		}
-
-		let searchField = NSSearchField()
-		searchField.translatesAutoresizingMaskIntoConstraints = false
-		searchField.placeholderString = "Search folder"
-		searchField.delegate = self
-		searchField.sendsSearchStringImmediately = true
-		view.addSubview(searchField)
-		outlineTopConstraint.isActive = false
-		NSLayoutConstraint.activate([
-			searchField.topAnchor.constraint(equalTo: view.topAnchor, constant: 6),
-			searchField.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 8),
-			searchField.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -8),
-			searchField.heightAnchor.constraint(equalToConstant: 24),
-			scrollView.topAnchor.constraint(equalTo: searchField.bottomAnchor, constant: 6),
-		])
-		self.searchField = searchField
-	}
-
-	func controlTextDidChange(_ notification: Notification) {
-		guard let searchField = notification.object as? NSSearchField,
-		      searchField === self.searchField
-		else {
-			return
-		}
-		applySearchQuery(searchField.stringValue)
-	}
-
-	func control(
-		_ control: NSControl,
-		textView _: NSTextView,
-		doCommandBy commandSelector: Selector
-	) -> Bool {
-		guard control === searchField,
-		      commandSelector == #selector(NSResponder.cancelOperation(_:))
-		else {
-			return false
-		}
-		searchField?.stringValue = ""
-		applySearchQuery("")
-		view.window?.makeFirstResponder(outlineView)
-		return true
-	}
-
-	func applySearchQuery(_ query: String) {
-		guard searchEnabled else {
-			return
-		}
-		currentSearchQuery = query
-		let result = FolderSearch.filter(rootNodes: rootNodes, query: query)
-		display(rootNodes: result.rootNodes)
-		if let matchCount = result.matchCount {
-			updateStatus(FolderSearch.statusText(
-				matchCount: matchCount,
-				isTruncated: searchItemLimitReached
-			))
-		} else {
-			updateStatus(labelText ?? "")
-		}
-		expandAllItems()
-		requestVisibleThumbnails()
-	}
-
-	func focusFolderSearch() -> Bool {
-		guard let searchField else {
-			return false
-		}
-		view.window?.makeFirstResponder(searchField)
-		searchField.currentEditor()?.selectAll(nil)
-		return true
 	}
 
 	func activateOutlineSelection() -> Bool {
@@ -278,11 +181,6 @@ class OutlinePreviewVC: NSViewController, PreviewVC, NSSearchFieldDelegate {
 	@objc
 	private func outlineSelectionWasDoubleClicked() {
 		_ = activateOutlineSelection()
-	}
-
-	private func updateStatus(_ status: String) {
-		previewStatusText = status
-		previewStatusDidChange?(status)
 	}
 
 	private func display(rootNodes: [FileTreeNode]) {

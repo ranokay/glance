@@ -21,16 +21,17 @@ protocol WorkspaceApplicationProviding {
 	)
 }
 
-private struct UncheckedOpenWithValue<Value>: @unchecked Sendable {
-	let value: Value
-}
-
 @MainActor
 final class WorkspaceApplicationProvider: WorkspaceApplicationProviding {
 	private let workspace: NSWorkspace
+	private let bridge: OpenWithBridgeSending
 
-	init(workspace: NSWorkspace = .shared) {
+	init(
+		workspace: NSWorkspace = .shared,
+		bridge: OpenWithBridgeSending = OpenWithBridgeClient()
+	) {
 		self.workspace = workspace
+		self.bridge = bridge
 	}
 
 	func compatibleApplicationURLs(for fileURL: URL) -> [URL] {
@@ -60,16 +61,7 @@ final class WorkspaceApplicationProvider: WorkspaceApplicationProviding {
 		with applicationURL: URL,
 		completion: @escaping @MainActor (Error?) -> Void
 	) {
-		workspace.open(
-			[fileURL],
-			withApplicationAt: applicationURL,
-			configuration: NSWorkspace.OpenConfiguration()
-		) { _, error in
-			let sendableError = UncheckedOpenWithValue(value: error)
-			Task { @MainActor in
-				completion(sendableError.value)
-			}
-		}
+		bridge.open(fileURL: fileURL, with: applicationURL, completion: completion)
 	}
 }
 
