@@ -5,12 +5,13 @@ Glance boosts your productivity by providing Quick Look previews for files that 
 Features:
 • Beautiful file previews for various file types
 • Previews visible in Quick Look, Finder and Spotlight
-• Searchable folder trees with Finder-style icons and progressive media thumbnails
+• Native macOS 26 controls and adaptive window materials
+• Expandable folder trees with Finder-style icons and progressive media thumbnails
 • In-place folder file previews and a compatible-app Open With chooser
 • Full compatibility with Dark Mode
 
 Supported file types:
-• Folders (searchable, expandable trees with icons and thumbnails, up to 500 items and 5 levels)
+• Folders (expandable trees with icons and thumbnails, up to 500 items and 5 levels)
 • Source code (.cpp, .elrc, .ini, .js, .json, .py, .swift, .toml, .ttml, .yml and many more)
 • Markdown (.md, .markdown, .mdown, .mkdn, .mkd, .Rmd, .qmd)
 • Archive (.7z, .ear, .jar, .tar, .tar.gz, .tgz, .war, .zip)

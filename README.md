@@ -11,7 +11,7 @@
 > This repository is a fork of [chamburr/glance](https://github.com/chamburr/glance) with additional maintenance and distribution work.
 > Compared with upstream, this fork includes:
 >
-> - macOS 15+ modernization
+> - native macOS 26 Liquid Glass controls and adaptive window materials
 > - Apple Silicon-only builds
 > - newer Quick Look and WebKit fixes
 > - `.toml`, `.ttml`, and `.elrc` source-code previews
@@ -25,7 +25,7 @@
 
 ## About
 
-This is a fork of the [original Glance plugin](https://github.com/samuelmeuli/glance). Unfortunately, the owner seems to have discarded the project a while ago, and the app is largely broken on newer macOS systems. The aim of this fork is to revive the project and maintain it for future updates. Current builds target Apple Silicon Macs running macOS 15 or newer and include fixes for newer macOS releases.
+This is a fork of the [original Glance plugin](https://github.com/samuelmeuli/glance). Unfortunately, the owner seems to have discarded the project a while ago, and the app is largely broken on newer macOS systems. The aim of this fork is to revive the project and maintain it for future updates. Current builds target Apple Silicon Macs running macOS 26 or newer and use the native macOS design system.
 
 ## Installation
 
@@ -44,7 +44,7 @@ Alternatively, you can install Glance directly. The installation is slightly com
 
 ## Supported file types
 
-- **Folders**: searchable, expandable trees with Finder-style icons and progressive image, video,
+- **Folders**: expandable trees with Finder-style icons and progressive image, video,
   and PDF thumbnails, limited to 500 items and 5 levels. Double-click a file or package to preview
   it in place; Space does the same when the Quick Look host forwards that key (some hosts reserve
   Space, so double-click remains the reliable fallback). The utility bar can open the top-level or
@@ -81,7 +81,7 @@ Alternatively, you can install Glance directly. The installation is slightly com
 
 **Why isn't the app available on older macOS versions or Intel Macs?**
 
-The app uses modern Quick Look, WebKit, and archive dependencies that now require macOS 15 or newer. This fork intentionally ships Apple Silicon-only builds.
+The app uses the macOS 26 AppKit design system and intentionally ships Apple Silicon-only builds.
 
 **Why are images in my Markdown files not loading?**
 
@@ -125,7 +125,7 @@ To add previews for a new file extension, please follow these steps:
 1. Create a new class for your file type in [this directory](./QLPlugin/Views/Previews/). It should implement the `Preview` protocol. See the other files in the directory for examples.
 2. Match the file extension to your class in [`PreviewVCFactory.swift`](./QLPlugin/Views/PreviewVCFactory.swift).
 3. Find your file's UTI by running `mdls -name kMDItemContentType /path/to/your/file`. Add it to `QLSupportedContentTypes` in [`Info.plist`](./QLPlugin/Info.plist).
-4. Update [`README.md`](README.md), [`SupportedFilesWC.xib`](Glance/SupportedFilesWC.xib), the [App Store description](AppStore/Listing/Description.txt) and [`Credits.rtf`](Glance/Credits.rtf) (if you introduced a new library).
+4. Update [`README.md`](README.md), the sections in [`SupportedFilesWC.swift`](Glance/SupportedFilesWC.swift), the [App Store description](AppStore/Listing/Description.txt) and [`Credits.rtf`](Glance/Credits.rtf) (if you introduced a new library).
 
 ## License
 

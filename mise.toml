@@ -1,5 +1,5 @@
 [tools]
-go = "1.26.4"
+go = "1.26.5"
 swiftformat = "0.61.1"
 swiftlint = "0.63.3"
 
