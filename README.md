@@ -25,7 +25,7 @@
 > - downloadable unsigned DMGs from this fork's GitHub Releases
 > - Settings controls for hiding the Dock icon
 >
-> Release DMGs are unsigned and unnotarized, so users may still need the quarantine-removal command shown in the installation steps.
+> Release DMGs are unsigned and unnotarized. Verify the attached SHA-256 checksum before using the quarantine-removal command shown in the installation steps.
 
 ## About
 
@@ -39,15 +39,21 @@ This maintained fork is distributed through [GitHub Releases](https://github.com
 
 Release DMGs are currently unsigned and unnotarized. To install Glance:
 
-1. Download the latest `Glance-<version>.dmg`, open it, and drag Glance.app to Applications.
-2. Open Terminal and remove the download quarantine attribute:
+1. Download both `Glance-<version>.dmg` and `Glance-<version>.dmg.sha256` from the same release. In Terminal, change to their download directory and verify the disk image before opening it:
+
+   ```sh
+   shasum -a 256 -c Glance-<version>.dmg.sha256
+   ```
+
+2. Open the verified disk image and drag Glance.app to Applications.
+3. If macOS blocks the app, remove the download quarantine attribute:
 
    ```sh
    xattr -rd com.apple.quarantine /Applications/Glance.app
    ```
 
-3. Launch Glance once so macOS can register its Quick Look extension.
-4. Keep Glance running while using its previews. You can hide its Dock icon in Settings; Glance remains available from the menu bar.
+4. Launch Glance once so macOS can register its Quick Look extension.
+5. Keep Glance running while using its previews. You can hide its Dock icon in Settings; Glance remains available from the menu bar.
 
 ## Supported file types
 
@@ -114,7 +120,7 @@ Glance doesn't currently support disabling individual file types.
 
 **You claim to support [file type], but previews aren't showing up.**
 
-Glance skips non-archive files larger than 10 MB to avoid slowing down your Mac. Folder previews are separately bounded to 500 visible items and five levels.
+Glance skips non-archive files larger than 10 MB to avoid slowing down your Mac. Folder previews are separately bounded to 500 items and five levels.
 
 It's possible that your file's extension or [UTI](https://en.wikipedia.org/wiki/Uniform_Type_Identifier) isn't associated with Glance. You can easily verify this:
 

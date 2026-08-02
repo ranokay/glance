@@ -140,7 +140,10 @@ jobs:
             -format UDZO \
             "$DMG_PATH"
 
-          shasum -a 256 "$DMG_PATH" | tee "$DMG_PATH.sha256"
+          (
+            cd "$DIST_DIR"
+            shasum -a 256 "$(basename "$DMG_PATH")" | tee "$(basename "$DMG_PATH").sha256"
+          )
 
       - name: Verify DMG contents
         env:
