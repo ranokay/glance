@@ -128,6 +128,23 @@ final class DirectoryThumbnailTests: XCTestCase {
 		XCTAssertNil(nodes[3].icon)
 	}
 
+	func testThumbnailLoaderDoesNotRetryFailedURLsDuringTheSamePreview() {
+		let generator = ControllableThumbnailGenerator()
+		let loader = DirectoryThumbnailLoader(generator: generator)
+		let imageNode = node(type: .png, path: "missing-thumbnail.png")
+
+		loader.requestThumbnail(for: imageNode, scale: 2) { _ in
+			XCTFail("A failed thumbnail must not produce an update")
+		}
+		generator.completeFirst(with: nil)
+		loader.requestThumbnail(for: imageNode, scale: 2) { _ in
+			XCTFail("A failed URL must not be retried")
+		}
+
+		XCTAssertEqual(generator.generatedURLs.count, 1)
+		XCTAssertEqual(generator.generatedURLs.first, imageNode.fileURL)
+	}
+
 	func testOutlineRequestsThumbnailsOnlyForVisibleRows() {
 		let generator = ControllableThumbnailGenerator()
 		let loader = DirectoryThumbnailLoader(generator: generator, maxConcurrentRequests: 4)

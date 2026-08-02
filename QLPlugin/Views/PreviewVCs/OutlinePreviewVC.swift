@@ -220,6 +220,12 @@ class OutlinePreviewVC: NSViewController, PreviewVC {
 			name: NSOutlineView.itemDidExpandNotification,
 			object: outlineView
 		)
+		NotificationCenter.default.addObserver(
+			self,
+			selector: #selector(outlineViewportDidChange),
+			name: NSOutlineView.itemDidCollapseNotification,
+			object: outlineView
+		)
 		requestVisibleThumbnails()
 	}
 
@@ -237,7 +243,7 @@ class OutlinePreviewVC: NSViewController, PreviewVC {
 			guard let cellView = outlineView.view(
 				atColumn: 0,
 				row: row,
-				makeIfNecessary: true
+				makeIfNecessary: false
 			) as? NSTableCellView else {
 				continue
 			}
@@ -340,12 +346,8 @@ final class WorkspaceFileIconProvider: FileIconProviding {
 
 /// `ValueTransformer` which returns a thumbnail, file-specific icon, or generic fallback icon.
 class IconTransformer: ValueTransformer {
-	private static let directoryIcon = NSImage(
-		contentsOfFile: "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/GenericFolderIcon.icns"
-	)
-	private static let fileIcon = NSImage(
-		contentsOfFile: "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/GenericDocumentIcon.icns"
-	)
+	private static let directoryIcon = NSWorkspace.shared.icon(for: .folder)
+	private static let fileIcon = NSWorkspace.shared.icon(for: .data)
 	private let fileIconProvider: FileIconProviding
 
 	override convenience init() {

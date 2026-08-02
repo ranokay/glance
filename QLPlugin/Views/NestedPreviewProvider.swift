@@ -97,8 +97,16 @@ final class NativePreviewVC: NSViewController, PreviewVC {
 			return
 		}
 		previewView.autoresizingMask = [.height, .width]
+		previewView.shouldCloseWithWindow = false
 		previewView.previewItem = fileURL as NSURL
 		view.addSubview(previewView)
 		self.previewView = previewView
+	}
+
+	func tearDown() {
+		if previewView?.window != nil {
+			previewView?.close()
+		}
+		previewView = nil
 	}
 }

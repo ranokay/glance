@@ -1,7 +1,13 @@
 import Cocoa
 
 /// View controller for rendering previews of a specific file type.
-protocol PreviewVC: NSViewController {}
+protocol PreviewVC: NSViewController {
+	func tearDown()
+}
+
+extension PreviewVC {
+	func tearDown() {}
+}
 
 @MainActor
 protocol PreviewStatusProviding: AnyObject {

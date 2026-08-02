@@ -135,6 +135,17 @@ enum OpenWithBridgeConstants {
 	static let maximumPayloadSize = 128 * 1024
 }
 
+enum OpenWithApplicationIdentity {
+	static let excludedBundleIdentifiers: Set<String> = [
+		"com.chamburr.Glance",
+		"com.chamburr.Glance.QLPlugin",
+	]
+
+	static func key(for applicationURL: URL) -> String {
+		applicationURL.resolvingSymlinksInPath().standardizedFileURL.path.lowercased()
+	}
+}
+
 struct OpenWithBridgeRequest: Codable {
 	let version: Int
 	let requestID: UUID
@@ -359,6 +370,7 @@ final class SystemOpenWithBridgeRequestStore: OpenWithBridgeRequestStoring {
 		let pasteboard = NSPasteboard(name: NSPasteboard.Name(name))
 		defer {
 			pasteboard.clearContents()
+			pasteboard.releaseGlobally()
 		}
 		guard let requestString = pasteboard.string(forType: Self.pasteboardType),
 		      requestString.utf8.count <= OpenWithBridgeConstants.maximumPayloadSize
@@ -372,7 +384,9 @@ final class SystemOpenWithBridgeRequestStore: OpenWithBridgeRequestStoring {
 		guard Self.isValidName(name) else {
 			return
 		}
-		NSPasteboard(name: NSPasteboard.Name(name)).clearContents()
+		let pasteboard = NSPasteboard(name: NSPasteboard.Name(name))
+		pasteboard.clearContents()
+		pasteboard.releaseGlobally()
 	}
 
 	private static func isValidName(_ name: String) -> Bool {
@@ -391,11 +405,6 @@ private struct UncheckedOpenWithBridgeValue<Value>: @unchecked Sendable {
 
 @MainActor
 final class WorkspaceOpenWithLauncher: OpenWithLaunching {
-	private static let excludedBundleIdentifiers: Set<String> = [
-		"com.chamburr.Glance",
-		"com.chamburr.Glance.QLPlugin",
-	]
-
 	private let workspace: NSWorkspace
 
 	init(workspace: NSWorkspace = .shared) {
@@ -406,13 +415,13 @@ final class WorkspaceOpenWithLauncher: OpenWithLaunching {
 		guard applicationURL.isFileURL,
 		      applicationURL.pathExtension.caseInsensitiveCompare("app") == .orderedSame,
 		      let bundleIdentifier = Bundle(url: applicationURL)?.bundleIdentifier,
-		      !Self.excludedBundleIdentifiers.contains(bundleIdentifier)
+		      !OpenWithApplicationIdentity.excludedBundleIdentifiers.contains(bundleIdentifier)
 		else {
 			return false
 		}
-		let requestedApplicationKey = Self.applicationKey(applicationURL)
+		let requestedApplicationKey = OpenWithApplicationIdentity.key(for: applicationURL)
 		return workspace.urlsForApplications(toOpen: fileURL).contains {
-			Self.applicationKey($0) == requestedApplicationKey
+			OpenWithApplicationIdentity.key(for: $0) == requestedApplicationKey
 		}
 	}
 
@@ -435,13 +444,10 @@ final class WorkspaceOpenWithLauncher: OpenWithLaunching {
 
 	static func makeOpenConfiguration() -> NSWorkspace.OpenConfiguration {
 		let configuration = NSWorkspace.OpenConfiguration()
+		configuration.activates = true
 		configuration.promptsUserIfNeeded = false
 		configuration.addsToRecentItems = false
 		return configuration
-	}
-
-	private static func applicationKey(_ applicationURL: URL) -> String {
-		applicationURL.resolvingSymlinksInPath().standardizedFileURL.path.lowercased()
 	}
 }
 

@@ -67,33 +67,40 @@ final class WorkspaceApplicationProvider: WorkspaceApplicationProviding {
 
 @MainActor
 final class OpenWithService {
-	private static let excludedBundleIdentifiers: Set<String> = [
-		"com.chamburr.Glance",
-		"com.chamburr.Glance.QLPlugin",
-	]
+	private struct CachedApplicationMetadata {
+		let applicationURL: URL
+		let bundleIdentifier: String?
+		let displayName: String
+		let icon: NSImage
+	}
 
 	private let workspace: WorkspaceApplicationProviding
+	private var applicationMetadataCache = [String: CachedApplicationMetadata]()
 
 	init(workspace: WorkspaceApplicationProviding = WorkspaceApplicationProvider()) {
 		self.workspace = workspace
 	}
 
 	func applications(for fileURL: URL) -> [OpenWithApplication] {
-		let defaultApplicationKey = workspace.defaultApplicationURL(for: fileURL).map(Self.key)
+		let defaultApplicationKey = workspace.defaultApplicationURL(for: fileURL).map {
+			OpenWithApplicationIdentity.key(for: $0)
+		}
 		var seenApplicationKeys = Set<String>()
 		return workspace.compatibleApplicationURLs(for: fileURL).compactMap { applicationURL in
-			let applicationKey = Self.key(applicationURL)
-			guard seenApplicationKeys.insert(applicationKey).inserted,
-			      !Self.excludedBundleIdentifiers.contains(
-			      	workspace.bundleIdentifier(for: applicationURL) ?? ""
-			      )
-			else {
+			let applicationKey = OpenWithApplicationIdentity.key(for: applicationURL)
+			guard seenApplicationKeys.insert(applicationKey).inserted else {
+				return nil
+			}
+			let metadata = cachedMetadata(for: applicationURL, key: applicationKey)
+			guard !OpenWithApplicationIdentity.excludedBundleIdentifiers.contains(
+				metadata.bundleIdentifier ?? ""
+			) else {
 				return nil
 			}
 			return OpenWithApplication(
-				applicationURL: applicationURL,
-				displayName: workspace.displayName(for: applicationURL),
-				icon: workspace.icon(for: applicationURL),
+				applicationURL: metadata.applicationURL,
+				displayName: metadata.displayName,
+				icon: metadata.icon,
 				isDefault: applicationKey == defaultApplicationKey
 			)
 		}
@@ -107,7 +114,20 @@ final class OpenWithService {
 		workspace.open(fileURL: fileURL, with: applicationURL, completion: completion)
 	}
 
-	private static func key(_ applicationURL: URL) -> String {
-		applicationURL.resolvingSymlinksInPath().standardizedFileURL.path.lowercased()
+	private func cachedMetadata(
+		for applicationURL: URL,
+		key: String
+	) -> CachedApplicationMetadata {
+		if let cachedMetadata = applicationMetadataCache[key] {
+			return cachedMetadata
+		}
+		let metadata = CachedApplicationMetadata(
+			applicationURL: applicationURL,
+			bundleIdentifier: workspace.bundleIdentifier(for: applicationURL),
+			displayName: workspace.displayName(for: applicationURL),
+			icon: workspace.icon(for: applicationURL)
+		)
+		applicationMetadataCache[key] = metadata
+		return metadata
 	}
 }

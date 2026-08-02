@@ -62,9 +62,32 @@ final class OpenWithTests: XCTestCase {
 		let applicationItems = mainVC.openWithButton.menu?.items.filter {
 			$0.representedObject is URL
 		} ?? []
+		XCTAssertFalse(try XCTUnwrap(mainVC.openWithButton.menu).autoenablesItems)
 		XCTAssertEqual(applicationItems.map(\.title), ["First", "Default"])
 		XCTAssertEqual(applicationItems.map(\.state), [.off, .on])
+		XCTAssertTrue(applicationItems.allSatisfy(\.isEnabled))
 		XCTAssertFalse(mainVC.openWithButton.itemTitles.contains("Other…"))
+	}
+
+	func testApplicationMetadataIsCachedWhileCompatibilityAndDefaultStayCurrent() {
+		let applicationURL = URL(fileURLWithPath: "/Applications/Editor.app")
+		let workspace = StubWorkspaceApplicationProvider(
+			compatibleApplicationURLs: [applicationURL],
+			defaultApplicationURL: applicationURL,
+			displayNames: [applicationURL: "Editor"]
+		)
+		let service = OpenWithService(workspace: workspace)
+		let firstFileURL = URL(fileURLWithPath: "/tmp/first.txt")
+		let secondFileURL = URL(fileURLWithPath: "/tmp/second.txt")
+
+		XCTAssertEqual(service.applications(for: firstFileURL).map(\.displayName), ["Editor"])
+		XCTAssertEqual(service.applications(for: secondFileURL).map(\.displayName), ["Editor"])
+
+		XCTAssertEqual(workspace.defaultApplicationRequestCount, 2)
+		XCTAssertEqual(workspace.compatibleApplicationRequestCount, 2)
+		XCTAssertEqual(workspace.bundleIdentifierRequestCount, 1)
+		XCTAssertEqual(workspace.displayNameRequestCount, 1)
+		XCTAssertEqual(workspace.iconRequestCount, 1)
 	}
 
 	func testFolderTargetIsDisabledForDirectoriesAndSymlinksAndEnabledForFilesAndPackages() throws {
@@ -738,6 +761,10 @@ private final class StubWorkspaceApplicationProvider: WorkspaceApplicationProvid
 	let openError: Error?
 	private(set) var openCalls = [OpenCall]()
 	private(set) var defaultApplicationRequestCount = 0
+	private(set) var compatibleApplicationRequestCount = 0
+	private(set) var bundleIdentifierRequestCount = 0
+	private(set) var displayNameRequestCount = 0
+	private(set) var iconRequestCount = 0
 
 	init(
 		compatibleApplicationURLs: [URL],
@@ -754,7 +781,8 @@ private final class StubWorkspaceApplicationProvider: WorkspaceApplicationProvid
 	}
 
 	func compatibleApplicationURLs(for _: URL) -> [URL] {
-		compatibleApplicationURLs
+		compatibleApplicationRequestCount += 1
+		return compatibleApplicationURLs
 	}
 
 	func defaultApplicationURL(for _: URL) -> URL? {
@@ -763,15 +791,19 @@ private final class StubWorkspaceApplicationProvider: WorkspaceApplicationProvid
 	}
 
 	func bundleIdentifier(for applicationURL: URL) -> String? {
-		bundleIdentifiers[applicationURL]
+		bundleIdentifierRequestCount += 1
+		return bundleIdentifiers[applicationURL]
 	}
 
 	func displayName(for applicationURL: URL) -> String {
-		displayNames[applicationURL] ?? applicationURL.deletingPathExtension().lastPathComponent
+		displayNameRequestCount += 1
+		return displayNames[applicationURL]
+			?? applicationURL.deletingPathExtension().lastPathComponent
 	}
 
 	func icon(for _: URL) -> NSImage {
-		NSImage(size: NSSize(width: 16, height: 16))
+		iconRequestCount += 1
+		return NSImage(size: NSSize(width: 16, height: 16))
 	}
 
 	func open(

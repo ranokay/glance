@@ -88,6 +88,7 @@ final class DirectoryThumbnailLoader {
 	private var pendingRequests = [PendingRequest]()
 	private var activeRequests = [URL: ActiveRequest]()
 	private var cachedImages = [URL: NSImage]()
+	private var failedURLs = Set<URL>()
 
 	init(
 		generator: DirectoryThumbnailGenerating = QuickLookDirectoryThumbnailGenerator(),
@@ -110,7 +111,8 @@ final class DirectoryThumbnailLoader {
 			completion(node)
 			return
 		}
-		guard activeRequests[fileURL] == nil,
+		guard !failedURLs.contains(fileURL),
+		      activeRequests[fileURL] == nil,
 		      !pendingRequests.contains(where: { $0.fileURL == fileURL })
 		else {
 			return
@@ -136,7 +138,7 @@ final class DirectoryThumbnailLoader {
 	}
 
 	static func isEligible(_ node: FileTreeNode) -> Bool {
-		guard node.fileURL != nil,
+		guard let fileURL = node.fileURL,
 		      !node.isDirectory,
 		      !node.isPackage,
 		      !node.isSymbolicLink,
@@ -153,8 +155,7 @@ final class DirectoryThumbnailLoader {
 			return false
 		}
 
-		guard let fileURL = node.fileURL,
-		      let registryEntry = SupportedPreviewRegistry.entry(matching: fileURL)
+		guard let registryEntry = SupportedPreviewRegistry.entry(matching: fileURL)
 		else {
 			return true
 		}
@@ -188,6 +189,8 @@ final class DirectoryThumbnailLoader {
 			cachedImages[fileURL] = image
 			activeRequest.node.icon = image
 			activeRequest.completion(activeRequest.node)
+		} else {
+			failedURLs.insert(fileURL)
 		}
 		startPendingRequests()
 	}

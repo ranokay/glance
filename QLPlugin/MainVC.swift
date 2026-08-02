@@ -285,6 +285,7 @@ class MainVC: NSViewController, QLPreviewingController {
 
 	private func refreshOpenWithMenu() {
 		let menu = NSMenu()
+		menu.autoenablesItems = false
 		let titleItem = NSMenuItem(title: "Open With…", action: nil, keyEquivalent: "")
 		titleItem.isEnabled = false
 		menu.addItem(titleItem)
@@ -299,8 +300,9 @@ class MainVC: NSViewController, QLPreviewingController {
 				action: nil,
 				keyEquivalent: ""
 			)
+			menuItem.isEnabled = true
 			menuItem.representedObject = application.applicationURL as NSURL
-			menuItem.image = application.icon
+			menuItem.image = application.icon.copy() as? NSImage
 			menuItem.image?.size = NSSize(width: 16, height: 16)
 			if application.isDefault {
 				menuItem.state = .on
@@ -365,6 +367,7 @@ class MainVC: NSViewController, QLPreviewingController {
 		guard let nestedPreviewController, let folderPreviewController else {
 			return
 		}
+		nestedPreviewController.tearDown()
 		nestedPreviewController.view.removeFromSuperview()
 		nestedPreviewController.removeFromParent()
 		self.nestedPreviewController = nil
@@ -376,6 +379,7 @@ class MainVC: NSViewController, QLPreviewingController {
 	private func clearPreviewControllers() {
 		statusResetTask?.cancel()
 		for child in children {
+			(child as? PreviewVC)?.tearDown()
 			child.view.removeFromSuperview()
 			child.removeFromParent()
 		}

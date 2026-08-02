@@ -63,6 +63,8 @@ final class NestedPreviewTests: XCTestCase {
 			provider.makePreviewController(for: imageNode) as? NativePreviewVC
 		)
 		XCTAssertEqual(nativePreview.fileURL, imageURL)
+		XCTAssertNotNil(nativePreview.previewView)
+		XCTAssertFalse(try XCTUnwrap(nativePreview.previewView).shouldCloseWithWindow)
 	}
 
 	func testOutlineSelectionTogglesDirectoriesPreviewsPackagesAndIgnoresSymlinks() throws {
@@ -139,6 +141,7 @@ final class NestedPreviewTests: XCTestCase {
 
 		mainVC.showFolderPreview()
 
+		XCTAssertEqual(nestedController.tearDownCallCount, 1)
 		XCTAssertIdentical(mainVC.currentPreviewController, previewVC)
 		XCTAssertIdentical(mainVC.folderPreviewController, previewVC)
 		XCTAssertIdentical(previewVC.selectedNode, retainedSelection)
@@ -289,7 +292,13 @@ private final class StubNestedPreviewProvider: NestedPreviewProviding {
 	}
 }
 
-private final class StubPreviewVC: NSViewController, PreviewVC {}
+private final class StubPreviewVC: NSViewController, PreviewVC {
+	private(set) var tearDownCallCount = 0
+
+	func tearDown() {
+		tearDownCallCount += 1
+	}
+}
 
 private enum TestNestedPreviewError: Error {
 	case failed

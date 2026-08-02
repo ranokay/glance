@@ -22,6 +22,14 @@ class DirectoryPreview: Preview {
 	static let defaultMaxItemCount = 500
 	static let defaultMaxDepth = 5
 	private static let sortLocale = Locale(identifier: "en_US_POSIX")
+	private static let resourceKeys: [URLResourceKey] = [
+		.contentModificationDateKey,
+		.fileSizeKey,
+		.isDirectoryKey,
+		.isPackageKey,
+		.isSymbolicLinkKey,
+		.contentTypeKey,
+	]
 
 	private static let defaultExcludedRootURLs = [
 		FileManager.default.temporaryDirectory,
@@ -112,33 +120,12 @@ class DirectoryPreview: Preview {
 		}
 
 		let contents: [URL]
+		let hasMoreContents: Bool
 		do {
-			let directoryContents = try fileManager.contentsOfDirectory(
+			(contents, hasMoreContents) = try sortedDirectoryContents(
 				at: directoryURL,
-				includingPropertiesForKeys: [
-					.contentModificationDateKey,
-					.fileSizeKey,
-					.isDirectoryKey,
-					.isPackageKey,
-					.isSymbolicLinkKey,
-					.contentTypeKey,
-				],
-				options: [.skipsHiddenFiles]
+				retaining: maxItemCount - itemCount + 1
 			)
-			contents = directoryContents.sorted { lhsURL, rhsURL in
-				let lhsName = lhsURL.lastPathComponent
-				let rhsName = rhsURL.lastPathComponent
-				let comparison = lhsName.compare(
-					rhsName,
-					options: [.caseInsensitive, .numeric],
-					range: nil,
-					locale: Self.sortLocale
-				)
-				if comparison == .orderedSame {
-					return lhsName < rhsName
-				}
-				return comparison == .orderedAscending
-			}
 		} catch {
 			if isRoot {
 				throw DirectoryPreviewError.directoryReadError(
@@ -160,14 +147,7 @@ class DirectoryPreview: Preview {
 
 			let resourceValues: URLResourceValues
 			do {
-				resourceValues = try itemURL.resourceValues(forKeys: [
-					.contentModificationDateKey,
-					.fileSizeKey,
-					.isDirectoryKey,
-					.isPackageKey,
-					.isSymbolicLinkKey,
-					.contentTypeKey,
-				])
+				resourceValues = try itemURL.resourceValues(forKeys: Set(Self.resourceKeys))
 			} catch {
 				Log.general.error(
 					"Could not read item metadata \(itemURL.path, privacy: .private): \(error.localizedDescription, privacy: .private)"
@@ -213,6 +193,69 @@ class DirectoryPreview: Preview {
 				isTruncated: &isTruncated
 			)
 		}
+		isTruncated = isTruncated || hasMoreContents
+	}
+
+	/// Scans every directory entry so the selection stays deterministic, but retains and sorts only
+	/// enough URLs to satisfy the global preview limit. This bounds memory for very large folders.
+	private func sortedDirectoryContents(
+		at directoryURL: URL,
+		retaining requestedLimit: Int
+	) throws -> (contents: [URL], hasMoreContents: Bool) {
+		let limit = max(1, requestedLimit)
+		var enumerationError: Error?
+		guard let enumerator = fileManager.enumerator(
+			at: directoryURL,
+			includingPropertiesForKeys: Self.resourceKeys,
+			options: [.skipsHiddenFiles, .skipsSubdirectoryDescendants],
+			errorHandler: { _, error in
+				enumerationError = error
+				return false
+			}
+		) else {
+			throw CocoaError(.fileReadUnknown)
+		}
+
+		var contents = [URL]()
+		var itemTotal = 0
+		for case let itemURL as URL in enumerator {
+			itemTotal += 1
+			let insertionIndex = Self.insertionIndex(for: itemURL, in: contents)
+			contents.insert(itemURL, at: insertionIndex)
+			if contents.count > limit {
+				contents.removeLast()
+			}
+		}
+		if let enumerationError {
+			throw enumerationError
+		}
+		return (contents, itemTotal > limit)
+	}
+
+	private static func insertionIndex(for itemURL: URL, in contents: [URL]) -> Int {
+		var lowerBound = 0
+		var upperBound = contents.count
+		while lowerBound < upperBound {
+			let index = lowerBound + (upperBound - lowerBound) / 2
+			if isOrderedBefore(itemURL, contents[index]) {
+				upperBound = index
+			} else {
+				lowerBound = index + 1
+			}
+		}
+		return lowerBound
+	}
+
+	private static func isOrderedBefore(_ lhsURL: URL, _ rhsURL: URL) -> Bool {
+		let lhsName = lhsURL.lastPathComponent
+		let rhsName = rhsURL.lastPathComponent
+		let comparison = lhsName.compare(
+			rhsName,
+			options: [.caseInsensitive, .numeric],
+			range: nil,
+			locale: sortLocale
+		)
+		return comparison == .orderedSame ? lhsName < rhsName : comparison == .orderedAscending
 	}
 
 	private func isExcluded(_ url: URL) -> Bool {
