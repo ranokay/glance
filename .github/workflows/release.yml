@@ -64,6 +64,7 @@ jobs:
           set -euo pipefail
           mise trust mise.toml
           mise install
+          mise exec -- rustup component add rustfmt clippy
 
       - name: Run production verification
         run: |
