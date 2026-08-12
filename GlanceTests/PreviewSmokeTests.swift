@@ -250,6 +250,31 @@ final class PreviewSmokeTests: XCTestCase {
 		XCTAssertTrue(mainVC.currentPreviewController is WebPreviewVC)
 	}
 
+	func testMainVCSupersededPreparationCompletesWithoutReplacingLatestPreview() async throws {
+		let firstURL = try writeFile(named: "first.swift", contents: "let first = true\n")
+		let latestURL = try writeFile(named: "latest.swift", contents: "let latest = true\n")
+		let mainVC = MainVC()
+		mainVC.containingAppIsRunning = { true }
+		mainVC.loadViewIfNeeded()
+		let firstCompletion = expectation(description: "superseded preparation completed")
+		let latestCompletion = expectation(description: "latest preparation completed")
+		firstCompletion.assertForOverFulfill = true
+		latestCompletion.assertForOverFulfill = true
+
+		mainVC.preparePreviewOfFile(at: firstURL) { error in
+			XCTAssertNil(error)
+			firstCompletion.fulfill()
+		}
+		mainVC.preparePreviewOfFile(at: latestURL) { error in
+			XCTAssertNil(error)
+			latestCompletion.fulfill()
+		}
+
+		await fulfillment(of: [firstCompletion, latestCompletion], timeout: 5)
+		XCTAssertEqual(mainVC.topLevelFile?.url, latestURL)
+		XCTAssertTrue(mainVC.currentPreviewController is WebPreviewVC)
+	}
+
 	func testTSVPreviewHandlesQuotedTabsUnicodeAndBlankCells() async throws {
 		let tsv = """
 		name\tvalue

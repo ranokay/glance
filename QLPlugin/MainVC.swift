@@ -162,6 +162,10 @@ class MainVC: NSViewController, QLPreviewingController {
 			do {
 				try await task.value
 				handler(nil)
+			} catch is CancellationError {
+				// Superseded requests still complete exactly once without asking Quick Look
+				// to replace the newer preview with its fallback UI.
+				handler(nil)
 			} catch {
 				handler(error)
 			}
@@ -220,6 +224,7 @@ class MainVC: NSViewController, QLPreviewingController {
 			// Generate file preview
 			let previewInitializer = previewInitializerType.init()
 			let previewVC = try await previewInitializer.createPreviewVC(file: file)
+			try Task.checkCancellation()
 
 			installTopLevelPreview(previewVC, file: file)
 

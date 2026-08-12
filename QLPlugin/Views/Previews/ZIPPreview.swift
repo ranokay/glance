@@ -28,11 +28,12 @@ class ZIPPreview: Preview {
 	private func makeFileTree(from entries: [ArchivePreviewEntry]) throws -> FileTree {
 		let fileTree = FileTree()
 		for entry in entries {
+			let size = try checkedInt(entry.size)
 			do {
 				try fileTree.addNode(
 					path: entry.path,
 					isDirectory: entry.entryType == .directory,
-					size: try checkedInt(entry.size),
+					size: size,
 					dateModified: entry.modifiedUnixSeconds.map(Date.init(timeIntervalSince1970:))
 				)
 			} catch let error as PreviewCoreBridgeError {

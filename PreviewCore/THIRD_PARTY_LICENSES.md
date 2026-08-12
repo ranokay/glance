@@ -25,6 +25,7 @@ and [bzip2](https://sourceware.org/bzip2/).
 | flate2 | 1.1.9 | MIT OR Apache-2.0 |
 | ICU4X Unicode data crates | locked versions | Unicode-3.0 |
 | libbz2-rs-sys | 0.2.5 | bzip2-1.0.6 |
+| libc | 0.2.189 | MIT OR Apache-2.0 |
 | lzma-rust2 | 0.18.1 | Apache-2.0 |
 | miniz_oxide | 0.8.9 | MIT OR Zlib OR Apache-2.0 |
 | onig, onig_sys | 6.5.3, 69.9.3 | MIT |

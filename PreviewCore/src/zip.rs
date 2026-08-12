@@ -60,7 +60,7 @@ pub(crate) fn scan_zip(path: &Path) -> Result<ArchivePayload, CoreError> {
             path,
             entry_type,
             size: entry.size(),
-            modified_unix_seconds: entry.last_modified().map(zip_datetime_to_unix),
+            modified_unix_seconds: entry.last_modified().and_then(zip_datetime_to_unix),
         });
     }
 
@@ -196,26 +196,19 @@ fn map_zip_error(error: ZipError) -> CoreError {
     }
 }
 
-fn zip_datetime_to_unix(date: zip::DateTime) -> f64 {
-    let days = days_from_civil(i64::from(date.year()), date.month(), date.day());
-    (days * 86_400
-        + i64::from(date.hour()) * 3_600
-        + i64::from(date.minute()) * 60
-        + i64::from(date.second())) as f64
-}
-
-fn days_from_civil(year: i64, month: u8, day: u8) -> i64 {
-    let adjusted_year = year - i64::from(month <= 2);
-    let era = if adjusted_year >= 0 {
-        adjusted_year
-    } else {
-        adjusted_year - 399
-    } / 400;
-    let year_of_era = adjusted_year - era * 400;
-    let shifted_month = i64::from(month) + if month > 2 { -3 } else { 9 };
-    let day_of_year = (153 * shifted_month + 2) / 5 + i64::from(day) - 1;
-    let day_of_era = year_of_era * 365 + year_of_era / 4 - year_of_era / 100 + day_of_year;
-    era * 146_097 + day_of_era - 719_468
+fn zip_datetime_to_unix(date: zip::DateTime) -> Option<f64> {
+    // ZIP DOS timestamps are local wall-clock values without a time-zone offset.
+    // `mktime` applies the previewing Mac's current time zone and daylight-saving rules.
+    let mut local_time: libc::tm = unsafe { std::mem::zeroed() };
+    local_time.tm_sec = i32::from(date.second());
+    local_time.tm_min = i32::from(date.minute());
+    local_time.tm_hour = i32::from(date.hour());
+    local_time.tm_mday = i32::from(date.day());
+    local_time.tm_mon = i32::from(date.month()) - 1;
+    local_time.tm_year = i32::from(date.year()) - 1900;
+    local_time.tm_isdst = -1;
+    let timestamp = unsafe { libc::mktime(&mut local_time) };
+    (timestamp != -1).then_some(timestamp as f64)
 }
 
 fn read_u16(bytes: &[u8], offset: usize) -> Option<u16> {
@@ -292,11 +285,19 @@ mod tests {
     }
 
     #[test]
-    fn converts_dos_dates_to_unix_seconds() {
-        let date = zip::DateTime::from_date_and_time(1980, 1, 1, 0, 0, 0).unwrap();
-        assert_eq!(zip_datetime_to_unix(date), 315_532_800.0);
+    fn preserves_dos_timestamps_as_local_wall_time() {
         let date = zip::DateTime::from_date_and_time(2024, 2, 29, 12, 34, 56).unwrap();
-        assert_eq!(zip_datetime_to_unix(date), 1_709_210_096.0);
+        let timestamp = zip_datetime_to_unix(date).unwrap() as libc::time_t;
+        let mut local_time: libc::tm = unsafe { std::mem::zeroed() };
+        let converted = unsafe { libc::localtime_r(&timestamp, &mut local_time) };
+
+        assert!(!converted.is_null());
+        assert_eq!(local_time.tm_year + 1900, 2024);
+        assert_eq!(local_time.tm_mon + 1, 2);
+        assert_eq!(local_time.tm_mday, 29);
+        assert_eq!(local_time.tm_hour, 12);
+        assert_eq!(local_time.tm_min, 34);
+        assert_eq!(local_time.tm_sec, 56);
     }
 
     #[test]
