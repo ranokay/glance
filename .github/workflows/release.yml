@@ -59,6 +59,7 @@ jobs:
 
       - name: Install pinned tools
         env:
+          GITHUB_TOKEN: ${{ github.token }}
           MISE_YES: "1"
         run: |
           set -euo pipefail
