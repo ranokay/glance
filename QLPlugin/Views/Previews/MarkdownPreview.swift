@@ -12,30 +12,6 @@ class MarkdownPreview: Preview {
 
 	required init() {}
 
-	private func getHTML(file: File) throws -> String {
-		var source: String
-		do {
-			source = try file.read()
-		} catch {
-			Log.parse
-				.error(
-					"Could not read Markdown file: \(error.localizedDescription, privacy: .private)"
-				)
-			throw error
-		}
-
-		do {
-			let html = try HTMLRenderer.renderMarkdown(source)
-			return "<div class=\"markdown-body\">\(html)</div>"
-		} catch {
-			Log.render
-				.error(
-					"Could not generate Markdown HTML: \(error.localizedDescription, privacy: .private)"
-				)
-			throw error
-		}
-	}
-
 	private func getStylesheets() -> [Stylesheet] {
 		var stylesheets = [Stylesheet]()
 
@@ -46,20 +22,29 @@ class MarkdownPreview: Preview {
 			Log.render.error("Could not find main Markdown stylesheet")
 		}
 
-		// Chroma stylesheet (for code syntax highlighting)
+		// Semantic syntax-highlighting stylesheet
 		if let chromaStylesheetURL {
 			stylesheets.append(Stylesheet(url: chromaStylesheetURL))
 		} else {
-			Log.render.error("Could not find Chroma stylesheet")
+			Log.render.error("Could not find syntax-highlighting stylesheet")
 		}
 
 		return stylesheets
 	}
 
-	func createPreviewVC(file: File) throws -> PreviewVC {
-		WebPreviewVC(
-			html: try getHTML(file: file),
-			stylesheets: getStylesheets()
-		)
+	func createPreviewVC(file: File) async throws -> PreviewVC {
+		let fileURL = file.url
+		do {
+			let html = try await PreviewExecutor.run {
+				let source = try String(contentsOf: fileURL, encoding: .utf8)
+				return "<div class=\"markdown-body\">\(try HTMLRenderer.renderMarkdown(source))</div>"
+			}
+			return WebPreviewVC(html: html, stylesheets: getStylesheets())
+		} catch {
+			Log.render.error(
+				"Could not generate Markdown HTML: \(error.localizedDescription, privacy: .private)"
+			)
+			throw error
+		}
 	}
 }
