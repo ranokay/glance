@@ -3,7 +3,7 @@
 	<h1>Glance</h1>
 	<p><strong>All-in-one Quick Look plugin</strong></p>
 	<p>Glance provides Quick Look previews for files that macOS doesn't support out of the box.</p>
-	<p><strong>Version 1.5.9 (build 19)</strong> · macOS 26 or later · Apple silicon</p>
+	<p><strong>Version 1.6.0 (build 20)</strong> · macOS 26 or later · Apple silicon</p>
 	<p><a href="#installation">Installation Steps</a></p>
 	<p><img src="./AppStore/Listing/Screenshots/Screenshot1.jpg" alt=""></p>
 </div>
@@ -21,6 +21,7 @@
 > - `.ini`, `.toml`, `.ttml`, and `.elrc` source-code previews
 > - expanded archive support
 > - safer bundled WebKit rendering
+> - a bounded Rust preview core with responsive off-main rendering and parsing
 > - pinned `mise` build and test tooling with expanded automated coverage
 > - downloadable unsigned DMGs from this fork's GitHub Releases
 > - Settings controls for hiding the Dock icon
@@ -31,7 +32,7 @@
 
 Glance extends the native Quick Look experience in Finder, Spotlight, and the Space-bar preview window. This maintained fork builds on [chamburr/glance](https://github.com/chamburr/glance) and the [original Glance plugin](https://github.com/samuelmeuli/glance), modernizing the app for current macOS releases while retaining local, lightweight previews.
 
-Version **1.5.9** (build **19**) requires an Apple silicon Mac running macOS 26 or later. It uses native macOS materials and controls without stacking custom glass effects inside Quick Look's own window chrome.
+Version **1.6.0** (build **20**) requires an Apple silicon Mac running macOS 26 or later. It uses native macOS materials and controls without stacking custom glass effects inside Quick Look's own window chrome.
 
 ## Installation
 
@@ -63,11 +64,11 @@ Release DMGs are currently unsigned and unnotarized. To install Glance:
   Look host forwards that key. The utility bar can open the top-level file or a selected nested item
   once with any compatible app without changing its macOS default.
 
-- **Source code and text** (with [Chroma](https://github.com/alecthomas/chroma) syntax highlighting): `.cpp`, `.elrc`, `.ini`, `.js`, `.json`, `.py`, `.swift`, `.toml`, `.ttml`, `.yml`, common extensionless configuration files, and many more
+- **Source code and text** (with [two-face/syntect](https://github.com/CosmicHorrorDev/two-face) syntax highlighting): `.cpp`, `.elrc`, `.ini`, `.js`, `.json`, `.py`, `.swift`, `.toml`, `.ttml`, `.yml`, common extensionless configuration files, and many more
 
   <p><img src="./AppStore/Assets/Screenshots/ScreenshotSourceCode.png" alt="" width="600"></p>
 
-- **Markdown** (rendered using [goldmark](https://github.com/yuin/goldmark)): `.md`, `.markdown`, `.mdown`, `.mkdn`, `.mkd`, `.Rmd`, `.qmd`
+- **Markdown** (rendered using [Comrak](https://github.com/kivikakk/comrak)): `.md`, `.markdown`, `.mdown`, `.mkdn`, `.mkd`, `.Rmd`, `.qmd`
 
   <p><img src="./AppStore/Assets/Screenshots/ScreenshotMarkdown.png" alt="" width="600"></p>
 
@@ -75,11 +76,11 @@ Release DMGs are currently unsigned and unnotarized. To install Glance:
 
   <p><img src="./AppStore/Assets/Screenshots/ScreenshotArchive.png" alt="" width="600"></p>
 
-- **Jupyter Notebook** (rendered using [nbtohtml](https://github.com/samuelmeuli/nbtohtml)): `.ipynb`
+- **Jupyter Notebook** (rendered by Glance's Rust preview core): `.ipynb`
 
   <p><img src="./AppStore/Assets/Screenshots/ScreenshotJupyterNotebook.png" alt="" width="600"></p>
 
-- **Tab-separated values** (parsed using [SwiftCSV](https://github.com/swiftcsv/SwiftCSV)): `.tab`, `.tsv`
+- **Tab-separated values** (parsed by Glance's bounded Rust preview core): `.tab`, `.tsv`
 
   <p><img src="./AppStore/Assets/Screenshots/ScreenshotTSV.png" alt="" width="600"></p>
 
@@ -134,10 +135,10 @@ Suggestions and contributions are always welcome! Please discuss larger changes 
 
 Building requires Xcode 26 on an Apple silicon Mac running macOS 26, plus
 [mise-en-place](https://mise.jdx.dev/). From the repository root, run `mise install` once to install
-the pinned Go, SwiftFormat, and SwiftLint versions.
+the pinned Rust, SwiftFormat, and SwiftLint versions.
 Common local commands are:
 
-- `mise run test` to run the Go and Xcode test suites
+- `mise run test` to run the Rust and Xcode test suites
 - `mise run build` to build the app in the `build` directory
 - `mise run verify` to run tests and a release build
 - `mise run all` to build, install into `/Applications`, register the Quick Look extension, and

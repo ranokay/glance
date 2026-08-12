@@ -1,0 +1,59 @@
+name: Production Verification
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Rust, Xcode, and release gates
+    runs-on: macos-26
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+
+      - name: Assert macOS 26 Apple Silicon toolchain
+        run: |
+          set -euo pipefail
+          test "$(uname -m)" = "arm64"
+          test "$(sw_vers -productVersion | cut -d. -f1)" = "26"
+          test "$(xcodebuild -version | awk 'NR == 1 { split($2, version, "."); print version[1] }')" = "26"
+
+      - name: Install checksum-verified mise
+        run: |
+          set -euo pipefail
+          MISE_VERSION="2026.6.0"
+          MISE_TARBALL="mise-v${MISE_VERSION}-macos-arm64.tar.gz"
+          curl -fsSLO "https://github.com/jdx/mise/releases/download/v${MISE_VERSION}/${MISE_TARBALL}"
+          echo "8830cf720025583bfbc5ca77bcf15958bf6efb4743fb84be6b572fd85d3a6cd0  ${MISE_TARBALL}" | shasum -a 256 -c -
+          tar -xzf "$MISE_TARBALL"
+          mkdir -p "$HOME/.local/bin"
+          cp mise/bin/mise "$HOME/.local/bin/mise"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Install pinned tools
+        env:
+          MISE_YES: "1"
+        run: |
+          set -euo pipefail
+          mise trust mise.toml
+          mise install
+
+      - name: Run production verification
+        run: |
+          set -euo pipefail
+          mise run verify
+          mise run verify:app
