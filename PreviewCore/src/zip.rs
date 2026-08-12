@@ -38,17 +38,16 @@ pub(crate) fn scan_zip(path: &Path) -> Result<ArchivePayload, CoreError> {
                 "Encrypted ZIP archives are not supported",
             ));
         }
+        let path = entry.name().to_owned();
+        if path == "__MACOSX" || path.starts_with("__MACOSX/") {
+            continue;
+        }
         compressed_size = compressed_size
             .checked_add(entry.compressed_size())
             .ok_or_else(|| CoreError::limit("ZIP archive metadata size overflow"))?;
         uncompressed_size = uncompressed_size
             .checked_add(entry.size())
             .ok_or_else(|| CoreError::limit("ZIP archive metadata size overflow"))?;
-
-        let path = entry.name().to_owned();
-        if path == "__MACOSX" || path.starts_with("__MACOSX/") {
-            continue;
-        }
         let entry_type = if entry.is_dir() {
             ArchiveEntryType::Directory
         } else if entry.is_file() {
@@ -258,6 +257,18 @@ mod tests {
                 .all(|entry| !entry.path.starts_with("__MACOSX"))
         );
         assert!(payload.uncompressed_size > 0);
+    }
+
+    #[test]
+    fn filtered_macos_metadata_does_not_affect_totals() {
+        let path = temporary_path();
+        fs::write(&path, single_file_zip(b"__MACOSX/metadata", 0, false)).unwrap();
+
+        let payload = scan_zip(&path).unwrap();
+        assert!(payload.entries.is_empty());
+        assert_eq!(payload.compressed_size, 0);
+        assert_eq!(payload.uncompressed_size, 0);
+        fs::remove_file(path).unwrap();
     }
 
     #[test]

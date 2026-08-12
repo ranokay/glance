@@ -12,8 +12,7 @@ struct Notebook {
     cells: Vec<Cell>,
     #[serde(default)]
     metadata: Metadata,
-    #[serde(default)]
-    nbformat: i64,
+    nbformat: Option<i64>,
 }
 
 #[derive(Debug, Default, Deserialize)]
@@ -101,10 +100,18 @@ impl NotebookText {
 pub(crate) fn render_notebook(source: &str) -> Result<String, RenderError> {
     let notebook: Notebook = serde_json::from_str(source)
         .map_err(|error| RenderError::new(format!("Could not parse notebook JSON: {error}")))?;
-    if notebook.nbformat < 4 {
-        return Err(RenderError::new(
-            "The provided Jupyter Notebook uses an old format; version 4 or newer is required",
-        ));
+    match notebook.nbformat {
+        None => {
+            return Err(RenderError::new(
+                "The provided Jupyter Notebook does not declare an nbformat version",
+            ));
+        }
+        Some(version) if version < 4 => {
+            return Err(RenderError::new(
+                "The provided Jupyter Notebook uses an old format; version 4 or newer is required",
+            ));
+        }
+        Some(_) => {}
     }
 
     let language = notebook_language(&notebook);
@@ -326,6 +333,12 @@ mod tests {
     #[test]
     fn rejects_invalid_notebooks_and_images() {
         assert!(render_notebook("not json").is_err());
+        assert!(
+            render_notebook(r#"{"cells":[],"metadata":{}}"#)
+                .unwrap_err()
+                .to_string()
+                .contains("does not declare an nbformat")
+        );
         assert!(render_notebook(r#"{"cells":[],"metadata":{},"nbformat":3}"#).is_err());
         assert!(
             render_notebook(

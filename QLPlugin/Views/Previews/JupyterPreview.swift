@@ -86,6 +86,8 @@ class JupyterPreview: Preview {
 				stylesheets: getStylesheets(),
 				scripts: getScripts()
 			)
+		} catch let error as CancellationError {
+			throw error
 		} catch {
 			Log.render.error(
 				"Could not generate Jupyter Notebook HTML: \(error.localizedDescription, privacy: .private)"

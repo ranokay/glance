@@ -70,7 +70,7 @@ enum HTMLRenderer {
 			)
 		}
 
-		guard result.status == 0 else {
+		guard result.status == GLANCE_STATUS_OK else {
 			throw HTMLRendererError.rendererError(
 				fileType: fileType,
 				errorMessage: output.isEmpty ? "renderer failed without details" : output

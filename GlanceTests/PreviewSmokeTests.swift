@@ -246,8 +246,25 @@ final class PreviewSmokeTests: XCTestCase {
 		}
 
 		await fulfillment(of: [completion], timeout: 5)
-		try await Task.sleep(for: .milliseconds(50))
+		let clock = ContinuousClock()
+		let deadline = clock.now.advanced(by: .seconds(5))
+		while !(mainVC.currentPreviewController is WebPreviewVC), clock.now < deadline {
+			try await Task.sleep(for: .milliseconds(10))
+		}
 		XCTAssertTrue(mainVC.currentPreviewController is WebPreviewVC)
+	}
+
+	func testMainVCDeclinesUnsupportedGzipForSystemFallback() async throws {
+		let fileURL = try writeFile(named: "plain.gz", contents: "not a tarball")
+		let mainVC = MainVC()
+		mainVC.loadViewIfNeeded()
+
+		await XCTAssertThrowsErrorAsync {
+			try await mainVC.previewFile(file: File(url: fileURL))
+		} errorHandler: { error in
+			XCTAssertEqual((error as NSError).code, 2)
+		}
+		XCTAssertNil(mainVC.currentPreviewController)
 	}
 
 	func testMainVCSupersededPreparationCompletesWithoutReplacingLatestPreview() async throws {
@@ -537,7 +554,7 @@ final class PreviewSmokeTests: XCTestCase {
 		while webView.isLoading, Date() < deadline {
 			RunLoop.current.run(mode: .default, before: Date().addingTimeInterval(0.01))
 		}
-		XCTAssertFalse(webView.isLoading)
+		XCTAssertFalse(webView.isLoading, "Web view did not finish loading within \(timeout) seconds")
 	}
 
 	private func waitForWebViewToFinishLoadingAsync(
@@ -549,7 +566,7 @@ final class PreviewSmokeTests: XCTestCase {
 		while webView.isLoading, clock.now < deadline {
 			try await Task.sleep(for: .milliseconds(10))
 		}
-		XCTAssertFalse(webView.isLoading)
+		XCTAssertFalse(webView.isLoading, "Web view did not finish loading within \(timeout)")
 	}
 
 	private func waitForWebViewToBecomeVisible(_ webView: WKWebView, timeout: TimeInterval = 15) {

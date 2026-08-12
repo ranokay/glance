@@ -7,6 +7,7 @@ use std::borrow::Cow;
 pub(crate) fn render_markdown(source: &str) -> Result<String, RenderError> {
     let source = rewrite_front_matter(source);
     let mut options = Options::default();
+    options.render.r#unsafe = false;
     options.extension.autolink = true;
     options.extension.strikethrough = true;
     options.extension.table = true;

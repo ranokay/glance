@@ -10,7 +10,7 @@ fi
 PROJECT_ROOT="${PROJECT_DIR:-$(cd "$(dirname "$0")/.." && pwd)}"
 CORE_ROOT="$PROJECT_ROOT/PreviewCore"
 TARGET="aarch64-apple-darwin"
-OUTPUT_DIRECTORY="$CORE_ROOT/build"
+OUTPUT_DIRECTORY="$CORE_ROOT/build/${CONFIGURATION:-Debug}"
 export CARGO_TARGET_DIR="$CORE_ROOT/target"
 export MACOSX_DEPLOYMENT_TARGET="${MACOSX_DEPLOYMENT_TARGET:-26.0}"
 
@@ -34,19 +34,24 @@ fi
 export MISE_TRUSTED_CONFIG_PATHS="$PROJECT_ROOT${MISE_TRUSTED_CONFIG_PATHS:+:$MISE_TRUSTED_CONFIG_PATHS}"
 
 PROFILE="debug"
-PROFILE_ARGUMENT=""
+set --
 case "${CONFIGURATION:-Debug}" in
 	Release|Profile)
 		PROFILE="release"
-		PROFILE_ARGUMENT="--release"
+		set -- --release
 		;;
 esac
+
+if ! "$MISE_BIN" exec -- rustup target list --installed | /usr/bin/grep -Fxq "$TARGET"; then
+	echo "Rust target $TARGET is not installed; run 'mise exec -- rustup target add $TARGET'" >&2
+	exit 1
+fi
 
 "$MISE_BIN" exec -- cargo build \
 	--locked \
 	--manifest-path "$CORE_ROOT/Cargo.toml" \
 	--target "$TARGET" \
-	$PROFILE_ARGUMENT
+	"$@"
 
 /usr/bin/install -d "$OUTPUT_DIRECTORY"
 /usr/bin/install -m 0644 \

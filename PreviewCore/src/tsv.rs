@@ -1,7 +1,7 @@
 use crate::error::CoreError;
 use crate::model::TsvPayload;
 use csv::ReaderBuilder;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 pub(crate) const MAX_FILE_SIZE: usize = 25 * 1_024 * 1_024;
 pub(crate) const MAX_ROWS: usize = 5_000;
@@ -36,17 +36,18 @@ fn parse_tsv_with_limits(
         .has_headers(true)
         .flexible(false)
         .from_reader(data);
-    let headers = reader
+    let raw_headers = reader
         .headers()
         .map_err(|error| CoreError::parse(format!("Could not parse TSV header: {error}")))?
         .iter()
         .map(str::to_owned)
         .collect::<Vec<_>>();
-    if headers.len() > max_columns {
+    if raw_headers.len() > max_columns {
         return Err(CoreError::limit(format!(
             "TSV header exceeds the {max_columns} column preview limit"
         )));
     }
+    let headers = unique_headers(raw_headers);
 
     let mut rows = Vec::with_capacity(max_rows.min(256));
     for record in reader.records().take(max_rows) {
@@ -61,6 +62,26 @@ fn parse_tsv_with_limits(
     }
 
     Ok(TsvPayload { headers, rows })
+}
+
+fn unique_headers(headers: Vec<String>) -> Vec<String> {
+    let mut used = BTreeSet::new();
+    headers
+        .into_iter()
+        .map(|header| {
+            if used.insert(header.clone()) {
+                return header;
+            }
+            let mut suffix = 2;
+            loop {
+                let candidate = format!("{header} ({suffix})");
+                if used.insert(candidate.clone()) {
+                    return candidate;
+                }
+                suffix += 1;
+            }
+        })
+        .collect()
 }
 
 #[cfg(test)]
@@ -90,6 +111,16 @@ mod tests {
         let payload = parse_tsv_with_limits(b"a\n1\n2\n", 32, 1, 1).unwrap();
         assert_eq!(payload.rows.len(), 1);
         assert_eq!(payload.rows[0]["a"], "1");
+    }
+
+    #[test]
+    fn disambiguates_duplicate_and_pre_suffixed_headers() {
+        let payload = parse_tsv(b"name\tname (2)\tname\nfirst\tmiddle\tlast\n").unwrap();
+
+        assert_eq!(payload.headers, ["name", "name (2)", "name (3)"]);
+        assert_eq!(payload.rows[0]["name"], "first");
+        assert_eq!(payload.rows[0]["name (2)"], "middle");
+        assert_eq!(payload.rows[0]["name (3)"], "last");
     }
 
     #[test]

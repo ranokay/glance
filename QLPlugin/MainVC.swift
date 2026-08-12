@@ -234,6 +234,11 @@ class MainVC: NSViewController, QLPreviewingController {
 			Log.general.info(
 				"Skipping preview for file \(file.path, privacy: .private): File type not supported"
 			)
+			throw NSError(
+				domain: "com.chamburr.Glance.QLPlugin",
+				code: 2,
+				userInfo: [NSLocalizedDescriptionKey: "File type is not supported"]
+			)
 		}
 	}
 

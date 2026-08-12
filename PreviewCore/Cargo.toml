@@ -9,6 +9,8 @@ publish = false
 crate-type = ["staticlib", "rlib"]
 
 [dependencies]
+# These migration-critical renderer/parser versions are exact by design; Cargo.lock pins the
+# complete transitive graph used by all locked production builds.
 ammonia = "4.1.4"
 ansi-to-html = "0.2.3"
 base64 = "0.23.1"
@@ -30,3 +32,4 @@ zip = { version = "=8.6.0", default-features = false, features = ["time"] }
 [profile.release]
 codegen-units = 1
 lto = "thin"
+panic = "unwind"

@@ -20,7 +20,7 @@ class SevenZipPreview: Preview {
 		let labelText = """
 		Compressed: \(byteCountFormatter.string(for: archiveSize) ?? "--")
 		Uncompressed: \(byteCountFormatter.string(for: totalUncompressed) ?? "--")
-		Compression ratio: \(String(compressionRatio)) %
+		Compression ratio: \(String(format: "%.1f", compressionRatio)) %
 		"""
 		return OutlinePreviewVC(rootNodes: fileTree.root.childrenList, labelText: labelText)
 	}

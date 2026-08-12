@@ -10,7 +10,9 @@ License texts are available from the linked standard licenses and each crate's s
 [MPL-2.0](https://www.mozilla.org/MPL/2.0/), [Unicode licenses](https://www.unicode.org/license.txt),
 [Unlicense](https://unlicense.org/), [Zlib](https://www.zlib.net/zlib_license.html),
 [BSL-1.0](https://www.boost.org/LICENSE_1_0.txt), [CC0-1.0](https://creativecommons.org/publicdomain/zero/1.0/),
-and [bzip2](https://sourceware.org/bzip2/).
+[MIT-0](https://opensource.org/license/mit-0),
+[Unicode-DFS-2016](https://spdx.org/licenses/Unicode-DFS-2016.html), and
+[bzip2-1.0.6](https://github.com/libarchive/bzip2/blob/bzip2-1.0.6/LICENSE).
 
 | Crate | Version | License expression |
 | --- | --- | --- |

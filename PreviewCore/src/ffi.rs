@@ -204,12 +204,24 @@ fn result_from_bytes(bytes: Vec<u8>, status: i32) -> GlanceRenderResult {
     result
 }
 
+/// Converts one validated FFI pointer/length pair into UTF-8.
+///
+/// # Safety
+///
+/// The returned reference must not outlive the enclosing FFI call. Its lifetime is not tied to
+/// the raw input pointer by the type system.
 unsafe fn utf8_input<'a>(data: *const u8, length: usize) -> Result<&'a str, CoreError> {
     let bytes = unsafe { byte_input(data, length, "Renderer")? };
     str::from_utf8(bytes)
         .map_err(|error| CoreError::invalid(format!("Renderer input is not valid UTF-8: {error}")))
 }
 
+/// Converts one validated FFI pointer/length pair into bytes.
+///
+/// # Safety
+///
+/// The returned reference must not outlive the enclosing FFI call. Its lifetime is not tied to
+/// the raw input pointer by the type system.
 unsafe fn byte_input<'a>(
     data: *const u8,
     length: usize,

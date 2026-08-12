@@ -4,6 +4,7 @@ use sevenz_rust2::{ArchiveReader, EncoderMethod, Error as SevenZipError, Passwor
 use std::fs::File;
 use std::io::{Read, Seek, SeekFrom};
 use std::path::Path;
+use std::sync::OnceLock;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 const SIGNATURE: &[u8; 6] = b"7z\xBC\xAF\x27\x1C";
@@ -62,8 +63,7 @@ pub(crate) fn scan_seven_zip(path: &Path) -> Result<ArchivePayload, CoreError> {
             size: entry.size,
             modified_unix_seconds: entry
                 .has_last_modified_date
-                .then(|| system_time_to_unix(entry.last_modified_date.into()))
-                .flatten(),
+                .then(|| system_time_to_unix(entry.last_modified_date.into())),
         });
     }
 
@@ -151,26 +151,30 @@ fn map_seven_zip_error(error: SevenZipError) -> CoreError {
     }
 }
 
-fn system_time_to_unix(time: SystemTime) -> Option<f64> {
+fn system_time_to_unix(time: SystemTime) -> f64 {
     match time.duration_since(UNIX_EPOCH) {
-        Ok(duration) => Some(duration.as_secs_f64()),
-        Err(error) => Some(-error.duration().as_secs_f64()),
+        Ok(duration) => duration.as_secs_f64(),
+        Err(error) => -error.duration().as_secs_f64(),
     }
 }
 
 fn crc32(bytes: &[u8]) -> u32 {
-    let mut table = [0_u32; 256];
-    for (index, value) in table.iter_mut().enumerate() {
-        let mut crc = index as u32;
-        for _ in 0..8 {
-            crc = if crc & 1 == 1 {
-                0xedb8_8320 ^ (crc >> 1)
-            } else {
-                crc >> 1
-            };
+    static TABLE: OnceLock<[u32; 256]> = OnceLock::new();
+    let table = TABLE.get_or_init(|| {
+        let mut table = [0_u32; 256];
+        for (index, value) in table.iter_mut().enumerate() {
+            let mut crc = index as u32;
+            for _ in 0..8 {
+                crc = if crc & 1 == 1 {
+                    0xedb8_8320 ^ (crc >> 1)
+                } else {
+                    crc >> 1
+                };
+            }
+            *value = crc;
         }
-        *value = crc;
-    }
+        table
+    });
     let mut crc = u32::MAX;
     for byte in bytes {
         crc = table[((crc ^ u32::from(*byte)) & 0xff) as usize] ^ (crc >> 8);

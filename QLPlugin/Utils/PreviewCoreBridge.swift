@@ -124,7 +124,7 @@ enum PreviewCoreBridge {
 		do {
 			return try JSONDecoder().decode(type, from: data)
 		} catch {
-			throw PreviewCoreBridgeError.invalidPayload(error.localizedDescription)
+			throw PreviewCoreBridgeError.invalidPayload(String(describing: error))
 		}
 	}
 
@@ -134,7 +134,7 @@ enum PreviewCoreBridge {
 			throw PreviewCoreBridgeError.invalidBuffer
 		}
 		let data = result.data.map { Data(bytes: $0, count: result.length) } ?? Data()
-		guard result.status == 0 else {
+		guard result.status == GLANCE_STATUS_OK else {
 			guard let message = String(data: data, encoding: .utf8) else {
 				throw PreviewCoreBridgeError.invalidUTF8
 			}

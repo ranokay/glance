@@ -153,7 +153,7 @@ run = '''
 set -e
 APP_NAME="${APP_NAME:-Glance}"
 APP_PATH="build/Build/Products/Release/$APP_NAME.app"
-RUST_ARCHIVE="PreviewCore/build/libglance_preview_core.a"
+RUST_ARCHIVE="PreviewCore/build/Release/libglance_preview_core.a"
 QL_EXECUTABLE="$APP_PATH/Contents/PlugIns/QLPlugin.appex/Contents/MacOS/QLPlugin"
 
 test -d "$APP_PATH"

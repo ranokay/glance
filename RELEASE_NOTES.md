@@ -12,5 +12,5 @@ preview core while preserving the native Swift/AppKit Quick Look experience.
 - The Go runtime and the SwiftCSV, ZIPFoundation, SWCompression, and BitByteData packages have been
   removed from the shipping app.
 
-This release remains Apple-silicon-only for macOS 26 or later. Its DMG is unsigned and
-unnotarized; verify the published SHA-256 checksum before installation.
+This release remains Apple-silicon-only for macOS 26 or later. The app is ad hoc signed; its DMG
+is not Developer ID-signed or notarized, so verify the published SHA-256 checksum before installation.

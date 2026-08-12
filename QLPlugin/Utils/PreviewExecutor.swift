@@ -1,6 +1,9 @@
 import Foundation
 
 /// Runs preview preparation outside the main actor and discards results after cancellation.
+///
+/// Cancellation does not interrupt a synchronous operation. The caller waits for it to finish,
+/// then its result is discarded; bounded parser limits keep that wait finite.
 enum PreviewExecutor {
 	static func run<Output: Sendable>(
 		_ operation: @escaping @Sendable () throws -> Output

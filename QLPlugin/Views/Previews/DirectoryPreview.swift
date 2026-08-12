@@ -100,7 +100,7 @@ class DirectoryPreview: Preview {
 					contentTypeIdentifier: entry.contentTypeIdentifier
 				)
 			} catch {
-				Log.parse.error("\(error.localizedDescription, privacy: .private)")
+				Log.general.error("\(error.localizedDescription, privacy: .private)")
 			}
 		}
 		return fileTree

@@ -177,7 +177,7 @@ impl TarScanner {
                     }
                     self.pending_long_name = self
                         .read_metadata(payload_size, padded_size)?
-                        .map(|payload| metadata_string(&payload));
+                        .map(|payload| tar_string(&payload));
                 }
                 TarEntryType::LongLink => {
                     if self.should_stop_before_skipping(padded_size) {
@@ -326,18 +326,23 @@ struct TarHeader {
 impl TarHeader {
     fn parse(block: &[u8; BLOCK_SIZE]) -> Result<Self, CoreError> {
         let stored_checksum = tar_integer(&block[148..156])?;
-        let computed_checksum = block
-            .iter()
-            .enumerate()
-            .fold(0_u64, |total, (index, byte)| {
-                total
-                    + u64::from(if (148..156).contains(&index) {
+        let (unsigned_checksum, signed_checksum) =
+            block
+                .iter()
+                .enumerate()
+                .fold((0_i64, 0_i64), |(unsigned, signed), (index, byte)| {
+                    let byte = if (148..156).contains(&index) {
                         b' '
                     } else {
                         *byte
-                    })
-            });
-        if stored_checksum != computed_checksum {
+                    };
+                    (unsigned + i64::from(byte), signed + i64::from(byte as i8))
+                });
+        let checksum_matches = match i64::try_from(stored_checksum) {
+            Ok(stored) => stored == unsigned_checksum || stored == signed_checksum,
+            Err(_) => false,
+        };
+        if !checksum_matches {
             return Err(CoreError::parse(
                 "TAR archive has an invalid header checksum",
             ));
@@ -447,14 +452,6 @@ fn tar_string(bytes: &[u8]) -> String {
     String::from_utf8_lossy(&bytes[..end]).into_owned()
 }
 
-fn metadata_string(bytes: &[u8]) -> String {
-    let end = bytes
-        .iter()
-        .position(|byte| *byte == 0)
-        .unwrap_or(bytes.len());
-    String::from_utf8_lossy(&bytes[..end]).into_owned()
-}
-
 fn tar_integer(bytes: &[u8]) -> Result<u64, CoreError> {
     if bytes.first().is_some_and(|byte| byte & 0x80 != 0) {
         let mut value = 0_u64;
@@ -519,6 +516,26 @@ mod tests {
         let gzip = fs::read(fixture("example.tar.gz")).unwrap();
         fs::write(&path, &gzip[..gzip.len() / 2]).unwrap();
         assert!(matches!(scan_tar(&path, true), Err(CoreError::Parse(_))));
+        fs::remove_file(path).unwrap();
+    }
+
+    #[test]
+    fn accepts_historic_signed_header_checksum() {
+        let path = temporary_path("tar");
+        let mut header = tar_header("signed.txt", 0, b'0');
+        header[265] = 0xff;
+        header[148..156].fill(b' ');
+        let checksum = header
+            .iter()
+            .map(|byte| i64::from(*byte as i8))
+            .sum::<i64>();
+        header[148..156].copy_from_slice(format!("{checksum:06o}\0 ").as_bytes());
+        let mut archive = header.to_vec();
+        archive.extend_from_slice(&[0_u8; BLOCK_SIZE * 2]);
+        fs::write(&path, archive).unwrap();
+
+        let payload = scan_tar(&path, false).unwrap();
+        assert_eq!(payload.entries[0].path, "signed.txt");
         fs::remove_file(path).unwrap();
     }
 

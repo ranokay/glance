@@ -30,6 +30,8 @@ class CodePreview: Preview {
 				return try HTMLRenderer.renderCode(source, lexer: lexer)
 			}
 			return WebPreviewVC(html: html, stylesheets: getStylesheets())
+		} catch let error as CancellationError {
+			throw error
 		} catch {
 			Log.render.error(
 				"Could not generate code HTML: \(error.localizedDescription, privacy: .private)"
