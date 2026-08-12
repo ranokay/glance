@@ -29,5 +29,5 @@ protocol PreviewStatusProviding: AnyObject {
 protocol Preview {
 	init()
 	@MainActor
-	func createPreviewVC(file: File) throws -> PreviewVC
+	func createPreviewVC(file: File) async throws -> PreviewVC
 }

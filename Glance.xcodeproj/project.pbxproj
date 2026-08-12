@@ -9,9 +9,11 @@
 /* Begin PBXBuildFile section */
 		102D56C526206A36000B5C0E /* MainVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 102D56C426206A36000B5C0E /* MainVC.swift */; };
 		103654F42F726241006F2538 /* SevenZipPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 103654F32F72623D006F2538 /* SevenZipPreview.swift */; };
-		10779BC42621502C008A903C /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 10779BC32621502C008A903C /* ZIPFoundation */; };
-		10779BEB26217F25008A903C /* SWCompression in Frameworks */ = {isa = PBXBuildFile; productRef = 10779BEA26217F25008A903C /* SWCompression */; };
-		10779C50262198EA008A903C /* htmlconverter.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7E42B61D245857D9008D7116 /* htmlconverter.a */; };
+		10779C50262198EA008A903C /* libglance_preview_core.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7E42B61D245857D9008D7116 /* libglance_preview_core.a */; };
+		A5A000000000000000000003 /* PreviewCoreBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A000000000000000000001 /* PreviewCoreBridge.swift */; };
+		A5A000000000000000000004 /* PreviewCoreBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A000000000000000000001 /* PreviewCoreBridge.swift */; };
+		A5A000000000000000000005 /* PreviewExecutor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A000000000000000000002 /* PreviewExecutor.swift */; };
+		A5A000000000000000000006 /* PreviewExecutor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A000000000000000000002 /* PreviewExecutor.swift */; };
 		A19F4D4226218B2B008A903C /* PreviewSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = A19F4D4526218B2B008A903C /* PreviewSupport.swift */; };
 		A19F4D4326218B2B008A903C /* PreviewSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = A19F4D4526218B2B008A903C /* PreviewSupport.swift */; };
 		A19F4D4426218B2B008A903C /* PreviewSupportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A19F4D4626218B2B008A903C /* PreviewSupportTests.swift */; };
@@ -20,10 +22,7 @@
 		C0DE00000000000000000203 /* PreviewFactoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE00000000000000000103 /* PreviewFactoryTests.swift */; };
 		C0DE00000000000000000204 /* PreviewSmokeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE00000000000000000104 /* PreviewSmokeTests.swift */; };
 		C0DE00000000000000000205 /* PlistCoverageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE00000000000000000105 /* PlistCoverageTests.swift */; };
-		C0DE00000000000000000206 /* SwiftCSV in Frameworks */ = {isa = PBXBuildFile; productRef = 7E616BAF244997420043F7AB /* SwiftCSV */; };
-		C0DE00000000000000000207 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 10779BC32621502C008A903C /* ZIPFoundation */; };
-		C0DE00000000000000000208 /* SWCompression in Frameworks */ = {isa = PBXBuildFile; productRef = 10779BEA26217F25008A903C /* SWCompression */; };
-		C0DE00000000000000000209 /* htmlconverter.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7E42B61D245857D9008D7116 /* htmlconverter.a */; };
+		C0DE00000000000000000209 /* libglance_preview_core.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7E42B61D245857D9008D7116 /* libglance_preview_core.a */; };
 		C0DE00000000000000000301 /* PreviewSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = A19F4D4526218B2B008A903C /* PreviewSupport.swift */; };
 		C0DE00000000000000000302 /* Log.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EE10F82244F6774007214D8 /* Log.swift */; };
 		C0DE00000000000000000303 /* Date.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E21C89024390E3100818EB2 /* Date.swift */; };
@@ -87,7 +86,6 @@
 		7E458AF0243944810091BD0F /* URL.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E458AEF243944810091BD0F /* URL.swift */; };
 		7E458AF52439481F0091BD0F /* Menu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E458AF42439481F0091BD0F /* Menu.swift */; };
 		7E45F899244DA45500BFB869 /* FileTree.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E45F898244DA45500BFB869 /* FileTree.swift */; };
-		7E616BB0244997420043F7AB /* SwiftCSV in Frameworks */ = {isa = PBXBuildFile; productRef = 7E616BAF244997420043F7AB /* SwiftCSV */; };
 		7E616BB2244998650043F7AB /* MainVC.xib in Resources */ = {isa = PBXBuildFile; fileRef = 7E616BB1244998650043F7AB /* MainVC.xib */; };
 		7E6EF1FD240CC802009E4199 /* Quartz.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7E6EF1FC240CC802009E4199 /* Quartz.framework */; };
 		7E6EF208240CC802009E4199 /* QLPlugin.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 7E6EF1FA240CC802009E4199 /* QLPlugin.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -191,6 +189,8 @@
 		10779C1126218B2B008A903C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A19F4D4526218B2B008A903C /* PreviewSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewSupport.swift; sourceTree = "<group>"; };
 		A19F4D4626218B2B008A903C /* PreviewSupportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewSupportTests.swift; sourceTree = "<group>"; };
+		A5A000000000000000000001 /* PreviewCoreBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewCoreBridge.swift; sourceTree = "<group>"; };
+		A5A000000000000000000002 /* PreviewExecutor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewExecutor.swift; sourceTree = "<group>"; };
 		C0DE00000000000000000101 /* FileTreeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileTreeTests.swift; sourceTree = "<group>"; };
 		C0DE00000000000000000102 /* FileTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileTests.swift; sourceTree = "<group>"; };
 		C0DE00000000000000000103 /* PreviewFactoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewFactoryTests.swift; sourceTree = "<group>"; };
@@ -223,8 +223,8 @@
 		7E21C89024390E3100818EB2 /* Date.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Date.swift; sourceTree = "<group>"; };
 		7E3DF744242CBE7F00DE7CD6 /* Main.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = Main.storyboard; sourceTree = "<group>"; };
 		7E413F7F2418DD6200CFBB1D /* TSVPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TSVPreview.swift; sourceTree = "<group>"; };
-		7E42B61C245857D9008D7116 /* htmlconverter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = htmlconverter.h; path = HTMLConverter/htmlconverter.h; sourceTree = "<group>"; };
-		7E42B61D245857D9008D7116 /* htmlconverter.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = htmlconverter.a; path = HTMLConverter/htmlconverter.a; sourceTree = "<group>"; };
+		7E42B61C245857D9008D7116 /* glance_preview_core.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = glance_preview_core.h; path = PreviewCore/include/glance_preview_core.h; sourceTree = "<group>"; };
+		7E42B61D245857D9008D7116 /* libglance_preview_core.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libglance_preview_core.a; path = "PreviewCore/build/$(CONFIGURATION)/libglance_preview_core.a"; sourceTree = "<group>"; };
 		7E458AEF243944810091BD0F /* URL.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URL.swift; sourceTree = "<group>"; };
 		7E458AF42439481F0091BD0F /* Menu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Menu.swift; sourceTree = "<group>"; };
 		7E45F898244DA45500BFB869 /* FileTree.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileTree.swift; sourceTree = "<group>"; };
@@ -288,10 +288,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C0DE00000000000000000208 /* SWCompression in Frameworks */,
-				C0DE00000000000000000209 /* htmlconverter.a in Frameworks */,
-				C0DE00000000000000000206 /* SwiftCSV in Frameworks */,
-				C0DE00000000000000000207 /* ZIPFoundation in Frameworks */,
+				C0DE00000000000000000209 /* libglance_preview_core.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -299,11 +296,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				7E616BB0244997420043F7AB /* SwiftCSV in Frameworks */,
-				10779C50262198EA008A903C /* htmlconverter.a in Frameworks */,
+				10779C50262198EA008A903C /* libglance_preview_core.a in Frameworks */,
 				7E6EF1FD240CC802009E4199 /* Quartz.framework in Frameworks */,
-				10779BEB26217F25008A903C /* SWCompression in Frameworks */,
-				10779BC42621502C008A903C /* ZIPFoundation in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -343,6 +337,8 @@
 				7EAC01EB240D220B009505D0 /* File.swift */,
 				7E45F898244DA45500BFB869 /* FileTree.swift */,
 				7E1B16912455D93E00E2B84D /* HTMLRenderer.swift */,
+				A5A000000000000000000001 /* PreviewCoreBridge.swift */,
+				A5A000000000000000000002 /* PreviewExecutor.swift */,
 				7E9F0D7924168870007F1008 /* WebAsset */,
 			);
 			path = Utils;
@@ -449,8 +445,8 @@
 		7E6EF1FB240CC802009E4199 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				7E42B61D245857D9008D7116 /* htmlconverter.a */,
-				7E42B61C245857D9008D7116 /* htmlconverter.h */,
+				7E42B61D245857D9008D7116 /* libglance_preview_core.a */,
+				7E42B61C245857D9008D7116 /* glance_preview_core.h */,
 				7E6EF1FC240CC802009E4199 /* Quartz.framework */,
 			);
 			name = Frameworks;
@@ -606,9 +602,6 @@
 			);
 			name = GlanceTests;
 			packageProductDependencies = (
-				7E616BAF244997420043F7AB /* SwiftCSV */,
-				10779BC32621502C008A903C /* ZIPFoundation */,
-				10779BEA26217F25008A903C /* SWCompression */,
 			);
 			productName = GlanceTests;
 			productReference = 10779C0D26218B2B008A903C /* GlanceTests.xctest */;
@@ -630,9 +623,6 @@
 			);
 			name = QLPlugin;
 			packageProductDependencies = (
-				7E616BAF244997420043F7AB /* SwiftCSV */,
-				10779BC32621502C008A903C /* ZIPFoundation */,
-				10779BEA26217F25008A903C /* SWCompression */,
 			);
 			productName = QLPlugin;
 			productReference = 7E6EF1FA240CC802009E4199 /* QLPlugin.appex */;
@@ -692,9 +682,6 @@
 			);
 			mainGroup = 7ECC8CE5240CB4CC000D6970;
 			packageReferences = (
-				7E616BAE244997420043F7AB /* XCRemoteSwiftPackageReference "SwiftCSV" */,
-				10779BC22621502C008A903C /* XCRemoteSwiftPackageReference "ZIPFoundation" */,
-				10779BE926217F25008A903C /* XCRemoteSwiftPackageReference "SWCompression" */,
 			);
 			productRefGroup = 7ECC8CEF240CB4CC000D6970 /* Products */;
 			projectDirPath = "";
@@ -775,19 +762,29 @@
 			);
 			inputPaths = (
 				"$(PROJECT_DIR)/mise.toml",
-				"$(PROJECT_DIR)/HTMLConverter/go.mod",
-				"$(PROJECT_DIR)/HTMLConverter/go.sum",
-				"$(PROJECT_DIR)/HTMLConverter/htmlconverter.go",
+				"$(PROJECT_DIR)/PreviewCore/Cargo.toml",
+				"$(PROJECT_DIR)/PreviewCore/Cargo.lock",
+				"$(PROJECT_DIR)/PreviewCore/build-xcode.sh",
+				"$(PROJECT_DIR)/PreviewCore/src/error.rs",
+				"$(PROJECT_DIR)/PreviewCore/src/ffi.rs",
+				"$(PROJECT_DIR)/PreviewCore/src/highlight.rs",
+				"$(PROJECT_DIR)/PreviewCore/src/lib.rs",
+				"$(PROJECT_DIR)/PreviewCore/src/markdown.rs",
+				"$(PROJECT_DIR)/PreviewCore/src/model.rs",
+				"$(PROJECT_DIR)/PreviewCore/src/notebook.rs",
+				"$(PROJECT_DIR)/PreviewCore/src/sevenzip.rs",
+				"$(PROJECT_DIR)/PreviewCore/src/tar.rs",
+				"$(PROJECT_DIR)/PreviewCore/src/tsv.rs",
+				"$(PROJECT_DIR)/PreviewCore/src/zip.rs",
 			);
 			outputFileListPaths = (
 			);
 			outputPaths = (
-				"$(PROJECT_DIR)/HTMLConverter/htmlconverter.a",
-				"$(PROJECT_DIR)/HTMLConverter/htmlconverter.h",
+				"$(PROJECT_DIR)/PreviewCore/build/$(CONFIGURATION)/libglance_preview_core.a",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "cd \"$PROJECT_DIR/HTMLConverter\"\nset -e\nif [ \"$(uname -m)\" != \"arm64\" ]; then\n\techo \"Apple Silicon is required to build HTMLConverter\" >&2\n\texit 1\nfi\n[ ! -d /opt/homebrew ] || eval \"$(/opt/homebrew/bin/brew shellenv)\"\nMISE_BIN=\"${MISE_BIN:-}\"\nif [ -z \"$MISE_BIN\" ]; then\n\tif command -v mise >/dev/null 2>&1; then\n\t\tMISE_BIN=\"$(command -v mise)\"\n\telif [ -x \"$HOME/.local/bin/mise\" ]; then\n\t\tMISE_BIN=\"$HOME/.local/bin/mise\"\n\telif [ -x \"/opt/homebrew/bin/mise\" ]; then\n\t\tMISE_BIN=\"/opt/homebrew/bin/mise\"\n\telif [ -x \"/usr/local/bin/mise\" ]; then\n\t\tMISE_BIN=\"/usr/local/bin/mise\"\n\tfi\nfi\nif [ -z \"$MISE_BIN\" ]; then\n\techo \"mise is required to build HTMLConverter with the pinned Go toolchain\" >&2\n\texit 1\nfi\nexport MISE_TRUSTED_CONFIG_PATHS=\"$PROJECT_DIR${MISE_TRUSTED_CONFIG_PATHS:+:$MISE_TRUSTED_CONFIG_PATHS}\"\nrm -f htmlconverter*.a htmlconverter*.h\nexport MACOSX_DEPLOYMENT_TARGET=\"${MACOSX_DEPLOYMENT_TARGET:-26.0}\"\nexport CGO_CFLAGS=\"-mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET} ${CGO_CFLAGS}\"\nexport CGO_LDFLAGS=\"-mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET} ${CGO_LDFLAGS}\"\n# Force rebuilds so cached Go objects use the selected macOS deployment target.\nGOOS=darwin GOARCH=arm64 CGO_ENABLED=1 \"$MISE_BIN\" exec -- go build -a --buildmode=c-archive -ldflags \"-s -w\" -o ./htmlconverter.a\n";
+			shellScript = "\"$PROJECT_DIR/PreviewCore/build-xcode.sh\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -799,6 +796,8 @@
 				D1A000000000000000000003 /* DirectoryPreview.swift in Sources */,
 				D1A000000000000000000005 /* DirectoryPreviewTests.swift in Sources */,
 				D2A000000000000000000003 /* DirectoryThumbnailLoader.swift in Sources */,
+				A5A000000000000000000004 /* PreviewCoreBridge.swift in Sources */,
+				A5A000000000000000000006 /* PreviewExecutor.swift in Sources */,
 				D2A000000000000000000005 /* DirectoryThumbnailTests.swift in Sources */,
 				D4A000000000000000000003 /* NestedPreviewProvider.swift in Sources */,
 				D4A000000000000000000005 /* NestedPreviewTests.swift in Sources */,
@@ -849,6 +848,8 @@
 			files = (
 				D1A000000000000000000002 /* DirectoryPreview.swift in Sources */,
 				D2A000000000000000000002 /* DirectoryThumbnailLoader.swift in Sources */,
+				A5A000000000000000000003 /* PreviewCoreBridge.swift in Sources */,
+				A5A000000000000000000005 /* PreviewExecutor.swift in Sources */,
 				D4A000000000000000000002 /* NestedPreviewProvider.swift in Sources */,
 				D5A000000000000000000002 /* OpenWithService.swift in Sources */,
 				D6A000000000000000000002 /* OpenWithBridge.swift in Sources */,
@@ -936,7 +937,7 @@
 					"@loader_path/../Frameworks",
 				);
 				LIBRARY_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/HTMLConverter",
+					"$(PROJECT_DIR)/PreviewCore/build/$(CONFIGURATION)",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.chamburr.Glance.GlanceTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -964,7 +965,7 @@
 					"@loader_path/../Frameworks",
 				);
 				LIBRARY_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/HTMLConverter",
+					"$(PROJECT_DIR)/PreviewCore/build/$(CONFIGURATION)",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.chamburr.Glance.GlanceTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -982,7 +983,7 @@
 				CODE_SIGN_ENTITLEMENTS = QLPlugin/QLPlugin.entitlements;
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 19;
+				CURRENT_PROJECT_VERSION = 20;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -994,9 +995,9 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				LIBRARY_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/HTMLConverter",
+					"$(PROJECT_DIR)/PreviewCore/build/$(CONFIGURATION)",
 				);
-				MARKETING_VERSION = 1.5.9;
+				MARKETING_VERSION = 1.6.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.chamburr.Glance.QLPlugin;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1013,7 +1014,7 @@
 				CODE_SIGN_ENTITLEMENTS = QLPlugin/QLPlugin.entitlements;
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 19;
+				CURRENT_PROJECT_VERSION = 20;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1025,9 +1026,9 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				LIBRARY_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/HTMLConverter",
+					"$(PROJECT_DIR)/PreviewCore/build/$(CONFIGURATION)",
 				);
-				MARKETING_VERSION = 1.5.9;
+				MARKETING_VERSION = 1.6.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.chamburr.Glance.QLPlugin;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1168,7 +1169,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 19;
+				CURRENT_PROJECT_VERSION = 20;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1177,7 +1178,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.5.9;
+				MARKETING_VERSION = 1.6.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.chamburr.Glance;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1194,7 +1195,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 19;
+				CURRENT_PROJECT_VERSION = 20;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1203,7 +1204,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.5.9;
+				MARKETING_VERSION = 1.6.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.chamburr.Glance;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1252,50 +1253,6 @@
 		};
 /* End XCConfigurationList section */
 
-/* Begin XCRemoteSwiftPackageReference section */
-		10779BC22621502C008A903C /* XCRemoteSwiftPackageReference "ZIPFoundation" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/weichsel/ZIPFoundation";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 0.9.20;
-			};
-		};
-		10779BE926217F25008A903C /* XCRemoteSwiftPackageReference "SWCompression" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/tsolomko/SWCompression";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 4.9.1;
-			};
-		};
-		7E616BAE244997420043F7AB /* XCRemoteSwiftPackageReference "SwiftCSV" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/swiftcsv/SwiftCSV";
-			requirement = {
-				kind = upToNextMinorVersion;
-				minimumVersion = 0.10.0;
-			};
-		};
-/* End XCRemoteSwiftPackageReference section */
-
-/* Begin XCSwiftPackageProductDependency section */
-		10779BC32621502C008A903C /* ZIPFoundation */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 10779BC22621502C008A903C /* XCRemoteSwiftPackageReference "ZIPFoundation" */;
-			productName = ZIPFoundation;
-		};
-		10779BEA26217F25008A903C /* SWCompression */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 10779BE926217F25008A903C /* XCRemoteSwiftPackageReference "SWCompression" */;
-			productName = SWCompression;
-		};
-		7E616BAF244997420043F7AB /* SwiftCSV */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 7E616BAE244997420043F7AB /* XCRemoteSwiftPackageReference "SwiftCSV" */;
-			productName = SwiftCSV;
-		};
-/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 7ECC8CE6240CB4CC000D6970 /* Project object */;
 }

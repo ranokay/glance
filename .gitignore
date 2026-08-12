@@ -1,13 +1,9 @@
 # Xcode
 project.xcworkspace/
-!Glance.xcodeproj/project.xcworkspace/
-!Glance.xcodeproj/project.xcworkspace/xcshareddata/
-!Glance.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/
-!Glance.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
 xcuserdata/
 build/
 .DS_Store
 
-# `go build` output
-HTMLConverter/htmlconverter*.a
-HTMLConverter/htmlconverter*.h
+# Rust build output
+PreviewCore/build/
+PreviewCore/target/

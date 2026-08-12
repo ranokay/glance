@@ -59,59 +59,23 @@ jobs:
 
       - name: Install pinned tools
         env:
+          GITHUB_TOKEN: ${{ github.token }}
           MISE_YES: "1"
         run: |
           set -euo pipefail
           mise trust mise.toml
           mise install
+          mise exec -- rustup component add rustfmt clippy
 
-      - name: Run tests
+      - name: Run production verification
         run: |
           set -euo pipefail
-          mise run test
+          mise run verify
 
-      - name: Build release app
+      - name: Verify release app
         run: |
           set -euo pipefail
-          mise run clean
-          mise run build
-
-      - name: Verify Apple Silicon artifacts
-        run: |
-          set -euo pipefail
-
-          APP_PATH="build/Build/Products/Release/Glance.app"
-          test -d "$APP_PATH"
-          lipo -info HTMLConverter/htmlconverter.a | tee /tmp/htmlconverter-lipo.txt
-          if grep -q "x86_64" /tmp/htmlconverter-lipo.txt; then
-            echo "HTMLConverter archive contains x86_64" >&2
-            exit 1
-          fi
-          if ! grep -q "arm64" /tmp/htmlconverter-lipo.txt; then
-            echo "HTMLConverter archive does not contain arm64" >&2
-            exit 1
-          fi
-
-          found_macho=0
-          while IFS= read -r -d '' candidate; do
-            if info="$(lipo -info "$candidate" 2>/dev/null)"; then
-              found_macho=1
-              echo "$info"
-              if echo "$info" | grep -q "x86_64"; then
-                echo "Bundle artifact contains x86_64: $candidate" >&2
-                exit 1
-              fi
-              if ! echo "$info" | grep -q "arm64"; then
-                echo "Bundle artifact does not contain arm64: $candidate" >&2
-                exit 1
-              fi
-            fi
-          done < <(find "$APP_PATH" -type f -print0)
-
-          if [ "$found_macho" -eq 0 ]; then
-            echo "No Mach-O artifacts found in $APP_PATH" >&2
-            exit 1
-          fi
+          mise run verify:app
 
       - name: Package DMG
         env:
@@ -155,11 +119,24 @@ jobs:
           DMG_PATH="dist/Glance-${VERSION}.dmg"
           MOUNT_DIR="$(mktemp -d)"
 
+          (cd dist && shasum -a 256 -c "Glance-${VERSION}.dmg.sha256")
           hdiutil attach "$DMG_PATH" -mountpoint "$MOUNT_DIR" -nobrowse -quiet
           trap 'hdiutil detach "$MOUNT_DIR" -quiet || true; rmdir "$MOUNT_DIR" || true' EXIT
 
           test -d "$MOUNT_DIR/Glance.app"
           test -d "$MOUNT_DIR/Glance.app/Contents/PlugIns/QLPlugin.appex"
+          test "$(plutil -extract CFBundleShortVersionString raw -o - "$MOUNT_DIR/Glance.app/Contents/Info.plist")" = "$VERSION"
+          codesign --verify --deep --strict --verbose=2 "$MOUNT_DIR/Glance.app"
+          QL_EXECUTABLE="$MOUNT_DIR/Glance.app/Contents/PlugIns/QLPlugin.appex/Contents/MacOS/QLPlugin"
+          lipo -info "$QL_EXECUTABLE" | grep -q "arm64"
+          if lipo -info "$QL_EXECUTABLE" | grep -q "x86_64"; then
+            echo "Published Quick Look executable contains x86_64" >&2
+            exit 1
+          fi
+          if strings "$QL_EXECUTABLE" | grep -Eq 'go\.buildid|runtime\.morestack|github\.com/alecthomas/chroma|github\.com/yuin/goldmark'; then
+            echo "Published Quick Look executable contains the removed Go runtime" >&2
+            exit 1
+          fi
 
           hdiutil detach "$MOUNT_DIR" -quiet
           trap - EXIT
@@ -178,4 +155,4 @@ jobs:
             "dist/Glance-${VERSION}.dmg.sha256" \
             --repo "$GITHUB_REPOSITORY" \
             --title "Glance ${VERSION}" \
-            --notes "Glance ${VERSION} for Apple silicon Macs running macOS 26 or later. This DMG is unsigned and unnotarized, so you may need to remove quarantine after installing. Verify the download with the attached SHA-256 checksum."
+            --notes-file RELEASE_NOTES.md

@@ -8,6 +8,7 @@ final class PlistCoverageTests: XCTestCase {
 			"org.7-zip.7-zip-archive",
 			"com.sun.java-archive",
 			"com.sun.web-application-archive",
+			"org.gnu.gnu-zip-archive",
 			"org.gnu.gnu-zip-tar-archive",
 			"public.tar-archive",
 			"public.zip-archive",
@@ -71,9 +72,15 @@ final class PlistCoverageTests: XCTestCase {
 				.appendingPathComponent("release.yml"),
 			encoding: .utf8
 		)
+		let rustBuildScriptContents = try String(
+			contentsOf: repositoryRoot()
+				.appendingPathComponent("PreviewCore", isDirectory: true)
+				.appendingPathComponent("build-xcode.sh"),
+			encoding: .utf8
+		)
 
 		XCTAssertTrue(projectContents.contains("MACOSX_DEPLOYMENT_TARGET = 26.0;"))
-		XCTAssertTrue(projectContents.contains("MACOSX_DEPLOYMENT_TARGET:-26.0"))
+		XCTAssertTrue(rustBuildScriptContents.contains("MACOSX_DEPLOYMENT_TARGET:-26.0"))
 		XCTAssertFalse(projectContents.contains("MACOSX_DEPLOYMENT_TARGET = 15.0;"))
 		XCTAssertTrue(workflowContents.contains("runs-on: macos-26"))
 		XCTAssertTrue(workflowContents.contains("Release builds require Xcode 26"))
@@ -85,13 +92,13 @@ final class PlistCoverageTests: XCTestCase {
 			encoding: .utf8
 		)
 
-		XCTAssertTrue(miseContents.contains("go = \"1.26.5\""))
+		XCTAssertTrue(miseContents.contains("rust = \"1.97.1\""))
 		XCTAssertTrue(miseContents.contains("swiftformat = \"0.61.1\""))
 		XCTAssertTrue(miseContents.contains("swiftlint = \"0.63.3\""))
 		XCTAssertFalse(miseContents.contains("= \"latest\""))
 	}
 
-	func testReleaseMetadataUsesVersion1_5_9Build19() throws {
+	func testReleaseMetadataUsesVersion1_6_0Build20() throws {
 		let projectContents = try String(
 			contentsOf: repositoryRoot()
 				.appendingPathComponent("Glance.xcodeproj", isDirectory: true)
@@ -111,16 +118,16 @@ final class PlistCoverageTests: XCTestCase {
 		)
 
 		XCTAssertEqual(
-			projectContents.components(separatedBy: "MARKETING_VERSION = 1.5.9;").count - 1,
+			projectContents.components(separatedBy: "MARKETING_VERSION = 1.6.0;").count - 1,
 			4
 		)
 		XCTAssertEqual(
-			projectContents.components(separatedBy: "CURRENT_PROJECT_VERSION = 19;").count - 1,
+			projectContents.components(separatedBy: "CURRENT_PROJECT_VERSION = 20;").count - 1,
 			4
 		)
-		XCTAssertTrue(readmeContents.contains("Version 1.5.9 (build 19)"))
-		XCTAssertTrue(readmeContents.contains("Version **1.5.9** (build **19**)"))
-		XCTAssertTrue(listingContents.contains("Version 1.5.9"))
+		XCTAssertTrue(readmeContents.contains("Version 1.6.0 (build 20)"))
+		XCTAssertTrue(readmeContents.contains("Version **1.6.0** (build **20**)"))
+		XCTAssertTrue(listingContents.contains("Version 1.6.0"))
 	}
 
 	func testUserFacingRepositoryLinksPointToMaintainedFork() throws {

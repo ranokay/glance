@@ -2,7 +2,7 @@ See what's in your files without opening them!
 
 Glance boosts your productivity by providing Quick Look previews for files that macOS doesn't support out of the box.
 
-Version 1.5.9 is built for Apple silicon Macs running macOS 26 or later.
+Version 1.6.0 is built for Apple silicon Macs running macOS 26 or later.
 
 Features:
 • Beautiful file previews for various file types

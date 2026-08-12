@@ -49,7 +49,7 @@ final class NestedPreviewTests: XCTestCase {
 		)))
 	}
 
-	func testProviderBuildsSupportedAndNativeControllers() throws {
+	func testProviderBuildsSupportedAndNativeControllers() async throws {
 		let markdownURL = try writeFile(named: "README.md", contents: "# Nested")
 		let imageURL = try writeFile(named: "image.png", contents: "")
 		let provider = DefaultNestedPreviewProvider()
@@ -58,16 +58,18 @@ final class NestedPreviewTests: XCTestCase {
 		let imageNode = node(named: imageURL.lastPathComponent, type: .png)
 		imageNode.fileURL = imageURL
 
-		XCTAssertTrue(try provider.makePreviewController(for: markdownNode) is WebPreviewVC)
+		let generatedMarkdownPreview = try await provider.makePreviewController(for: markdownNode)
+		XCTAssertTrue(generatedMarkdownPreview is WebPreviewVC)
+		let generatedNativePreview = try await provider.makePreviewController(for: imageNode)
 		let nativePreview = try XCTUnwrap(
-			provider.makePreviewController(for: imageNode) as? NativePreviewVC
+			generatedNativePreview as? NativePreviewVC
 		)
 		XCTAssertEqual(nativePreview.fileURL, imageURL)
 		XCTAssertNotNil(nativePreview.previewView)
 		XCTAssertFalse(try XCTUnwrap(nativePreview.previewView).shouldCloseWithWindow)
 	}
 
-	func testProviderRejectsOversizedSupportedNestedFiles() throws {
+	func testProviderRejectsOversizedSupportedNestedFiles() async throws {
 		let markdownURL = try writeFile(named: "Oversized.md", contents: "")
 		let fileHandle = try FileHandle(forWritingTo: markdownURL)
 		try fileHandle.truncate(atOffset: UInt64(PreviewPolicy.maximumFileSize + 1))
@@ -75,9 +77,10 @@ final class NestedPreviewTests: XCTestCase {
 		let markdownNode = node(named: markdownURL.lastPathComponent, type: .plainText)
 		markdownNode.fileURL = markdownURL
 
-		XCTAssertThrowsError(
-			try DefaultNestedPreviewProvider().makePreviewController(for: markdownNode)
-		) { error in
+		do {
+			_ = try await DefaultNestedPreviewProvider().makePreviewController(for: markdownNode)
+			XCTFail("Expected an oversized nested file to be rejected")
+		} catch {
 			guard case let PreviewError.fileSizeError(path) = error else {
 				return XCTFail("Expected the shared preview size error, got \(error)")
 			}
@@ -121,7 +124,7 @@ final class NestedPreviewTests: XCTestCase {
 		XCTAssertIdentical(interactionDelegate.previewedNode, package)
 	}
 
-	func testBackRestoresTheRetainedFolderControllerAndItsState() throws {
+	func testBackRestoresTheRetainedFolderControllerAndItsState() async throws {
 		let folderURL = try makeDirectory(named: "folder")
 		let fileURL = try writeFile(named: "folder/file.txt", contents: "nested")
 		let fileNode = node(named: fileURL.lastPathComponent, type: .plainText)
@@ -152,6 +155,7 @@ final class NestedPreviewTests: XCTestCase {
 		let retainedScrollOrigin = clipView.bounds.origin
 
 		mainVC.outlinePreview(previewVC, requestPreviewOf: try XCTUnwrap(retainedSelection))
+		try await waitUntil { mainVC.currentPreviewController === nestedController }
 
 		XCTAssertIdentical(mainVC.currentPreviewController, nestedController)
 		XCTAssertFalse(mainVC.backButton.isHidden)
@@ -176,7 +180,7 @@ final class NestedPreviewTests: XCTestCase {
 		XCTAssertEqual(mainVC.statusLabel.stringValue, "1 items")
 	}
 
-	func testFailedNestedPreviewLeavesFolderVisibleAndShowsNonmodalError() throws {
+	func testFailedNestedPreviewLeavesFolderVisibleAndShowsNonmodalError() async throws {
 		let folderURL = try makeDirectory(named: "failure-folder")
 		let fileURL = try writeFile(named: "failure-folder/file.bin", contents: "data")
 		let fileNode = node(named: fileURL.lastPathComponent, type: .data)
@@ -190,6 +194,7 @@ final class NestedPreviewTests: XCTestCase {
 		mainVC.installTopLevelPreview(previewVC, file: try File(url: folderURL))
 
 		mainVC.outlinePreview(previewVC, requestPreviewOf: fileNode)
+		try await waitUntil { mainVC.statusLabel.stringValue == "Couldn’t preview file.bin" }
 
 		XCTAssertIdentical(mainVC.currentPreviewController, previewVC)
 		XCTAssertNil(mainVC.nestedPreviewController)
@@ -287,6 +292,20 @@ final class NestedPreviewTests: XCTestCase {
 		try contents.write(to: fileURL, atomically: true, encoding: .utf8)
 		return fileURL
 	}
+
+	private func waitUntil(
+		timeout: Duration = .seconds(2),
+		condition: @escaping @MainActor () -> Bool
+	) async throws {
+		let clock = ContinuousClock()
+		let deadline = clock.now.advanced(by: timeout)
+		while !condition() {
+			guard clock.now < deadline else {
+				throw TestNestedPreviewError.timedOut
+			}
+			try await Task.sleep(for: .milliseconds(5))
+		}
+	}
 }
 
 @MainActor
@@ -311,7 +330,7 @@ private final class StubNestedPreviewProvider: NestedPreviewProviding {
 		self.result = result
 	}
 
-	func makePreviewController(for _: FileTreeNode) throws -> PreviewVC {
+	func makePreviewController(for _: FileTreeNode) async throws -> PreviewVC {
 		try result.get()
 	}
 }
@@ -343,4 +362,5 @@ private final class StubPreviewVC: NSViewController, PreviewVC, PreviewStatusPro
 
 private enum TestNestedPreviewError: Error {
 	case failed
+	case timedOut
 }

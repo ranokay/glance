@@ -1,5 +1,6 @@
 [tools]
-go = "1.26.5"
+"cargo:cargo-audit" = "0.22.2"
+rust = "1.97.1"
 swiftformat = "0.61.1"
 swiftlint = "0.63.3"
 
@@ -58,7 +59,7 @@ INSTALL_PATH="${INSTALL_PATH:-/Applications}"
 echo "Checking extension status..."
 echo ""
 echo "Extension registration:"
-pluginkit -m -v | grep -A3 -i "$APP_NAME" || echo "Not registered"
+pluginkit -m -A -D -v | grep -A3 -i "$APP_NAME" || echo "Not registered"
 echo ""
 echo "Installed location:"
 ls -la "$INSTALL_PATH/$APP_NAME.app/Contents/PlugIns/"*.appex 2>/dev/null || echo "Not found"
@@ -73,7 +74,8 @@ APP_NAME="${APP_NAME:-Glance}"
 echo "Cleaning build artifacts..."
 rm -rf build
 rm -rf "$HOME/Library/Developer/Xcode/DerivedData/$APP_NAME"-*
-rm -f HTMLConverter/htmlconverter*.a HTMLConverter/htmlconverter*.h
+cargo clean --manifest-path PreviewCore/Cargo.toml
+rm -rf PreviewCore/build
 echo "Clean complete"
 '''
 
@@ -100,9 +102,24 @@ mise run register
 mise run reset
 '''
 
-[tasks."test:go"]
-description = "Run Go tests for HTMLConverter"
-run = "cd HTMLConverter && go test ./..."
+[tasks."test:rust"]
+description = "Check and test PreviewCore with the pinned Rust toolchain"
+run = '''
+set -e
+cargo fmt --manifest-path PreviewCore/Cargo.toml --check
+cargo clippy --manifest-path PreviewCore/Cargo.toml --locked --all-targets -- -D warnings
+cargo test --manifest-path PreviewCore/Cargo.toml --locked
+'''
+
+[tasks."audit:rust"]
+description = "Audit PreviewCore's locked Rust dependency graph"
+run = '''
+# syntect 5.3.0 still requires these two unmaintained serialization crates. Neither advisory
+# reports a vulnerability, and both are isolated behind two-face's bundled syntax data.
+cargo audit --file PreviewCore/Cargo.lock --deny warnings \
+	--ignore RUSTSEC-2025-0141 \
+	--ignore RUSTSEC-2024-0320
+'''
 
 [tasks."test:xcode"]
 description = "Run Xcode tests"
@@ -116,7 +133,7 @@ xcodebuild test -scheme "$APP_NAME" -configuration Debug -derivedDataPath build 
 description = "Run all tests"
 run = '''
 set -e
-mise run test:go
+mise run test:rust
 mise run test:xcode
 '''
 
@@ -125,6 +142,56 @@ description = "Run tests and build the release app from a clean build directory"
 run = '''
 set -e
 mise run test
+mise run audit:rust
 mise run clean
 mise run build
+'''
+
+[tasks."verify:app"]
+description = "Verify release architecture, deployment target, runtimes, and signatures"
+run = '''
+set -e
+APP_NAME="${APP_NAME:-Glance}"
+APP_PATH="build/Build/Products/Release/$APP_NAME.app"
+RUST_ARCHIVE="PreviewCore/build/Release/libglance_preview_core.a"
+QL_EXECUTABLE="$APP_PATH/Contents/PlugIns/QLPlugin.appex/Contents/MacOS/QLPlugin"
+
+test -d "$APP_PATH"
+test -f "$RUST_ARCHIVE"
+test -x "$QL_EXECUTABLE"
+
+lipo -info "$RUST_ARCHIVE" | grep -q "arm64"
+if lipo -info "$RUST_ARCHIVE" | grep -q "x86_64"; then
+	echo "PreviewCore archive contains x86_64" >&2
+	exit 1
+fi
+
+found_macho=0
+candidate_list="$(mktemp)"
+trap 'rm -f "$candidate_list"' EXIT
+find "$APP_PATH" -type f -print > "$candidate_list"
+while IFS= read -r candidate; do
+	if info="$(lipo -info "$candidate" 2>/dev/null)"; then
+		found_macho=1
+		echo "$info"
+		echo "$info" | grep -q "arm64"
+		if echo "$info" | grep -q "x86_64"; then
+			echo "Bundle artifact contains x86_64: $candidate" >&2
+			exit 1
+		fi
+		xcrun vtool -show-build "$candidate" | grep -q "minos 26.0"
+	fi
+done < "$candidate_list"
+test "$found_macho" -eq 1
+
+if strings "$QL_EXECUTABLE" | grep -Eq 'go\.buildid|runtime\.morestack|github\.com/alecthomas/chroma|github\.com/yuin/goldmark'; then
+	echo "Quick Look executable still contains the removed Go runtime" >&2
+	exit 1
+fi
+if find "$APP_PATH" -type d \( -name SwiftCSV.framework -o -name ZIPFoundation.framework -o -name SWCompression.framework -o -name BitByteData.framework \) | grep -q .; then
+	echo "App bundle contains a removed Swift parser framework" >&2
+	exit 1
+fi
+
+codesign --verify --deep --strict --verbose=2 "$APP_PATH"
 '''

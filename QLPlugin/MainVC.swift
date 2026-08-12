@@ -22,6 +22,12 @@ class MainVC: NSViewController, QLPreviewingController {
 	let stats = Stats()
 	var nestedPreviewProvider: NestedPreviewProviding = DefaultNestedPreviewProvider()
 	var openWithService = OpenWithService()
+	var containingAppIsRunning = {
+		!NSRunningApplication.runningApplications(
+			withBundleIdentifier: MainVC.containingAppBundleID
+		).isEmpty
+	}
+
 	private(set) var currentPreviewController: PreviewVC?
 	private(set) var topLevelPreviewController: PreviewVC?
 	private(set) var folderPreviewController: OutlinePreviewVC?
@@ -36,6 +42,9 @@ class MainVC: NSViewController, QLPreviewingController {
 	private(set) var openWithTargetURL: URL?
 	private var baseStatusText = ""
 	private var statusResetTask: Task<Void, Never>?
+	private var previewPreparationTask: Task<Void, Error>?
+	private var previewPreparationID: UUID?
+	private var nestedPreviewTask: Task<Void, Never>?
 	private weak var boundStatusProvider: (any PreviewStatusProviding)?
 
 	override func loadView() {
@@ -126,68 +135,87 @@ class MainVC: NSViewController, QLPreviewingController {
 		at fileUrl: URL,
 		completionHandler handler: @escaping @Sendable (Error?) -> Void
 	) {
-		DispatchQueue.main.async {
-			// Only preview files when the containing app is running
-			if NSRunningApplication.runningApplications(
-				withBundleIdentifier: Self.containingAppBundleID
-			).isEmpty {
-				Log.general.info("Glance app is not running, declining preview")
-				let error = NSError(
-					domain: "com.chamburr.Glance.QLPlugin",
-					code: 1,
-					userInfo: [NSLocalizedDescriptionKey: "Glance app is not running"]
-				)
-				handler(error)
+		Task { @MainActor [weak self] in
+			guard let self else {
+				handler(CancellationError())
 				return
 			}
+			startPreviewPreparation(at: fileUrl, completionHandler: handler)
+		}
+	}
 
-			// Read information about the file to preview
-			var file: File
+	private func startPreviewPreparation(
+		at fileURL: URL,
+		completionHandler handler: @escaping @Sendable (Error?) -> Void
+	) {
+		previewPreparationTask?.cancel()
+		let preparationID = UUID()
+		previewPreparationID = preparationID
+		let task = Task { @MainActor [weak self] in
+			guard let self else {
+				throw CancellationError()
+			}
+			try await preparePreview(at: fileURL)
+		}
+		previewPreparationTask = task
+		Task { @MainActor [weak self] in
 			do {
-				file = try File(url: fileUrl)
+				try await task.value
+				handler(nil)
+			} catch is CancellationError {
+				// Superseded requests still complete exactly once without asking Quick Look
+				// to replace the newer preview with its fallback UI.
+				handler(nil)
 			} catch {
-				Log.general.error(
-					"Could not obtain information about file \(fileUrl.path, privacy: .private): \(error.localizedDescription, privacy: .private)"
-				)
 				handler(error)
-				return
 			}
-
-			// Skip preview if the file is too large
-			do {
-				try PreviewPolicy.validateFileSize(file)
-			} catch {
-				// Log error and fall back to default preview (by calling the completion handler
-				// with the error)
-				Log.general
-					.error(
-						"Skipping file preview: \(error.localizedDescription, privacy: .private)"
-					)
-				handler(error)
-				return
+			if self?.previewPreparationID == preparationID {
+				self?.previewPreparationTask = nil
+				self?.previewPreparationID = nil
 			}
+		}
+	}
 
-			// Render file preview
-			Log.general.info("Generating preview for file \(file.path, privacy: .private)")
-			do {
-				try self.previewFile(file: file)
-			} catch {
-				// Log error and fall back to default preview (by calling the completion handler
-				// with the error)
-				Log.general.error(
-					"Could not generate preview for file \(file.path, privacy: .private): \(error.localizedDescription, privacy: .private)"
-				)
-				handler(error)
-				return
-			}
+	private func preparePreview(at fileURL: URL) async throws {
+		guard containingAppIsRunning() else {
+			Log.general.info("Glance app is not running, declining preview")
+			throw NSError(
+				domain: "com.chamburr.Glance.QLPlugin",
+				code: 1,
+				userInfo: [NSLocalizedDescriptionKey: "Glance app is not running"]
+			)
+		}
 
-			// Hide preview loading spinner
-			handler(nil)
+		let file: File
+		do {
+			file = try File(url: fileURL)
+		} catch {
+			Log.general.error(
+				"Could not obtain information about file \(fileURL.path, privacy: .private): \(error.localizedDescription, privacy: .private)"
+			)
+			throw error
+		}
+		do {
+			try PreviewPolicy.validateFileSize(file)
+		} catch {
+			Log.general
+				.error("Skipping file preview: \(error.localizedDescription, privacy: .private)")
+			throw error
+		}
+
+		Log.general.info("Generating preview for file \(file.path, privacy: .private)")
+		do {
+			try await previewFile(file: file)
+		} catch {
+			Log.general.error(
+				"Could not generate preview for file \(file.path, privacy: .private): \(error.localizedDescription, privacy: .private)"
+			)
+			throw error
 		}
 	}
 
 	/// Generates a preview of the selected file and adds the corresponding child view controller.
-	func previewFile(file: File) throws {
+	func previewFile(file: File) async throws {
 		// Initialize `PreviewVC` for the file type
 		if let previewInitializerType = PreviewVCFactory.getPreviewInitializer(
 			fileURL: file.url,
@@ -195,7 +223,8 @@ class MainVC: NSViewController, QLPreviewingController {
 		) {
 			// Generate file preview
 			let previewInitializer = previewInitializerType.init()
-			let previewVC = try previewInitializer.createPreviewVC(file: file)
+			let previewVC = try await previewInitializer.createPreviewVC(file: file)
+			try Task.checkCancellation()
 
 			installTopLevelPreview(previewVC, file: file)
 
@@ -204,6 +233,11 @@ class MainVC: NSViewController, QLPreviewingController {
 		} else {
 			Log.general.info(
 				"Skipping preview for file \(file.path, privacy: .private): File type not supported"
+			)
+			throw NSError(
+				domain: "com.chamburr.Glance.QLPlugin",
+				code: 2,
+				userInfo: [NSLocalizedDescriptionKey: "File type is not supported"]
 			)
 		}
 	}
@@ -349,24 +383,35 @@ class MainVC: NSViewController, QLPreviewingController {
 		guard nestedPreviewController == nil, let folderPreviewController else {
 			return
 		}
-		do {
-			let previewVC = try nestedPreviewProvider.makePreviewController(for: node)
-			folderPreviewController.view.isHidden = true
-			nestedPreviewController = previewVC
-			currentPreviewController = previewVC
-			bindStatus(to: previewVC)
-			show(previewVC)
-			backButton.isHidden = false
-		} catch {
-			Log.general.error(
-				"Could not generate nested preview for \(node.name, privacy: .private): \(error.localizedDescription, privacy: .private)"
-			)
-			showTransientError("Couldn’t preview \(node.name)")
+		nestedPreviewTask?.cancel()
+		nestedPreviewTask = Task { @MainActor [weak self] in
+			do {
+				guard let self else {
+					return
+				}
+				let previewVC = try await nestedPreviewProvider.makePreviewController(for: node)
+				try Task.checkCancellation()
+				folderPreviewController.view.isHidden = true
+				nestedPreviewController = previewVC
+				currentPreviewController = previewVC
+				bindStatus(to: previewVC)
+				show(previewVC)
+				backButton.isHidden = false
+			} catch is CancellationError {
+				return
+			} catch {
+				Log.general.error(
+					"Could not generate nested preview for \(node.name, privacy: .private): \(error.localizedDescription, privacy: .private)"
+				)
+				self?.showTransientError("Couldn’t preview \(node.name)")
+			}
 		}
 	}
 
 	@objc
 	func showFolderPreview() {
+		nestedPreviewTask?.cancel()
+		nestedPreviewTask = nil
 		guard let nestedPreviewController, let folderPreviewController else {
 			return
 		}
@@ -381,6 +426,8 @@ class MainVC: NSViewController, QLPreviewingController {
 	}
 
 	private func clearPreviewControllers() {
+		nestedPreviewTask?.cancel()
+		nestedPreviewTask = nil
 		statusResetTask?.cancel()
 		boundStatusProvider?.previewStatusDidChange = nil
 		boundStatusProvider = nil

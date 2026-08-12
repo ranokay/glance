@@ -23,7 +23,7 @@ final class DirectoryPreviewTests: XCTestCase {
 		try super.tearDownWithError()
 	}
 
-	func testPreviewBuildsNestedTreeWithMetadataAndExpandsAllRows() throws {
+	func testPreviewBuildsNestedTreeWithMetadataAndExpandsAllRows() async throws {
 		let rootURL = try makeDirectory(named: "root")
 		let nestedURL = try makeDirectory(named: "root/nested")
 		let modificationDate = Date(timeIntervalSince1970: 1_700_000_000)
@@ -36,7 +36,7 @@ final class DirectoryPreviewTests: XCTestCase {
 			ofItemAtPath: visibleURL.path
 		)
 
-		let previewVC = try makePreview(for: rootURL)
+		let previewVC = try await makePreview(for: rootURL)
 		let visibleNode = try XCTUnwrap(node(named: "visible.txt", in: previewVC.rootNodes))
 		let nestedNode = try XCTUnwrap(
 			node(named: nestedURL.lastPathComponent, in: previewVC.rootNodes)
@@ -57,32 +57,32 @@ final class DirectoryPreviewTests: XCTestCase {
 		XCTAssertEqual(outlineView.numberOfRows, 3)
 	}
 
-	func testPreviewUsesDeterministicItemLimitAndTruncationLabel() throws {
+	func testPreviewUsesDeterministicItemLimitAndTruncationLabel() async throws {
 		let rootURL = try makeDirectory(named: "limited")
 		_ = try writeFile(named: "limited/c.txt", contents: "c")
 		_ = try writeFile(named: "limited/a.txt", contents: "a")
 		_ = try writeFile(named: "limited/b.txt", contents: "b")
 
-		let previewVC = try makePreview(for: rootURL, maxItemCount: 2)
+		let previewVC = try await makePreview(for: rootURL, maxItemCount: 2)
 
 		XCTAssertEqual(Set(previewVC.rootNodes.map(\.name)), Set(["a.txt", "b.txt"]))
 		previewVC.loadViewIfNeeded()
 		XCTAssertEqual(previewVC.previewStatusText, "2+ items")
 	}
 
-	func testPreviewStopsAtConfiguredDepth() throws {
+	func testPreviewStopsAtConfiguredDepth() async throws {
 		let rootURL = try makeDirectory(named: "depth")
 		_ = try makeDirectory(named: "depth/level-1/level-2")
 		_ = try writeFile(named: "depth/level-1/level-2/level-3.txt", contents: "deep")
 
-		let previewVC = try makePreview(for: rootURL, maxDepth: 2)
+		let previewVC = try await makePreview(for: rootURL, maxDepth: 2)
 
 		XCTAssertNotNil(node(named: "level-1", in: previewVC.rootNodes))
 		XCTAssertNotNil(node(named: "level-2", in: previewVC.rootNodes))
 		XCTAssertNil(node(named: "level-3.txt", in: previewVC.rootNodes))
 	}
 
-	func testPreviewDoesNotRecurseIntoSymbolicLinksOrPackages() throws {
+	func testPreviewDoesNotRecurseIntoSymbolicLinksOrPackages() async throws {
 		let rootURL = try makeDirectory(named: "boundaries")
 		let packageURL = try makeDirectory(named: "boundaries/Sample.app/Contents")
 		_ = try writeFile(
@@ -92,7 +92,7 @@ final class DirectoryPreviewTests: XCTestCase {
 		let loopURL = rootURL.appendingPathComponent("loop", isDirectory: true)
 		try FileManager.default.createSymbolicLink(at: loopURL, withDestinationURL: rootURL)
 
-		let previewVC = try makePreview(for: rootURL)
+		let previewVC = try await makePreview(for: rootURL)
 		let packageNode = try XCTUnwrap(node(named: "Sample.app", in: previewVC.rootNodes))
 		let loopNode = try XCTUnwrap(node(named: "loop", in: previewVC.rootNodes))
 
@@ -102,12 +102,13 @@ final class DirectoryPreviewTests: XCTestCase {
 		XCTAssertNil(node(named: "inside.txt", in: previewVC.rootNodes))
 	}
 
-	func testDefaultPreviewDeclinesTemporaryDirectories() throws {
+	func testDefaultPreviewDeclinesTemporaryDirectories() async throws {
 		let rootURL = try makeDirectory(named: "temporary")
 
-		XCTAssertThrowsError(
-			try DirectoryPreview().createPreviewVC(file: File(url: rootURL))
-		) { error in
+		do {
+			_ = try await DirectoryPreview().createPreviewVC(file: File(url: rootURL))
+			XCTFail("Expected temporary directories to be declined")
+		} catch {
 			guard let directoryError = error as? DirectoryPreviewError else {
 				return XCTFail("Unexpected error: \(error)")
 			}
@@ -121,15 +122,14 @@ final class DirectoryPreviewTests: XCTestCase {
 		for directoryURL: URL,
 		maxItemCount: Int = DirectoryPreview.defaultMaxItemCount,
 		maxDepth: Int = DirectoryPreview.defaultMaxDepth
-	) throws -> OutlinePreviewVC {
-		try XCTUnwrap(
-			DirectoryPreview(
-				fileManager: .default,
-				maxItemCount: maxItemCount,
-				maxDepth: maxDepth,
-				excludedRootURLs: []
-			).createPreviewVC(file: File(url: directoryURL)) as? OutlinePreviewVC
-		)
+	) async throws -> OutlinePreviewVC {
+		let generatedPreview = try await DirectoryPreview(
+			fileManager: .default,
+			maxItemCount: maxItemCount,
+			maxDepth: maxDepth,
+			excludedRootURLs: []
+		).createPreviewVC(file: File(url: directoryURL))
+		return try XCTUnwrap(generatedPreview as? OutlinePreviewVC)
 	}
 
 	private func makeDirectory(named name: String) throws -> URL {

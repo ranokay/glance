@@ -24,42 +24,21 @@ class JupyterPreview: Preview {
 
 	required init() {}
 
-	private func getHTML(file: File) throws -> String {
-		var source: String
-		do {
-			source = try file.read()
-		} catch {
-			Log.parse.error(
-				"Could not read Jupyter Notebook file: \(error.localizedDescription, privacy: .private)"
-			)
-			throw error
-		}
-
-		do {
-			return try HTMLRenderer.renderNotebook(source)
-		} catch {
-			Log.render.error(
-				"Could not generate Jupyter Notebook HTML: \(error.localizedDescription, privacy: .private)"
-			)
-			throw error
-		}
-	}
-
 	private func getStylesheets() -> [Stylesheet] {
 		var stylesheets = [Stylesheet]()
 
-		// Main Jupyter stylesheet (overrides and additions for nbtohtml stylesheet)
+		// Main Jupyter stylesheet
 		if let mainStylesheetURL {
 			stylesheets.append(Stylesheet(url: mainStylesheetURL))
 		} else {
 			Log.render.error("Could not find main Jupyter stylesheet")
 		}
 
-		// Chroma stylesheet (for code syntax highlighting)
+		// Semantic syntax-highlighting stylesheet
 		if let chromaStylesheetURL {
 			stylesheets.append(Stylesheet(url: chromaStylesheetURL))
 		} else {
-			Log.render.error("Could not find Chroma stylesheet")
+			Log.render.error("Could not find syntax-highlighting stylesheet")
 		}
 
 		// KaTeX stylesheet (for rendering LaTeX math)
@@ -95,11 +74,25 @@ class JupyterPreview: Preview {
 		return scripts
 	}
 
-	func createPreviewVC(file: File) throws -> PreviewVC {
-		WebPreviewVC(
-			html: try getHTML(file: file),
-			stylesheets: getStylesheets(),
-			scripts: getScripts()
-		)
+	func createPreviewVC(file: File) async throws -> PreviewVC {
+		let fileURL = file.url
+		do {
+			let html = try await PreviewExecutor.run {
+				let source = try String(contentsOf: fileURL, encoding: .utf8)
+				return try HTMLRenderer.renderNotebook(source)
+			}
+			return WebPreviewVC(
+				html: html,
+				stylesheets: getStylesheets(),
+				scripts: getScripts()
+			)
+		} catch let error as CancellationError {
+			throw error
+		} catch {
+			Log.render.error(
+				"Could not generate Jupyter Notebook HTML: \(error.localizedDescription, privacy: .private)"
+			)
+			throw error
+		}
 	}
 }

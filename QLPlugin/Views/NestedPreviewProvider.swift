@@ -26,12 +26,12 @@ enum NestedPreviewRoute {
 
 @MainActor
 protocol NestedPreviewProviding {
-	func makePreviewController(for node: FileTreeNode) throws -> PreviewVC
+	func makePreviewController(for node: FileTreeNode) async throws -> PreviewVC
 }
 
 @MainActor
 struct DefaultNestedPreviewProvider: NestedPreviewProviding {
-	func makePreviewController(for node: FileTreeNode) throws -> PreviewVC {
+	func makePreviewController(for node: FileTreeNode) async throws -> PreviewVC {
 		guard let fileURL = node.fileURL else {
 			throw NestedPreviewError.missingFileURL(name: node.name)
 		}
@@ -43,7 +43,7 @@ struct DefaultNestedPreviewProvider: NestedPreviewProviding {
 			case let .glance(previewType):
 				let file = try File(url: fileURL)
 				try PreviewPolicy.validateFileSize(file)
-				return try previewType.init().createPreviewVC(file: file)
+				return try await previewType.init().createPreviewVC(file: file)
 			case .native:
 				let previewVC = NativePreviewVC(fileURL: fileURL)
 				previewVC.loadViewIfNeeded()

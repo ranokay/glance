@@ -45,7 +45,7 @@ struct SupportedPreviewType: Equatable {
 	let searchTokens: [String]
 	let previewFileType: PreviewFileType
 
-	/// The Chroma lexer name to use for syntax highlighting. Only meaningful for `.code` entries.
+	/// The syntax name or alias to use for highlighting. Only meaningful for `.code` entries.
 	/// When `nil`, `getCodeLexer` falls back to the file extension or `"autodetect"`.
 	let codeLexer: String?
 
