@@ -5,10 +5,12 @@ linters:
     - depguard
     - dupword
     - exhaustruct
+    - exhaustruct_v5
     - funlen
     - gochecknoglobals
     - gocognit
     - godot
+    - gomodguard
     - nlreturn
     - nolintlint
     - nonamedreturns

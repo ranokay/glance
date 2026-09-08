@@ -34,6 +34,7 @@ class FileTreeNode: NSObject {
 	@objc var childrenList: [FileTreeNode] {
 		children.values.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
 	}
+
 	/// Whether the node has any children (required for rendering the tree in an `NSOutlineView`)
 	@objc var hasChildren: Bool { children.isEmpty }
 

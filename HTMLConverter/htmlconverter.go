@@ -75,7 +75,7 @@ func convertCodeToHTML(source *C.char, lexer *C.char) *C.char {
 		return convertToCString(errMessage)
 	}
 
-	err = formatter.Format(htmlBuffer, styles.GitHub, iterator)
+	err = formatter.Format(htmlBuffer, styles.Get("github"), iterator)
 	if err != nil {
 		errMessage := fmt.Sprintf("error: Could not render source code (formatting error): %d", err)
 		return convertToCString(errMessage)
