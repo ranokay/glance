@@ -4,7 +4,11 @@ class OutlinePreviewVC: NSViewController, PreviewVC {
 	@objc dynamic var rootNodes: [FileTreeNode]
 	private let labelText: String?
 
-	@objc dynamic var customSortDescriptors = [NSSortDescriptor(key: "name", ascending: true)]
+	@objc dynamic var customSortDescriptors = [NSSortDescriptor(
+		key: "name",
+		ascending: true,
+		selector: #selector(NSString.localizedStandardCompare(_:))
+	)]
 
 	@IBOutlet private var treeController: NSTreeController!
 	@IBOutlet private var outlineView: NSOutlineView!

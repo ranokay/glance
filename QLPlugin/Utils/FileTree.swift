@@ -31,7 +31,9 @@ class FileTreeNode: NSObject {
 	/// Number of child nodes (required for rendering the tree in an `NSOutlineView`)
 	@objc var childrenCount: Int { children.values.count }
 	/// List of child nodes (required for rendering the tree in an `NSOutlineView`)
-	@objc var childrenList: [FileTreeNode] { Array(children.values) }
+	@objc var childrenList: [FileTreeNode] {
+		children.values.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+	}
 	/// Whether the node has any children (required for rendering the tree in an `NSOutlineView`)
 	@objc var hasChildren: Bool { children.isEmpty }
 
