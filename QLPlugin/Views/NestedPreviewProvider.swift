@@ -1,3 +1,4 @@
+import AVKit
 import Cocoa
 import QuickLookUI
 import UniformTypeIdentifiers
@@ -21,6 +22,7 @@ enum NestedPreviewError: LocalizedError {
 
 enum NestedPreviewRoute {
 	case glance(Preview.Type)
+	case media
 	case native
 }
 
@@ -44,6 +46,8 @@ struct DefaultNestedPreviewProvider: NestedPreviewProviding {
 				let file = try File(url: fileURL)
 				try PreviewPolicy.validateFileSize(file)
 				return try await previewType.init().createPreviewVC(file: file)
+			case .media:
+				return AVPlayerPreviewVC(fileURL: fileURL)
 			case .native:
 				let previewVC = NativePreviewVC(fileURL: fileURL)
 				previewVC.loadViewIfNeeded()
@@ -60,9 +64,13 @@ struct DefaultNestedPreviewProvider: NestedPreviewProviding {
 		}
 
 		let contentType = node.contentTypeIdentifier.flatMap(UTType.init)
-		let isNativeMedia = contentType?.conforms(to: .image) == true
-			|| contentType?.conforms(to: .movie) == true
+		let isPlayableMedia = contentType?.conforms(to: .movie) == true
 			|| contentType?.conforms(to: .audio) == true
+		if isPlayableMedia {
+			return .media
+		}
+
+		let isNativeMedia = contentType?.conforms(to: .image) == true
 			|| contentType?.conforms(to: .pdf) == true
 		if isNativeMedia {
 			return .native
@@ -95,7 +103,7 @@ final class NativePreviewVC: NSViewController, PreviewVC {
 
 	override func viewDidLoad() {
 		super.viewDidLoad()
-		guard let previewView = QLPreviewView(frame: view.bounds, style: .normal) else {
+		guard let previewView = QLPreviewView(frame: view.bounds, style: .compact) else {
 			return
 		}
 		previewView.autoresizingMask = [.height, .width]
@@ -110,5 +118,51 @@ final class NativePreviewVC: NSViewController, PreviewVC {
 			previewView?.close()
 		}
 		previewView = nil
+	}
+}
+
+final class AVPlayerPreviewVC: NSViewController, PreviewVC {
+	let fileURL: URL
+	private(set) var playerView: AVPlayerView?
+	private(set) var player: AVPlayer?
+
+	init(fileURL: URL) {
+		self.fileURL = fileURL
+		super.init(nibName: nil, bundle: nil)
+	}
+
+	@available(*, unavailable)
+	required init?(coder _: NSCoder) {
+		fatalError("init(coder:) has not been implemented")
+	}
+
+	override func loadView() {
+		view = PreviewBackgroundView(frame: .zero)
+	}
+
+	override func viewDidLoad() {
+		super.viewDidLoad()
+		let player = AVPlayer(url: fileURL)
+		let playerView = AVPlayerView()
+		playerView.controlsStyle = .inline
+		playerView.player = player
+		playerView.translatesAutoresizingMaskIntoConstraints = false
+		view.addSubview(playerView)
+		NSLayoutConstraint.activate([
+			playerView.topAnchor.constraint(equalTo: view.topAnchor),
+			playerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+			playerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+			playerView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+		])
+		self.player = player
+		self.playerView = playerView
+	}
+
+	func tearDown() {
+		player?.pause()
+		player?.replaceCurrentItem(with: nil)
+		playerView?.player = nil
+		player = nil
+		playerView = nil
 	}
 }

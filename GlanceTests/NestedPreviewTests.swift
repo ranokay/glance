@@ -1,3 +1,4 @@
+import AVKit
 import Cocoa
 import UniformTypeIdentifiers
 import XCTest
@@ -24,7 +25,7 @@ final class NestedPreviewTests: XCTestCase {
 		try super.tearDownWithError()
 	}
 
-	func testProviderRoutesSupportedTextAndArchivesToGlanceAndMediaAndPackagesToNative() {
+	func testProviderRoutesSupportedTextAndArchivesToGlanceMediaToAVKitAndOtherTypesToNative() {
 		let provider = DefaultNestedPreviewProvider()
 
 		assertGlanceRoute(
@@ -40,6 +41,8 @@ final class NestedPreviewTests: XCTestCase {
 			expected: ZIPPreview.self
 		)
 		assertNativeRoute(provider.route(for: node(named: "image.png", type: .png)))
+		assertMediaRoute(provider.route(for: node(named: "movie.mp4", type: .mpeg4Movie)))
+		assertMediaRoute(provider.route(for: node(named: "audio.m4a", type: .mpeg4Audio)))
 		assertNativeRoute(provider.route(for: node(named: "unknown.bin", type: .data)))
 		assertNativeRoute(provider.route(for: node(
 			named: "Project.screenstudio",
@@ -49,14 +52,17 @@ final class NestedPreviewTests: XCTestCase {
 		)))
 	}
 
-	func testProviderBuildsSupportedAndNativeControllers() async throws {
+	func testProviderBuildsSupportedNativeAndAVKitControllers() async throws {
 		let markdownURL = try writeFile(named: "README.md", contents: "# Nested")
 		let imageURL = try writeFile(named: "image.png", contents: "")
+		let movieURL = try writeFile(named: "movie.mp4", contents: "")
 		let provider = DefaultNestedPreviewProvider()
 		let markdownNode = node(named: markdownURL.lastPathComponent, type: .plainText)
 		markdownNode.fileURL = markdownURL
 		let imageNode = node(named: imageURL.lastPathComponent, type: .png)
 		imageNode.fileURL = imageURL
+		let movieNode = node(named: movieURL.lastPathComponent, type: .mpeg4Movie)
+		movieNode.fileURL = movieURL
 
 		let generatedMarkdownPreview = try await provider.makePreviewController(for: markdownNode)
 		XCTAssertTrue(generatedMarkdownPreview is WebPreviewVC)
@@ -67,6 +73,16 @@ final class NestedPreviewTests: XCTestCase {
 		XCTAssertEqual(nativePreview.fileURL, imageURL)
 		XCTAssertNotNil(nativePreview.previewView)
 		XCTAssertFalse(try XCTUnwrap(nativePreview.previewView).shouldCloseWithWindow)
+
+		let generatedMediaPreview = try await provider.makePreviewController(for: movieNode)
+		let mediaPreview = try XCTUnwrap(generatedMediaPreview as? AVPlayerPreviewVC)
+		mediaPreview.loadViewIfNeeded()
+		XCTAssertEqual(mediaPreview.fileURL, movieURL)
+		XCTAssertEqual(mediaPreview.playerView?.controlsStyle, .inline)
+		XCTAssertNotNil(mediaPreview.player)
+		mediaPreview.tearDown()
+		XCTAssertNil(mediaPreview.player)
+		XCTAssertNil(mediaPreview.playerView)
 	}
 
 	func testProviderRejectsOversizedSupportedNestedFiles() async throws {
@@ -170,7 +186,7 @@ final class NestedPreviewTests: XCTestCase {
 		XCTAssertIdentical(mainVC.currentPreviewController, previewVC)
 		XCTAssertIdentical(mainVC.folderPreviewController, previewVC)
 		XCTAssertIdentical(previewVC.selectedNode, retainedSelection)
-		XCTAssertFalse(previewVC.customSortDescriptors[0].ascending)
+		XCTAssertFalse(try XCTUnwrap(previewVC.customSortDescriptors.last).ascending)
 		XCTAssertTrue(outlineView.isItemExpanded(retainedFolderItem))
 		XCTAssertEqual(clipView.bounds.origin, retainedScrollOrigin)
 		XCTAssertFalse(previewVC.view.isHidden)
@@ -178,6 +194,49 @@ final class NestedPreviewTests: XCTestCase {
 		XCTAssertEqual(mainVC.statusLabel.stringValue, "1 items")
 		nestedController.updateStatus("Stale nested status")
 		XCTAssertEqual(mainVC.statusLabel.stringValue, "1 items")
+	}
+
+	func testDirectoryNavigationUsesAMultiLevelBackStackAndRetainsEachController() async throws {
+		let rootURL = try makeDirectory(named: "navigation")
+		_ = try makeDirectory(named: "navigation/level-one/level-two")
+		_ = try writeFile(named: "navigation/level-one/level-two/file.txt", contents: "nested")
+		let generatedRootPreview = try await DirectoryPreview(
+			fileManager: .default,
+			maxItemCount: 500,
+			maxDepth: DirectoryPreview.defaultMaxDepth,
+			excludedRootURLs: []
+		).createPreviewVC(file: File(url: rootURL))
+		let rootPreview = try XCTUnwrap(generatedRootPreview as? OutlinePreviewVC)
+		let levelOneNode = try XCTUnwrap(rootPreview.rootNodes.first { $0.name == "level-one" })
+		let mainVC = MainVC()
+		mainVC.loadViewIfNeeded()
+		mainVC.installTopLevelPreview(rootPreview, file: try File(url: rootURL))
+
+		mainVC.outlinePreview(rootPreview, requestNavigationInto: levelOneNode)
+		try await waitUntil {
+			mainVC.currentPreviewController !== rootPreview
+				&& mainVC.currentPreviewController is OutlinePreviewVC
+		}
+		let levelOnePreview = try XCTUnwrap(mainVC.currentPreviewController as? OutlinePreviewVC)
+		levelOnePreview.customSortDescriptors = [NSSortDescriptor(key: "name", ascending: false)]
+		let levelTwoNode = try XCTUnwrap(levelOnePreview.rootNodes.first { $0.name == "level-two" })
+		XCTAssertEqual(mainVC.previewNavigationStack.count, 2)
+		XCTAssertFalse(mainVC.backButton.isHidden)
+
+		mainVC.outlinePreview(levelOnePreview, requestNavigationInto: levelTwoNode)
+		try await waitUntil { mainVC.previewNavigationStack.count == 3 }
+		let levelTwoPreview = try XCTUnwrap(mainVC.currentPreviewController as? OutlinePreviewVC)
+		XCTAssertNotIdentical(levelTwoPreview, levelOnePreview)
+
+		mainVC.showFolderPreview()
+		XCTAssertIdentical(mainVC.currentPreviewController, levelOnePreview)
+		XCTAssertFalse(try XCTUnwrap(levelOnePreview.customSortDescriptors.last).ascending)
+		XCTAssertFalse(mainVC.backButton.isHidden)
+
+		mainVC.showFolderPreview()
+		XCTAssertIdentical(mainVC.currentPreviewController, rootPreview)
+		XCTAssertEqual(mainVC.previewNavigationStack.count, 1)
+		XCTAssertTrue(mainVC.backButton.isHidden)
 	}
 
 	func testFailedNestedPreviewLeavesFolderVisibleAndShowsNonmodalError() async throws {
@@ -229,7 +288,8 @@ final class NestedPreviewTests: XCTestCase {
 			rootNodes: rootNodes,
 			labelText: "\(rootNodes.count) items",
 			expandAll: true,
-			showsFileThumbnails: true
+			showsFileThumbnails: true,
+			directoryURL: temporaryDirectory
 		)
 	}
 
@@ -257,6 +317,16 @@ final class NestedPreviewTests: XCTestCase {
 	) {
 		guard case .native = route else {
 			return XCTFail("Expected native route", file: file, line: line)
+		}
+	}
+
+	private func assertMediaRoute(
+		_ route: NestedPreviewRoute,
+		file: StaticString = #filePath,
+		line: UInt = #line
+	) {
+		guard case .media = route else {
+			return XCTFail("Expected AVKit media route", file: file, line: line)
 		}
 	}
 
@@ -312,6 +382,7 @@ final class NestedPreviewTests: XCTestCase {
 private final class RecordingOutlineInteractionDelegate: OutlinePreviewInteractionDelegate {
 	private(set) var selectedNode: FileTreeNode?
 	private(set) var previewedNode: FileTreeNode?
+	private(set) var navigatedNode: FileTreeNode?
 
 	func outlinePreview(_: OutlinePreviewVC, didSelect node: FileTreeNode?) {
 		selectedNode = node
@@ -319,6 +390,10 @@ private final class RecordingOutlineInteractionDelegate: OutlinePreviewInteracti
 
 	func outlinePreview(_: OutlinePreviewVC, requestPreviewOf node: FileTreeNode) {
 		previewedNode = node
+	}
+
+	func outlinePreview(_: OutlinePreviewVC, requestNavigationInto node: FileTreeNode) {
+		navigatedNode = node
 	}
 }
 
