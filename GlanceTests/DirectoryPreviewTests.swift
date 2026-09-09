@@ -120,6 +120,54 @@ final class DirectoryPreviewTests: XCTestCase {
 			.first { if case .loadMore = $0.role { true } else { false } })
 	}
 
+	func testPaginationSnapshotRemainsStableWhenDirectoryChanges() async throws {
+		let rootURL = try makeDirectory(named: "changing")
+		_ = try writeFile(named: "changing/b.txt", contents: "b")
+		_ = try writeFile(named: "changing/c.txt", contents: "c")
+		_ = try writeFile(named: "changing/d.txt", contents: "d")
+		let loader = DirectoryPageLoader(fileManager: .default, pageSize: 2)
+
+		let firstPage = try await loader.page(at: rootURL, offset: 0)
+		_ = try writeFile(named: "changing/a.txt", contents: "a")
+		try FileManager.default.removeItem(at: rootURL.appendingPathComponent("b.txt"))
+		let secondPage = try await loader.page(at: rootURL, offset: 2)
+
+		XCTAssertEqual(firstPage.entries.map(\.name), ["b.txt", "c.txt"])
+		XCTAssertEqual(secondPage.entries.map(\.name), ["d.txt"])
+		XCTAssertEqual(secondPage.totalItemCount, 3)
+		XCTAssertNil(secondPage.nextOffset)
+	}
+
+	func testRealFilenameCannotCollideWithNestedLoadMoreRow() async throws {
+		let rootURL = try makeDirectory(named: "collision-root")
+		let childURL = try makeDirectory(named: "collision-root/child")
+		_ = try writeFile(
+			named: "collision-root/child/__glance_load_more__",
+			contents: "real file"
+		)
+		for index in 0 ..< 500 {
+			_ = try writeFile(
+				named: "collision-root/child/item-\(String(format: "%04d", index)).txt",
+				contents: "x"
+			)
+		}
+
+		let previewVC = try await makePreview(for: rootURL, pageSize: 500)
+		let outlineView = try loadOutlineView(for: previewVC)
+		let childNode = try XCTUnwrap(itemNode(
+			named: childURL.lastPathComponent,
+			in: previewVC.rootNodes
+		))
+		try expand(childNode, in: outlineView)
+		try await waitUntil { childNode.directoryChildrenState == .loaded(nextOffset: 500) }
+
+		XCTAssertNotNil(itemNode(named: "__glance_load_more__", in: childNode.childrenList))
+		XCTAssertEqual(childNode.childrenList.count { $0.role == .item }, 500)
+		XCTAssertEqual(childNode.childrenList.count {
+			if case .loadMore = $0.role { true } else { false }
+		}, 1)
+	}
+
 	func testNestedPageFailureShowsRetryAndCanRecover() async throws {
 		let rootURL = try makeDirectory(named: "retry-root")
 		let childURL = try makeDirectory(named: "retry-root/child")

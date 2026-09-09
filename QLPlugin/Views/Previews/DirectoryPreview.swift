@@ -18,7 +18,7 @@ enum DirectoryPreviewError: LocalizedError {
 	}
 }
 
-struct DirectoryPreviewEntry: Sendable {
+struct DirectoryPreviewEntry {
 	let name: String
 	let isDirectory: Bool
 	let size: Int
@@ -29,7 +29,7 @@ struct DirectoryPreviewEntry: Sendable {
 	let contentTypeIdentifier: String?
 }
 
-struct DirectoryPage: Sendable {
+struct DirectoryPage {
 	let entries: [DirectoryPreviewEntry]
 	let nextOffset: Int?
 	let totalItemCount: Int
@@ -39,26 +39,59 @@ protocol DirectoryPageLoading: Sendable {
 	func page(at directoryURL: URL, offset: Int) async throws -> DirectoryPage
 }
 
-/// Each call scans exactly one directory off-main and retains only the requested sorted prefix.
-/// This keeps memory bounded while still allowing deterministic pagination.
-struct DirectoryPageLoader: DirectoryPageLoading, @unchecked Sendable {
+/// Keeps a stable name cursor for each directory page while retaining only one UI-sized batch.
+/// Insertions or removals before the cursor cannot shift later pages into duplicates or omissions.
+actor DirectoryPageLoader: DirectoryPageLoading {
 	let fileManager: FileManager
 	let pageSize: Int
+	private var pageCursors = [URL: [Int: String]]()
+
+	init(fileManager: sending FileManager, pageSize: Int) {
+		self.fileManager = fileManager
+		self.pageSize = pageSize
+	}
 
 	func page(at directoryURL: URL, offset: Int) async throws -> DirectoryPage {
+		let pageURL = directoryURL.standardizedFileURL
+		let safeOffset = max(0, offset)
+		let afterName: String?
+		if safeOffset == 0 {
+			pageCursors[pageURL] = [:]
+			afterName = nil
+		} else {
+			guard let cursor = pageCursors[pageURL]?[safeOffset] else {
+				throw DirectoryPreviewError.directoryReadError(
+					path: pageURL.path,
+					message: "The directory page cursor is no longer available"
+				)
+			}
+			afterName = cursor
+		}
+
 		let scanner = DirectoryPageScanner(fileManager: fileManager, pageSize: pageSize)
-		return try await PreviewExecutor.run {
+		let scanResult = try await PreviewExecutor.run {
 			do {
-				return try scanner.scan(directoryURL: directoryURL, offset: offset)
+				return try scanner.scan(
+					directoryURL: pageURL,
+					offset: safeOffset,
+					afterName: afterName
+				)
 			} catch is CancellationError {
 				throw CancellationError()
 			} catch {
 				throw DirectoryPreviewError.directoryReadError(
-					path: directoryURL.path,
+					path: pageURL.path,
 					message: error.localizedDescription
 				)
 			}
 		}
+		try Task.checkCancellation()
+		if let nextOffset = scanResult.page.nextOffset {
+			if let continuationName = scanResult.continuationName {
+				pageCursors[pageURL, default: [:]][nextOffset] = continuationName
+			}
+		}
+		return scanResult.page
 	}
 }
 
@@ -89,7 +122,7 @@ class DirectoryPreview: Preview {
 	}
 
 	init(
-		fileManager: FileManager,
+		fileManager: sending FileManager,
 		maxItemCount: Int,
 		maxDepth _: Int,
 		excludedRootURLs: [URL]
@@ -194,12 +227,14 @@ private struct DirectoryPageScanner: @unchecked Sendable {
 	let fileManager: FileManager
 	let pageSize: Int
 
-	func scan(directoryURL: URL, offset: Int) throws -> DirectoryPage {
+	func scan(
+		directoryURL: URL,
+		offset: Int,
+		afterName: String?
+	) throws -> (page: DirectoryPage, continuationName: String?) {
 		try Task.checkCancellation()
-		let safeOffset = max(0, offset)
-		let pageEnd = safeOffset.addingReportingOverflow(pageSize)
-		let retainedLimit = pageEnd.partialValue.addingReportingOverflow(1)
-		guard !pageEnd.overflow, !retainedLimit.overflow else {
+		let retainedLimit = pageSize.addingReportingOverflow(1)
+		guard !retainedLimit.overflow else {
 			throw CocoaError(.fileReadTooLarge)
 		}
 
@@ -242,6 +277,9 @@ private struct DirectoryPageScanner: @unchecked Sendable {
 				contentTypeIdentifier: values.contentType?.identifier
 			)
 			itemCount += 1
+			guard afterName.map({ Self.isOrderedAfter(entry.name, $0) }) ?? true else {
+				continue
+			}
 			let insertionIndex = Self.insertionIndex(for: entry, in: retainedEntries)
 			retainedEntries.insert(entry, at: insertionIndex)
 			if retainedEntries.count > retainedLimit.partialValue {
@@ -252,17 +290,22 @@ private struct DirectoryPageScanner: @unchecked Sendable {
 			throw enumerationError
 		}
 
-		let requestedEnd = min(pageEnd.partialValue, retainedEntries.count)
-		let entries = safeOffset < requestedEnd
-			? Array(retainedEntries[safeOffset ..< requestedEnd])
-			: []
-		let nextOffset = itemCount > safeOffset + entries.count
-			? safeOffset + entries.count
-			: nil
-		return DirectoryPage(
-			entries: entries,
-			nextOffset: nextOffset,
-			totalItemCount: itemCount
+		let hasMore = retainedEntries.count > pageSize
+		if hasMore {
+			retainedEntries.removeLast(retainedEntries.count - pageSize)
+		}
+		let nextOffsetValue = offset.addingReportingOverflow(retainedEntries.count)
+		guard !nextOffsetValue.overflow else {
+			throw CocoaError(.fileReadTooLarge)
+		}
+		let nextOffset = hasMore ? nextOffsetValue.partialValue : nil
+		return (
+			DirectoryPage(
+				entries: retainedEntries,
+				nextOffset: nextOffset,
+				totalItemCount: itemCount
+			),
+			nextOffset == nil ? nil : retainedEntries.last?.name
 		)
 	}
 
@@ -287,12 +330,26 @@ private struct DirectoryPageScanner: @unchecked Sendable {
 		_ lhs: DirectoryPreviewEntry,
 		_ rhs: DirectoryPreviewEntry
 	) -> Bool {
-		let comparison = lhs.name.compare(
-			rhs.name,
+		compareNames(lhs.name, rhs.name) == .orderedAscending
+	}
+
+	private static func isOrderedAfter(_ name: String, _ cursorName: String) -> Bool {
+		compareNames(name, cursorName) == .orderedDescending
+	}
+
+	private static func compareNames(_ lhs: String, _ rhs: String) -> ComparisonResult {
+		let comparison = lhs.compare(
+			rhs,
 			options: [.caseInsensitive, .numeric],
 			range: nil,
 			locale: sortLocale
 		)
-		return comparison == .orderedSame ? lhs.name < rhs.name : comparison == .orderedAscending
+		if comparison != .orderedSame {
+			return comparison
+		}
+		if lhs == rhs {
+			return .orderedSame
+		}
+		return lhs < rhs ? .orderedAscending : .orderedDescending
 	}
 }

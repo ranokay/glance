@@ -8,6 +8,14 @@ protocol OutlinePreviewInteractionDelegate: AnyObject {
 }
 
 class OutlinePreviewVC: NSViewController, PreviewVC {
+	/// NUL cannot occur in a filesystem name, so these internal dictionary keys cannot replace a
+	/// real child. The node's display name remains the user-facing loading/action text.
+	private enum AuxiliaryChildKey {
+		static let loading = "\0glance.loading"
+		static let loadMore = "\0glance.load-more"
+		static let retry = "\0glance.retry"
+	}
+
 	@objc dynamic var rootNodes: [FileTreeNode]
 	private(set) var previewStatusText: String
 	var previewStatusDidChange: (@MainActor (String) -> Void)?
@@ -26,6 +34,7 @@ class OutlinePreviewVC: NSViewController, PreviewVC {
 	var isDirectoryBrowser: Bool {
 		directoryURL != nil
 	}
+
 	private let directoryPageLoader: (any DirectoryPageLoading)?
 	private var thumbnailLoader: DirectoryThumbnailLoader?
 	private var directoryLoadTasks = [ObjectIdentifier: Task<Void, Never>]()
@@ -58,7 +67,7 @@ class OutlinePreviewVC: NSViewController, PreviewVC {
 					return
 				}
 				self.pendingSortSnapshot = nil
-				self.reloadTree(restoring: pendingSortSnapshot)
+				reloadTree(restoring: pendingSortSnapshot)
 			}
 		}
 	}
@@ -404,7 +413,7 @@ class OutlinePreviewVC: NSViewController, PreviewVC {
 		}
 
 		node.directoryChildrenState = .loading
-		node.children = ["__glance_loading__": .loadingNode(parent: node)]
+		node.children = [AuxiliaryChildKey.loading: .loadingNode(parent: node)]
 		reloadTree(expanding: node)
 		let task = Task { @MainActor [weak self, weak node] in
 			guard let self, let node else {
@@ -422,7 +431,7 @@ class OutlinePreviewVC: NSViewController, PreviewVC {
 					"Could not load folder \(fileURL.path, privacy: .private): \(error.localizedDescription, privacy: .private)"
 				)
 				node.directoryChildrenState = .failed
-				node.children = ["__glance_retry__": .retryNode(offset: 0, parent: node)]
+				node.children = [AuxiliaryChildKey.retry: .retryNode(offset: 0, parent: node)]
 				reloadTree(expanding: node)
 			}
 		}
@@ -453,7 +462,7 @@ class OutlinePreviewVC: NSViewController, PreviewVC {
 			return
 		}
 		removeAuxiliaryChildren(from: parent)
-		parent.children["__glance_loading__"] = .loadingNode(parent: parent)
+		parent.children[AuxiliaryChildKey.loading] = .loadingNode(parent: parent)
 		parent.directoryChildrenState = .loading
 		reloadTree(expanding: parent)
 		let task = Task { @MainActor [weak self, weak parent] in
@@ -472,7 +481,7 @@ class OutlinePreviewVC: NSViewController, PreviewVC {
 					"Could not load more items from \(fileURL.path, privacy: .private): \(error.localizedDescription, privacy: .private)"
 				)
 				removeAuxiliaryChildren(from: parent)
-				parent.children["__glance_retry__"] = .retryNode(
+				parent.children[AuxiliaryChildKey.retry] = .retryNode(
 					offset: offset,
 					parent: parent
 				)
@@ -529,7 +538,7 @@ class OutlinePreviewVC: NSViewController, PreviewVC {
 			parent.children[child.name] = child
 		}
 		if let nextOffset = page.nextOffset {
-			parent.children["__glance_load_more__"] = .loadMoreNode(
+			parent.children[AuxiliaryChildKey.loadMore] = .loadMoreNode(
 				offset: nextOffset,
 				parent: parent
 			)
@@ -598,17 +607,20 @@ class OutlinePreviewVC: NSViewController, PreviewVC {
 		outlineView.reloadData()
 		var row = 0
 		while row < outlineView.numberOfRows {
-			if let treeNode = treeNode(at: row),
-			   expandedNodes.contains(ObjectIdentifier(treeNode)),
-			   let item = outlineView.item(atRow: row) {
+			let treeNode = treeNode(at: row)
+			let nodeIdentifier = treeNode.map(ObjectIdentifier.init)
+			let isExpanded = nodeIdentifier.map(expandedNodes.contains) ?? false
+			if isExpanded, let item = outlineView.item(atRow: row) {
 				outlineView.expandItem(item)
 			}
 			row += 1
 		}
-		if let selectedIdentifier,
-		   let selectedRow = (0 ..< outlineView.numberOfRows).first(where: { row in
-			   treeNode(at: row).map(ObjectIdentifier.init) == selectedIdentifier
-		   }) {
+		let selectedRow = selectedIdentifier.flatMap { identifier in
+			(0 ..< outlineView.numberOfRows).first { row in
+				treeNode(at: row).map(ObjectIdentifier.init) == identifier
+			}
+		}
+		if let selectedRow {
 			outlineView.selectRowIndexes(
 				IndexSet(integer: selectedRow),
 				byExtendingSelection: false
@@ -639,9 +651,9 @@ extension OutlinePreviewVC: NSOutlineViewDelegate {
 			return false
 		}
 		switch treeNode.directoryChildrenState {
-			case .notLoaded, .failed:
+			case .notLoaded:
 				loadFirstPage(for: treeNode)
-			case .loading, .loaded:
+			case .loading, .loaded, .failed:
 				break
 		}
 		return true
@@ -654,12 +666,13 @@ extension OutlinePreviewVC: NSOutlineViewDelegate {
 	}
 
 	func outlineView(_: NSOutlineView, didAdd _: NSTableRowView, forRow row: Int) {
-		guard showsFileThumbnails,
-		      let cellView = outlineView.view(
-			      atColumn: 0,
-			      row: row,
-			      makeIfNecessary: false
-		      ) as? NSTableCellView
+		guard
+			showsFileThumbnails,
+			let cellView = outlineView.view(
+				atColumn: 0,
+				row: row,
+				makeIfNecessary: false
+			) as? NSTableCellView
 		else {
 			return
 		}
