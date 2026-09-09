@@ -26,7 +26,7 @@ final class SupportedFilesWC: NSWindowController {
 		SupportedFileSection(title: "Tab-separated Values", details: ".tab, .tsv"),
 		SupportedFileSection(
 			title: "Folders",
-			details: "Recursive trees with icons and thumbnails, up to 500 items and 5 levels"
+			details: "Lazy trees with icons, thumbnails, 500-item pages, and Back navigation"
 		),
 	]
 
