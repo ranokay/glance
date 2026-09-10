@@ -126,16 +126,48 @@ final class DirectoryPreviewTests: XCTestCase {
 		_ = try writeFile(named: "changing/c.txt", contents: "c")
 		_ = try writeFile(named: "changing/d.txt", contents: "d")
 		let loader = DirectoryPageLoader(fileManager: .default, pageSize: 2)
+		let session = DirectoryPaginationSession()
 
-		let firstPage = try await loader.page(at: rootURL, offset: 0)
+		let firstPage = try await loader.page(at: rootURL, offset: 0, session: session)
 		_ = try writeFile(named: "changing/a.txt", contents: "a")
 		try FileManager.default.removeItem(at: rootURL.appendingPathComponent("b.txt"))
-		let secondPage = try await loader.page(at: rootURL, offset: 2)
+		let secondPage = try await loader.page(at: rootURL, offset: 2, session: session)
 
 		XCTAssertEqual(firstPage.entries.map(\.name), ["b.txt", "c.txt"])
 		XCTAssertEqual(secondPage.entries.map(\.name), ["d.txt"])
 		XCTAssertEqual(secondPage.totalItemCount, 3)
 		XCTAssertNil(secondPage.nextOffset)
+	}
+
+	func testRetainedDirectoryViewsKeepIndependentPaginationCursors() async throws {
+		let rootURL = try makeDirectory(named: "shared-loader")
+		_ = try writeFile(named: "shared-loader/b.txt", contents: "b")
+		_ = try writeFile(named: "shared-loader/c.txt", contents: "c")
+		_ = try writeFile(named: "shared-loader/d.txt", contents: "d")
+		let loader = DirectoryPageLoader(fileManager: .default, pageSize: 2)
+		let retainedSession = DirectoryPaginationSession()
+		let navigatedSession = DirectoryPaginationSession()
+
+		let retainedFirstPage = try await loader.page(
+			at: rootURL,
+			offset: 0,
+			session: retainedSession
+		)
+		_ = try writeFile(named: "shared-loader/a.txt", contents: "a")
+		let navigatedFirstPage = try await loader.page(
+			at: rootURL,
+			offset: 0,
+			session: navigatedSession
+		)
+		let retainedSecondPage = try await loader.page(
+			at: rootURL,
+			offset: 2,
+			session: retainedSession
+		)
+
+		XCTAssertEqual(retainedFirstPage.entries.map(\.name), ["b.txt", "c.txt"])
+		XCTAssertEqual(navigatedFirstPage.entries.map(\.name), ["a.txt", "b.txt"])
+		XCTAssertEqual(retainedSecondPage.entries.map(\.name), ["d.txt"])
 	}
 
 	func testRealFilenameCannotCollideWithNestedLoadMoreRow() async throws {
@@ -357,7 +389,11 @@ private actor RetryingDirectoryLoader: DirectoryPageLoading {
 		self.childURL = childURL
 	}
 
-	func page(at directoryURL: URL, offset _: Int) async throws -> DirectoryPage {
+	func page(
+		at directoryURL: URL,
+		offset _: Int,
+		session _: DirectoryPaginationSession
+	) async throws -> DirectoryPage {
 		if directoryURL == rootURL {
 			return DirectoryPage(
 				entries: [.directory(named: "child", url: childURL)],
@@ -393,7 +429,11 @@ private actor CancellableDirectoryLoader: DirectoryPageLoading {
 		self.childURL = childURL
 	}
 
-	func page(at directoryURL: URL, offset _: Int) async throws -> DirectoryPage {
+	func page(
+		at directoryURL: URL,
+		offset _: Int,
+		session _: DirectoryPaginationSession
+	) async throws -> DirectoryPage {
 		if directoryURL == rootURL {
 			return DirectoryPage(
 				entries: [.directory(named: "child", url: childURL)],

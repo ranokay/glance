@@ -36,6 +36,7 @@ class OutlinePreviewVC: NSViewController, PreviewVC {
 	}
 
 	private let directoryPageLoader: (any DirectoryPageLoading)?
+	private let directoryPaginationSession: DirectoryPaginationSession
 	private var thumbnailLoader: DirectoryThumbnailLoader?
 	private var directoryLoadTasks = [ObjectIdentifier: Task<Void, Never>]()
 	private var rootPageLoadTask: Task<Void, Never>?
@@ -104,7 +105,8 @@ class OutlinePreviewVC: NSViewController, PreviewVC {
 		expandAll: Bool = false,
 		showsFileThumbnails: Bool = false,
 		directoryURL: URL? = nil,
-		directoryPageLoader: (any DirectoryPageLoading)? = nil
+		directoryPageLoader: (any DirectoryPageLoading)? = nil,
+		directoryPaginationSession: DirectoryPaginationSession = DirectoryPaginationSession()
 	) {
 		self.init(
 			nibName: NSNib.Name("OutlinePreviewVC"),
@@ -114,7 +116,8 @@ class OutlinePreviewVC: NSViewController, PreviewVC {
 			expandAll: expandAll,
 			showsFileThumbnails: showsFileThumbnails,
 			directoryURL: directoryURL,
-			directoryPageLoader: directoryPageLoader
+			directoryPageLoader: directoryPageLoader,
+			directoryPaginationSession: directoryPaginationSession
 		)
 	}
 
@@ -127,7 +130,8 @@ class OutlinePreviewVC: NSViewController, PreviewVC {
 		showsFileThumbnails: Bool = false,
 		thumbnailLoader: DirectoryThumbnailLoader? = nil,
 		directoryURL: URL? = nil,
-		directoryPageLoader: (any DirectoryPageLoading)? = nil
+		directoryPageLoader: (any DirectoryPageLoading)? = nil,
+		directoryPaginationSession: DirectoryPaginationSession = DirectoryPaginationSession()
 	) {
 		self.rootNodes = rootNodes
 		previewStatusText = labelText ?? ""
@@ -135,6 +139,7 @@ class OutlinePreviewVC: NSViewController, PreviewVC {
 		self.showsFileThumbnails = showsFileThumbnails
 		self.directoryURL = directoryURL
 		self.directoryPageLoader = directoryPageLoader
+		self.directoryPaginationSession = directoryPaginationSession
 		self.thumbnailLoader = showsFileThumbnails
 			? thumbnailLoader ?? DirectoryThumbnailLoader()
 			: nil
@@ -423,7 +428,11 @@ class OutlinePreviewVC: NSViewController, PreviewVC {
 			}
 			defer { directoryLoadTasks[taskID] = nil }
 			do {
-				let page = try await directoryPageLoader.page(at: fileURL, offset: 0)
+				let page = try await directoryPageLoader.page(
+					at: fileURL,
+					offset: 0,
+					session: directoryPaginationSession
+				)
 				try Task.checkCancellation()
 				apply(page: page, to: node, replacingChildren: true)
 			} catch is CancellationError {
@@ -473,7 +482,11 @@ class OutlinePreviewVC: NSViewController, PreviewVC {
 			}
 			defer { directoryLoadTasks[taskID] = nil }
 			do {
-				let page = try await loader.page(at: fileURL, offset: offset)
+				let page = try await loader.page(
+					at: fileURL,
+					offset: offset,
+					session: directoryPaginationSession
+				)
 				try Task.checkCancellation()
 				apply(page: page, to: parent, replacingChildren: false)
 			} catch is CancellationError {
@@ -507,7 +520,11 @@ class OutlinePreviewVC: NSViewController, PreviewVC {
 			}
 			defer { rootPageLoadTask = nil }
 			do {
-				let page = try await loader.page(at: directoryURL, offset: offset)
+				let page = try await loader.page(
+					at: directoryURL,
+					offset: offset,
+					session: directoryPaginationSession
+				)
 				try Task.checkCancellation()
 				rootNodes.removeAll { $0.role != .item }
 				rootNodes.append(contentsOf: DirectoryPreview.makeNodes(from: page.entries))

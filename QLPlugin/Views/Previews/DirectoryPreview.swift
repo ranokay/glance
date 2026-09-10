@@ -35,31 +35,43 @@ struct DirectoryPage {
 	let totalItemCount: Int
 }
 
-protocol DirectoryPageLoading: Sendable {
-	func page(at directoryURL: URL, offset: Int) async throws -> DirectoryPage
+struct DirectoryPaginationSession: Hashable {
+	private let id = UUID()
 }
 
-/// Keeps a stable name cursor for each directory page while retaining only one UI-sized batch.
-/// Insertions or removals before the cursor cannot shift later pages into duplicates or omissions.
+protocol DirectoryPageLoading: Sendable {
+	func page(
+		at directoryURL: URL,
+		offset: Int,
+		session: DirectoryPaginationSession
+	) async throws -> DirectoryPage
+}
+
+/// Keeps stable name cursors for each retained directory view while holding one UI-sized batch.
+/// A session prevents navigation previews of the same URL from overwriting each other's cursors.
 actor DirectoryPageLoader: DirectoryPageLoading {
 	let fileManager: FileManager
 	let pageSize: Int
-	private var pageCursors = [URL: [Int: String]]()
+	private var pageCursors = [DirectoryPaginationSession: [URL: [Int: String]]]()
 
 	init(fileManager: sending FileManager, pageSize: Int) {
 		self.fileManager = fileManager
 		self.pageSize = pageSize
 	}
 
-	func page(at directoryURL: URL, offset: Int) async throws -> DirectoryPage {
+	func page(
+		at directoryURL: URL,
+		offset: Int,
+		session: DirectoryPaginationSession
+	) async throws -> DirectoryPage {
 		let pageURL = directoryURL.standardizedFileURL
 		let safeOffset = max(0, offset)
 		let afterName: String?
 		if safeOffset == 0 {
-			pageCursors[pageURL] = [:]
+			pageCursors[session, default: [:]][pageURL] = [:]
 			afterName = nil
 		} else {
-			guard let cursor = pageCursors[pageURL]?[safeOffset] else {
+			guard let cursor = pageCursors[session]?[pageURL]?[safeOffset] else {
 				throw DirectoryPreviewError.directoryReadError(
 					path: pageURL.path,
 					message: "The directory page cursor is no longer available"
@@ -88,7 +100,9 @@ actor DirectoryPageLoader: DirectoryPageLoading {
 		try Task.checkCancellation()
 		if let nextOffset = scanResult.page.nextOffset {
 			if let continuationName = scanResult.continuationName {
-				pageCursors[pageURL, default: [:]][nextOffset] = continuationName
+				pageCursors[session, default: [:]][pageURL, default: [:]][
+					nextOffset
+				] = continuationName
 			}
 		}
 		return scanResult.page
@@ -158,7 +172,12 @@ class DirectoryPreview: Preview {
 		for directoryURL: URL,
 		pageLoader: any DirectoryPageLoading
 	) async throws -> OutlinePreviewVC {
-		let page = try await pageLoader.page(at: directoryURL, offset: 0)
+		let paginationSession = DirectoryPaginationSession()
+		let page = try await pageLoader.page(
+			at: directoryURL,
+			offset: 0,
+			session: paginationSession
+		)
 		try Task.checkCancellation()
 		var rootNodes = makeNodes(from: page.entries)
 		if let nextOffset = page.nextOffset {
@@ -173,7 +192,8 @@ class DirectoryPreview: Preview {
 			expandAll: false,
 			showsFileThumbnails: true,
 			directoryURL: directoryURL,
-			directoryPageLoader: pageLoader
+			directoryPageLoader: pageLoader,
+			directoryPaginationSession: paginationSession
 		)
 	}
 
@@ -255,6 +275,11 @@ private struct DirectoryPageScanner: @unchecked Sendable {
 		var itemCount = 0
 		for case let itemURL as URL in enumerator {
 			try Task.checkCancellation()
+			itemCount += 1
+			let name = itemURL.lastPathComponent
+			guard afterName.map({ Self.isOrderedAfter(name, $0) }) ?? true else {
+				continue
+			}
 			let values: URLResourceValues
 			do {
 				values = try itemURL.resourceValues(forKeys: Self.resourceKeys)
@@ -267,7 +292,7 @@ private struct DirectoryPageScanner: @unchecked Sendable {
 
 			let isDirectory = values.isDirectory ?? false
 			let entry = DirectoryPreviewEntry(
-				name: itemURL.lastPathComponent,
+				name: name,
 				isDirectory: isDirectory,
 				size: isDirectory ? 0 : values.fileSize ?? 0,
 				dateModified: values.contentModificationDate,
@@ -276,10 +301,6 @@ private struct DirectoryPageScanner: @unchecked Sendable {
 				isSymbolicLink: values.isSymbolicLink ?? false,
 				contentTypeIdentifier: values.contentType?.identifier
 			)
-			itemCount += 1
-			guard afterName.map({ Self.isOrderedAfter(entry.name, $0) }) ?? true else {
-				continue
-			}
 			let insertionIndex = Self.insertionIndex(for: entry, in: retainedEntries)
 			retainedEntries.insert(entry, at: insertionIndex)
 			if retainedEntries.count > retainedLimit.partialValue {
