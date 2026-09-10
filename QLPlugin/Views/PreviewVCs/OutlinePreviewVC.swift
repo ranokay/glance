@@ -40,6 +40,9 @@ class OutlinePreviewVC: NSViewController, PreviewVC {
 	private var directoryLoadTasks = [ObjectIdentifier: Task<Void, Never>]()
 	private var rootPageLoadTask: Task<Void, Never>?
 	private var pendingSortSnapshot: OutlineStateSnapshot?
+	var isRestoringSortState: Bool {
+		pendingSortSnapshot != nil
+	}
 
 	@objc dynamic var customSortDescriptors = [
 		NSSortDescriptor(key: "auxiliarySortRank", ascending: true),
@@ -56,7 +59,6 @@ class OutlinePreviewVC: NSViewController, PreviewVC {
 				customSortDescriptors = [
 					NSSortDescriptor(key: "auxiliarySortRank", ascending: true),
 				] + customSortDescriptors.filter { $0.key != "auxiliarySortRank" }
-				return
 			}
 			guard let pendingSortSnapshot else {
 				return

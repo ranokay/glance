@@ -159,6 +159,7 @@ final class NestedPreviewTests: XCTestCase {
 		mainVC.loadViewIfNeeded()
 		mainVC.installTopLevelPreview(previewVC, file: try File(url: folderURL))
 		previewVC.customSortDescriptors = [NSSortDescriptor(key: "name", ascending: false)]
+		try await waitUntil { !previewVC.isRestoringSortState }
 		let outlineView = try XCTUnwrap(firstSubview(of: NSOutlineView.self, in: previewVC.view))
 		let fileRow = try XCTUnwrap(row(named: fileNode.name, in: outlineView))
 		outlineView.selectRowIndexes(IndexSet(integer: fileRow), byExtendingSelection: false)
@@ -219,6 +220,7 @@ final class NestedPreviewTests: XCTestCase {
 		}
 		let levelOnePreview = try XCTUnwrap(mainVC.currentPreviewController as? OutlinePreviewVC)
 		levelOnePreview.customSortDescriptors = [NSSortDescriptor(key: "name", ascending: false)]
+		try await waitUntil { !levelOnePreview.isRestoringSortState }
 		let levelTwoNode = try XCTUnwrap(levelOnePreview.rootNodes.first { $0.name == "level-two" })
 		XCTAssertEqual(mainVC.previewNavigationStack.count, 2)
 		XCTAssertFalse(mainVC.backButton.isHidden)

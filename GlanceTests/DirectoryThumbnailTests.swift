@@ -228,7 +228,6 @@ final class DirectoryThumbnailTests: XCTestCase {
 			NSSortDescriptor(key: "size", ascending: false),
 		] {
 			previewVC.customSortDescriptors = [sortDescriptor]
-			outlineView.sortDescriptors = [sortDescriptor]
 			await Task.yield()
 			await Task.yield()
 			previewVC.view.layoutSubtreeIfNeeded()
