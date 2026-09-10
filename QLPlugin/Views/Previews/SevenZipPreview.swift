@@ -1,8 +1,6 @@
 import Foundation
 
 class SevenZipPreview: Preview {
-	let byteCountFormatter = ByteCountFormatter()
-
 	required init() {}
 
 	func createPreviewVC(file: File) async throws -> PreviewVC {
@@ -12,16 +10,12 @@ class SevenZipPreview: Preview {
 			try PreviewCoreBridge.scanSevenZip(at: fileURL)
 		}
 		let fileTree = try makeFileTree(from: payload.entries)
-		let totalUncompressed = try checkedInt(payload.uncompressedSize)
-		let compressionRatio = totalUncompressed == 0
-			? 0.0
-			: 100.0 - Double(archiveSize) / Double(totalUncompressed) * 100.0
+		_ = try checkedInt(payload.uncompressedSize)
 
-		let labelText = """
-		Compressed: \(byteCountFormatter.string(for: archiveSize) ?? "--")
-		Uncompressed: \(byteCountFormatter.string(for: totalUncompressed) ?? "--")
-		Compression ratio: \(String(format: "%.1f", compressionRatio)) %
-		"""
+		let labelText = ArchiveStatusFormatter.status(
+			compressed: UInt64(max(0, archiveSize)),
+			uncompressed: payload.uncompressedSize
+		)
 		return OutlinePreviewVC(rootNodes: fileTree.root.childrenList, labelText: labelText)
 	}
 

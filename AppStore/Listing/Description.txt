@@ -8,14 +8,14 @@ Features:
 • Beautiful file previews for various file types
 • Previews visible in Quick Look, Finder and Spotlight
 • Native macOS 26 controls and adaptive window materials
-• Recursive, expandable folder trees with Finder-style icons and progressive media thumbnails
-• In-place previews for nested folder files and packages
+• Lazy, expandable folder trees with Finder-style icons, pagination, and progressive media thumbnails
+• In-place previews and multi-level Back navigation for nested folder items
 • A compatible-app Open With chooser that never changes default file associations
 • Local preview processing with no telemetry or file-content uploads
 • Light and dark appearance, Reduce Transparency and Increase Contrast support
 
 Supported file types:
-• Folders (recursive trees with icons and thumbnails, up to 500 items and 5 levels)
+• Folders (lazy trees with icons, thumbnails, 500-item pages, and Back navigation)
 • Source code (.cpp, .elrc, .ini, .js, .json, .py, .swift, .toml, .ttml, .yml and many more)
 • Markdown (.md, .markdown, .mdown, .mkdn, .mkd, .Rmd, .qmd)
 • Archive (.7z, .ear, .jar, .tar, .tar.gz, .tgz, .war, .zip)

@@ -172,6 +172,41 @@ final class PreviewSmokeTests: XCTestCase {
 		XCTAssertEqual(webView.alphaValue, 1)
 	}
 
+	func testPreviewBackgroundMatchesWebContentBeforeFirstPaintInBothAppearances() throws {
+		for (appearanceName, expectedComponent) in [
+			(NSAppearance.Name.aqua, CGFloat(1)),
+			(NSAppearance.Name.darkAqua, CGFloat(30) / 255),
+		] {
+			let previewVC = WebPreviewVC(html: "<p>Matched background</p>")
+			previewVC.loadViewIfNeeded()
+			previewVC.view.appearance = NSAppearance(named: appearanceName)
+			let backgroundView = try XCTUnwrap(previewVC.view as? PreviewBackgroundView)
+			XCTAssertTrue(backgroundView.wantsLayer)
+			backgroundView.updateLayer()
+			let color = try XCTUnwrap(
+				NSColor(cgColor: try XCTUnwrap(backgroundView.layer?.backgroundColor))?
+					.usingColorSpace(.sRGB)
+			)
+
+			XCTAssertEqual(color.redComponent, expectedComponent, accuracy: 0.01)
+			XCTAssertEqual(color.greenComponent, expectedComponent, accuracy: 0.01)
+			XCTAssertEqual(color.blueComponent, expectedComponent, accuracy: 0.01)
+		}
+	}
+
+	func testArchiveStatusIsSingleLineAndUsesAccurateSavedAndOverheadLabels() {
+		let saved = ArchiveStatusFormatter.status(compressed: 50, uncompressed: 100)
+		let overhead = ArchiveStatusFormatter.status(compressed: 125, uncompressed: 100)
+		let empty = ArchiveStatusFormatter.status(compressed: 0, uncompressed: 0)
+
+		XCTAssertFalse(saved.contains("\n"))
+		XCTAssertTrue(saved.contains(" • "))
+		XCTAssertTrue(saved.contains("Saved 50.0%"))
+		XCTAssertTrue(overhead.contains("Overhead 25.0%"))
+		XCTAssertFalse(empty.contains("Saved"))
+		XCTAssertFalse(empty.contains("Overhead"))
+	}
+
 	func testWebPreviewRendersInlineContentAndStyles() throws {
 		let previewVC = WebPreviewVC(
 			html: #"<script>document.body.dataset.bad = "script"</script><p onclick="document.body.dataset.bad = 'event'">Visible content</p>"#
@@ -373,6 +408,9 @@ final class PreviewSmokeTests: XCTestCase {
 
 		XCTAssertNotNil(node(named: "folder", in: previewVC.rootNodes))
 		XCTAssertNil(node(named: "__MACOSX", in: previewVC.rootNodes))
+		XCTAssertFalse(previewVC.previewStatusText.contains("\n"))
+		XCTAssertTrue(previewVC.previewStatusText.contains("Compressed "))
+		XCTAssertTrue(previewVC.previewStatusText.contains("Uncompressed "))
 	}
 
 	func testZIPPreviewRejectsCorruptedArchive() async throws {
@@ -554,7 +592,10 @@ final class PreviewSmokeTests: XCTestCase {
 		while webView.isLoading, Date() < deadline {
 			RunLoop.current.run(mode: .default, before: Date().addingTimeInterval(0.01))
 		}
-		XCTAssertFalse(webView.isLoading, "Web view did not finish loading within \(timeout) seconds")
+		XCTAssertFalse(
+			webView.isLoading,
+			"Web view did not finish loading within \(timeout) seconds"
+		)
 	}
 
 	private func waitForWebViewToFinishLoadingAsync(

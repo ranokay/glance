@@ -1,6 +1,29 @@
 import Cocoa
 import Quartz
 
+final class PreviewBackgroundView: NSView {
+	override init(frame frameRect: NSRect) {
+		super.init(frame: frameRect)
+		wantsLayer = true
+	}
+
+	@available(*, unavailable)
+	required init?(coder _: NSCoder) {
+		fatalError("init(coder:) has not been implemented")
+	}
+
+	override var wantsUpdateLayer: Bool {
+		true
+	}
+
+	override func updateLayer() {
+		let isDark = effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+		layer?.backgroundColor = isDark
+			? NSColor(srgbRed: 30 / 255, green: 30 / 255, blue: 30 / 255, alpha: 1).cgColor
+			: NSColor.white.cgColor
+	}
+}
+
 enum PreviewError: Error {
 	case fileSizeError(path: String)
 }
@@ -40,7 +63,10 @@ class MainVC: NSViewController, QLPreviewingController {
 	private(set) var statusLabel = NSTextField(labelWithString: "")
 	private(set) var openWithButton = NSPopUpButton()
 	private(set) var openWithTargetURL: URL?
+	private(set) var previewNavigationStack = [PreviewVC]()
 	private var baseStatusText = ""
+	private var utilityBarHeightConstraint: NSLayoutConstraint?
+	private var nestedOpenWithTargetURL: URL?
 	private var statusResetTask: Task<Void, Never>?
 	private var previewPreparationTask: Task<Void, Error>?
 	private var previewPreparationID: UUID?
@@ -48,7 +74,7 @@ class MainVC: NSViewController, QLPreviewingController {
 	private weak var boundStatusProvider: (any PreviewStatusProviding)?
 
 	override func loadView() {
-		view = NSView(frame: NSRect(x: 0, y: 0, width: 800, height: 500))
+		view = PreviewBackgroundView(frame: NSRect(x: 0, y: 0, width: 800, height: 500))
 	}
 
 	override func viewDidLoad() {
@@ -61,6 +87,8 @@ class MainVC: NSViewController, QLPreviewingController {
 		utilityBarView.translatesAutoresizingMaskIntoConstraints = false
 		view.addSubview(contentContainerView)
 		view.addSubview(utilityBarView)
+		let utilityBarHeightConstraint = utilityBarView.heightAnchor.constraint(equalToConstant: 0)
+		self.utilityBarHeightConstraint = utilityBarHeightConstraint
 		NSLayoutConstraint.activate([
 			contentContainerView.topAnchor.constraint(equalTo: view.topAnchor),
 			contentContainerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -69,7 +97,7 @@ class MainVC: NSViewController, QLPreviewingController {
 			utilityBarView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
 			utilityBarView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
 			utilityBarView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-			utilityBarView.heightAnchor.constraint(equalToConstant: 32),
+			utilityBarHeightConstraint,
 		])
 		setUpUtilityBar()
 	}
@@ -94,6 +122,7 @@ class MainVC: NSViewController, QLPreviewingController {
 		statusLabel.alignment = .center
 		statusLabel.textColor = .secondaryLabelColor
 		statusLabel.lineBreakMode = .byTruncatingTail
+		statusLabel.maximumNumberOfLines = 1
 		statusLabel.translatesAutoresizingMaskIntoConstraints = false
 		utilityBarView.addSubview(statusLabel)
 
@@ -127,6 +156,7 @@ class MainVC: NSViewController, QLPreviewingController {
 			openWithButton.centerYAnchor.constraint(equalTo: utilityBarView.centerYAnchor),
 		])
 		refreshOpenWithMenu()
+		updateChrome()
 	}
 
 	/// Function responsible for generating file previews. It's called for previews in Finder,
@@ -247,13 +277,14 @@ class MainVC: NSViewController, QLPreviewingController {
 		topLevelFile = file
 		topLevelPreviewController = previewVC
 		currentPreviewController = previewVC
+		previewNavigationStack = [previewVC]
 		if file.isDirectory, let outlinePreview = previewVC as? OutlinePreviewVC {
 			folderPreviewController = outlinePreview
 			outlinePreview.interactionDelegate = self
 		}
+		nestedOpenWithTargetURL = nil
 		bindStatus(to: previewVC)
 		show(previewVC)
-		backButton.isHidden = true
 		updateOpenWithTarget()
 	}
 
@@ -261,14 +292,22 @@ class MainVC: NSViewController, QLPreviewingController {
 		if previewVC.parent == nil {
 			addChild(previewVC)
 		}
-		previewVC.view.translatesAutoresizingMaskIntoConstraints = false
-		contentContainerView.addSubview(previewVC.view)
-		NSLayoutConstraint.activate([
-			previewVC.view.topAnchor.constraint(equalTo: contentContainerView.topAnchor),
-			previewVC.view.leadingAnchor.constraint(equalTo: contentContainerView.leadingAnchor),
-			previewVC.view.trailingAnchor.constraint(equalTo: contentContainerView.trailingAnchor),
-			previewVC.view.bottomAnchor.constraint(equalTo: contentContainerView.bottomAnchor),
-		])
+		for child in children where child !== previewVC {
+			child.view.isHidden = true
+		}
+		if previewVC.view.superview == nil {
+			previewVC.view.translatesAutoresizingMaskIntoConstraints = false
+			contentContainerView.addSubview(previewVC.view)
+			NSLayoutConstraint.activate([
+				previewVC.view.topAnchor.constraint(equalTo: contentContainerView.topAnchor),
+				previewVC.view.leadingAnchor
+					.constraint(equalTo: contentContainerView.leadingAnchor),
+				previewVC.view.trailingAnchor
+					.constraint(equalTo: contentContainerView.trailingAnchor),
+				previewVC.view.bottomAnchor.constraint(equalTo: contentContainerView.bottomAnchor),
+			])
+		}
+		previewVC.view.isHidden = false
 	}
 
 	private func bindStatus(to previewVC: PreviewVC) {
@@ -287,12 +326,19 @@ class MainVC: NSViewController, QLPreviewingController {
 
 	private func setBaseStatus(_ status: String) {
 		baseStatusText = status
+		setDisplayedStatus(status)
+	}
+
+	private func setDisplayedStatus(_ status: String) {
 		statusLabel.stringValue = status
+		statusLabel.toolTip = status.isEmpty ? nil : status
+		statusLabel.setAccessibilityLabel(status)
+		updateChrome()
 	}
 
 	private func showTransientError(_ message: String) {
 		statusResetTask?.cancel()
-		statusLabel.stringValue = message
+		setDisplayedStatus(message)
 		statusResetTask = Task { @MainActor [weak self] in
 			try? await Task.sleep(for: .seconds(3))
 			guard !Task.isCancelled else {
@@ -301,7 +347,7 @@ class MainVC: NSViewController, QLPreviewingController {
 			guard let self else {
 				return
 			}
-			statusLabel.stringValue = baseStatusText
+			setDisplayedStatus(baseStatusText)
 		}
 	}
 
@@ -309,14 +355,17 @@ class MainVC: NSViewController, QLPreviewingController {
 		let selectedFolderNodeIsOpenable = selectedFolderNode.map {
 			!$0.isSymbolicLink && (!$0.isDirectory || $0.isPackage)
 		} == true
-		if let topLevelFile, !topLevelFile.isDirectory {
-			openWithTargetURL = topLevelFile.url
-		} else if let selectedFolderNode, selectedFolderNodeIsOpenable {
+		if currentPreviewController is OutlinePreviewVC,
+		   let selectedFolderNode,
+		   selectedFolderNodeIsOpenable {
 			openWithTargetURL = selectedFolderNode.fileURL
+		} else if previewNavigationStack.count > 1 {
+			openWithTargetURL = nestedOpenWithTargetURL
 		} else {
 			openWithTargetURL = nil
 		}
 		refreshOpenWithMenu()
+		updateChrome()
 	}
 
 	private func refreshOpenWithMenu() {
@@ -352,6 +401,21 @@ class MainVC: NSViewController, QLPreviewingController {
 		openWithButton.selectItem(at: 0)
 	}
 
+	private func updateChrome() {
+		guard isViewLoaded else {
+			return
+		}
+		let showsBack = previewNavigationStack.count > 1
+		let showsStatus = !statusLabel.stringValue.isEmpty
+		let showsOpenWith = openWithTargetURL != nil
+		backButton.isHidden = !showsBack
+		statusLabel.isHidden = !showsStatus
+		openWithButton.isHidden = !showsOpenWith
+		let showsUtilityBar = showsBack || showsStatus || showsOpenWith
+		utilityBarView.isHidden = !showsUtilityBar
+		utilityBarHeightConstraint?.constant = showsUtilityBar ? 32 : 0
+	}
+
 	@objc
 	private func openWithSelectionChanged(_ sender: NSPopUpButton) {
 		guard let applicationURL = sender.selectedItem?.representedObject as? URL else {
@@ -379,8 +443,8 @@ class MainVC: NSViewController, QLPreviewingController {
 		}
 	}
 
-	private func showNestedPreview(for node: FileTreeNode) {
-		guard nestedPreviewController == nil, let folderPreviewController else {
+	private func showNestedPreview(for node: FileTreeNode, from source: OutlinePreviewVC) {
+		guard currentPreviewController === source else {
 			return
 		}
 		nestedPreviewTask?.cancel()
@@ -391,12 +455,10 @@ class MainVC: NSViewController, QLPreviewingController {
 				}
 				let previewVC = try await nestedPreviewProvider.makePreviewController(for: node)
 				try Task.checkCancellation()
-				folderPreviewController.view.isHidden = true
-				nestedPreviewController = previewVC
-				currentPreviewController = previewVC
-				bindStatus(to: previewVC)
-				show(previewVC)
-				backButton.isHidden = false
+				guard currentPreviewController === source else {
+					return
+				}
+				pushPreview(previewVC, openWithTargetURL: node.fileURL)
 			} catch is CancellationError {
 				return
 			} catch {
@@ -408,21 +470,80 @@ class MainVC: NSViewController, QLPreviewingController {
 		}
 	}
 
+	private func showDirectoryPreview(for node: FileTreeNode, from source: OutlinePreviewVC) {
+		guard currentPreviewController === source else {
+			return
+		}
+		nestedPreviewTask?.cancel()
+		nestedPreviewTask = Task { @MainActor [weak self] in
+			do {
+				guard let self else {
+					return
+				}
+				let previewVC = try await source.makeDirectoryPreview(for: node)
+				try Task.checkCancellation()
+				guard currentPreviewController === source else {
+					return
+				}
+				pushPreview(previewVC, openWithTargetURL: nil)
+			} catch is CancellationError {
+				return
+			} catch {
+				Log.general.error(
+					"Could not open folder \(node.name, privacy: .private): \(error.localizedDescription, privacy: .private)"
+				)
+				self?.showTransientError("Couldn’t open \(node.name)")
+			}
+		}
+	}
+
+	private func pushPreview(_ previewVC: PreviewVC, openWithTargetURL: URL?) {
+		if let outlinePreview = previewVC as? OutlinePreviewVC,
+		   outlinePreview.isDirectoryBrowser {
+			outlinePreview.interactionDelegate = self
+			folderPreviewController = outlinePreview
+			nestedPreviewController = nil
+			selectedFolderNode = outlinePreview.selectedNode
+		} else {
+			nestedPreviewController = previewVC
+			selectedFolderNode = nil
+		}
+		previewNavigationStack.append(previewVC)
+		currentPreviewController = previewVC
+		nestedOpenWithTargetURL = openWithTargetURL
+		bindStatus(to: previewVC)
+		show(previewVC)
+		updateOpenWithTarget()
+	}
+
 	@objc
 	func showFolderPreview() {
 		nestedPreviewTask?.cancel()
 		nestedPreviewTask = nil
-		guard let nestedPreviewController, let folderPreviewController else {
+		guard previewNavigationStack.count > 1,
+		      let removedController = previewNavigationStack.popLast(),
+		      let previousController = previewNavigationStack.last
+		else {
 			return
 		}
-		nestedPreviewController.tearDown()
-		nestedPreviewController.view.removeFromSuperview()
-		nestedPreviewController.removeFromParent()
-		self.nestedPreviewController = nil
-		currentPreviewController = folderPreviewController
-		bindStatus(to: folderPreviewController)
-		folderPreviewController.view.isHidden = false
-		backButton.isHidden = true
+		removedController.tearDown()
+		removedController.view.removeFromSuperview()
+		removedController.removeFromParent()
+		currentPreviewController = previousController
+		if let outlinePreview = previousController as? OutlinePreviewVC,
+		   outlinePreview.isDirectoryBrowser {
+			folderPreviewController = outlinePreview
+			nestedPreviewController = nil
+			selectedFolderNode = outlinePreview.selectedNode
+		} else {
+			folderPreviewController = nil
+			nestedPreviewController = previousController
+			selectedFolderNode = nil
+		}
+		nestedOpenWithTargetURL = nil
+		bindStatus(to: previousController)
+		show(previousController)
+		updateOpenWithTarget()
 	}
 
 	private func clearPreviewControllers() {
@@ -440,10 +561,14 @@ class MainVC: NSViewController, QLPreviewingController {
 		topLevelPreviewController = nil
 		folderPreviewController = nil
 		nestedPreviewController = nil
+		previewNavigationStack.removeAll()
 		topLevelFile = nil
 		selectedFolderNode = nil
+		nestedOpenWithTargetURL = nil
 		openWithTargetURL = nil
 		refreshOpenWithMenu()
+		setBaseStatus("")
+		updateChrome()
 	}
 }
 
@@ -453,7 +578,11 @@ extension MainVC: OutlinePreviewInteractionDelegate {
 		updateOpenWithTarget()
 	}
 
-	func outlinePreview(_: OutlinePreviewVC, requestPreviewOf node: FileTreeNode) {
-		showNestedPreview(for: node)
+	func outlinePreview(_ preview: OutlinePreviewVC, requestPreviewOf node: FileTreeNode) {
+		showNestedPreview(for: node, from: preview)
+	}
+
+	func outlinePreview(_ preview: OutlinePreviewVC, requestNavigationInto node: FileTreeNode) {
+		showDirectoryPreview(for: node, from: preview)
 	}
 }

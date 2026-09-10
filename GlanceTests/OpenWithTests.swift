@@ -44,7 +44,7 @@ final class OpenWithTests: XCTestCase {
 		XCTAssertEqual(applications.map(\.isDefault), [false, true])
 	}
 
-	func testTopLevelFileMenuUsesRankedAppsMarksDefaultAndHasNoOtherPicker() throws {
+	func testTopLevelFilesRelyOnFinderOpenWithAndCollapseTheEmptyUtilityBar() throws {
 		let fileURL = try writeFile(named: "notes.txt")
 		let firstAppURL = URL(fileURLWithPath: "/Applications/First.app")
 		let defaultAppURL = URL(fileURLWithPath: "/Applications/Default.app")
@@ -57,16 +57,11 @@ final class OpenWithTests: XCTestCase {
 
 		mainVC.installTopLevelPreview(OpenWithStubPreviewVC(), file: try File(url: fileURL))
 
-		XCTAssertEqual(mainVC.openWithTargetURL, fileURL)
-		XCTAssertTrue(mainVC.openWithButton.isEnabled)
-		let applicationItems = mainVC.openWithButton.menu?.items.filter {
-			$0.representedObject is URL
-		} ?? []
-		XCTAssertFalse(try XCTUnwrap(mainVC.openWithButton.menu).autoenablesItems)
-		XCTAssertEqual(applicationItems.map(\.title), ["First", "Default"])
-		XCTAssertEqual(applicationItems.map(\.state), [.off, .on])
-		XCTAssertTrue(applicationItems.allSatisfy(\.isEnabled))
-		XCTAssertFalse(mainVC.openWithButton.itemTitles.contains("Other…"))
+		XCTAssertNil(mainVC.openWithTargetURL)
+		XCTAssertFalse(mainVC.openWithButton.isEnabled)
+		XCTAssertTrue(mainVC.openWithButton.isHidden)
+		XCTAssertTrue(mainVC.utilityBarView.isHidden)
+		XCTAssertEqual(mainVC.view.subviews.count(where: { $0 === mainVC.utilityBarView }), 1)
 	}
 
 	func testApplicationMetadataIsCachedWhileCompatibilityAndDefaultStayCurrent() {
@@ -112,6 +107,7 @@ final class OpenWithTests: XCTestCase {
 		mainVC.outlinePreview(outlineVC, didSelect: directoryNode)
 		XCTAssertNil(mainVC.openWithTargetURL)
 		XCTAssertFalse(mainVC.openWithButton.isEnabled)
+		XCTAssertTrue(mainVC.openWithButton.isHidden)
 
 		mainVC.outlinePreview(outlineVC, didSelect: symlinkNode)
 		XCTAssertNil(mainVC.openWithTargetURL)
@@ -120,21 +116,48 @@ final class OpenWithTests: XCTestCase {
 		mainVC.outlinePreview(outlineVC, didSelect: regularFileNode)
 		XCTAssertEqual(mainVC.openWithTargetURL, regularFileNode.fileURL)
 		XCTAssertTrue(mainVC.openWithButton.isEnabled)
+		XCTAssertFalse(mainVC.openWithButton.isHidden)
 
 		mainVC.outlinePreview(outlineVC, didSelect: packageNode)
 		XCTAssertEqual(mainVC.openWithTargetURL, packageNode.fileURL)
 		XCTAssertTrue(mainVC.openWithButton.isEnabled)
 	}
 
+	func testArchiveStatusUsesOneSingleLineUtilityBarAtNarrowWidths() throws {
+		let archiveURL = try writeFile(named: "archive.zip")
+		let status = ArchiveStatusFormatter.status(compressed: 18_600_000, uncompressed: 20_000_000)
+		let previewVC = OutlinePreviewVC(rootNodes: [], labelText: status)
+		let mainVC = MainVC()
+		mainVC.loadViewIfNeeded()
+		mainVC.view.frame = NSRect(x: 0, y: 0, width: 320, height: 400)
+
+		mainVC.installTopLevelPreview(previewVC, file: try File(url: archiveURL))
+		mainVC.view.layoutSubtreeIfNeeded()
+
+		XCTAssertFalse(mainVC.utilityBarView.isHidden)
+		XCTAssertEqual(mainVC.utilityBarView.frame.height, 32, accuracy: 0.5)
+		XCTAssertEqual(mainVC.statusLabel.maximumNumberOfLines, 1)
+		XCTAssertEqual(mainVC.statusLabel.stringValue, status)
+		XCTAssertEqual(mainVC.statusLabel.toolTip, status)
+		XCTAssertFalse(mainVC.statusLabel.stringValue.contains("\n"))
+		XCTAssertTrue(mainVC.openWithButton.isHidden)
+		XCTAssertEqual(mainVC.view.subviews.count(where: { $0 === mainVC.utilityBarView }), 1)
+	}
+
 	func testChosenApplicationOpensExactlyOnceWithoutChangingDefaults() throws {
-		let fileURL = try writeFile(named: "once.txt")
+		let folderURL = try makeDirectory(named: "open-folder")
+		let fileURL = try writeFile(named: "open-folder/once.txt")
 		let applicationURL = URL(fileURLWithPath: "/Applications/Editor.app")
 		let workspace = StubWorkspaceApplicationProvider(
 			compatibleApplicationURLs: [applicationURL],
 			displayNames: [applicationURL: "Editor"]
 		)
 		let mainVC = makeMainVC(workspace: workspace)
-		mainVC.installTopLevelPreview(OpenWithStubPreviewVC(), file: try File(url: fileURL))
+		let outlineVC = OutlinePreviewVC(rootNodes: [], labelText: "0 items")
+		mainVC.installTopLevelPreview(outlineVC, file: try File(url: folderURL))
+		let childNode = fileNode(named: "once.txt")
+		childNode.fileURL = fileURL
+		mainVC.outlinePreview(outlineVC, didSelect: childNode)
 
 		let applicationItem = try XCTUnwrap(
 			mainVC.openWithButton.menu?.items.first { $0.representedObject is URL }
@@ -663,7 +686,8 @@ final class OpenWithTests: XCTestCase {
 	}
 
 	func testOpeningFailureShowsTransientNonmodalUtilityBarError() throws {
-		let fileURL = try writeFile(named: "failure.txt")
+		let folderURL = try makeDirectory(named: "failure-folder")
+		let fileURL = try writeFile(named: "failure-folder/failure.txt")
 		let applicationURL = URL(fileURLWithPath: "/Applications/Editor.app")
 		let workspace = StubWorkspaceApplicationProvider(
 			compatibleApplicationURLs: [applicationURL],
@@ -671,7 +695,11 @@ final class OpenWithTests: XCTestCase {
 			openError: TestOpenWithError.failed
 		)
 		let mainVC = makeMainVC(workspace: workspace)
-		mainVC.installTopLevelPreview(OpenWithStubPreviewVC(), file: try File(url: fileURL))
+		let outlineVC = OutlinePreviewVC(rootNodes: [], labelText: "0 items")
+		mainVC.installTopLevelPreview(outlineVC, file: try File(url: folderURL))
+		let childNode = fileNode(named: "failure.txt")
+		childNode.fileURL = fileURL
+		mainVC.outlinePreview(outlineVC, didSelect: childNode)
 
 		mainVC.openWithApplication(at: applicationURL)
 
