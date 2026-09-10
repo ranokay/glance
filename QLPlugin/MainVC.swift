@@ -2,6 +2,16 @@ import Cocoa
 import Quartz
 
 final class PreviewBackgroundView: NSView {
+	override init(frame frameRect: NSRect) {
+		super.init(frame: frameRect)
+		wantsLayer = true
+	}
+
+	@available(*, unavailable)
+	required init?(coder _: NSCoder) {
+		fatalError("init(coder:) has not been implemented")
+	}
+
 	override var wantsUpdateLayer: Bool {
 		true
 	}

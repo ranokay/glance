@@ -181,7 +181,7 @@ final class PreviewSmokeTests: XCTestCase {
 			previewVC.loadViewIfNeeded()
 			previewVC.view.appearance = NSAppearance(named: appearanceName)
 			let backgroundView = try XCTUnwrap(previewVC.view as? PreviewBackgroundView)
-			backgroundView.wantsLayer = true
+			XCTAssertTrue(backgroundView.wantsLayer)
 			backgroundView.updateLayer()
 			let color = try XCTUnwrap(
 				NSColor(cgColor: try XCTUnwrap(backgroundView.layer?.backgroundColor))?
