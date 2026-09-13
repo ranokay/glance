@@ -182,9 +182,12 @@ class WebPreviewVC: NSViewController, PreviewVC, WKNavigationDelegate {
 	}
 
 	private func revealAfterFirstPaint(_ webView: WKWebView) {
-		webView.evaluateJavaScript(
-			"new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))"
-		) { [weak webView] _, _ in
+		webView.callAsyncJavaScript(
+			"await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))",
+			arguments: [:],
+			in: nil,
+			in: .page
+		) { [weak webView] _ in
 			guard let webView else {
 				return
 			}

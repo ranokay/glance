@@ -22,6 +22,11 @@ final class PreviewBackgroundView: NSView {
 			? NSColor(srgbRed: 30 / 255, green: 30 / 255, blue: 30 / 255, alpha: 1).cgColor
 			: NSColor.white.cgColor
 	}
+
+	override func viewDidChangeEffectiveAppearance() {
+		super.viewDidChangeEffectiveAppearance()
+		needsDisplay = true
+	}
 }
 
 enum PreviewError: Error {
