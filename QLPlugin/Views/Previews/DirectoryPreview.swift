@@ -234,6 +234,11 @@ class DirectoryPreview: Preview {
 }
 
 private struct DirectoryPageScanner: @unchecked Sendable {
+	private struct Candidate {
+		let name: String
+		let fileURL: URL
+	}
+
 	private static let sortLocale = Locale(identifier: "en_US_POSIX")
 	private static let resourceKeys: Set<URLResourceKey> = [
 		.contentModificationDateKey,
@@ -261,7 +266,7 @@ private struct DirectoryPageScanner: @unchecked Sendable {
 		var enumerationError: Error?
 		guard let enumerator = fileManager.enumerator(
 			at: directoryURL,
-			includingPropertiesForKeys: Array(Self.resourceKeys),
+			includingPropertiesForKeys: nil,
 			options: [.skipsHiddenFiles, .skipsSubdirectoryDescendants],
 			errorHandler: { _, error in
 				enumerationError = error
@@ -271,7 +276,7 @@ private struct DirectoryPageScanner: @unchecked Sendable {
 			throw CocoaError(.fileReadUnknown)
 		}
 
-		var retainedEntries = [DirectoryPreviewEntry]()
+		var retainedCandidates = [Candidate]()
 		var itemCount = 0
 		for case let itemURL as URL in enumerator {
 			try Task.checkCancellation()
@@ -280,42 +285,52 @@ private struct DirectoryPageScanner: @unchecked Sendable {
 			guard afterName.map({ Self.isOrderedAfter(name, $0) }) ?? true else {
 				continue
 			}
-			let values: URLResourceValues
-			do {
-				values = try itemURL.resourceValues(forKeys: Self.resourceKeys)
-			} catch {
-				Log.general.error(
-					"Could not read item metadata \(itemURL.path, privacy: .private): \(error.localizedDescription, privacy: .private)"
-				)
-				continue
-			}
-
-			let isDirectory = values.isDirectory ?? false
-			let entry = DirectoryPreviewEntry(
-				name: name,
-				isDirectory: isDirectory,
-				size: isDirectory ? 0 : values.fileSize ?? 0,
-				dateModified: values.contentModificationDate,
-				fileURL: itemURL,
-				isPackage: values.isPackage ?? false,
-				isSymbolicLink: values.isSymbolicLink ?? false,
-				contentTypeIdentifier: values.contentType?.identifier
+			let candidate = Candidate(name: name, fileURL: itemURL)
+			let insertionIndex = Self.insertionIndex(
+				for: candidate,
+				in: retainedCandidates
 			)
-			let insertionIndex = Self.insertionIndex(for: entry, in: retainedEntries)
-			retainedEntries.insert(entry, at: insertionIndex)
-			if retainedEntries.count > retainedLimit.partialValue {
-				retainedEntries.removeLast()
+			retainedCandidates.insert(candidate, at: insertionIndex)
+			if retainedCandidates.count > retainedLimit.partialValue {
+				retainedCandidates.removeLast()
 			}
 		}
 		if let enumerationError {
 			throw enumerationError
 		}
 
-		let hasMore = retainedEntries.count > pageSize
+		let hasMore = retainedCandidates.count > pageSize
 		if hasMore {
-			retainedEntries.removeLast(retainedEntries.count - pageSize)
+			retainedCandidates.removeLast(retainedCandidates.count - pageSize)
 		}
-		let nextOffsetValue = offset.addingReportingOverflow(retainedEntries.count)
+
+		var retainedEntries = [DirectoryPreviewEntry]()
+		for candidate in retainedCandidates {
+			try Task.checkCancellation()
+			let values: URLResourceValues
+			do {
+				values = try candidate.fileURL.resourceValues(forKeys: Self.resourceKeys)
+			} catch {
+				Log.general.error(
+					"Could not read item metadata \(candidate.fileURL.path, privacy: .private): \(error.localizedDescription, privacy: .private)"
+				)
+				continue
+			}
+
+			let isDirectory = values.isDirectory ?? false
+			retainedEntries.append(DirectoryPreviewEntry(
+				name: candidate.name,
+				isDirectory: isDirectory,
+				size: isDirectory ? 0 : values.fileSize ?? 0,
+				dateModified: values.contentModificationDate,
+				fileURL: candidate.fileURL,
+				isPackage: values.isPackage ?? false,
+				isSymbolicLink: values.isSymbolicLink ?? false,
+				contentTypeIdentifier: values.contentType?.identifier
+			))
+		}
+
+		let nextOffsetValue = offset.addingReportingOverflow(retainedCandidates.count)
 		guard !nextOffsetValue.overflow else {
 			throw CocoaError(.fileReadTooLarge)
 		}
@@ -326,13 +341,13 @@ private struct DirectoryPageScanner: @unchecked Sendable {
 				nextOffset: nextOffset,
 				totalItemCount: itemCount
 			),
-			nextOffset == nil ? nil : retainedEntries.last?.name
+			nextOffset == nil ? nil : retainedCandidates.last?.name
 		)
 	}
 
 	private static func insertionIndex(
-		for entry: DirectoryPreviewEntry,
-		in entries: [DirectoryPreviewEntry]
+		for entry: Candidate,
+		in entries: [Candidate]
 	) -> Int {
 		var lowerBound = 0
 		var upperBound = entries.count
@@ -348,8 +363,8 @@ private struct DirectoryPageScanner: @unchecked Sendable {
 	}
 
 	private static func isOrderedBefore(
-		_ lhs: DirectoryPreviewEntry,
-		_ rhs: DirectoryPreviewEntry
+		_ lhs: Candidate,
+		_ rhs: Candidate
 	) -> Bool {
 		compareNames(lhs.name, rhs.name) == .orderedAscending
 	}
