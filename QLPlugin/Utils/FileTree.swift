@@ -1,5 +1,19 @@
 import Cocoa
 
+enum FileTreeNodeRole: Equatable {
+	case item
+	case loading
+	case loadMore(offset: Int)
+	case retry(offset: Int)
+}
+
+enum DirectoryChildrenState: Equatable {
+	case notLoaded
+	case loading
+	case loaded(nextOffset: Int?)
+	case failed
+}
+
 enum FileTreeError {
 	case notADirectoryError(pathParts: [String.SubSequence], pathPartIndex: Int)
 	case pathDepthLimitExceeded(path: String, maxDepth: Int)
@@ -42,6 +56,9 @@ class FileTreeNode: NSObject {
 	@objc var isSymbolicLink: Bool
 	@objc var contentTypeIdentifier: String?
 	@objc dynamic var icon: NSImage?
+	let role: FileTreeNodeRole
+	var directoryChildrenState: DirectoryChildrenState
+	weak var parentNode: FileTreeNode?
 	/// Child nodes of a directory
 	@objc var children = [String: FileTreeNode]()
 
@@ -62,7 +79,23 @@ class FileTreeNode: NSObject {
 
 	/// Whether the node is a leaf (has no children) — used by `NSTreeController`'s `leafKeyPath`
 	@objc var isLeaf: Bool {
-		children.isEmpty
+		guard role == .item else {
+			return true
+		}
+		guard isDirectory, !isPackage, !isSymbolicLink else {
+			return !hasChildren
+		}
+		switch directoryChildrenState {
+			case .notLoaded, .loading, .failed:
+				return false
+			case .loaded:
+				return children.isEmpty
+		}
+	}
+
+	/// Keeps loading, retry, and pagination actions after real entries for every sort direction.
+	@objc var auxiliarySortRank: Int {
+		role == .item ? 0 : 1
 	}
 
 	convenience init(name: String, size: Int, isDirectory: Bool) {
@@ -78,7 +111,9 @@ class FileTreeNode: NSObject {
 		isPackage: Bool = false,
 		isSymbolicLink: Bool = false,
 		contentTypeIdentifier: String? = nil,
-		icon: NSImage? = nil
+		icon: NSImage? = nil,
+		role: FileTreeNodeRole = .item,
+		directoryChildrenState: DirectoryChildrenState = .loaded(nextOffset: nil)
 	) {
 		self.name = name
 		self.size = size
@@ -89,6 +124,50 @@ class FileTreeNode: NSObject {
 		self.isSymbolicLink = isSymbolicLink
 		self.contentTypeIdentifier = contentTypeIdentifier
 		self.icon = icon
+		self.role = role
+		self.directoryChildrenState = directoryChildrenState
+	}
+
+	static func loadingNode(parent: FileTreeNode? = nil) -> FileTreeNode {
+		let node = FileTreeNode(
+			name: "Loading…",
+			size: 0,
+			isDirectory: false,
+			dateModified: nil,
+			icon: NSImage(systemSymbolName: "progress.indicator", accessibilityDescription: nil),
+			role: .loading
+		)
+		node.parentNode = parent
+		return node
+	}
+
+	static func loadMoreNode(offset: Int, parent: FileTreeNode? = nil) -> FileTreeNode {
+		let node = FileTreeNode(
+			name: "Load More…",
+			size: 0,
+			isDirectory: false,
+			dateModified: nil,
+			icon: NSImage(systemSymbolName: "arrow.down.circle", accessibilityDescription: nil),
+			role: .loadMore(offset: offset)
+		)
+		node.parentNode = parent
+		return node
+	}
+
+	static func retryNode(offset: Int, parent: FileTreeNode? = nil) -> FileTreeNode {
+		let node = FileTreeNode(
+			name: "Couldn’t load this folder — Retry",
+			size: 0,
+			isDirectory: false,
+			dateModified: nil,
+			icon: NSImage(
+				systemSymbolName: "arrow.clockwise.circle",
+				accessibilityDescription: nil
+			),
+			role: .retry(offset: offset)
+		)
+		node.parentNode = parent
+		return node
 	}
 }
 
