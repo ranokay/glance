@@ -98,7 +98,7 @@ final class PlistCoverageTests: XCTestCase {
 		XCTAssertFalse(miseContents.contains("= \"latest\""))
 	}
 
-	func testReleaseMetadataUsesVersion1_6_0Build20() throws {
+	func testReleaseMetadataUsesVersion1_6_1Build21() throws {
 		let projectContents = try String(
 			contentsOf: repositoryRoot()
 				.appendingPathComponent("Glance.xcodeproj", isDirectory: true)
