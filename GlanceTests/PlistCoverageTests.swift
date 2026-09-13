@@ -118,16 +118,16 @@ final class PlistCoverageTests: XCTestCase {
 		)
 
 		XCTAssertEqual(
-			projectContents.components(separatedBy: "MARKETING_VERSION = 1.6.0;").count - 1,
+			projectContents.components(separatedBy: "MARKETING_VERSION = 1.6.1;").count - 1,
 			4
 		)
 		XCTAssertEqual(
-			projectContents.components(separatedBy: "CURRENT_PROJECT_VERSION = 20;").count - 1,
+			projectContents.components(separatedBy: "CURRENT_PROJECT_VERSION = 21;").count - 1,
 			4
 		)
-		XCTAssertTrue(readmeContents.contains("Version 1.6.0 (build 20)"))
-		XCTAssertTrue(readmeContents.contains("Version **1.6.0** (build **20**)"))
-		XCTAssertTrue(listingContents.contains("Version 1.6.0"))
+		XCTAssertTrue(readmeContents.contains("Version 1.6.1 (build 21)"))
+		XCTAssertTrue(readmeContents.contains("Version **1.6.1** (build **21**)"))
+		XCTAssertTrue(listingContents.contains("Version 1.6.1"))
 	}
 
 	func testUserFacingRepositoryLinksPointToMaintainedFork() throws {
