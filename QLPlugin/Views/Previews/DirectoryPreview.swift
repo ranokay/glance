@@ -47,12 +47,13 @@ protocol DirectoryPageLoading: Sendable {
 	) async throws -> DirectoryPage
 }
 
-/// Keeps stable name cursors for each retained directory view while holding one UI-sized batch.
-/// A session prevents navigation previews of the same URL from overwriting each other's cursors.
+/// Keeps stable name cursors and lightweight ordered snapshots for each retained directory view.
+/// Snapshots are invalidated by directory modification time and released after the last page.
 actor DirectoryPageLoader: DirectoryPageLoading {
 	let fileManager: FileManager
 	let pageSize: Int
 	private var pageCursors = [DirectoryPaginationSession: [URL: [Int: String]]]()
+	private var directorySnapshots = [DirectoryPaginationSession: [URL: DirectorySnapshot]]()
 
 	init(fileManager: sending FileManager, pageSize: Int) {
 		self.fileManager = fileManager
@@ -69,6 +70,7 @@ actor DirectoryPageLoader: DirectoryPageLoading {
 		let afterName: String?
 		if safeOffset == 0 {
 			pageCursors[session, default: [:]][pageURL] = [:]
+			directorySnapshots[session, default: [:]][pageURL] = nil
 			afterName = nil
 		} else {
 			guard let cursor = pageCursors[session]?[pageURL]?[safeOffset] else {
@@ -81,10 +83,27 @@ actor DirectoryPageLoader: DirectoryPageLoading {
 		}
 
 		let scanner = DirectoryPageScanner(fileManager: fileManager, pageSize: pageSize)
+		let currentModificationDate = try await PreviewExecutor.run {
+			try scanner.modificationDate(for: pageURL)
+		}
+		let cachedSnapshot = directorySnapshots[session]?[pageURL]
+		let snapshot: DirectorySnapshot
+		if let cachedSnapshot,
+		   let currentModificationDate,
+		   cachedSnapshot.modificationDate == currentModificationDate
+		{
+			snapshot = cachedSnapshot
+		} else {
+			snapshot = try await PreviewExecutor.run {
+				try scanner.snapshot(directoryURL: pageURL)
+			}
+			try Task.checkCancellation()
+			directorySnapshots[session, default: [:]][pageURL] = snapshot
+		}
 		let scanResult = try await PreviewExecutor.run {
 			do {
-				return try scanner.scan(
-					directoryURL: pageURL,
+				return try scanner.page(
+					from: snapshot,
 					offset: safeOffset,
 					afterName: afterName
 				)
@@ -104,6 +123,8 @@ actor DirectoryPageLoader: DirectoryPageLoading {
 					nextOffset
 				] = continuationName
 			}
+		} else {
+			directorySnapshots[session]?[pageURL] = nil
 		}
 		return scanResult.page
 	}
@@ -233,12 +254,17 @@ class DirectoryPreview: Preview {
 	}
 }
 
-private struct DirectoryPageScanner: @unchecked Sendable {
-	private struct Candidate {
-		let name: String
-		let fileURL: URL
-	}
+private struct DirectoryPageCandidate {
+	let name: String
+	let fileURL: URL
+}
 
+private struct DirectorySnapshot {
+	let candidates: [DirectoryPageCandidate]
+	let modificationDate: Date?
+}
+
+private struct DirectoryPageScanner: @unchecked Sendable {
 	private static let sortLocale = Locale(identifier: "en_US_POSIX")
 	private static let resourceKeys: Set<URLResourceKey> = [
 		.contentModificationDateKey,
@@ -252,17 +278,13 @@ private struct DirectoryPageScanner: @unchecked Sendable {
 	let fileManager: FileManager
 	let pageSize: Int
 
-	func scan(
-		directoryURL: URL,
-		offset: Int,
-		afterName: String?
-	) throws -> (page: DirectoryPage, continuationName: String?) {
-		try Task.checkCancellation()
-		let retainedLimit = pageSize.addingReportingOverflow(1)
-		guard !retainedLimit.overflow else {
-			throw CocoaError(.fileReadTooLarge)
-		}
+	func modificationDate(for directoryURL: URL) throws -> Date? {
+		try directoryURL.resourceValues(forKeys: [.contentModificationDateKey])
+			.contentModificationDate
+	}
 
+	func snapshot(directoryURL: URL) throws -> DirectorySnapshot {
+		try Task.checkCancellation()
 		var enumerationError: Error?
 		guard let enumerator = fileManager.enumerator(
 			at: directoryURL,
@@ -276,28 +298,42 @@ private struct DirectoryPageScanner: @unchecked Sendable {
 			throw CocoaError(.fileReadUnknown)
 		}
 
-		var retainedCandidates = [Candidate]()
-		var itemCount = 0
+		var candidates = [DirectoryPageCandidate]()
 		for case let itemURL as URL in enumerator {
 			try Task.checkCancellation()
-			itemCount += 1
-			let name = itemURL.lastPathComponent
-			guard afterName.map({ Self.isOrderedAfter(name, $0) }) ?? true else {
-				continue
-			}
-			let candidate = Candidate(name: name, fileURL: itemURL)
-			let insertionIndex = Self.insertionIndex(
-				for: candidate,
-				in: retainedCandidates
-			)
-			retainedCandidates.insert(candidate, at: insertionIndex)
-			if retainedCandidates.count > retainedLimit.partialValue {
-				retainedCandidates.removeLast()
-			}
+			candidates.append(DirectoryPageCandidate(
+				name: itemURL.lastPathComponent,
+				fileURL: itemURL
+			))
 		}
 		if let enumerationError {
 			throw enumerationError
 		}
+		candidates.sort(by: Self.isOrderedBefore)
+		return DirectorySnapshot(
+			candidates: candidates,
+			modificationDate: try modificationDate(for: directoryURL)
+		)
+	}
+
+	func page(
+		from snapshot: DirectorySnapshot,
+		offset: Int,
+		afterName: String?
+	) throws -> (page: DirectoryPage, continuationName: String?) {
+		try Task.checkCancellation()
+		let retainedLimit = pageSize.addingReportingOverflow(1)
+		guard !retainedLimit.overflow else {
+			throw CocoaError(.fileReadTooLarge)
+		}
+		let startIndex = afterName.map {
+			Self.firstCandidate(after: $0, in: snapshot.candidates)
+		} ?? snapshot.candidates.startIndex
+		let endIndex = min(
+			startIndex + retainedLimit.partialValue,
+			snapshot.candidates.endIndex
+		)
+		var retainedCandidates = Array(snapshot.candidates[startIndex ..< endIndex])
 
 		let hasMore = retainedCandidates.count > pageSize
 		if hasMore {
@@ -339,21 +375,21 @@ private struct DirectoryPageScanner: @unchecked Sendable {
 			DirectoryPage(
 				entries: retainedEntries,
 				nextOffset: nextOffset,
-				totalItemCount: itemCount
+				totalItemCount: snapshot.candidates.count
 			),
 			nextOffset == nil ? nil : retainedCandidates.last?.name
 		)
 	}
 
-	private static func insertionIndex(
-		for entry: Candidate,
-		in entries: [Candidate]
+	private static func firstCandidate(
+		after name: String,
+		in candidates: [DirectoryPageCandidate]
 	) -> Int {
 		var lowerBound = 0
-		var upperBound = entries.count
+		var upperBound = candidates.count
 		while lowerBound < upperBound {
 			let index = lowerBound + (upperBound - lowerBound) / 2
-			if isOrderedBefore(entry, entries[index]) {
+			if isOrderedAfter(candidates[index].name, name) {
 				upperBound = index
 			} else {
 				lowerBound = index + 1
@@ -363,8 +399,8 @@ private struct DirectoryPageScanner: @unchecked Sendable {
 	}
 
 	private static func isOrderedBefore(
-		_ lhs: Candidate,
-		_ rhs: Candidate
+		_ lhs: DirectoryPageCandidate,
+		_ rhs: DirectoryPageCandidate
 	) -> Bool {
 		compareNames(lhs.name, rhs.name) == .orderedAscending
 	}

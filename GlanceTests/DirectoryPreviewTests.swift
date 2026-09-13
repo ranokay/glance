@@ -120,7 +120,7 @@ final class DirectoryPreviewTests: XCTestCase {
 			.first { if case .loadMore = $0.role { true } else { false } })
 	}
 
-	func testPaginationSnapshotRemainsStableWhenDirectoryChanges() async throws {
+	func testPaginationSnapshotRefreshesWhenDirectoryChanges() async throws {
 		let rootURL = try makeDirectory(named: "changing")
 		_ = try writeFile(named: "changing/b.txt", contents: "b")
 		_ = try writeFile(named: "changing/c.txt", contents: "c")
@@ -130,12 +130,17 @@ final class DirectoryPreviewTests: XCTestCase {
 
 		let firstPage = try await loader.page(at: rootURL, offset: 0, session: session)
 		_ = try writeFile(named: "changing/a.txt", contents: "a")
+		_ = try writeFile(named: "changing/e.txt", contents: "e")
 		try FileManager.default.removeItem(at: rootURL.appendingPathComponent("b.txt"))
+		try FileManager.default.setAttributes(
+			[.modificationDate: Date(timeIntervalSince1970: 1_800_000_000)],
+			ofItemAtPath: rootURL.path
+		)
 		let secondPage = try await loader.page(at: rootURL, offset: 2, session: session)
 
 		XCTAssertEqual(firstPage.entries.map(\.name), ["b.txt", "c.txt"])
-		XCTAssertEqual(secondPage.entries.map(\.name), ["d.txt"])
-		XCTAssertEqual(secondPage.totalItemCount, 3)
+		XCTAssertEqual(secondPage.entries.map(\.name), ["d.txt", "e.txt"])
+		XCTAssertEqual(secondPage.totalItemCount, 4)
 		XCTAssertNil(secondPage.nextOffset)
 	}
 
