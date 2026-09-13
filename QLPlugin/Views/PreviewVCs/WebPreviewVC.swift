@@ -182,19 +182,36 @@ class WebPreviewVC: NSViewController, PreviewVC, WKNavigationDelegate {
 	}
 
 	private func revealAfterFirstPaint(_ webView: WKWebView) {
+		// requestAnimationFrame is suspended while a WebKit view is detached from a window.
+		// Keep a fallback so offscreen navigation cannot leave the preview
+		// invisible.
+		Task { @MainActor [weak self, weak webView] in
+			try? await Task.sleep(for: .milliseconds(250))
+			guard !Task.isCancelled, let self, let webView else {
+				return
+			}
+			reveal(webView)
+		}
 		webView.callAsyncJavaScript(
 			"await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))",
 			arguments: [:],
 			in: nil,
 			in: .page
-		) { [weak webView] _ in
-			guard let webView else {
+		) { [weak self, weak webView] _ in
+			guard let self, let webView else {
 				return
 			}
-			NSAnimationContext.runAnimationGroup { context in
-				context.duration = 0.08
-				webView.animator().alphaValue = 1
-			}
+			reveal(webView)
+		}
+	}
+
+	private func reveal(_ webView: WKWebView) {
+		guard webView.alphaValue < 1 else {
+			return
+		}
+		NSAnimationContext.runAnimationGroup { context in
+			context.duration = 0.08
+			webView.animator().alphaValue = 1
 		}
 	}
 }
