@@ -151,6 +151,7 @@ enum SupportedPreviewRegistry {
 		extensionEntry("hbs", group: .code, codeLexer: "handlebars", searchTokens: ["Handlebars"]),
 		extensionEntry("iml", group: .code, codeLexer: "xml", searchTokens: ["IntelliJ", "XML"]),
 		extensionEntry("ini", group: .code, codeLexer: "ini", searchTokens: ["configuration"]),
+		extensionEntry("jsonl", group: .code, codeLexer: "json", searchTokens: ["JSON Lines", "NDJSON"]),
 		extensionEntry("liquid", group: .code, codeLexer: "twig", searchTokens: ["Liquid", "Twig"]),
 		extensionEntry("lrc", group: .code, codeLexer: "txt", searchTokens: ["lyrics"]),
 		extensionEntry("mjs", group: .code, codeLexer: "js", searchTokens: ["JavaScript"]),

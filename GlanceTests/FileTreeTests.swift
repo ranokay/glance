@@ -47,6 +47,22 @@ class FileTreeTests: XCTestCase {
 		XCTAssert(fileTree!.root.children.isEmpty)
 	}
 
+	func testChildrenUseLocalizedNaturalNameOrder() throws {
+		for name in ["file-10", "File-2", "file-1"] {
+			try fileTree?.addNode(
+				path: name,
+				isDirectory: false,
+				size: 0,
+				dateModified: now
+			)
+		}
+
+		XCTAssertEqual(
+			fileTree?.root.childrenList.map(\.name),
+			["file-1", "File-2", "file-10"]
+		)
+	}
+
 	// Tree:
 	//
 	// └── file

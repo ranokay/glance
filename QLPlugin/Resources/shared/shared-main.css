@@ -187,6 +187,10 @@ pre {
 	font-family: var(--font-family-monospace);
 }
 
+pre code {
+	font-size: 1em;
+}
+
 /* Tables */
 
 table {

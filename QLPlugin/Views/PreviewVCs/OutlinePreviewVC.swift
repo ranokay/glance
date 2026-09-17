@@ -42,7 +42,13 @@ class OutlinePreviewVC: NSViewController, PreviewVC {
 	private let showsFileThumbnails: Bool
 	private var thumbnailLoader: DirectoryThumbnailLoader?
 
-	@objc dynamic var customSortDescriptors = [NSSortDescriptor(key: "name", ascending: true)]
+	@objc dynamic var customSortDescriptors = [
+		NSSortDescriptor(
+			key: "name",
+			ascending: true,
+			selector: #selector(NSString.localizedStandardCompare(_:))
+		),
+	]
 
 	@IBOutlet private var treeController: NSTreeController!
 	@IBOutlet private var outlineView: NSOutlineView!
