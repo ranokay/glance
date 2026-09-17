@@ -15,6 +15,7 @@ final class PlistCoverageTests: XCTestCase {
 			"org.jupyter.ipynb",
 			"public.jupyter-notebook",
 			"com.microsoft.ini",
+			"dyn.ah62d4rv4ge80y65tr30a",
 			"public.markdown",
 			"net.daringfireball.markdown",
 			"public.tab-separated-values-text",

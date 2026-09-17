@@ -47,7 +47,11 @@ class OutlinePreviewVC: NSViewController, PreviewVC {
 
 	@objc dynamic var customSortDescriptors = [
 		NSSortDescriptor(key: "auxiliarySortRank", ascending: true),
-		NSSortDescriptor(key: "name", ascending: true),
+		NSSortDescriptor(
+			key: "name",
+			ascending: true,
+			selector: #selector(NSString.localizedStandardCompare(_:))
+		),
 	] {
 		willSet {
 			guard isViewLoaded, pendingSortSnapshot == nil else {

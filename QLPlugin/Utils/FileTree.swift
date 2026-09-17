@@ -69,7 +69,7 @@ class FileTreeNode: NSObject {
 
 	/// List of child nodes (required for rendering the tree in an `NSOutlineView`)
 	@objc var childrenList: [FileTreeNode] {
-		Array(children.values)
+		children.values.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
 	}
 
 	/// Whether the node has any children (required for rendering the tree in an `NSOutlineView`)

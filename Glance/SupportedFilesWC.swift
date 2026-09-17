@@ -12,7 +12,7 @@ final class SupportedFilesWC: NSWindowController {
 	static let sections = [
 		SupportedFileSection(
 			title: "Source Code",
-			details: ".cpp, .elrc, .ini, .js, .json, .py, .swift, .toml, .ttml, .yml and many more"
+			details: ".cpp, .elrc, .ini, .js, .json, .jsonl, .py, .swift, .toml, .ttml, .yml and many more"
 		),
 		SupportedFileSection(
 			title: "Markdown",
