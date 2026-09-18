@@ -129,6 +129,30 @@ final class PreviewSmokeTests: XCTestCase {
 		}
 	}
 
+	func testJupyterPreviewRendersLatexDisplayOutput() async throws {
+		let notebook = #"""
+		{"cells":[{"cell_type":"code","metadata":{},"source":[],"outputs":[{"output_type":"execute_result","execution_count":1,"data":{"text/latex":["$\\displaystyle x^2", "+ y^2$"]}}]}],"metadata":{},"nbformat":4,"nbformat_minor":5}
+		"""#
+		let fileURL = try writeFile(named: "latex-output.ipynb", contents: notebook)
+		let generatedPreview = try await JupyterPreview().createPreviewVC(file: File(url: fileURL))
+		let previewVC = try XCTUnwrap(generatedPreview as? WebPreviewVC)
+		previewVC.loadViewIfNeeded()
+		let webView = try XCTUnwrap(previewVC.view.subviews.compactMap { $0 as? WKWebView }.first)
+
+		try await waitForWebViewToFinishLoadingAsync(webView)
+		let result = try await webView.evaluateJavaScript(
+			"""
+			[
+				document.querySelector('[data-glance-latex-output="1"]') !== null,
+				document.querySelector('.latex-output .katex') !== null,
+				!document.body.textContent.includes('LaTeX output')
+			].join('|')
+			"""
+		)
+
+		XCTAssertEqual(result as? String, "true|true|true")
+	}
+
 	func testJupyterKaTeXStylesheetReferencesOnlyBundledWOFF2Fonts() throws {
 		let bundle = WebPreviewVC.resourceBundle
 		let stylesheetURL = try XCTUnwrap(

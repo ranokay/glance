@@ -68,8 +68,27 @@ class JupyterPreview: Preview {
 			Log.render.error("Could not find KaTeX auto-render script")
 		}
 
-		// Main script (calls the KaTeX auto-renderer)
-		scripts.append(Script(content: "renderMathInElement(document.body);"))
+		// Markdown cells use KaTeX's delimiter-based auto-renderer. MIME `text/latex`
+		// outputs carry a renderer-owned marker and are rendered directly from textContent,
+		// which keeps notebook data out of HTML and JavaScript source.
+		let renderScript = """
+		(function() {
+			renderMathInElement(document.body, {
+				ignoredClasses: ['latex-output', 'no-katex']
+			});
+
+			document.querySelectorAll('[data-glance-latex-output="1"]')
+				.forEach(function(element) {
+					katex.render(element.textContent || '', element, {
+						displayMode: true,
+						throwOnError: false,
+						trust: false,
+						strict: 'warn'
+					});
+				});
+		})();
+		"""
+		scripts.append(Script(content: renderScript))
 
 		return scripts
 	}
