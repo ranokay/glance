@@ -24,7 +24,7 @@
 > - a bounded Rust preview core with responsive off-main rendering and parsing
 > - pinned `mise` build and test tooling with expanded automated coverage
 > - downloadable unsigned DMGs from this fork's GitHub Releases
-> - Settings controls for hiding the Dock icon
+> - Settings controls for the Dock icon and preview font, size, and line wrapping
 >
 > Release DMGs are unsigned and unnotarized. Verify the attached SHA-256 checksum before using the quarantine-removal command shown in the installation steps.
 
@@ -54,7 +54,9 @@ Release DMGs are currently unsigned and unnotarized. To install Glance:
    ```
 
 4. Launch Glance once so macOS can register its Quick Look extension.
-5. Keep Glance running while using its previews. You can hide its Dock icon in Settings; Glance remains available from the menu bar.
+5. Keep Glance running while using its previews. Settings can hide the Dock icon and customize the
+   font, size, and line wrapping used by new code, Markdown, and notebook previews. Glance remains
+   available from the menu bar.
 
 ## Supported file types
 

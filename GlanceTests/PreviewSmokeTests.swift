@@ -290,6 +290,88 @@ final class PreviewSmokeTests: XCTestCase {
 		wait(for: [expectation], timeout: 5)
 	}
 
+	func testWebPreviewAppliesAppearancePreferencesToEveryRenderedFormat() async throws {
+		let preferences = PreviewAppearancePreferences(
+			fontFamily: "Menlo",
+			fontSize: 18,
+			wrapsLines: true
+		)
+		let formatHTML = [
+			#"<pre class="chroma"><code>code</code></pre>"#,
+			#"<div class="markdown-body"><pre><code>markdown</code></pre></div>"#,
+			#"<div class="cell cell-code"><pre><code>notebook</code></pre></div>"#,
+		]
+
+		for html in formatHTML {
+			for appearanceName in [NSAppearance.Name.aqua, .darkAqua] {
+				let previewVC = WebPreviewVC(
+					html: html,
+					appearancePreferences: preferences,
+					availableFontFamilies: ["Menlo"]
+				)
+				previewVC.loadViewIfNeeded()
+				previewVC.view.appearance = NSAppearance(named: appearanceName)
+				let webView = try XCTUnwrap(
+					previewVC.view.subviews.compactMap { $0 as? WKWebView }.first
+				)
+
+				try await waitForWebViewToFinishLoadingAsync(webView)
+				let state = try await webView.evaluateJavaScript(
+					"""
+					const code = document.querySelector('pre code');
+					[
+						getComputedStyle(document.body).fontSize,
+						getComputedStyle(document.body).fontFamily,
+						getComputedStyle(code).whiteSpace,
+						getComputedStyle(code).overflowWrap
+					].join('|')
+					"""
+				) as? String
+
+				XCTAssertEqual(state, #"18px|Menlo, sans-serif|pre-wrap|anywhere"#)
+			}
+		}
+	}
+
+	func testWebPreviewRejectsUnavailableAndUnsafeFontFamilies() async throws {
+		let unsafeFamily = #"Menlo\";}</style><script>document.body.dataset.bad='1'</script>"#
+		let fallbackStylesheet = PreviewAppearancePreferences(
+			fontFamily: "Not Installed",
+			fontSize: 14,
+			wrapsLines: false
+		).stylesheet(availableFontFamilies: ["Menlo"])
+		XCTAssertFalse(fallbackStylesheet.contains("Not Installed"))
+
+		let previewVC = WebPreviewVC(
+			html: "<pre><code>Safe content</code></pre>",
+			appearancePreferences: PreviewAppearancePreferences(
+				fontFamily: unsafeFamily,
+				fontSize: 14,
+				wrapsLines: false
+			),
+			availableFontFamilies: [unsafeFamily]
+		)
+		previewVC.loadViewIfNeeded()
+		let webView = try XCTUnwrap(
+			previewVC.view.subviews.compactMap { $0 as? WKWebView }.first
+		)
+
+		try await waitForWebViewToFinishLoadingAsync(webView)
+		let state = try await webView.evaluateJavaScript(
+			"""
+			[
+				document.querySelector('script') === null,
+				document.body.dataset.bad || '',
+				getComputedStyle(document.querySelector('pre code')).whiteSpace,
+				Array.from(document.querySelectorAll('style'))
+					.some(style => style.textContent.includes('</style>'))
+			].join('|')
+			"""
+		) as? String
+
+		XCTAssertEqual(state, "true||pre|false")
+	}
+
 	func testPreviewExecutorRunsWorkOffMainThreadAndPropagatesCancellation() async throws {
 		let ranOnMainThread = try await PreviewExecutor.run { Thread.isMainThread }
 		XCTAssertFalse(ranOnMainThread)
