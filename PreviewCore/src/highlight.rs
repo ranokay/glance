@@ -195,6 +195,8 @@ mod tests {
             "handlebars",
             "twig",
             "hcl",
+            "dotenv",
+            "systemverilog",
             "applescript",
             "c",
             "swift",
@@ -231,6 +233,8 @@ mod tests {
             "handlebars",
             "twig",
             "hcl",
+            "dotenv",
+            "systemverilog",
             "applescript",
             "c",
         ];

@@ -69,6 +69,7 @@ enum SupportedPreviewMatchRule: Equatable {
 	case any([SupportedPreviewMatchRule])
 	case fileExtension(String)
 	case fileName(String)
+	case fileNamePrefix(String)
 	case pathSuffix(String)
 
 	/// Catch-all for files not matched by any specific rule. Matches everything except bare
@@ -84,6 +85,8 @@ enum SupportedPreviewMatchRule: Equatable {
 				fileURL.pathExtension.lowercased() == fileExtension.lowercased()
 			case let .fileName(fileName):
 				fileURL.lastPathComponent.lowercased() == fileName.lowercased()
+			case let .fileNamePrefix(prefix):
+				fileURL.lastPathComponent.lowercased().hasPrefix(prefix.lowercased())
 			case let .pathSuffix(pathSuffix):
 				fileURL.path(percentEncoded: false).lowercased().hasSuffix(pathSuffix.lowercased())
 			case .defaultTextFallback:
@@ -126,6 +129,7 @@ enum SupportedPreviewRegistry {
 		fileNameEntry(".bashrc", group: .code, codeLexer: ".bashrc", searchTokens: ["bash", "shell"]),
 		fileNameEntry(".dockerignore", group: .code, codeLexer: "bash", searchTokens: ["Docker", "ignore"]),
 		fileNameEntry(".editorconfig", group: .code, codeLexer: "ini", searchTokens: ["EditorConfig", "ini"]),
+		dotenvEntry(),
 		elrcEntry(),
 		fileNameEntry(".gitattributes", group: .code, codeLexer: "bash", searchTokens: ["git"]),
 		fileNameEntry(".gitconfig", group: .code, codeLexer: "ini", searchTokens: ["git", "ini"]),
@@ -143,14 +147,24 @@ enum SupportedPreviewRegistry {
 		fileNameEntry("Rakefile", group: .code, codeLexer: "Rakefile", searchTokens: ["Ruby", "Rake"]),
 
 		extensionEntry("alfredappearance", group: .code, codeLexer: "json", searchTokens: ["Alfred", "JSON"]),
+		extensionEntry("asc", group: .code, codeLexer: "txt", searchTokens: ["scientific data", "plain text"]),
 		extensionEntry("ass", group: .code, codeLexer: "txt", searchTokens: ["subtitle"]),
+		extensionEntry(
+			"cif",
+			group: .code,
+			codeLexer: "txt",
+			searchTokens: ["crystallographic information", "scientific data"]
+		),
 		extensionEntry("cjs", group: .code, codeLexer: "js", searchTokens: ["JavaScript"]),
 		extensionEntry("cls", group: .code, codeLexer: "tex", searchTokens: ["TeX", "LaTeX"]),
 		extensionEntry("csproj", group: .code, codeLexer: "xml", searchTokens: ["C#", "XML"]),
+		extensionEntry("dat", group: .code, codeLexer: "txt", searchTokens: ["scientific data", "plain text"]),
 		extensionEntry("entitlements", group: .code, codeLexer: "xml", searchTokens: ["Xcode", "XML"]),
+		extensionEntry("gzmat", group: .code, codeLexer: "txt", searchTokens: ["Gaussian", "scientific data"]),
 		extensionEntry("hbs", group: .code, codeLexer: "handlebars", searchTokens: ["Handlebars"]),
 		extensionEntry("iml", group: .code, codeLexer: "xml", searchTokens: ["IntelliJ", "XML"]),
 		extensionEntry("ini", group: .code, codeLexer: "ini", searchTokens: ["configuration"]),
+		extensionEntry("inp", group: .code, codeLexer: "txt", searchTokens: ["scientific input", "plain text"]),
 		extensionEntry("jsonl", group: .code, codeLexer: "json", searchTokens: ["JSON Lines", "NDJSON"]),
 		extensionEntry("liquid", group: .code, codeLexer: "twig", searchTokens: ["Liquid", "Twig"]),
 		extensionEntry("lrc", group: .code, codeLexer: "txt", searchTokens: ["lyrics"]),
@@ -159,13 +173,16 @@ enum SupportedPreviewRegistry {
 		extensionEntry("modulemap", group: .code, codeLexer: "hcl", searchTokens: ["Clang", "module map"]),
 		extensionEntry("nfo", group: .code, codeLexer: "txt", searchTokens: ["text"]),
 		extensionEntry("njk", group: .code, codeLexer: "twig", searchTokens: ["Nunjucks", "Twig"]),
+		extensionEntry("out", group: .code, codeLexer: "txt", searchTokens: ["scientific output", "plain text"]),
 		extensionEntry("pbxproj", group: .code, codeLexer: "txt", searchTokens: ["Xcode"]),
 		extensionEntry("plist", group: .code, codeLexer: "xml", searchTokens: ["property list", "XML"]),
 		extensionEntry("props", group: .code, codeLexer: "xml", searchTokens: ["MSBuild", "XML"]),
 		extensionEntry("resolved", group: .code, codeLexer: "json", searchTokens: ["Swift Package Manager", "lockfile"]),
 		extensionEntry("scpt", group: .code, codeLexer: "applescript", searchTokens: ["AppleScript"]),
 		extensionEntry("scptd", group: .code, codeLexer: "applescript", searchTokens: ["AppleScript"]),
+		extensionEntry("sinf", group: .code, codeLexer: "txt", searchTokens: ["semiconductor", "wafer map"]),
 		extensionEntry("sln", group: .code, codeLexer: "txt", searchTokens: ["Visual Studio"]),
+		extensionEntry("slurm", group: .code, codeLexer: "bash", searchTokens: ["HPC", "scheduler", "shell"]),
 		extensionEntry("spf", group: .code, codeLexer: "xml", searchTokens: ["Sequel Pro", "XML"]),
 		extensionEntry("sptheme", group: .code, codeLexer: "xml", searchTokens: ["Sequel Pro", "XML"]),
 		extensionEntry("srt", group: .code, codeLexer: "txt", searchTokens: ["SubRip", "subtitle"]),
@@ -173,13 +190,19 @@ enum SupportedPreviewRegistry {
 		extensionEntry("strings", group: .code, codeLexer: "c", searchTokens: ["Xcode", "localization"]),
 		extensionEntry("stringsdict", group: .code, codeLexer: "xml", searchTokens: ["Xcode", "localization", "XML"]),
 		extensionEntry("sty", group: .code, codeLexer: "tex", searchTokens: ["TeX", "LaTeX"]),
+		extensionEntry("sv", group: .code, codeLexer: "systemverilog", searchTokens: ["SystemVerilog", "HDL"]),
+		extensionEntry("svh", group: .code, codeLexer: "systemverilog", searchTokens: ["SystemVerilog header", "HDL"]),
 		extensionEntry("targets", group: .code, codeLexer: "xml", searchTokens: ["MSBuild", "XML"]),
 		extensionEntry("ttml", group: .code, codeLexer: "xml", searchTokens: ["Timed Text", "XML"]),
 		extensionEntry("vtt", group: .code, codeLexer: "txt", searchTokens: ["WebVTT", "subtitle"]),
+		extensionEntry("wdl", group: .code, codeLexer: "txt", searchTokens: ["Workflow Description Language"]),
 		extensionEntry("webmanifest", group: .code, codeLexer: "json", searchTokens: ["web app manifest", "JSON"]),
 		extensionEntry("xcscheme", group: .code, codeLexer: "xml", searchTokens: ["Xcode", "XML"]),
 		extensionEntry("xib", group: .code, codeLexer: "xml", searchTokens: ["Xcode", "XML"]),
 		extensionEntry("xmp", group: .code, codeLexer: "xml", searchTokens: ["XML"]),
+		extensionEntry("xy", group: .code, codeLexer: "txt", searchTokens: ["scientific data", "coordinates"]),
+		extensionEntry("xye", group: .code, codeLexer: "txt", searchTokens: ["scientific data", "coordinates"]),
+		extensionEntry("xyz", group: .code, codeLexer: "txt", searchTokens: ["molecular coordinates", "scientific data"]),
 
 		SupportedPreviewType(
 			id: "code.other-source-text",
@@ -269,6 +292,21 @@ enum SupportedPreviewRegistry {
 			matchRule: .any([
 				.fileName(".elrc"),
 				.fileExtension("elrc")
+			])
+		)
+	}
+
+	private static func dotenvEntry() -> SupportedPreviewType {
+		SupportedPreviewType(
+			id: "code.filename.env",
+			displayName: ".env / .env.*",
+			group: .code,
+			searchTokens: ["dotenv", "environment", "configuration"],
+			previewFileType: .code,
+			codeLexer: "dotenv",
+			matchRule: .any([
+				.fileName(".env"),
+				.fileNamePrefix(".env.")
 			])
 		)
 	}
