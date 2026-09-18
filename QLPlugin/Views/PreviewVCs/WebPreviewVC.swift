@@ -187,7 +187,12 @@ class WebPreviewVC: NSViewController, PreviewVC, WKNavigationDelegate {
 		// invisible.
 		Task { @MainActor [weak self, weak webView] in
 			try? await Task.sleep(for: .milliseconds(250))
-			guard !Task.isCancelled, let self, let webView else {
+			guard
+				!Task.isCancelled,
+				let self,
+				let webView,
+				Self.isDetachedRevealFallbackEligible(webView)
+			else {
 				return
 			}
 			reveal(webView)
@@ -203,6 +208,10 @@ class WebPreviewVC: NSViewController, PreviewVC, WKNavigationDelegate {
 			}
 			reveal(webView)
 		}
+	}
+
+	static func isDetachedRevealFallbackEligible(_ webView: WKWebView) -> Bool {
+		webView.window == nil
 	}
 
 	private func reveal(_ webView: WKWebView) {

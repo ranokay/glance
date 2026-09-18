@@ -1,3 +1,4 @@
+import Cocoa
 import Foundation
 import WebKit
 import XCTest
@@ -170,6 +171,23 @@ final class PreviewSmokeTests: XCTestCase {
 		XCTAssertFalse(webView.isHidden)
 		waitForWebViewToBecomeVisible(webView)
 		XCTAssertEqual(webView.alphaValue, 1)
+	}
+
+	func testWebPreviewFallbackOnlyAppliesWhileDetached() throws {
+		let previewVC = WebPreviewVC(html: "<p>Fallback eligibility</p>")
+		previewVC.loadViewIfNeeded()
+		let webView = try XCTUnwrap(previewVC.view.subviews.compactMap { $0 as? WKWebView }.first)
+		XCTAssertTrue(WebPreviewVC.isDetachedRevealFallbackEligible(webView))
+
+		let window = NSWindow(
+			contentRect: NSRect(x: 0, y: 0, width: 320, height: 240),
+			styleMask: [.borderless],
+			backing: .buffered,
+			defer: false
+		)
+		window.contentViewController = previewVC
+
+		XCTAssertFalse(WebPreviewVC.isDetachedRevealFallbackEligible(webView))
 	}
 
 	func testPreviewBackgroundMatchesWebContentBeforeFirstPaintInBothAppearances() throws {
