@@ -125,6 +125,20 @@ final class PreviewSupportTests: XCTestCase {
 
 	func testCodeLexerUsesExtensionMappings() {
 		let cases = [
+			("sinf", "txt"),
+			("wdl", "txt"),
+			("sv", "systemverilog"),
+			("svh", "systemverilog"),
+			("slurm", "bash"),
+			("dat", "txt"),
+			("asc", "txt"),
+			("xy", "txt"),
+			("xye", "txt"),
+			("out", "txt"),
+			("inp", "txt"),
+			("cif", "txt"),
+			("xyz", "txt"),
+			("gzmat", "txt"),
 			("alfredappearance", "json"),
 			("mobileconfig", "xml"),
 			("cjs", "js"),
@@ -174,6 +188,67 @@ final class PreviewSupportTests: XCTestCase {
 				fileExtension
 			)
 		}
+	}
+
+	func testDotenvVariantsUseDotenvHighlighting() {
+		let fileNames = [
+			".env",
+			".env.preview",
+			".env.development.local",
+			".ENV.PRODUCTION",
+		]
+
+		for fileName in fileNames {
+			let fileURL = URL(fileURLWithPath: "/tmp/\(fileName)")
+			XCTAssertEqual(
+				SupportedPreviewRegistry.entry(matching: fileURL)?.id,
+				"code.filename.env",
+				fileName
+			)
+			XCTAssertEqual(PreviewSupport.getCodeLexer(fileURL: fileURL), "dotenv", fileName)
+		}
+	}
+
+	func testRequestedSourceAndDataFormatsUseCodePreview() {
+		let fileExtensions = [
+			"sinf", "wdl", "sv", "svh", "slurm",
+			"dat", "asc", "xy", "xye", "out", "inp", "cif", "xyz", "gzmat",
+		]
+
+		for fileExtension in fileExtensions {
+			let fileURL = URL(fileURLWithPath: "/tmp/example.\(fileExtension)")
+			XCTAssertEqual(
+				PreviewSupport.getPreviewFileType(fileURL: fileURL),
+				.code,
+				fileExtension
+			)
+			XCTAssertEqual(
+				SupportedPreviewRegistry.entry(matching: fileURL)?.id,
+				"code.extension.\(fileExtension)",
+				fileExtension
+			)
+		}
+
+		XCTAssertEqual(
+			PreviewSupport.getPreviewFileType(fileURL: URL(fileURLWithPath: "/tmp/.env.local")),
+			.code
+		)
+		XCTAssertEqual(
+			PreviewSupport.getPreviewFileType(fileURL: URL(fileURLWithPath: "/tmp/.env.ipynb")),
+			.jupyter
+		)
+		XCTAssertEqual(
+			PreviewSupport.getPreviewFileType(fileURL: URL(fileURLWithPath: "/tmp/.env.tsv")),
+			.tsv
+		)
+		XCTAssertEqual(
+			PreviewSupport.getPreviewFileType(fileURL: URL(fileURLWithPath: "/tmp/.env.zip")),
+			.zip
+		)
+		XCTAssertEqual(
+			PreviewSupport.getPreviewFileType(fileURL: URL(fileURLWithPath: "/tmp/.env.md")),
+			.markdown
+		)
 	}
 
 	func testCodeLexerRecursesThroughDistExtension() {

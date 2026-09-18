@@ -24,6 +24,20 @@ final class PlistCoverageTests: XCTestCase {
 			"public.swift-source",
 			"public.toml",
 			"public.plain-text",
+			"dyn.ah62d4rv4ge81g4psq2", // .sinf
+			"dyn.ah62d4rv4ge81s3dq", // .wdl
+			"dyn.ah62d4rv4ge81g7u", // .sv
+			"dyn.ah62d4rv4ge81g7xk", // .svh
+			"dyn.ah62d4rv4ge81g5dzsm0u", // .slurm
+			"dyn.ah62d4rv4ge80c65d", // .asc
+			"dyn.ah62d4rv4ge81u8k", // .xy
+			"dyn.ah62d4rv4ge81u8pf", // .xye
+			"dyn.ah62d4rv4ge8087py", // .out
+			"dyn.ah62d4rv4ge80w5xu", // .inp
+			"dyn.ah62d4rv4ge80g4pg", // .cif
+			"dyn.ah62d4rv4ge81u8p4", // .xyz
+			"dyn.ah62d4rv4ge80s8xrqf4a", // .gzmat
+			"dyn.ah62d4rv4ge80n5x0", // .env
 		]
 
 		for requiredType in requiredTypes {

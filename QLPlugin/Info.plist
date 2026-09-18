@@ -287,7 +287,21 @@
 				<string>public.c-source</string> <!-- .c -->
 				<string>public.csh-script</string> <!-- .csh -->
 				<string>public.css</string> <!-- .css -->
-				<string>public.data</string> <!-- e.g. .gitignore, .editorconfig, README, ... -->
+				<string>public.data</string> <!-- e.g. .gitignore, .editorconfig, .dat, dotenv variants, README, ... -->
+				<string>dyn.ah62d4rv4ge81g4psq2</string> <!-- .sinf -->
+				<string>dyn.ah62d4rv4ge81s3dq</string> <!-- .wdl -->
+				<string>dyn.ah62d4rv4ge81g7u</string> <!-- .sv -->
+				<string>dyn.ah62d4rv4ge81g7xk</string> <!-- .svh -->
+				<string>dyn.ah62d4rv4ge81g5dzsm0u</string> <!-- .slurm -->
+				<string>dyn.ah62d4rv4ge80c65d</string> <!-- .asc -->
+				<string>dyn.ah62d4rv4ge81u8k</string> <!-- .xy -->
+				<string>dyn.ah62d4rv4ge81u8pf</string> <!-- .xye -->
+				<string>dyn.ah62d4rv4ge8087py</string> <!-- .out -->
+				<string>dyn.ah62d4rv4ge80w5xu</string> <!-- .inp -->
+				<string>dyn.ah62d4rv4ge80g4pg</string> <!-- .cif -->
+				<string>dyn.ah62d4rv4ge81u8p4</string> <!-- .xyz -->
+				<string>dyn.ah62d4rv4ge80s8xrqf4a</string> <!-- .gzmat -->
+				<string>dyn.ah62d4rv4ge80n5x0</string> <!-- .env -->
 				<string>public.fortran-90-source</string> <!-- .f90 (Fortran) -->
 				<string>public.fortran-source</string> <!-- .f, .for (Fortran) -->
 				<string>public.json</string> <!-- .json -->
