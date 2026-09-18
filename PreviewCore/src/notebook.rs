@@ -200,8 +200,13 @@ fn render_data_output(data: &OutputData) -> Result<String, RenderError> {
     if data.application_pdf.is_some() {
         return Ok("<pre>PDF output</pre>".to_owned());
     }
-    if data.text_latex.is_some() {
-        return Ok("<pre>LaTeX output</pre>".to_owned());
+    if let Some(value) = &data.text_latex {
+        let joined = value.joined();
+        let latex = strip_latex_delimiters(joined.trim());
+        return Ok(format!(
+            "<div class=\"latex-output\" data-glance-latex-output=\"1\">{}</div>",
+            escape_html(latex)
+        ));
     }
     if data.image_svg.is_some() {
         return Ok("<pre>SVG output</pre>".to_owned());
@@ -252,6 +257,18 @@ fn render_prompt(execution_count: Option<i64>) -> String {
     execution_count
         .map(|count| format!("[{count}]:"))
         .unwrap_or_default()
+}
+
+fn strip_latex_delimiters(value: &str) -> &str {
+    for (opening, closing) in [("$$", "$$"), (r"\[", r"\]"), (r"\(", r"\)"), ("$", "$")] {
+        if value.len() >= opening.len() + closing.len()
+            && value.starts_with(opening)
+            && value.ends_with(closing)
+        {
+            return &value[opening.len()..value.len() - closing.len()];
+        }
+    }
+    value
 }
 
 fn escape_html(value: &str) -> String {
@@ -319,7 +336,7 @@ mod tests {
         let html = render_notebook(source).unwrap();
         assert!(html.contains("cell-unknown-type"));
         assert!(html.contains("<pre>PDF output</pre>"));
-        assert!(html.contains("<pre>LaTeX output</pre>"));
+        assert!(html.contains(r#"<div class="latex-output" data-glance-latex-output="1">x</div>"#));
         assert!(html.contains("<pre>SVG output</pre>"));
         assert!(html.contains("data:image/jpeg;base64,aGVsbG8="));
         assert!(html.contains("<strong>bold</strong>"));
@@ -328,6 +345,30 @@ mod tests {
         assert!(html.contains("output-future-output"));
         assert!(html.contains("storage type swift"));
         assert!(!html.contains("source python"));
+    }
+
+    #[test]
+    fn renders_latex_output_as_escaped_math_source() {
+        let source = r##"{
+            "cells":[{
+                "cell_type":"code",
+                "source":[],
+                "outputs":[{
+                    "output_type":"display_data",
+                    "data":{"text/latex":["$\\displaystyle x^2", "<script>bad()</script>$"]}
+                }]
+            }],
+            "metadata":{},
+            "nbformat":4
+        }"##;
+
+        let html = render_notebook(source).unwrap();
+
+        assert!(html.contains(
+            r#"<div class="latex-output" data-glance-latex-output="1">\displaystyle x^2&lt;script&gt;bad()&lt;/script&gt;</div>"#
+        ));
+        assert!(!html.contains("LaTeX output"));
+        assert!(!html.contains("<script>"));
     }
 
     #[test]
