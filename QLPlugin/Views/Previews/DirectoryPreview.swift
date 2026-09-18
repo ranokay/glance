@@ -18,8 +18,123 @@ enum DirectoryPreviewError: LocalizedError {
 	}
 }
 
+struct DirectoryPreviewEntry {
+	let name: String
+	let isDirectory: Bool
+	let size: Int
+	let dateModified: Date?
+	let fileURL: URL
+	let isPackage: Bool
+	let isSymbolicLink: Bool
+	let contentTypeIdentifier: String?
+}
+
+struct DirectoryPage {
+	let entries: [DirectoryPreviewEntry]
+	let nextOffset: Int?
+	let totalItemCount: Int
+}
+
+struct DirectoryPaginationSession: Hashable {
+	private let id = UUID()
+}
+
+protocol DirectoryPageLoading: Sendable {
+	func page(
+		at directoryURL: URL,
+		offset: Int,
+		session: DirectoryPaginationSession
+	) async throws -> DirectoryPage
+}
+
+/// Keeps stable name cursors and lightweight ordered snapshots for each retained directory view.
+/// Snapshots are invalidated by directory modification time and released after the last page.
+actor DirectoryPageLoader: DirectoryPageLoading {
+	let fileManager: FileManager
+	let pageSize: Int
+	private var pageCursors = [DirectoryPaginationSession: [URL: [Int: String]]]()
+	private var directorySnapshots = [DirectoryPaginationSession: [URL: DirectorySnapshot]]()
+
+	init(fileManager: sending FileManager, pageSize: Int) {
+		self.fileManager = fileManager
+		self.pageSize = pageSize
+	}
+
+	func page(
+		at directoryURL: URL,
+		offset: Int,
+		session: DirectoryPaginationSession
+	) async throws -> DirectoryPage {
+		let pageURL = directoryURL.standardizedFileURL
+		let safeOffset = max(0, offset)
+		let afterName: String?
+		if safeOffset == 0 {
+			pageCursors[session, default: [:]][pageURL] = [:]
+			directorySnapshots[session, default: [:]][pageURL] = nil
+			afterName = nil
+		} else {
+			guard let cursor = pageCursors[session]?[pageURL]?[safeOffset] else {
+				throw DirectoryPreviewError.directoryReadError(
+					path: pageURL.path,
+					message: "The directory page cursor is no longer available"
+				)
+			}
+			afterName = cursor
+		}
+
+		let scanner = DirectoryPageScanner(fileManager: fileManager, pageSize: pageSize)
+		let currentModificationDate = try await PreviewExecutor.run {
+			try scanner.modificationDate(for: pageURL)
+		}
+		let cachedSnapshot = directorySnapshots[session]?[pageURL]
+		let snapshot: DirectorySnapshot
+		if let cachedSnapshot,
+		   let currentModificationDate,
+		   cachedSnapshot.modificationDate == currentModificationDate
+		{
+			snapshot = cachedSnapshot
+		} else {
+			snapshot = try await PreviewExecutor.run {
+				try scanner.snapshot(directoryURL: pageURL)
+			}
+			try Task.checkCancellation()
+			directorySnapshots[session, default: [:]][pageURL] = snapshot
+		}
+		let scanResult = try await PreviewExecutor.run {
+			do {
+				return try scanner.page(
+					from: snapshot,
+					offset: safeOffset,
+					afterName: afterName
+				)
+			} catch is CancellationError {
+				throw CancellationError()
+			} catch {
+				throw DirectoryPreviewError.directoryReadError(
+					path: pageURL.path,
+					message: error.localizedDescription
+				)
+			}
+		}
+		try Task.checkCancellation()
+		if let nextOffset = scanResult.page.nextOffset {
+			if let continuationName = scanResult.continuationName {
+				pageCursors[session, default: [:]][pageURL, default: [:]][
+					nextOffset
+				] = continuationName
+			}
+		} else {
+			directorySnapshots[session]?[pageURL] = nil
+		}
+		return scanResult.page
+	}
+}
+
 class DirectoryPreview: Preview {
-	static let defaultMaxItemCount = 500
+	static let defaultPageSize = 500
+	// Kept as source compatibility for older tests and callers; traversal is now one level at a
+	// time.
+	static let defaultMaxItemCount = defaultPageSize
 	static let defaultMaxDepth = 5
 	private static let defaultExcludedRootURLs = [
 		FileManager.default.temporaryDirectory,
@@ -29,29 +144,33 @@ class DirectoryPreview: Preview {
 		URL(fileURLWithPath: "/tmp", isDirectory: true),
 	]
 
-	private let fileManager: FileManager
-	private let maxItemCount: Int
-	private let maxDepth: Int
+	private let pageLoader: any DirectoryPageLoading
 	private let excludedRootURLs: [URL]
 
 	required convenience init() {
 		self.init(
 			fileManager: .default,
-			maxItemCount: Self.defaultMaxItemCount,
+			maxItemCount: Self.defaultPageSize,
 			maxDepth: Self.defaultMaxDepth,
 			excludedRootURLs: Self.defaultExcludedRootURLs
 		)
 	}
 
 	init(
-		fileManager: FileManager,
+		fileManager: sending FileManager,
 		maxItemCount: Int,
-		maxDepth: Int,
+		maxDepth _: Int,
 		excludedRootURLs: [URL]
 	) {
-		self.fileManager = fileManager
-		self.maxItemCount = max(0, maxItemCount)
-		self.maxDepth = max(0, maxDepth)
+		pageLoader = DirectoryPageLoader(
+			fileManager: fileManager,
+			pageSize: max(1, maxItemCount)
+		)
+		self.excludedRootURLs = excludedRootURLs.map(\.standardizedFileURL)
+	}
+
+	init(pageLoader: any DirectoryPageLoading, excludedRootURLs: [URL] = []) {
+		self.pageLoader = pageLoader
 		self.excludedRootURLs = excludedRootURLs.map(\.standardizedFileURL)
 	}
 
@@ -63,47 +182,67 @@ class DirectoryPreview: Preview {
 			throw DirectoryPreviewError.temporaryDirectory(path: file.path)
 		}
 
-		let rootURL = file.url
-		let scanner = DirectoryScanner(
-			fileManager: fileManager,
-			maxItemCount: maxItemCount,
-			maxDepth: maxDepth
-		)
-		let scanResult = try await PreviewExecutor.run {
-			try scanner.scan(rootURL: rootURL)
-		}
-		let fileTree = makeFileTree(from: scanResult.entries)
-		let itemSuffix = scanResult.isTruncated ? "+" : ""
-		let itemNoun = scanResult.itemCount == 1 && !scanResult.isTruncated ? "item" : "items"
-		let labelText = "\(scanResult.itemCount)\(itemSuffix) \(itemNoun)"
-
-		return OutlinePreviewVC(
-			rootNodes: fileTree.root.childrenList,
-			labelText: labelText,
-			expandAll: true,
-			showsFileThumbnails: true
+		return try await Self.makeOutlinePreview(
+			for: file.url,
+			pageLoader: pageLoader
 		)
 	}
 
-	private func makeFileTree(from entries: [DirectoryPreviewEntry]) -> FileTree {
-		let fileTree = FileTree()
-		for entry in entries {
-			do {
-				try fileTree.addNode(
-					path: entry.relativePath,
-					isDirectory: entry.isDirectory,
-					size: entry.size,
-					dateModified: entry.dateModified,
-					fileURL: entry.fileURL,
-					isPackage: entry.isPackage,
-					isSymbolicLink: entry.isSymbolicLink,
-					contentTypeIdentifier: entry.contentTypeIdentifier
-				)
-			} catch {
-				Log.general.error("\(error.localizedDescription, privacy: .private)")
-			}
+	@MainActor
+	static func makeOutlinePreview(
+		for directoryURL: URL,
+		pageLoader: any DirectoryPageLoading
+	) async throws -> OutlinePreviewVC {
+		let paginationSession = DirectoryPaginationSession()
+		let page = try await pageLoader.page(
+			at: directoryURL,
+			offset: 0,
+			session: paginationSession
+		)
+		try Task.checkCancellation()
+		var rootNodes = makeNodes(from: page.entries)
+		if let nextOffset = page.nextOffset {
+			rootNodes.append(.loadMoreNode(offset: nextOffset))
 		}
-		return fileTree
+		return OutlinePreviewVC(
+			rootNodes: rootNodes,
+			labelText: itemCountText(
+				loadedCount: page.entries.count,
+				hasMore: page.nextOffset != nil
+			),
+			expandAll: false,
+			showsFileThumbnails: true,
+			directoryURL: directoryURL,
+			directoryPageLoader: pageLoader,
+			directoryPaginationSession: paginationSession
+		)
+	}
+
+	@MainActor
+	static func makeNodes(from entries: [DirectoryPreviewEntry]) -> [FileTreeNode] {
+		entries.map { entry in
+			FileTreeNode(
+				name: entry.name,
+				size: entry.size,
+				isDirectory: entry.isDirectory,
+				dateModified: entry.dateModified,
+				fileURL: entry.fileURL,
+				isPackage: entry.isPackage,
+				isSymbolicLink: entry.isSymbolicLink,
+				contentTypeIdentifier: entry.contentTypeIdentifier,
+				directoryChildrenState: entry.isDirectory
+					&& !entry.isPackage
+					&& !entry.isSymbolicLink
+					? .notLoaded
+					: .loaded(nextOffset: nil)
+			)
+		}
+	}
+
+	static func itemCountText(loadedCount: Int, hasMore: Bool) -> String {
+		let suffix = hasMore ? "+" : ""
+		let noun = loadedCount == 1 && !hasMore ? "item" : "items"
+		return "\(loadedCount)\(suffix) \(noun)"
 	}
 
 	private func isExcluded(_ url: URL) -> Bool {
@@ -115,25 +254,17 @@ class DirectoryPreview: Preview {
 	}
 }
 
-private struct DirectoryScanResult {
-	let entries: [DirectoryPreviewEntry]
-	let itemCount: Int
-	let isTruncated: Bool
-}
-
-private struct DirectoryPreviewEntry {
-	let relativePath: String
-	let isDirectory: Bool
-	let size: Int
-	let dateModified: Date?
+private struct DirectoryPageCandidate {
+	let name: String
 	let fileURL: URL
-	let isPackage: Bool
-	let isSymbolicLink: Bool
-	let contentTypeIdentifier: String?
 }
 
-/// FileManager instances are confined to the detached scan that owns this value.
-private struct DirectoryScanner: @unchecked Sendable {
+private struct DirectorySnapshot {
+	let candidates: [DirectoryPageCandidate]
+	let modificationDate: Date?
+}
+
+private struct DirectoryPageScanner: @unchecked Sendable {
 	private static let sortLocale = Locale(identifier: "en_US_POSIX")
 	private static let resourceKeys: Set<URLResourceKey> = [
 		.contentModificationDateKey,
@@ -145,126 +276,19 @@ private struct DirectoryScanner: @unchecked Sendable {
 	]
 
 	let fileManager: FileManager
-	let maxItemCount: Int
-	let maxDepth: Int
+	let pageSize: Int
 
-	func scan(rootURL: URL) throws -> DirectoryScanResult {
-		var entries = [DirectoryPreviewEntry]()
-		var itemCount = 0
-		var isTruncated = false
-		try scanDirectory(
-			at: rootURL,
-			relativePath: "",
-			depth: 0,
-			isRoot: true,
-			entries: &entries,
-			itemCount: &itemCount,
-			isTruncated: &isTruncated
-		)
-		return DirectoryScanResult(
-			entries: entries,
-			itemCount: itemCount,
-			isTruncated: isTruncated
-		)
+	func modificationDate(for directoryURL: URL) throws -> Date? {
+		try directoryURL.resourceValues(forKeys: [.contentModificationDateKey])
+			.contentModificationDate
 	}
 
-	private func scanDirectory(
-		at directoryURL: URL,
-		relativePath: String,
-		depth: Int,
-		isRoot: Bool,
-		entries: inout [DirectoryPreviewEntry],
-		itemCount: inout Int,
-		isTruncated: inout Bool
-	) throws {
+	func snapshot(directoryURL: URL) throws -> DirectorySnapshot {
 		try Task.checkCancellation()
-		guard depth < maxDepth else {
-			return
-		}
-
-		let contents: [URL]
-		let hasMoreContents: Bool
-		do {
-			(contents, hasMoreContents) = try sortedDirectoryContents(
-				at: directoryURL,
-				retaining: maxItemCount - itemCount + 1
-			)
-		} catch {
-			if isRoot {
-				throw DirectoryPreviewError.directoryReadError(
-					path: directoryURL.path,
-					message: error.localizedDescription
-				)
-			}
-			Log.general.error(
-				"Could not read directory \(directoryURL.path, privacy: .private): \(error.localizedDescription, privacy: .private)"
-			)
-			return
-		}
-
-		for itemURL in contents {
-			try Task.checkCancellation()
-			guard itemCount < maxItemCount else {
-				isTruncated = true
-				return
-			}
-			let resourceValues: URLResourceValues
-			do {
-				resourceValues = try itemURL.resourceValues(forKeys: Self.resourceKeys)
-			} catch {
-				Log.general.error(
-					"Could not read item metadata \(itemURL.path, privacy: .private): \(error.localizedDescription, privacy: .private)"
-				)
-				continue
-			}
-
-			let isDirectory = resourceValues.isDirectory ?? false
-			let itemRelativePath = relativePath.isEmpty
-				? itemURL.lastPathComponent
-				: "\(relativePath)/\(itemURL.lastPathComponent)"
-			entries.append(
-				DirectoryPreviewEntry(
-					relativePath: itemRelativePath,
-					isDirectory: isDirectory,
-					size: isDirectory ? 0 : resourceValues.fileSize ?? 0,
-					dateModified: resourceValues.contentModificationDate,
-					fileURL: itemURL,
-					isPackage: resourceValues.isPackage ?? false,
-					isSymbolicLink: resourceValues.isSymbolicLink ?? false,
-					contentTypeIdentifier: resourceValues.contentType?.identifier
-				)
-			)
-			itemCount += 1
-
-			guard isDirectory,
-			      resourceValues.isSymbolicLink != true,
-			      resourceValues.isPackage != true
-			else {
-				continue
-			}
-			try scanDirectory(
-				at: itemURL,
-				relativePath: itemRelativePath,
-				depth: depth + 1,
-				isRoot: false,
-				entries: &entries,
-				itemCount: &itemCount,
-				isTruncated: &isTruncated
-			)
-		}
-		isTruncated = isTruncated || hasMoreContents
-	}
-
-	/// Retains only the deterministic prefix needed by the global item limit.
-	private func sortedDirectoryContents(
-		at directoryURL: URL,
-		retaining requestedLimit: Int
-	) throws -> (contents: [URL], hasMoreContents: Bool) {
-		let limit = max(1, requestedLimit)
 		var enumerationError: Error?
 		guard let enumerator = fileManager.enumerator(
 			at: directoryURL,
-			includingPropertiesForKeys: Array(Self.resourceKeys),
+			includingPropertiesForKeys: nil,
 			options: [.skipsHiddenFiles, .skipsSubdirectoryDescendants],
 			errorHandler: { _, error in
 				enumerationError = error
@@ -274,29 +298,98 @@ private struct DirectoryScanner: @unchecked Sendable {
 			throw CocoaError(.fileReadUnknown)
 		}
 
-		var contents = [URL]()
-		var itemTotal = 0
+		var candidates = [DirectoryPageCandidate]()
 		for case let itemURL as URL in enumerator {
 			try Task.checkCancellation()
-			itemTotal += 1
-			let insertionIndex = Self.insertionIndex(for: itemURL, in: contents)
-			contents.insert(itemURL, at: insertionIndex)
-			if contents.count > limit {
-				contents.removeLast()
-			}
+			candidates.append(DirectoryPageCandidate(
+				name: itemURL.lastPathComponent,
+				fileURL: itemURL
+			))
 		}
 		if let enumerationError {
 			throw enumerationError
 		}
-		return (contents, itemTotal > limit)
+		candidates.sort(by: Self.isOrderedBefore)
+		return DirectorySnapshot(
+			candidates: candidates,
+			modificationDate: try modificationDate(for: directoryURL)
+		)
 	}
 
-	private static func insertionIndex(for itemURL: URL, in contents: [URL]) -> Int {
+	func page(
+		from snapshot: DirectorySnapshot,
+		offset: Int,
+		afterName: String?
+	) throws -> (page: DirectoryPage, continuationName: String?) {
+		try Task.checkCancellation()
+		let retainedLimit = pageSize.addingReportingOverflow(1)
+		guard !retainedLimit.overflow else {
+			throw CocoaError(.fileReadTooLarge)
+		}
+		let startIndex = afterName.map {
+			Self.firstCandidate(after: $0, in: snapshot.candidates)
+		} ?? snapshot.candidates.startIndex
+		let endIndex = min(
+			startIndex + retainedLimit.partialValue,
+			snapshot.candidates.endIndex
+		)
+		var retainedCandidates = Array(snapshot.candidates[startIndex ..< endIndex])
+
+		let hasMore = retainedCandidates.count > pageSize
+		if hasMore {
+			retainedCandidates.removeLast(retainedCandidates.count - pageSize)
+		}
+
+		var retainedEntries = [DirectoryPreviewEntry]()
+		for candidate in retainedCandidates {
+			try Task.checkCancellation()
+			let values: URLResourceValues
+			do {
+				values = try candidate.fileURL.resourceValues(forKeys: Self.resourceKeys)
+			} catch {
+				Log.general.error(
+					"Could not read item metadata \(candidate.fileURL.path, privacy: .private): \(error.localizedDescription, privacy: .private)"
+				)
+				continue
+			}
+
+			let isDirectory = values.isDirectory ?? false
+			retainedEntries.append(DirectoryPreviewEntry(
+				name: candidate.name,
+				isDirectory: isDirectory,
+				size: isDirectory ? 0 : values.fileSize ?? 0,
+				dateModified: values.contentModificationDate,
+				fileURL: candidate.fileURL,
+				isPackage: values.isPackage ?? false,
+				isSymbolicLink: values.isSymbolicLink ?? false,
+				contentTypeIdentifier: values.contentType?.identifier
+			))
+		}
+
+		let nextOffsetValue = offset.addingReportingOverflow(retainedCandidates.count)
+		guard !nextOffsetValue.overflow else {
+			throw CocoaError(.fileReadTooLarge)
+		}
+		let nextOffset = hasMore ? nextOffsetValue.partialValue : nil
+		return (
+			DirectoryPage(
+				entries: retainedEntries,
+				nextOffset: nextOffset,
+				totalItemCount: snapshot.candidates.count
+			),
+			nextOffset == nil ? nil : retainedCandidates.last?.name
+		)
+	}
+
+	private static func firstCandidate(
+		after name: String,
+		in candidates: [DirectoryPageCandidate]
+	) -> Int {
 		var lowerBound = 0
-		var upperBound = contents.count
+		var upperBound = candidates.count
 		while lowerBound < upperBound {
 			let index = lowerBound + (upperBound - lowerBound) / 2
-			if isOrderedBefore(itemURL, contents[index]) {
+			if isOrderedAfter(candidates[index].name, name) {
 				upperBound = index
 			} else {
 				lowerBound = index + 1
@@ -305,15 +398,30 @@ private struct DirectoryScanner: @unchecked Sendable {
 		return lowerBound
 	}
 
-	private static func isOrderedBefore(_ lhsURL: URL, _ rhsURL: URL) -> Bool {
-		let lhsName = lhsURL.lastPathComponent
-		let rhsName = rhsURL.lastPathComponent
-		let comparison = lhsName.compare(
-			rhsName,
+	private static func isOrderedBefore(
+		_ lhs: DirectoryPageCandidate,
+		_ rhs: DirectoryPageCandidate
+	) -> Bool {
+		compareNames(lhs.name, rhs.name) == .orderedAscending
+	}
+
+	private static func isOrderedAfter(_ name: String, _ cursorName: String) -> Bool {
+		compareNames(name, cursorName) == .orderedDescending
+	}
+
+	private static func compareNames(_ lhs: String, _ rhs: String) -> ComparisonResult {
+		let comparison = lhs.compare(
+			rhs,
 			options: [.caseInsensitive, .numeric],
 			range: nil,
 			locale: sortLocale
 		)
-		return comparison == .orderedSame ? lhsName < rhsName : comparison == .orderedAscending
+		if comparison != .orderedSame {
+			return comparison
+		}
+		if lhs == rhs {
+			return .orderedSame
+		}
+		return lhs < rhs ? .orderedAscending : .orderedDescending
 	}
 }

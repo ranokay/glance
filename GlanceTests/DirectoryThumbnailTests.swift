@@ -192,6 +192,90 @@ final class DirectoryThumbnailTests: XCTestCase {
 		XCTAssertLessThan(generator.generatedURLs.count, nodes.count)
 	}
 
+	func testFolderIconGeometryAndExpansionStayStableAcrossSorting() async throws {
+		let child = node(type: .plainText, path: "Folder/child.txt")
+		let folder = node(type: .folder, path: "Folder", isDirectory: true)
+		folder.children = [child.name: child]
+		let collapsedChild = node(type: .plainText, path: "Collapsed/child.txt")
+		let collapsedFolder = node(type: .folder, path: "Collapsed", isDirectory: true)
+		collapsedFolder.children = [collapsedChild.name: collapsedChild]
+		let previewVC = OutlinePreviewVC(
+			rootNodes: [
+				folder,
+				collapsedFolder,
+				node(type: .png, path: "image.png"),
+				node(type: .plainText, path: "notes.txt"),
+			],
+			labelText: "4 items",
+			expandAll: true,
+			showsFileThumbnails: true
+		)
+		previewVC.loadViewIfNeeded()
+		previewVC.view.frame = NSRect(x: 0, y: 0, width: 800, height: 500)
+		previewVC.view.layoutSubtreeIfNeeded()
+		let outlineView = try XCTUnwrap(firstSubview(of: NSOutlineView.self, in: previewVC.view))
+		let scrollView = try XCTUnwrap(outlineView.enclosingScrollView)
+		XCTAssertFalse(scrollView.drawsBackground)
+		XCTAssertFalse(scrollView.contentView.drawsBackground)
+		XCTAssertEqual(outlineView.backgroundColor, .clear)
+		let initialCollapsedItem = try outlineItem(for: collapsedFolder, in: outlineView)
+		outlineView.collapseItem(initialCollapsedItem)
+
+		try assertFolderCellGeometry(in: outlineView)
+		for sortDescriptor in [
+			NSSortDescriptor(key: "name", ascending: false),
+			NSSortDescriptor(key: "dateModified", ascending: true),
+			NSSortDescriptor(key: "size", ascending: false),
+		] {
+			previewVC.customSortDescriptors = [sortDescriptor]
+			await Task.yield()
+			await Task.yield()
+			previewVC.view.layoutSubtreeIfNeeded()
+			try assertFolderCellGeometry(in: outlineView)
+			XCTAssertTrue(outlineView.isItemExpanded(try outlineItem(for: folder, in: outlineView)))
+			XCTAssertFalse(
+				outlineView.isItemExpanded(try outlineItem(for: collapsedFolder, in: outlineView))
+			)
+		}
+
+		let folderItem = try outlineItem(for: folder, in: outlineView)
+		outlineView.collapseItem(folderItem)
+		outlineView.expandItem(folderItem)
+		previewVC.view.layoutSubtreeIfNeeded()
+		try assertFolderCellGeometry(in: outlineView)
+	}
+
+	private func outlineItem(
+		for node: FileTreeNode,
+		in outlineView: NSOutlineView
+	) throws -> Any {
+		let row = try XCTUnwrap((0 ..< outlineView.numberOfRows).first { row in
+			let treeNode = outlineView.item(atRow: row) as? NSTreeNode
+			return (treeNode?.representedObject as? FileTreeNode) === node
+		})
+		return try XCTUnwrap(outlineView.item(atRow: row))
+	}
+
+	private func assertFolderCellGeometry(in outlineView: NSOutlineView) throws {
+		for row in 0 ..< outlineView.numberOfRows {
+			let cellView = try XCTUnwrap(
+				outlineView.view(atColumn: 0, row: row, makeIfNecessary: true) as? NSTableCellView
+			)
+			let imageView = try XCTUnwrap(cellView.imageView)
+			let textField = try XCTUnwrap(cellView.textField)
+			cellView.layoutSubtreeIfNeeded()
+			XCTAssertEqual(imageView.frame.size, NSSize(width: 24, height: 24))
+			XCTAssertEqual(textField.frame.minX - imageView.frame.maxX, 4, accuracy: 0.5)
+		}
+	}
+
+	private func firstSubview<View: NSView>(of _: View.Type, in view: NSView) -> View? {
+		if let matchingView = view as? View {
+			return matchingView
+		}
+		return view.subviews.lazy.compactMap { self.firstSubview(of: View.self, in: $0) }.first
+	}
+
 	private func node(
 		type: UTType,
 		path: String,

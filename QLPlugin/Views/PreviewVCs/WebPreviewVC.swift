@@ -16,7 +16,7 @@ class WebPreviewVC: NSViewController, PreviewVC, WKNavigationDelegate {
 			Bundle(identifier: "com.chamburr.Glance.QLPlugin"),
 			embeddedPluginBundle,
 			Bundle.main,
-		].compactMap { $0 }
+		].compactMap(\.self)
 
 		return candidates.first {
 			$0.url(forResource: "shared-main", withExtension: "css") != nil
@@ -67,6 +67,10 @@ class WebPreviewVC: NSViewController, PreviewVC, WKNavigationDelegate {
 		}
 	}
 
+	override func loadView() {
+		view = PreviewBackgroundView(frame: NSRect(x: 0, y: 0, width: 800, height: 500))
+	}
+
 	override func viewDidLoad() {
 		super.viewDidLoad()
 		loadPreview()
@@ -101,7 +105,9 @@ class WebPreviewVC: NSViewController, PreviewVC, WKNavigationDelegate {
 				/>
 				<meta
 					http-equiv="Content-Security-Policy"
-					content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-\(previewNonce)'; img-src data: file: blob:; font-src data: file:; media-src data: file: blob:; object-src 'none'; base-uri 'none'; form-action 'none'; connect-src 'none'"
+					content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-\(
+						previewNonce
+					)'; img-src data: file: blob:; font-src data: file:; media-src data: file: blob:; object-src 'none'; base-uri 'none'; form-action 'none'; connect-src 'none'"
 				/>
 				\(linkTags)
 			</head>
@@ -146,15 +152,20 @@ class WebPreviewVC: NSViewController, PreviewVC, WKNavigationDelegate {
 			return html
 		}
 
-		let range = NSRange(html.startIndex..<html.endIndex, in: html)
-		return expression.stringByReplacingMatches(in: html, options: [], range: range, withTemplate: "")
+		let range = NSRange(html.startIndex ..< html.endIndex, in: html)
+		return expression.stringByReplacingMatches(
+			in: html,
+			options: [],
+			range: range,
+			withTemplate: ""
+		)
 	}
 
 	// MARK: - WKNavigationDelegate
 
 	/// Reveal the web view once the content has finished loading to prevent flickering
 	func webView(_ webView: WKWebView, didFinish _: WKNavigation!) {
-		webView.alphaValue = 1
+		revealAfterFirstPaint(webView)
 	}
 
 	/// On navigation failure, show the web view anyway so the user sees something
@@ -168,5 +179,48 @@ class WebPreviewVC: NSViewController, PreviewVC, WKNavigationDelegate {
 		withError _: Error
 	) {
 		webView.alphaValue = 1
+	}
+
+	private func revealAfterFirstPaint(_ webView: WKWebView) {
+		// requestAnimationFrame is suspended while a WebKit view is detached from a window.
+		// Keep a fallback so offscreen navigation cannot leave the preview
+		// invisible.
+		Task { @MainActor [weak self, weak webView] in
+			try? await Task.sleep(for: .milliseconds(250))
+			guard
+				!Task.isCancelled,
+				let self,
+				let webView,
+				Self.isDetachedRevealFallbackEligible(webView)
+			else {
+				return
+			}
+			reveal(webView)
+		}
+		webView.callAsyncJavaScript(
+			"await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))",
+			arguments: [:],
+			in: nil,
+			in: .page
+		) { [weak self, weak webView] _ in
+			guard let self, let webView else {
+				return
+			}
+			reveal(webView)
+		}
+	}
+
+	static func isDetachedRevealFallbackEligible(_ webView: WKWebView) -> Bool {
+		webView.window == nil
+	}
+
+	private func reveal(_ webView: WKWebView) {
+		guard webView.alphaValue < 1 else {
+			return
+		}
+		NSAnimationContext.runAnimationGroup { context in
+			context.duration = 0.08
+			webView.animator().alphaValue = 1
+		}
 	}
 }

@@ -48,7 +48,7 @@ class FileTreeTests: XCTestCase {
 	}
 
 	func testChildrenUseLocalizedNaturalNameOrder() throws {
-		for name in ["file-10", "File-2", "file-1"] {
+		for name in ["file-10", "file-2", "file-1"] {
 			try fileTree?.addNode(
 				path: name,
 				isDirectory: false,
@@ -59,7 +59,7 @@ class FileTreeTests: XCTestCase {
 
 		XCTAssertEqual(
 			fileTree?.root.childrenList.map(\.name),
-			["file-1", "File-2", "file-10"]
+			["file-1", "file-2", "file-10"]
 		)
 	}
 

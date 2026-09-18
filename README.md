@@ -3,7 +3,7 @@
 	<h1>Glance</h1>
 	<p><strong>All-in-one Quick Look plugin</strong></p>
 	<p>Glance provides Quick Look previews for files that macOS doesn't support out of the box.</p>
-	<p><strong>Version 1.6.0 (build 20)</strong> · macOS 26 or later · Apple silicon</p>
+	<p><strong>Version 1.6.1 (build 21)</strong> · macOS 26 or later · Apple silicon</p>
 	<p><a href="#installation">Installation Steps</a></p>
 	<p><img src="./AppStore/Listing/Screenshots/Screenshot1.jpg" alt=""></p>
 </div>
@@ -14,8 +14,8 @@
 >
 > - native macOS 26 Liquid Glass controls and adaptive window materials
 > - Apple silicon-only builds
-> - recursive folder previews with Finder-style icons and progressive thumbnails
-> - in-place previews for nested folder items
+> - lazy folder previews with Finder-style icons, pagination, and progressive thumbnails
+> - in-place previews and multi-level navigation for nested folder items
 > - a sandbox-safe Open With chooser that preserves default app associations
 > - newer Quick Look and WebKit fixes
 > - `.ini`, `.toml`, `.ttml`, and `.elrc` source-code previews
@@ -32,7 +32,7 @@
 
 Glance extends the native Quick Look experience in Finder, Spotlight, and the Space-bar preview window. This maintained fork builds on [chamburr/glance](https://github.com/chamburr/glance) and the [original Glance plugin](https://github.com/samuelmeuli/glance), modernizing the app for current macOS releases while retaining local, lightweight previews.
 
-Version **1.6.0** (build **20**) requires an Apple silicon Mac running macOS 26 or later. It uses native macOS materials and controls without stacking custom glass effects inside Quick Look's own window chrome.
+Version **1.6.1** (build **21**) requires an Apple silicon Mac running macOS 26 or later. It uses native macOS materials and controls without stacking custom glass effects inside Quick Look's own window chrome.
 
 ## Installation
 
@@ -58,11 +58,11 @@ Release DMGs are currently unsigned and unnotarized. To install Glance:
 
 ## Supported file types
 
-- **Folders**: recursive, expandable trees with Finder-style icons and progressive image, video,
-  and PDF thumbnails. Folder traversal skips hidden items and is bounded to 500 items and five
-  levels. Double-click a file or package to preview it in place; Space does the same when the Quick
-  Look host forwards that key. The utility bar can open the top-level file or a selected nested item
-  once with any compatible app without changing its macOS default.
+- **Folders**: lazy, expandable trees with Finder-style icons and progressive image, video, and PDF
+  thumbnails. Glance loads one directory at a time in pages of 500 and skips hidden items.
+  Double-click a folder to navigate into it with multi-level Back navigation, or double-click a file
+  or package to preview it in place. The utility bar can open a selected nested item once with any
+  compatible app without changing its macOS default.
 
 - **Source code and text** (with [two-face/syntect](https://github.com/CosmicHorrorDev/two-face) syntax highlighting): `.cpp`, `.elrc`, `.ini`, `.js`, `.json`, `.py`, `.swift`, `.toml`, `.ttml`, `.yml`, common extensionless configuration files, and many more
 
@@ -121,7 +121,9 @@ Glance doesn't currently support disabling individual file types.
 
 **You claim to support [file type], but previews aren't showing up.**
 
-Glance skips non-archive files larger than 10 MB to avoid slowing down your Mac. Folder previews are separately bounded to 500 items and five levels.
+Glance skips non-archive files larger than 10 MB to avoid slowing down your Mac. Folder previews
+load off-main one directory at a time in pages of 500 so large descendants cannot hide their
+siblings or block the initial preview.
 
 It's possible that your file's extension or [UTI](https://en.wikipedia.org/wiki/Uniform_Type_Identifier) isn't associated with Glance. You can easily verify this:
 

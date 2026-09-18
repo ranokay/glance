@@ -2,7 +2,6 @@ import Foundation
 
 /// Presentation adapter for TAR and gzip-compressed TAR metadata parsed by PreviewCore.
 class TARPreview: Preview {
-	let byteCountFormatter = ByteCountFormatter()
 	private let maxEntryCount = 50_000
 
 	required init() {}
@@ -16,26 +15,23 @@ class TARPreview: Preview {
 			try PreviewCoreBridge.scanTAR(at: fileURL, isGzipped: isGzipped)
 		}
 		let fileTree = makeFileTree(from: payload.entries)
-		let scannedSize = try checkedInt64(payload.scannedUncompressedSize ?? 0)
-		var labelText =
-			"\(isGzipped ? "Compressed" : "Size"): \(byteCountFormatter.string(fromByteCount: Int64(archiveSize)))"
-
-		if isGzipped {
-			let uncompressedPrefix = payload.truncated ? "at least " : ""
-			labelText += """
-
-			Uncompressed: \(uncompressedPrefix)\(byteCountFormatter
-				.string(fromByteCount: scannedSize))
-			"""
-			if payload.truncated {
-				labelText +=
-					"\nPreview truncated after scanning \(byteCountFormatter.string(fromByteCount: scannedSize))"
-			} else {
-				labelText +=
-					"\nCompression ratio: \(compressionRatioText(compressed: Int64(archiveSize), uncompressed: scannedSize)) %"
-			}
-		} else if payload.truncated {
-			labelText += "\nPreview truncated after \(maxEntryCount) entries"
+		let scannedSize = payload.scannedUncompressedSize ?? 0
+		_ = try checkedInt64(scannedSize)
+		let labelText: String = if isGzipped {
+			ArchiveStatusFormatter.status(
+				compressed: UInt64(max(0, archiveSize)),
+				uncompressed: scannedSize,
+				uncompressedPrefix: payload.truncated ? "at least " : "",
+				trailingNote: payload.truncated ? "Preview truncated" : nil,
+				includesPercentage: !payload.truncated
+			)
+		} else {
+			ArchiveStatusFormatter.size(
+				UInt64(max(0, archiveSize)),
+				trailingNote: payload.truncated
+					? "Preview truncated after \(maxEntryCount) entries"
+					: nil
+			)
 		}
 
 		return OutlinePreviewVC(rootNodes: fileTree.root.childrenList, labelText: labelText)
@@ -67,14 +63,6 @@ class TARPreview: Preview {
 
 	private func clampedInt(_ value: UInt64) -> Int {
 		value > UInt64(Int.max) ? Int.max : Int(value)
-	}
-
-	private func compressionRatioText(compressed: Int64, uncompressed: Int64) -> String {
-		guard uncompressed != 0 else {
-			return "0.0"
-		}
-		let ratio = 100.0 - Double(compressed) / Double(uncompressed) * 100.0
-		return String(format: "%.1f", ratio)
 	}
 }
 

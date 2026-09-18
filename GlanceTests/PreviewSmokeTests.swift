@@ -1,3 +1,4 @@
+import Cocoa
 import Foundation
 import WebKit
 import XCTest
@@ -170,6 +171,59 @@ final class PreviewSmokeTests: XCTestCase {
 		XCTAssertFalse(webView.isHidden)
 		waitForWebViewToBecomeVisible(webView)
 		XCTAssertEqual(webView.alphaValue, 1)
+	}
+
+	func testWebPreviewFallbackOnlyAppliesWhileDetached() throws {
+		let previewVC = WebPreviewVC(html: "<p>Fallback eligibility</p>")
+		previewVC.loadViewIfNeeded()
+		let webView = try XCTUnwrap(previewVC.view.subviews.compactMap { $0 as? WKWebView }.first)
+		XCTAssertTrue(WebPreviewVC.isDetachedRevealFallbackEligible(webView))
+
+		let window = NSWindow(
+			contentRect: NSRect(x: 0, y: 0, width: 320, height: 240),
+			styleMask: [.borderless],
+			backing: .buffered,
+			defer: false
+		)
+		window.contentViewController = previewVC
+
+		XCTAssertFalse(WebPreviewVC.isDetachedRevealFallbackEligible(webView))
+	}
+
+	func testPreviewBackgroundMatchesWebContentBeforeFirstPaintInBothAppearances() throws {
+		for (appearanceName, expectedComponent) in [
+			(NSAppearance.Name.aqua, CGFloat(1)),
+			(NSAppearance.Name.darkAqua, CGFloat(30) / 255),
+		] {
+			let previewVC = WebPreviewVC(html: "<p>Matched background</p>")
+			previewVC.loadViewIfNeeded()
+			previewVC.view.appearance = NSAppearance(named: appearanceName)
+			let backgroundView = try XCTUnwrap(previewVC.view as? PreviewBackgroundView)
+			XCTAssertTrue(backgroundView.wantsLayer)
+			backgroundView.viewDidChangeEffectiveAppearance()
+			backgroundView.displayIfNeeded()
+			let color = try XCTUnwrap(
+				NSColor(cgColor: try XCTUnwrap(backgroundView.layer?.backgroundColor))?
+					.usingColorSpace(.sRGB)
+			)
+
+			XCTAssertEqual(color.redComponent, expectedComponent, accuracy: 0.01)
+			XCTAssertEqual(color.greenComponent, expectedComponent, accuracy: 0.01)
+			XCTAssertEqual(color.blueComponent, expectedComponent, accuracy: 0.01)
+		}
+	}
+
+	func testArchiveStatusIsSingleLineAndUsesAccurateSavedAndOverheadLabels() {
+		let saved = ArchiveStatusFormatter.status(compressed: 50, uncompressed: 100)
+		let overhead = ArchiveStatusFormatter.status(compressed: 125, uncompressed: 100)
+		let empty = ArchiveStatusFormatter.status(compressed: 0, uncompressed: 0)
+
+		XCTAssertFalse(saved.contains("\n"))
+		XCTAssertTrue(saved.contains(" • "))
+		XCTAssertTrue(saved.contains("Saved 50.0%"))
+		XCTAssertTrue(overhead.contains("Overhead 25.0%"))
+		XCTAssertFalse(empty.contains("Saved"))
+		XCTAssertFalse(empty.contains("Overhead"))
 	}
 
 	func testWebPreviewRendersInlineContentAndStyles() throws {
@@ -373,6 +427,9 @@ final class PreviewSmokeTests: XCTestCase {
 
 		XCTAssertNotNil(node(named: "folder", in: previewVC.rootNodes))
 		XCTAssertNil(node(named: "__MACOSX", in: previewVC.rootNodes))
+		XCTAssertFalse(previewVC.previewStatusText.contains("\n"))
+		XCTAssertTrue(previewVC.previewStatusText.contains("Compressed "))
+		XCTAssertTrue(previewVC.previewStatusText.contains("Uncompressed "))
 	}
 
 	func testZIPPreviewRejectsCorruptedArchive() async throws {
@@ -554,7 +611,10 @@ final class PreviewSmokeTests: XCTestCase {
 		while webView.isLoading, Date() < deadline {
 			RunLoop.current.run(mode: .default, before: Date().addingTimeInterval(0.01))
 		}
-		XCTAssertFalse(webView.isLoading, "Web view did not finish loading within \(timeout) seconds")
+		XCTAssertFalse(
+			webView.isLoading,
+			"Web view did not finish loading within \(timeout) seconds"
+		)
 	}
 
 	private func waitForWebViewToFinishLoadingAsync(

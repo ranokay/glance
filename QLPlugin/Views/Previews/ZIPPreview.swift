@@ -1,8 +1,6 @@
 import Foundation
 
 class ZIPPreview: Preview {
-	let byteCountFormatter = ByteCountFormatter()
-
 	required init() {}
 
 	func createPreviewVC(file: File) async throws -> PreviewVC {
@@ -12,16 +10,12 @@ class ZIPPreview: Preview {
 			try PreviewCoreBridge.scanZIP(at: fileURL)
 		}
 		let fileTree = try makeFileTree(from: payload.entries)
-		let uncompressedSize = try checkedInt(payload.uncompressedSize)
+		_ = try checkedInt(payload.uncompressedSize)
 
-		let labelText = """
-		Compressed: \(byteCountFormatter.string(for: archiveSize) ?? "--")
-		Uncompressed: \(byteCountFormatter.string(for: uncompressedSize) ?? "--")
-		Compression ratio: \(compressionRatioText(
-			compressed: payload.compressedSize,
+		let labelText = ArchiveStatusFormatter.status(
+			compressed: UInt64(max(0, archiveSize)),
 			uncompressed: payload.uncompressedSize
-		)) %
-		"""
+		)
 		return OutlinePreviewVC(rootNodes: fileTree.root.childrenList, labelText: labelText)
 	}
 
@@ -50,14 +44,6 @@ class ZIPPreview: Preview {
 			throw ZIPPreviewError.metadataSizeLimitExceeded
 		}
 		return Int(value)
-	}
-
-	private func compressionRatioText(compressed: UInt64, uncompressed: UInt64) -> String {
-		guard uncompressed != 0 else {
-			return "0.0"
-		}
-		let ratio = 100.0 - Double(compressed) / Double(uncompressed) * 100.0
-		return String(format: "%.1f", ratio)
 	}
 }
 
