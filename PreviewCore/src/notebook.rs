@@ -260,7 +260,14 @@ fn render_prompt(execution_count: Option<i64>) -> String {
 }
 
 fn strip_latex_delimiters(value: &str) -> &str {
-    for (opening, closing) in [("$$", "$$"), (r"\[", r"\]"), (r"\(", r"\)"), ("$", "$")] {
+    if value.starts_with("$$") || value.ends_with("$$") {
+        return value
+            .strip_prefix("$$")
+            .and_then(|inner| inner.strip_suffix("$$"))
+            .unwrap_or(value);
+    }
+
+    for (opening, closing) in [(r"\[", r"\]"), (r"\(", r"\)"), ("$", "$")] {
         if value.len() >= opening.len() + closing.len()
             && value.starts_with(opening)
             && value.ends_with(closing)
@@ -371,6 +378,13 @@ mod tests {
         assert!(html.contains("output-execute-result"));
         assert!(!html.contains("LaTeX output"));
         assert!(!html.contains("<script>"));
+    }
+
+    #[test]
+    fn preserves_malformed_double_dollar_delimiters() {
+        assert_eq!(strip_latex_delimiters("$$x$"), "$$x$");
+        assert_eq!(strip_latex_delimiters("$x$$"), "$x$$");
+        assert_eq!(strip_latex_delimiters("$$x$$"), "x");
     }
 
     #[test]
