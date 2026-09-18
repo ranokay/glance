@@ -354,7 +354,8 @@ mod tests {
                 "cell_type":"code",
                 "source":[],
                 "outputs":[{
-                    "output_type":"display_data",
+                    "output_type":"execute_result",
+                    "execution_count":1,
                     "data":{"text/latex":["$\\displaystyle x^2", "<script>bad()</script>$"]}
                 }]
             }],
@@ -367,6 +368,7 @@ mod tests {
         assert!(html.contains(
             r#"<div class="latex-output" data-glance-latex-output="1">\displaystyle x^2&lt;script&gt;bad()&lt;/script&gt;</div>"#
         ));
+        assert!(html.contains("output-execute-result"));
         assert!(!html.contains("LaTeX output"));
         assert!(!html.contains("<script>"));
     }
