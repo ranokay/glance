@@ -66,6 +66,7 @@
 		F1A000000000000000000003 /* WindowAppearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A000000000000000000001 /* WindowAppearance.swift */; };
 		F2A000000000000000000002 /* WindowAppearanceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2A000000000000000000001 /* WindowAppearanceTests.swift */; };
 		F3A000000000000000000001 /* SupportedFilesWC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ED140652450C671007A7C70 /* SupportedFilesWC.swift */; };
+		F4A000000000000000000001 /* SettingsWC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3048855925A27D336EC30FC7 /* SettingsWC.swift */; };
 		7E022BE52452181F000EFCD3 /* WebPreviewVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E022BE32452181F000EFCD3 /* WebPreviewVC.swift */; };
 		7E022BE62452181F000EFCD3 /* WebPreviewVC.xib in Resources */ = {isa = PBXBuildFile; fileRef = 7E022BE42452181F000EFCD3 /* WebPreviewVC.xib */; };
 		7E022BED245253B3000EFCD3 /* OutlinePreviewVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E022BEB245253B3000EFCD3 /* OutlinePreviewVC.swift */; };
@@ -809,6 +810,7 @@
 				F1A000000000000000000003 /* WindowAppearance.swift in Sources */,
 				F2A000000000000000000002 /* WindowAppearanceTests.swift in Sources */,
 				F3A000000000000000000001 /* SupportedFilesWC.swift in Sources */,
+				F4A000000000000000000001 /* SettingsWC.swift in Sources */,
 				C0DE00000000000000000315 /* CodePreview.swift in Sources */,
 				C0DE00000000000000000303 /* Date.swift in Sources */,
 				C0DE00000000000000000302 /* Log.swift in Sources */,

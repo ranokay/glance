@@ -2,7 +2,7 @@ import Cocoa
 
 @main
 @MainActor
-class AppDelegate: NSObject, NSApplicationDelegate {
+class AppDelegate: NSObject, NSApplicationDelegate, DockIconVisibilityUpdating {
 	private var mainWindowController: NSWindowController?
 	private var statusItem: NSStatusItem?
 	private let openWithBridgeServer = OpenWithBridgeServer()

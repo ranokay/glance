@@ -32,9 +32,20 @@ class WebPreviewVC: NSViewController, PreviewVC, WKNavigationDelegate {
 	required convenience init(
 		html: String,
 		stylesheets: [Stylesheet] = [],
-		scripts: [Script] = []
+		scripts: [Script] = [],
+		appearancePreferences: PreviewAppearancePreferences = AppSettingsStore.shared
+			.previewAppearance,
+		availableFontFamilies: [String] = NSFontManager.shared.availableFontFamilies
 	) {
-		self.init(nibName: nil, bundle: nil, html: html, stylesheets: stylesheets, scripts: scripts)
+		self.init(
+			nibName: nil,
+			bundle: nil,
+			html: html,
+			stylesheets: stylesheets,
+			scripts: scripts,
+			appearancePreferences: appearancePreferences,
+			availableFontFamilies: availableFontFamilies
+		)
 	}
 
 	init(
@@ -42,15 +53,26 @@ class WebPreviewVC: NSViewController, PreviewVC, WKNavigationDelegate {
 		bundle nibBundleOrNil: Bundle?,
 		html: String,
 		stylesheets: [Stylesheet] = [],
-		scripts: [Script] = []
+		scripts: [Script] = [],
+		appearancePreferences: PreviewAppearancePreferences = AppSettingsStore.shared
+			.previewAppearance,
+		availableFontFamilies: [String] = NSFontManager.shared.availableFontFamilies
 	) {
 		self.html = html
+		var resolvedStylesheets = stylesheets
 		if let sharedStylesheetURL {
-			self.stylesheets = [Stylesheet(url: sharedStylesheetURL)] + stylesheets
+			resolvedStylesheets.insert(Stylesheet(url: sharedStylesheetURL), at: 0)
 		} else {
 			Log.render.error("Could not find shared stylesheet")
-			self.stylesheets = stylesheets
 		}
+		resolvedStylesheets.append(
+			Stylesheet(
+				content: appearancePreferences.stylesheet(
+					availableFontFamilies: availableFontFamilies
+				)
+			)
+		)
+		self.stylesheets = resolvedStylesheets
 		self.scripts = scripts
 		super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
 	}

@@ -33,3 +33,8 @@ zip = { version = "=8.6.0", default-features = false, features = ["time"] }
 codegen-units = 1
 lto = "thin"
 panic = "unwind"
+
+# macOS 27 rejects proc-macro dylibs stripped by rustc 1.97 (rust-lang/rust#157750).
+# Build-time crates are not included in the shipped static library.
+[profile.release.build-override]
+strip = false
