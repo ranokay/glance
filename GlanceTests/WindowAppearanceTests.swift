@@ -107,6 +107,17 @@ final class WindowAppearanceTests: XCTestCase {
 		XCTAssertEqual(controller.lineWrappingCheckbox.state, .off)
 	}
 
+	func testSettingsWindowCanonicalizesPersistedFontFamilyCasing() throws {
+		let (store, suiteName) = try makeSettingsStore()
+		defer { UserDefaults.standard.removePersistentDomain(forName: suiteName) }
+		store.previewFontFamily = "menlo"
+		let controller = SettingsWC(settingsStore: store, fontFamilies: ["Menlo"])
+
+		controller.syncState()
+
+		XCTAssertEqual(controller.fontFamilyPopUpButton.titleOfSelectedItem, "Menlo")
+	}
+
 	func testWindowAppearanceUsesOneAdaptiveMaterialBackground() throws {
 		let window = NSWindow(
 			contentRect: NSRect(x: 0, y: 0, width: 400, height: 300),

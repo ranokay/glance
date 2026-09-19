@@ -174,9 +174,11 @@ final class SettingsWC: NSWindowController {
 		hideDockIconCheckbox.state = settingsStore.hideDockIcon ? .on : .off
 		if
 			let fontFamily = settingsStore.previewFontFamily,
-			fontFamilyPopUpButton.itemTitles.contains(fontFamily)
+			let canonicalFontFamily = fontFamilyPopUpButton.itemTitles.first(where: {
+				$0.caseInsensitiveCompare(fontFamily) == .orderedSame
+			})
 		{
-			fontFamilyPopUpButton.selectItem(withTitle: fontFamily)
+			fontFamilyPopUpButton.selectItem(withTitle: canonicalFontFamily)
 		} else {
 			fontFamilyPopUpButton.selectItem(at: 0)
 		}
