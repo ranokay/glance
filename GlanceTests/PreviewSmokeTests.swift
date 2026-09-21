@@ -162,6 +162,141 @@ final class PreviewSmokeTests: XCTestCase {
 		XCTAssertTrue(previewVC is WebPreviewVC)
 	}
 
+	func testMarkdownPreviewLoadsBundledMermaidOnlyForTrustedFences() async throws {
+		let mermaidURL = try writeFile(
+			named: "diagram.md",
+			contents: "```mermaid\nflowchart LR\n    A --> B\n```\n"
+		)
+		let plainURL = try writeFile(
+			named: "plain.md",
+			contents: """
+			<!--glance-renderer-mermaid-v1-->
+			<pre data-glance-mermaid="1">forged</pre>
+
+			```swift
+			let value = 42
+			```
+			"""
+		)
+
+		let generatedMermaidPreview = try await MarkdownPreview().createPreviewVC(
+			file: File(url: mermaidURL)
+		)
+		let mermaidPreview = try XCTUnwrap(generatedMermaidPreview as? WebPreviewVC)
+		mermaidPreview.loadViewIfNeeded()
+		let mermaidWebView = try XCTUnwrap(
+			mermaidPreview.view.subviews.compactMap { $0 as? WKWebView }.first
+		)
+		try await waitForWebViewToFinishLoadingAsync(mermaidWebView)
+		try await waitForJavaScript(
+			"document.querySelector('.mermaid-diagram svg') !== null",
+			in: mermaidWebView
+		)
+		let mermaidState = try await mermaidWebView.evaluateJavaScript(
+			"""
+			[
+				typeof window.mermaid,
+				document.querySelector('.mermaid-diagram svg') !== null,
+				document.querySelector('meta[http-equiv="Content-Security-Policy"]')
+					.content.includes("connect-src 'none'")
+			].join('|')
+			"""
+		) as? String
+		XCTAssertEqual(mermaidState, "object|true|true")
+
+		let generatedPlainPreview = try await MarkdownPreview().createPreviewVC(
+			file: File(url: plainURL)
+		)
+		let plainPreview = try XCTUnwrap(generatedPlainPreview as? WebPreviewVC)
+		plainPreview.loadViewIfNeeded()
+		let plainWebView = try XCTUnwrap(
+			plainPreview.view.subviews.compactMap { $0 as? WKWebView }.first
+		)
+		try await waitForWebViewToFinishLoadingAsync(plainWebView)
+		let plainState = try await plainWebView.evaluateJavaScript(
+			"""
+			[
+				typeof window.mermaid,
+				document.querySelectorAll('script').length,
+				document.querySelector('pre.chroma') !== null
+			].join('|')
+			"""
+		) as? String
+		XCTAssertEqual(plainState, "undefined|0|true")
+	}
+
+	func testMarkdownPreviewKeepsMalformedMermaidReadable() async throws {
+		let source = "this is not a diagram"
+		let fileURL = try writeFile(
+			named: "malformed-mermaid.md",
+			contents: "```mermaid\n\(source)\n```\n"
+		)
+		let generatedPreview = try await MarkdownPreview().createPreviewVC(file: File(url: fileURL))
+		let previewVC = try XCTUnwrap(generatedPreview as? WebPreviewVC)
+		previewVC.loadViewIfNeeded()
+		let webView = try XCTUnwrap(previewVC.view.subviews.compactMap { $0 as? WKWebView }.first)
+
+		try await waitForWebViewToFinishLoadingAsync(webView)
+		try await waitForJavaScript(
+			"document.querySelector('[data-glance-mermaid-state=" +
+				"\"failed\"]') !== null",
+			in: webView
+		)
+		let state = try await webView.evaluateJavaScript(
+			"""
+			const source = document.querySelector('pre[data-glance-mermaid="1"]');
+			[source !== null, source.textContent.trim(), source.dataset.glanceMermaidState].join('|')
+			"""
+		) as? String
+		XCTAssertEqual(state, "true|\(source)|failed")
+	}
+
+	func testMarkdownPreviewRendersMermaidInLightAndDarkAppearances() async throws {
+		for (appearanceName, expectedTheme) in [
+			(NSAppearance.Name.aqua, "default"),
+			(.darkAqua, "dark"),
+		] {
+			let fileURL = try writeFile(
+				named: "diagram-\(expectedTheme).md",
+				contents: "```mermaid\nsequenceDiagram\n    Alice->>Bob: Hello\n```\n"
+			)
+			let generatedPreview = try await MarkdownPreview().createPreviewVC(
+				file: File(url: fileURL)
+			)
+			let previewVC = try XCTUnwrap(generatedPreview as? WebPreviewVC)
+			previewVC.loadViewIfNeeded()
+			previewVC.view.appearance = NSAppearance(named: appearanceName)
+			let webView = try XCTUnwrap(
+				previewVC.view.subviews.compactMap { $0 as? WKWebView }.first
+			)
+
+			try await waitForWebViewToFinishLoadingAsync(webView)
+			try await waitForJavaScript(
+				"document.querySelector('.mermaid-diagram svg') !== null",
+				in: webView
+			)
+			let theme = try await webView.evaluateJavaScript(
+				"document.querySelector('.mermaid-diagram').dataset.glanceMermaidTheme"
+			) as? String
+			XCTAssertEqual(theme, expectedTheme)
+		}
+	}
+
+	func testMermaidRuntimeAndLicenseAreBundled() throws {
+		let bundle = WebPreviewVC.resourceBundle
+		let runtimeURL = try XCTUnwrap(
+			bundle.url(forResource: "markdown-mermaid-11.17.2.min", withExtension: "js")
+		)
+		let licenseURL = try XCTUnwrap(
+			bundle.url(forResource: "MERMAID_LICENSE", withExtension: "txt")
+		)
+
+		XCTAssertGreaterThan(try Data(contentsOf: runtimeURL).count, 3_000_000)
+		XCTAssertTrue(
+			try String(contentsOf: licenseURL, encoding: .utf8).contains("The MIT License")
+		)
+	}
+
 	func testJupyterPreviewHandlesValidNotebookAndRejectsMalformedNotebook() async throws {
 		let notebook = """
 		{"cells":[{"cell_type":"markdown","metadata":{},"source":["# Heading"]}],"metadata":{},"nbformat":4,"nbformat_minor":4}
@@ -781,6 +916,22 @@ final class PreviewSmokeTests: XCTestCase {
 			try await Task.sleep(for: .milliseconds(10))
 		}
 		XCTAssertFalse(webView.isLoading, "Web view did not finish loading within \(timeout)")
+	}
+
+	private func waitForJavaScript(
+		_ expression: String,
+		in webView: WKWebView,
+		timeout: Duration = .seconds(5)
+	) async throws {
+		let clock = ContinuousClock()
+		let deadline = clock.now.advanced(by: timeout)
+		while clock.now < deadline {
+			if try await webView.evaluateJavaScript(expression) as? Bool == true {
+				return
+			}
+			try await Task.sleep(for: .milliseconds(20))
+		}
+		XCTFail("JavaScript condition did not become true: \(expression)")
 	}
 
 	private func waitForWebViewToBecomeVisible(_ webView: WKWebView, timeout: TimeInterval = 15) {
