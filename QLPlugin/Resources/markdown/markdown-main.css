@@ -46,3 +46,13 @@ pre code {
 	background-color: initial;
 	border: 0;
 }
+
+.mermaid-diagram {
+	overflow-x: auto;
+	text-align: center;
+}
+
+.mermaid-diagram svg {
+	height: auto;
+	max-width: 100%;
+}

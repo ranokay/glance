@@ -16,7 +16,7 @@ final class SupportedFilesWC: NSWindowController {
 		),
 		SupportedFileSection(
 			title: "Markdown",
-			details: ".md, .markdown, .mdown, .mkdn, .mkd, .Rmd, .qmd"
+			details: ".md, .markdown, .mdown, .mkdn, .mkd, .Rmd, .qmd • Mermaid diagrams"
 		),
 		SupportedFileSection(
 			title: "Archive",

@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		20A000000000000000000003 /* markdown-mermaid-11.17.2.min.js in Resources */ = {isa = PBXBuildFile; fileRef = 20A000000000000000000001 /* markdown-mermaid-11.17.2.min.js */; };
+		20A000000000000000000004 /* MERMAID_LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = 20A000000000000000000002 /* MERMAID_LICENSE.txt */; };
 		3F0000000000000000000011 /* SCNVector3.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F0000000000000000000001 /* SCNVector3.swift */; };
 		3F0000000000000000000012 /* ThreeMFSceneBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F0000000000000000000002 /* ThreeMFSceneBuilder.swift */; };
 		3F0000000000000000000013 /* ModelCamera.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F0000000000000000000003 /* ModelCamera.swift */; };
@@ -194,6 +196,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		20A000000000000000000001 /* markdown-mermaid-11.17.2.min.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = "markdown-mermaid-11.17.2.min.js"; sourceTree = "<group>"; };
+		20A000000000000000000002 /* MERMAID_LICENSE.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = MERMAID_LICENSE.txt; sourceTree = "<group>"; };
 		3F0000000000000000000001 /* SCNVector3.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SCNVector3.swift; sourceTree = "<group>"; };
 		3F0000000000000000000002 /* ThreeMFSceneBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreeMFSceneBuilder.swift; sourceTree = "<group>"; };
 		3F0000000000000000000003 /* ModelCamera.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelCamera.swift; sourceTree = "<group>"; };
@@ -548,6 +552,8 @@
 		7EB3643B244B03CC00D7F96F /* markdown */ = {
 			isa = PBXGroup;
 			children = (
+				20A000000000000000000002 /* MERMAID_LICENSE.txt */,
+				20A000000000000000000001 /* markdown-mermaid-11.17.2.min.js */,
 				7EB3643D244B03CC00D7F96F /* markdown-main.css */,
 			);
 			path = markdown;
@@ -727,6 +733,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				20A000000000000000000004 /* MERMAID_LICENSE.txt in Resources */,
+				20A000000000000000000003 /* markdown-mermaid-11.17.2.min.js in Resources */,
 				7EB36448244B03CC00D7F96F /* KaTeX_Main-Regular.woff2 in Resources */,
 				7EB36460244B03CC00D7F96F /* KaTeX_Fraktur-Regular.woff2 in Resources */,
 				7EB36441244B03CC00D7F96F /* jupyter-katex.min.css in Resources */,

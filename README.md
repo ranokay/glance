@@ -71,7 +71,7 @@ Release DMGs are currently unsigned and unnotarized. To install Glance:
 
   <p><img src="./AppStore/Assets/Screenshots/ScreenshotSourceCode.png" alt="" width="600"></p>
 
-- **Markdown** (rendered using [Comrak](https://github.com/kivikakk/comrak)): `.md`, `.markdown`, `.mdown`, `.mkdn`, `.mkd`, `.Rmd`, `.qmd`
+- **Markdown** (rendered using [Comrak](https://github.com/kivikakk/comrak), with offline [Mermaid](https://mermaid.js.org/) diagrams): `.md`, `.markdown`, `.mdown`, `.mkdn`, `.mkd`, `.Rmd`, `.qmd`
 
   <p><img src="./AppStore/Assets/Screenshots/ScreenshotMarkdown.png" alt="" width="600"></p>
 
