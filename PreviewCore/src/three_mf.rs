@@ -1,6 +1,9 @@
 use crate::error::CoreError;
 use crate::model::{ThreeMfInstance, ThreeMfMesh, ThreeMfPayload};
+use quick_xml::encoding::Decoder;
 use quick_xml::events::{BytesStart, Event};
+use quick_xml::name::{Namespace, ResolveResult};
+use quick_xml::reader::NsReader;
 use quick_xml::{Reader, XmlVersion};
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::fs::File;
@@ -11,6 +14,7 @@ const MODEL_RELATIONSHIP_TYPE: &str =
     "http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel";
 const DEFAULT_MODEL_PATH: &str = "3D/3dmodel.model";
 const RELATIONSHIPS_PATH: &str = "_rels/.rels";
+const CORE_NAMESPACE: &[u8] = b"http://schemas.microsoft.com/3dmanufacturing/core/2015/02";
 
 pub(crate) const MAX_FILE_SIZE: u64 = 200_000_000;
 const MAX_ENTRY_COUNT: usize = 4_096;
@@ -63,6 +67,12 @@ struct Component {
 struct EntryIndex {
     index: usize,
     size: u64,
+}
+
+#[derive(Clone, PartialEq, Eq)]
+struct ElementName {
+    local: Vec<u8>,
+    is_core: bool,
 }
 
 pub(crate) fn parse_three_mf(path: &Path) -> Result<ThreeMfPayload, CoreError> {
@@ -186,14 +196,15 @@ fn relationship_target(xml: &[u8]) -> Result<Option<String>, CoreError> {
     let mut reader = Reader::from_reader(xml);
     reader.config_mut().trim_text(true);
     loop {
+        let decoder = reader.decoder();
         match reader.read_event() {
             Ok(Event::Start(element) | Event::Empty(element))
                 if local_name(element.name().as_ref()) == b"Relationship" =>
             {
-                if attribute(&reader, &element, b"Type")?.as_deref()
+                if attribute(decoder, &element, b"Type")?.as_deref()
                     == Some(MODEL_RELATIONSHIP_TYPE)
                 {
-                    return attribute(&reader, &element, b"Target");
+                    return attribute(decoder, &element, b"Target");
                 }
             }
             Ok(Event::Eof) => return Ok(None),
@@ -215,28 +226,29 @@ fn parse_model_part(
     pending: &mut VecDeque<String>,
     parsed: &HashSet<String>,
 ) -> Result<(), CoreError> {
-    let mut reader = Reader::from_reader(xml);
+    let mut reader = NsReader::from_reader(xml);
     reader.config_mut().trim_text(true);
-    let mut stack: Vec<Vec<u8>> = Vec::new();
+    let mut stack: Vec<ElementName> = Vec::new();
     let mut current_object: Option<(String, Object)> = None;
     let mut current_mesh: Option<(usize, Mesh)> = None;
     let mut current_colors: Option<(usize, String, Vec<[f32; 4]>)> = None;
 
     loop {
-        let event = reader
-            .read_event()
+        let decoder = reader.decoder();
+        let (namespace, event) = reader
+            .read_resolved_event()
             .map_err(|error| CoreError::parse(format!("Could not parse 3MF model XML: {error}")))?;
         match event {
             Event::Start(element) => {
                 if stack.len() >= MAX_ELEMENT_DEPTH {
                     return Err(CoreError::limit("3MF XML is nested too deeply"));
                 }
-                let name = local_name(element.name().as_ref()).to_vec();
+                let name = element_name(namespace, element.local_name().as_ref())?;
                 stack.push(name.clone());
                 handle_start(
-                    &reader,
+                    decoder,
                     &element,
-                    &name,
+                    &name.local,
                     &stack,
                     part_path,
                     is_root,
@@ -252,12 +264,12 @@ fn parse_model_part(
                 if stack.len() >= MAX_ELEMENT_DEPTH {
                     return Err(CoreError::limit("3MF XML is nested too deeply"));
                 }
-                let name = local_name(element.name().as_ref()).to_vec();
+                let name = element_name(namespace, element.local_name().as_ref())?;
                 stack.push(name.clone());
                 handle_start(
-                    &reader,
+                    decoder,
                     &element,
-                    &name,
+                    &name.local,
                     &stack,
                     part_path,
                     is_root,
@@ -269,7 +281,7 @@ fn parse_model_part(
                     &mut current_colors,
                 )?;
                 handle_end(
-                    &name,
+                    &name.local,
                     &stack,
                     stack.len(),
                     model,
@@ -280,9 +292,9 @@ fn parse_model_part(
                 stack.pop();
             }
             Event::End(element) => {
-                let name = local_name(element.name().as_ref()).to_vec();
+                let name = element_name(namespace, element.local_name().as_ref())?;
                 handle_end(
-                    &name,
+                    &name.local,
                     &stack,
                     stack.len(),
                     model,
@@ -290,7 +302,7 @@ fn parse_model_part(
                     &mut current_mesh,
                     &mut current_colors,
                 )?;
-                if stack.pop().as_deref() != Some(name.as_slice()) {
+                if stack.pop().as_ref() != Some(&name) {
                     return Err(CoreError::parse("3MF XML element nesting is invalid"));
                 }
             }
@@ -306,10 +318,10 @@ fn parse_model_part(
 
 #[allow(clippy::too_many_arguments)]
 fn handle_start(
-    reader: &Reader<&[u8]>,
+    decoder: Decoder,
     element: &BytesStart<'_>,
     name: &[u8],
-    stack: &[Vec<u8>],
+    stack: &[ElementName],
     part_path: &str,
     is_root: bool,
     model: &mut ParsedModel,
@@ -321,8 +333,8 @@ fn handle_start(
 ) -> Result<(), CoreError> {
     let depth = stack.len();
     match name {
-        b"model" if is_root => {
-            if let Some(unit) = attribute(reader, element, b"unit")? {
+        b"model" if is_root && stack.len() == 1 && stack[0].is_core => {
+            if let Some(unit) = attribute(decoder, element, b"unit")? {
                 model.unit_millimeters = unit_scale(&unit);
             }
         }
@@ -330,9 +342,9 @@ fn handle_start(
             if current_object.is_some() {
                 return Err(CoreError::parse("3MF objects must not be nested"));
             }
-            let id = required_attribute(reader, element, b"id", "object")?;
-            let group = attribute(reader, element, b"pid")?.map(|id| object_key(part_path, &id));
-            let property_index = attribute(reader, element, b"pindex")?
+            let id = required_attribute(decoder, element, b"id", "object")?;
+            let group = attribute(decoder, element, b"pid")?.map(|id| object_key(part_path, &id));
+            let property_index = attribute(decoder, element, b"pindex")?
                 .map(|value| parse_usize(&value, "object property index"))
                 .transpose()?;
             *current_object = Some((
@@ -364,9 +376,9 @@ fn handle_start(
                 )));
             }
             let vertex = [
-                coordinate(&required_attribute(reader, element, b"x", "vertex")?)?,
-                coordinate(&required_attribute(reader, element, b"y", "vertex")?)?,
-                coordinate(&required_attribute(reader, element, b"z", "vertex")?)?,
+                coordinate(&required_attribute(decoder, element, b"x", "vertex")?)?,
+                coordinate(&required_attribute(decoder, element, b"y", "vertex")?)?,
+                coordinate(&required_attribute(decoder, element, b"z", "vertex")?)?,
             ];
             current_mesh
                 .as_mut()
@@ -389,15 +401,15 @@ fn handle_start(
             }
             let triangle = [
                 parse_u32(
-                    &required_attribute(reader, element, b"v1", "triangle")?,
+                    &required_attribute(decoder, element, b"v1", "triangle")?,
                     "triangle index",
                 )?,
                 parse_u32(
-                    &required_attribute(reader, element, b"v2", "triangle")?,
+                    &required_attribute(decoder, element, b"v2", "triangle")?,
                     "triangle index",
                 )?,
                 parse_u32(
-                    &required_attribute(reader, element, b"v3", "triangle")?,
+                    &required_attribute(decoder, element, b"v3", "triangle")?,
                     "triangle index",
                 )?,
             ];
@@ -412,8 +424,8 @@ fn handle_start(
             if current_object.is_some()
                 && path_ends_with(stack, &[b"object", b"components", b"component"]) =>
         {
-            let id = required_attribute(reader, element, b"objectid", "component")?;
-            let target_path = target_part_path(reader, element, part_path)?;
+            let id = required_attribute(decoder, element, b"objectid", "component")?;
+            let target_path = target_part_path(decoder, element, part_path)?;
             enqueue_part(&target_path, pending, parsed)?;
             current_object
                 .as_mut()
@@ -422,22 +434,22 @@ fn handle_start(
                 .components
                 .push(Component {
                     object_key: object_key(&target_path, &id),
-                    transform: parse_transform(attribute(reader, element, b"transform")?)?,
+                    transform: parse_transform(attribute(decoder, element, b"transform")?)?,
                 });
         }
         b"item" if is_root && path_ends_with(stack, &[b"model", b"build", b"item"]) => {
-            let id = required_attribute(reader, element, b"objectid", "build item")?;
-            let target_path = target_part_path(reader, element, part_path)?;
+            let id = required_attribute(decoder, element, b"objectid", "build item")?;
+            let target_path = target_part_path(decoder, element, part_path)?;
             enqueue_part(&target_path, pending, parsed)?;
             model.build_items.push(Component {
                 object_key: object_key(&target_path, &id),
-                transform: parse_transform(attribute(reader, element, b"transform")?)?,
+                transform: parse_transform(attribute(decoder, element, b"transform")?)?,
             });
         }
         b"basematerials" | b"colorgroup"
             if current_colors.is_none() && path_ends_with(stack, &[b"resources", name]) =>
         {
-            let id = required_attribute(reader, element, b"id", "color group")?;
+            let id = required_attribute(decoder, element, b"id", "color group")?;
             *current_colors = Some((depth, object_key(part_path, &id), Vec::new()));
         }
         b"base"
@@ -446,7 +458,7 @@ fn handle_start(
                 .is_some_and(|(group_depth, _, _)| depth == group_depth + 1)
                 && path_ends_with(stack, &[b"basematerials", b"base"]) =>
         {
-            let color = attribute(reader, element, b"displaycolor")?
+            let color = attribute(decoder, element, b"displaycolor")?
                 .as_deref()
                 .and_then(parse_color)
                 .unwrap_or(DEFAULT_COLOR);
@@ -462,7 +474,7 @@ fn handle_start(
                 .is_some_and(|(group_depth, _, _)| depth == group_depth + 1)
                 && path_ends_with(stack, &[b"colorgroup", b"color"]) =>
         {
-            let color = attribute(reader, element, b"color")?
+            let color = attribute(decoder, element, b"color")?
                 .as_deref()
                 .and_then(parse_color)
                 .unwrap_or(DEFAULT_COLOR);
@@ -479,7 +491,7 @@ fn handle_start(
 
 fn handle_end(
     name: &[u8],
-    stack: &[Vec<u8>],
+    stack: &[ElementName],
     depth: usize,
     model: &mut ParsedModel,
     current_object: &mut Option<(String, Object)>,
@@ -702,11 +714,11 @@ fn transform_point(point: [f32; 3], matrix: Matrix) -> Result<[f32; 3], CoreErro
 }
 
 fn target_part_path(
-    reader: &Reader<&[u8]>,
+    decoder: Decoder,
     element: &BytesStart<'_>,
     current_path: &str,
 ) -> Result<String, CoreError> {
-    match attribute(reader, element, b"path")? {
+    match attribute_by_local_name(decoder, element, b"path")? {
         Some(path) => canonical_path(&path),
         None => Ok(current_path.to_owned()),
     }
@@ -729,7 +741,27 @@ fn enqueue_part(
 }
 
 fn attribute(
-    reader: &Reader<&[u8]>,
+    decoder: Decoder,
+    element: &BytesStart<'_>,
+    expected: &[u8],
+) -> Result<Option<String>, CoreError> {
+    for attribute in element.attributes() {
+        let attribute = attribute
+            .map_err(|error| CoreError::parse(format!("Invalid 3MF XML attribute: {error}")))?;
+        if attribute.key.as_ref() == expected {
+            return attribute
+                .decoded_and_normalized_value(XmlVersion::Implicit1_0, decoder)
+                .map(|value| Some(value.into_owned()))
+                .map_err(|error| {
+                    CoreError::parse(format!("Invalid 3MF XML attribute value: {error}"))
+                });
+        }
+    }
+    Ok(None)
+}
+
+fn attribute_by_local_name(
+    decoder: Decoder,
     element: &BytesStart<'_>,
     expected: &[u8],
 ) -> Result<Option<String>, CoreError> {
@@ -738,7 +770,7 @@ fn attribute(
             .map_err(|error| CoreError::parse(format!("Invalid 3MF XML attribute: {error}")))?;
         if local_name(attribute.key.as_ref()) == expected {
             return attribute
-                .decoded_and_normalized_value(XmlVersion::Implicit1_0, reader.decoder())
+                .decoded_and_normalized_value(XmlVersion::Implicit1_0, decoder)
                 .map(|value| Some(value.into_owned()))
                 .map_err(|error| {
                     CoreError::parse(format!("Invalid 3MF XML attribute value: {error}"))
@@ -749,12 +781,12 @@ fn attribute(
 }
 
 fn required_attribute(
-    reader: &Reader<&[u8]>,
+    decoder: Decoder,
     element: &BytesStart<'_>,
     name: &[u8],
     context: &str,
 ) -> Result<String, CoreError> {
-    attribute(reader, element, name)?.ok_or_else(|| {
+    attribute(decoder, element, name)?.ok_or_else(|| {
         CoreError::parse(format!(
             "3MF {context} is missing {}",
             String::from_utf8_lossy(name)
@@ -766,12 +798,29 @@ fn local_name(name: &[u8]) -> &[u8] {
     name.rsplit(|byte| *byte == b':').next().unwrap_or(name)
 }
 
-fn path_ends_with(stack: &[Vec<u8>], expected: &[&[u8]]) -> bool {
+fn path_ends_with(stack: &[ElementName], expected: &[&[u8]]) -> bool {
     stack.len() >= expected.len()
         && stack[stack.len() - expected.len()..]
             .iter()
-            .map(Vec::as_slice)
-            .eq(expected.iter().copied())
+            .zip(expected)
+            .all(|(actual, expected)| actual.is_core && actual.local.as_slice() == *expected)
+}
+
+fn element_name(namespace: ResolveResult<'_>, local: &[u8]) -> Result<ElementName, CoreError> {
+    let is_core = match namespace {
+        ResolveResult::Unbound => true,
+        ResolveResult::Bound(Namespace(namespace)) => namespace == CORE_NAMESPACE,
+        ResolveResult::Unknown(prefix) => {
+            return Err(CoreError::parse(format!(
+                "3MF XML contains an unknown namespace prefix: {}",
+                String::from_utf8_lossy(&prefix)
+            )));
+        }
+    };
+    Ok(ElementName {
+        local: local.to_vec(),
+        is_core,
+    })
 }
 
 fn canonical_path(path: &str) -> Result<String, CoreError> {
@@ -933,12 +982,13 @@ mod tests {
 
     #[test]
     fn ignores_extension_elements_named_object() {
-        let model = r#"<model xmlns:vendor="urn:vendor"><resources><object id="1"><vendor:object/><mesh><vertices><vertex x="0" y="0" z="0"/><vertex x="1" y="0" z="0"/><vertex x="0" y="1" z="0"/></vertices><triangles><triangle v1="0" v2="1" v3="2"/></triangles></mesh></object></resources><build><item objectid="1"/></build></model>"#;
+        let model = r#"<model unit="millimeter" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02" xmlns:vendor="urn:vendor"><vendor:model unit="inch"/><resources><object id="1"><vendor:object><vendor:components><vendor:component objectid="999"/></vendor:components><vendor:mesh><vendor:vertices><vendor:vertex x="NaN" y="0" z="0"/></vendor:vertices></vendor:mesh></vendor:object><mesh><vertices><vertex x="0" y="0" z="0"/><vertex x="1" y="0" z="0"/><vertex x="0" y="1" z="0"/></vertices><triangles><triangle v1="0" v2="1" v3="2"/></triangles></mesh></object></resources><build><item objectid="1"/></build></model>"#;
         let path = write_archive(&[("3D/3dmodel.model", model)]);
 
         let payload = parse_three_mf(&path).unwrap();
 
         assert_eq!(payload.triangle_count, 1);
+        assert_eq!(payload.unit_millimeters, 1.0);
         fs::remove_file(path).unwrap();
     }
 
