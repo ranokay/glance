@@ -19,6 +19,7 @@ final class PreviewFactoryTests: XCTestCase {
 			("/tmp/archive.tgz", TARPreview.self),
 			("/tmp/archive.tar.gz", TARPreview.self),
 			("/tmp/model.3mf", ThreeMFPreview.self),
+			("/tmp/diagram.drawio", DrawIOPreview.self),
 			("/tmp/table.tab", TSVPreview.self),
 			("/tmp/table.tsv", TSVPreview.self),
 			("/tmp/archive.7z", SevenZipPreview.self),

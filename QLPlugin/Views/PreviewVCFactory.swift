@@ -13,6 +13,8 @@ class PreviewVCFactory {
 		}
 
 		switch entry.previewFileType {
+			case .drawIO:
+				return DrawIOPreview.self
 			case .markdown:
 				return MarkdownPreview.self
 			case .jupyter:

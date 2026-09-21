@@ -2,6 +2,7 @@ import Foundation
 
 enum PreviewFileType: Equatable {
 	case code
+	case drawIO
 	case jupyter
 	case markdown
 	case sevenZip

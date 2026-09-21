@@ -9,6 +9,11 @@
 /* Begin PBXBuildFile section */
 		20A000000000000000000003 /* markdown-mermaid-11.17.2.min.js in Resources */ = {isa = PBXBuildFile; fileRef = 20A000000000000000000001 /* markdown-mermaid-11.17.2.min.js */; };
 		20A000000000000000000004 /* MERMAID_LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = 20A000000000000000000002 /* MERMAID_LICENSE.txt */; };
+		21A000000000000000000011 /* DrawIOPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21A000000000000000000001 /* DrawIOPreview.swift */; };
+		21A000000000000000000012 /* DrawIOPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21A000000000000000000001 /* DrawIOPreview.swift */; };
+		21A000000000000000000013 /* drawio-viewer-31.4.6.min.js in Resources */ = {isa = PBXBuildFile; fileRef = 21A000000000000000000002 /* drawio-viewer-31.4.6.min.js */; };
+		21A000000000000000000014 /* DRAWIO_LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = 21A000000000000000000003 /* DRAWIO_LICENSE.txt */; };
+		21A000000000000000000015 /* drawio-main.css in Resources */ = {isa = PBXBuildFile; fileRef = 21A000000000000000000004 /* drawio-main.css */; };
 		3F0000000000000000000011 /* SCNVector3.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F0000000000000000000001 /* SCNVector3.swift */; };
 		3F0000000000000000000012 /* ThreeMFSceneBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F0000000000000000000002 /* ThreeMFSceneBuilder.swift */; };
 		3F0000000000000000000013 /* ModelCamera.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F0000000000000000000003 /* ModelCamera.swift */; };
@@ -198,6 +203,10 @@
 /* Begin PBXFileReference section */
 		20A000000000000000000001 /* markdown-mermaid-11.17.2.min.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = "markdown-mermaid-11.17.2.min.js"; sourceTree = "<group>"; };
 		20A000000000000000000002 /* MERMAID_LICENSE.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = MERMAID_LICENSE.txt; sourceTree = "<group>"; };
+		21A000000000000000000001 /* DrawIOPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrawIOPreview.swift; sourceTree = "<group>"; };
+		21A000000000000000000002 /* drawio-viewer-31.4.6.min.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = "drawio-viewer-31.4.6.min.js"; sourceTree = "<group>"; };
+		21A000000000000000000003 /* DRAWIO_LICENSE.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = DRAWIO_LICENSE.txt; sourceTree = "<group>"; };
+		21A000000000000000000004 /* drawio-main.css */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.css; path = "drawio-main.css"; sourceTree = "<group>"; };
 		3F0000000000000000000001 /* SCNVector3.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SCNVector3.swift; sourceTree = "<group>"; };
 		3F0000000000000000000002 /* ThreeMFSceneBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreeMFSceneBuilder.swift; sourceTree = "<group>"; };
 		3F0000000000000000000003 /* ModelCamera.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelCamera.swift; sourceTree = "<group>"; };
@@ -381,6 +390,7 @@
 		7E1DC52B240E91FC00D0A061 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				21A000000000000000000005 /* drawio */,
 				7EB363F6244B03CC00D7F96F /* jupyter */,
 				7EB3643B244B03CC00D7F96F /* markdown */,
 				7EB36438244B03CC00D7F96F /* shared */,
@@ -391,6 +401,7 @@
 		7E1DC52C240E9A3700D0A061 /* Previews */ = {
 			isa = PBXGroup;
 			children = (
+				21A000000000000000000001 /* DrawIOPreview.swift */,
 				3F0000000000000000000005 /* ThreeMFPreview.swift */,
 				D1A000000000000000000001 /* DirectoryPreview.swift */,
 				103654F32F72623D006F2538 /* SevenZipPreview.swift */,
@@ -402,6 +413,16 @@
 				7EB36489244B665700D7F96F /* ZIPPreview.swift */,
 			);
 			path = Previews;
+			sourceTree = "<group>";
+		};
+		21A000000000000000000005 /* drawio */ = {
+			isa = PBXGroup;
+			children = (
+				21A000000000000000000003 /* DRAWIO_LICENSE.txt */,
+				21A000000000000000000004 /* drawio-main.css */,
+				21A000000000000000000002 /* drawio-viewer-31.4.6.min.js */,
+			);
+			path = drawio;
 			sourceTree = "<group>";
 		};
 		7E21C88F24390E2400818EB2 /* Utils */ = {
@@ -733,6 +754,9 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				21A000000000000000000014 /* DRAWIO_LICENSE.txt in Resources */,
+				21A000000000000000000015 /* drawio-main.css in Resources */,
+				21A000000000000000000013 /* drawio-viewer-31.4.6.min.js in Resources */,
 				20A000000000000000000004 /* MERMAID_LICENSE.txt in Resources */,
 				20A000000000000000000003 /* markdown-mermaid-11.17.2.min.js in Resources */,
 				7EB36448244B03CC00D7F96F /* KaTeX_Main-Regular.woff2 in Resources */,
@@ -823,6 +847,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				21A000000000000000000012 /* DrawIOPreview.swift in Sources */,
 				3F0000000000000000000021 /* SCNVector3.swift in Sources */,
 				3F0000000000000000000022 /* ThreeMFSceneBuilder.swift in Sources */,
 				3F0000000000000000000023 /* ModelCamera.swift in Sources */,
@@ -882,6 +907,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				21A000000000000000000011 /* DrawIOPreview.swift in Sources */,
 				3F0000000000000000000011 /* SCNVector3.swift in Sources */,
 				3F0000000000000000000012 /* ThreeMFSceneBuilder.swift in Sources */,
 				3F0000000000000000000013 /* ModelCamera.swift in Sources */,

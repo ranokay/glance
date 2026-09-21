@@ -2,6 +2,7 @@ import Foundation
 
 enum SupportedPreviewGroup: CaseIterable {
 	case archive
+	case diagram
 	case markdown
 	case jupyter
 	case tsv
@@ -11,6 +12,8 @@ enum SupportedPreviewGroup: CaseIterable {
 		switch self {
 			case .archive:
 				"Archive"
+			case .diagram:
+				"Diagram"
 			case .markdown:
 				"Markdown"
 			case .jupyter:
@@ -26,6 +29,8 @@ enum SupportedPreviewGroup: CaseIterable {
 		switch self {
 			case .archive:
 				"archive"
+			case .diagram:
+				"diagram"
 			case .markdown:
 				"markdown"
 			case .jupyter:
@@ -97,6 +102,13 @@ enum SupportedPreviewMatchRule: Equatable {
 
 enum SupportedPreviewRegistry {
 	static let all: [SupportedPreviewType] = [
+		extensionEntry(
+			"drawio",
+			group: .diagram,
+			previewFileType: .drawIO,
+			searchTokens: ["diagrams.net", "mxGraph"]
+		),
+
 		pathSuffixEntry(
 			id: "archive.extension.tar-gz",
 			displayName: ".tar.gz",

@@ -81,6 +81,166 @@ final class PreviewSmokeTests: XCTestCase {
 		XCTAssertNotEqual(camera.node.position.x, initialPosition.x)
 	}
 
+	func testDrawIOPreviewRendersUncompressedDiagramOffline() async throws {
+		let fileURL = try writeFile(
+			named: "diagram.drawio",
+			contents: Self.drawIODocument(label: "Offline diagram")
+		)
+		let generated = try await DrawIOPreview().createPreviewVC(file: File(url: fileURL))
+		let previewVC = try XCTUnwrap(generated as? WebPreviewVC)
+		previewVC.loadViewIfNeeded()
+		let webView = try XCTUnwrap(previewVC.view.subviews.compactMap { $0 as? WKWebView }.first)
+
+		try await waitForWebViewToFinishLoadingAsync(webView)
+		try await waitForJavaScript(
+			"document.querySelector('.mxgraph > svg') !== null",
+			in: webView
+		)
+		let state = try await webView.evaluateJavaScript(
+			"""
+			[
+				document.body.textContent.includes('Offline diagram'),
+				document.querySelector('meta[http-equiv="Content-Security-Policy"]')
+					.content.includes("connect-src 'none'"),
+				document.querySelector('[data-drawio-payload]') === null
+			].join('|')
+			"""
+		) as? String
+		XCTAssertEqual(state, "true|true|true")
+	}
+
+	func testDrawIOPreviewEncodesUntrustedXMLWithoutExecutingIt() async throws {
+		let payload = "</div><script>window.drawIOInjected = true</script><div>"
+		let fileURL = try writeFile(
+			named: "untrusted.drawio",
+			contents: Self.drawIODocument(label: payload)
+		)
+		let generated = try await DrawIOPreview().createPreviewVC(file: File(url: fileURL))
+		let previewVC = try XCTUnwrap(generated as? WebPreviewVC)
+		previewVC.loadViewIfNeeded()
+		let webView = try XCTUnwrap(previewVC.view.subviews.compactMap { $0 as? WKWebView }.first)
+
+		try await waitForWebViewToFinishLoadingAsync(webView)
+		try await waitForJavaScript(
+			"document.querySelector('.mxgraph > svg') !== null",
+			in: webView
+		)
+		let state = try await webView.evaluateJavaScript(
+			"""
+			[
+				window.drawIOInjected === undefined,
+				document.querySelector('.mxgraph > svg') !== null,
+				!Array.from(document.scripts).some(script =>
+					script.textContent.includes('drawIOInjected')
+				)
+			].join('|')
+			"""
+		) as? String
+		XCTAssertEqual(state, "true|true|true")
+	}
+
+	func testDrawIOPreviewRejectsMalformedCompressedAndOversizedDocuments() async throws {
+		let malformedURL = try writeFile(named: "malformed.drawio", contents: "not xml")
+		let invalidUTF8URL = try writeDataFile(
+			named: "invalid-utf8.drawio",
+			data: Data([0xFF])
+		)
+		let compressedURL = try writeFile(
+			named: "compressed.drawio",
+			contents: #"<mxfile><diagram>jZLBbsIwDIafJtfuACRE2HbsuO0Bq7Q1iZM4Re3t5yYtG0JC7Pz//2UnkJmKV/dG6vAGIxQupzvp2PFiKUPkuc6ZnBHiGCU5wkTOCOlV9vTKSdoKKS9if2iNN9C08Kk1p2EHElBBP8NQWH7ZrsCTMTnnlHnYys+eowfXJzIJN2RbSIYwmjuBcdSPCnwaZHNldH03nVZLYGl6bmzvpPKGAVed16J4LLr9Xm9Vz0+Gh1C05kuvB/X1HzKnssv5z2v9w0lwDLuzH7S19Ac="</diagram></mxfile>"#
+		)
+		let oversizedURL = temporaryDirectory.appendingPathComponent("oversized.drawio")
+		FileManager.default.createFile(atPath: oversizedURL.path, contents: nil)
+		let handle = try FileHandle(forWritingTo: oversizedURL)
+		try handle.truncate(atOffset: UInt64(DrawIOPreview.maximumFileSize + 1))
+		try handle.close()
+		let externalEntityURL = try writeFile(
+			named: "entity.drawio",
+			contents: """
+			<!DOCTYPE mxGraphModel [<!ENTITY file SYSTEM "file:///etc/passwd">]>
+			<mxGraphModel><root><mxCell id="0" value="&file;"/></root></mxGraphModel>
+			"""
+		)
+
+		let failures = [
+			(malformedURL, "Could not preview Draw.io diagram"),
+			(invalidUTF8URL, "Draw.io diagram is not valid UTF-8"),
+			(compressedURL, "Compressed Draw.io diagrams are not supported"),
+			(oversizedURL, "Draw.io diagram exceeds the 10 MB preview limit"),
+			(externalEntityURL, "document type declarations are not allowed"),
+		]
+
+		for (fileURL, expectedMessage) in failures {
+			do {
+				_ = try await DrawIOPreview().createPreviewVC(file: File(url: fileURL))
+				XCTFail("Expected \(fileURL.lastPathComponent) to be rejected")
+			} catch {
+				XCTAssertTrue(error.localizedDescription.contains(expectedMessage))
+			}
+		}
+	}
+
+	func testDrawIOPreviewAcceptsBareUncompressedGraphModel() async throws {
+		let fileURL = try writeFile(
+			named: "bare.drawio",
+			contents: "<mxGraphModel><root><mxCell id=\"0\"/></root></mxGraphModel>"
+		)
+
+		let previewVC = try await DrawIOPreview().createPreviewVC(file: File(url: fileURL))
+
+		XCTAssertTrue(previewVC is WebPreviewVC)
+	}
+
+	func testDrawIOPreviewRendersAtSidebarAndWindowSizesInBothAppearances() async throws {
+		for (appearanceName, width, expectedColorScheme) in [
+			(NSAppearance.Name.aqua, CGFloat(320), "light"),
+			(.darkAqua, CGFloat(1000), "dark"),
+		] {
+			let fileURL = try writeFile(
+				named: "responsive-\(expectedColorScheme).drawio",
+				contents: Self.drawIODocument(label: "Responsive diagram")
+			)
+			let generated = try await DrawIOPreview().createPreviewVC(file: File(url: fileURL))
+			let previewVC = try XCTUnwrap(generated as? WebPreviewVC)
+			previewVC.loadViewIfNeeded()
+			previewVC.view.frame = NSRect(x: 0, y: 0, width: width, height: 500)
+			previewVC.view.appearance = NSAppearance(named: appearanceName)
+			let webView = try XCTUnwrap(
+				previewVC.view.subviews.compactMap { $0 as? WKWebView }.first
+			)
+
+			try await waitForWebViewToFinishLoadingAsync(webView)
+			try await waitForJavaScript(
+				"document.querySelector('.mxgraph > svg') !== null",
+				in: webView
+			)
+			let state = try await webView.evaluateJavaScript(
+				"""
+				[
+					window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
+					document.documentElement.clientWidth
+				].join('|')
+				"""
+			) as? String
+			XCTAssertEqual(state, "\(expectedColorScheme)|\(Int(width))")
+		}
+	}
+
+	func testDrawIORuntimeAndLicenseAreBundled() throws {
+		let bundle = WebPreviewVC.resourceBundle
+		let runtimeURL = try XCTUnwrap(
+			bundle.url(forResource: "drawio-viewer-31.4.6.min", withExtension: "js")
+		)
+		let licenseURL = try XCTUnwrap(
+			bundle.url(forResource: "DRAWIO_LICENSE", withExtension: "txt")
+		)
+
+		XCTAssertGreaterThan(try Data(contentsOf: runtimeURL).count, 2_000_000)
+		XCTAssertTrue(
+			try String(contentsOf: licenseURL, encoding: .utf8).contains("Apache License")
+		)
+	}
+
 	func testHTMLRendererPreservesBinarySafeUnicodeAndEmptyInputs() throws {
 		let html = try HTMLRenderer.renderCode("let cafe = \"\u{2615}\"\n", lexer: "swift")
 
@@ -871,6 +1031,35 @@ final class PreviewSmokeTests: XCTestCase {
 		)
 		try contents.write(to: fileURL, atomically: true, encoding: .utf8)
 		return fileURL
+	}
+
+	private static func drawIODocument(label: String) -> String {
+		let escapedLabel = label
+			.replacingOccurrences(of: "&", with: "&amp;")
+			.replacingOccurrences(of: "\"", with: "&quot;")
+			.replacingOccurrences(of: "<", with: "&lt;")
+			.replacingOccurrences(of: ">", with: "&gt;")
+		return """
+		<mxfile host="app.diagrams.net">
+		  <diagram name="Page-1">
+		    <mxGraphModel dx="800" dy="500" grid="1" gridSize="10" page="1" pageWidth="827" pageHeight="1169">
+		      <root>
+		        <mxCell id="0"/>
+		        <mxCell id="1" parent="0"/>
+		        <mxCell
+		          id="2"
+		          value="\(escapedLabel)"
+		          style="rounded=1;whiteSpace=wrap;html=1;fillColor=light-dark(#ffffff,#1e1e1e);fontColor=light-dark(#000000,#f5f5f5);"
+		          vertex="1"
+		          parent="1"
+		        >
+		          <mxGeometry x="40" y="40" width="180" height="80" as="geometry"/>
+		        </mxCell>
+		      </root>
+		    </mxGraphModel>
+		  </diagram>
+		</mxfile>
+		"""
 	}
 
 	private func writeDataFile(named name: String, data: Data) throws -> URL {

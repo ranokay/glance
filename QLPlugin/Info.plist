@@ -39,6 +39,9 @@
 				<!-- Directory -->
 				<string>public.folder</string>
 
+				<!-- Draw.io -->
+				<string>dyn.ah62d4rv4ge80k6xbs7y08</string> <!-- .drawio -->
+
 				<!-- Archive -->
 				<string>dyn.ah62d4rv4ge8xg5pg</string> <!-- .3mf -->
 				<string>org.7-zip.7-zip-archive</string> <!-- .7z -->

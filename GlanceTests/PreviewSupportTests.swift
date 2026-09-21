@@ -9,6 +9,7 @@ final class PreviewSupportTests: XCTestCase {
 
 	func testSupportedPreviewRegistryMatchesAliasesAndFallbacks() throws {
 		let cases: [(path: String, expectedID: String?, expectedType: PreviewFileType)] = [
+			("/tmp/diagram.drawio", "diagram.extension.drawio", .drawIO),
 			("/tmp/archive.tar.gz", "archive.extension.tar-gz", .tar),
 			("/tmp/model.3mf", "archive.extension.3mf", .threeMF),
 			("/tmp/ARCHIVE.TAR.GZ", "archive.extension.tar-gz", .tar),
