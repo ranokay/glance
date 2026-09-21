@@ -5,6 +5,7 @@ final class PlistCoverageTests: XCTestCase {
 		let supportedTypes = try quickLookSupportedContentTypes()
 		let requiredTypes = [
 			"public.folder",
+			"dyn.ah62d4rv4ge8xg5pg", // .3mf
 			"org.7-zip.7-zip-archive",
 			"com.sun.java-archive",
 			"com.sun.web-application-archive",

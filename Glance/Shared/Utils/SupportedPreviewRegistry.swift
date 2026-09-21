@@ -105,6 +105,12 @@ enum SupportedPreviewRegistry {
 			previewFileType: .tar,
 			searchTokens: ["tar", "gzip", "archive"]
 		),
+		extensionEntry(
+			"3mf",
+			group: .archive,
+			previewFileType: .threeMF,
+			searchTokens: ["3D", "model"]
+		),
 		extensionEntry("7z", group: .archive, previewFileType: .sevenZip, searchTokens: ["7-zip"]),
 		extensionEntry("ear", group: .archive, previewFileType: .zip, searchTokens: ["java", "archive"]),
 		extensionEntry("jar", group: .archive, previewFileType: .zip, searchTokens: ["java", "archive"]),

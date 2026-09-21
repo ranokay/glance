@@ -42,6 +42,39 @@ enum ArchivePreviewEntryType: String, Decodable {
 	case other
 }
 
+struct ThreeMFPreviewPayload: Decodable {
+	let meshes: [ThreeMFMeshPayload]
+	let instances: [ThreeMFInstancePayload]
+	let unitMillimeters: Float
+	let boundsMin: [Float]
+	let boundsMax: [Float]
+	let triangleCount: Int
+
+	private enum CodingKeys: String, CodingKey {
+		case meshes, instances
+		case unitMillimeters = "unit_millimeters"
+		case boundsMin = "bounds_min"
+		case boundsMax = "bounds_max"
+		case triangleCount = "triangle_count"
+	}
+}
+
+struct ThreeMFMeshPayload: Decodable {
+	let vertices: [[Float]]
+	let triangles: [[UInt32]]
+	let color: [Float]
+}
+
+struct ThreeMFInstancePayload: Decodable {
+	let meshIndex: Int
+	let transform: [Float]
+
+	private enum CodingKeys: String, CodingKey {
+		case meshIndex = "mesh_index"
+		case transform
+	}
+}
+
 enum PreviewCoreBridgeError: LocalizedError {
 	case invalidBuffer
 	case invalidUTF8
@@ -74,6 +107,13 @@ enum PreviewCoreBridge {
 			)
 		}
 		return try decode(TSVPreviewPayload.self, result: result)
+	}
+
+	static func parseThreeMF(at url: URL) throws -> ThreeMFPreviewPayload {
+		try decode(
+			ThreeMFPreviewPayload.self,
+			result: pathResult(for: url, call: glance_parse_three_mf)
+		)
 	}
 
 	static func scanZIP(at url: URL) throws -> ArchivePreviewPayload {

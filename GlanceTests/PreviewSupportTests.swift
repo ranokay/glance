@@ -10,6 +10,7 @@ final class PreviewSupportTests: XCTestCase {
 	func testSupportedPreviewRegistryMatchesAliasesAndFallbacks() throws {
 		let cases: [(path: String, expectedID: String?, expectedType: PreviewFileType)] = [
 			("/tmp/archive.tar.gz", "archive.extension.tar-gz", .tar),
+			("/tmp/model.3mf", "archive.extension.3mf", .threeMF),
 			("/tmp/ARCHIVE.TAR.GZ", "archive.extension.tar-gz", .tar),
 			("/tmp/readme.md", "markdown.extension.md", .markdown),
 			("/tmp/README.MD", "markdown.extension.md", .markdown),
@@ -56,6 +57,7 @@ final class PreviewSupportTests: XCTestCase {
 			("/tmp/archive.tar", .tar),
 			("/tmp/archive.tgz", .tar),
 			("/tmp/archive.tar.gz", .tar),
+			("/tmp/model.3mf", .threeMF),
 			("/tmp/table.tab", .tsv),
 			("/tmp/table.tsv", .tsv),
 			("/tmp/archive.7z", .sevenZip),

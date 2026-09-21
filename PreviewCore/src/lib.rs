@@ -6,13 +6,14 @@ mod model;
 mod notebook;
 mod sevenzip;
 mod tar;
+mod three_mf;
 mod tsv;
 mod zip;
 
 pub use ffi::{
-    GlanceRenderResult, glance_parse_tsv, glance_render_buffer_free, glance_render_code,
-    glance_render_markdown, glance_render_notebook, glance_scan_seven_zip, glance_scan_tar,
-    glance_scan_zip,
+    GlanceRenderResult, glance_parse_three_mf, glance_parse_tsv, glance_render_buffer_free,
+    glance_render_code, glance_render_markdown, glance_render_notebook, glance_scan_seven_zip,
+    glance_scan_tar, glance_scan_zip,
 };
 
 #[cfg(test)]

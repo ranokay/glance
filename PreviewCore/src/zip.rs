@@ -72,7 +72,10 @@ pub(crate) fn scan_zip(path: &Path) -> Result<ArchivePayload, CoreError> {
     })
 }
 
-fn preflight_central_directory(file: &mut File, file_size: u64) -> Result<(), CoreError> {
+pub(crate) fn preflight_central_directory(
+    file: &mut File,
+    file_size: u64,
+) -> Result<(), CoreError> {
     if file_size < EOCD_MIN_SIZE as u64 {
         return Err(CoreError::parse(
             "ZIP archive is too small to contain an end record",
@@ -183,7 +186,7 @@ fn parse_zip64_directory(file: &mut File, eocd_offset: u64) -> Result<(u64, u64,
     ))
 }
 
-fn map_zip_error(error: ZipError) -> CoreError {
+pub(crate) fn map_zip_error(error: ZipError) -> CoreError {
     match error {
         ZipError::Io(error) => CoreError::io(format!("Could not read ZIP archive: {error}")),
         ZipError::UnsupportedArchive(message) => CoreError::unsupported(message),

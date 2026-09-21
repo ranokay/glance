@@ -99,6 +99,24 @@ pub unsafe extern "C" fn glance_parse_tsv(
     })
 }
 
+/// Parses a 3MF archive at a raw filesystem path into validated scene JSON.
+///
+/// # Safety
+///
+/// The pointer must be valid for reads of `path_length` bytes for the duration of this call.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn glance_parse_three_mf(
+    path_data: *const u8,
+    path_length: usize,
+) -> GlanceRenderResult {
+    ffi_call(|| unsafe {
+        json_bytes(&crate::three_mf::parse_three_mf(path_input(
+            path_data,
+            path_length,
+        )?)?)
+    })
+}
+
 /// Scans a ZIP/JAR/EAR/WAR archive at a raw filesystem path into a typed JSON payload.
 ///
 /// # Safety
@@ -329,10 +347,23 @@ mod tests {
         assert_eq!(status, STATUS_INVALID_INPUT);
         assert!(message.contains("null"));
 
+        let result = unsafe { glance_parse_three_mf(ptr::null(), 1) };
+        let (status, message) = take(result);
+        assert_eq!(status, STATUS_INVALID_INPUT);
+        assert!(message.contains("null"));
+
         let result = unsafe { glance_scan_tar(ptr::null(), 0, false) };
         let (status, message) = take(result);
         assert_eq!(status, STATUS_INVALID_INPUT);
         assert!(message.contains("must not be empty"));
+
+        let model = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../GlanceTests/TestFiles/models/simple.3mf");
+        let model_bytes = model.as_os_str().as_bytes();
+        let result = unsafe { glance_parse_three_mf(model_bytes.as_ptr(), model_bytes.len()) };
+        let (status, json) = take(result);
+        assert_eq!(status, STATUS_OK);
+        assert!(json.contains("\"triangle_count\":1"));
     }
 
     #[test]

@@ -1,5 +1,6 @@
 import Cocoa
 import Foundation
+import SceneKit
 import WebKit
 import XCTest
 
@@ -31,6 +32,53 @@ final class PreviewSmokeTests: XCTestCase {
 		let previewVC = try await CodePreview().createPreviewVC(file: File(url: fileURL))
 
 		XCTAssertTrue(previewVC is WebPreviewVC)
+	}
+
+	func testThreeMFPreviewBuildsInteractiveSceneFromRustPayload() async throws {
+		let fixtureURL = URL(fileURLWithPath: #filePath)
+			.deletingLastPathComponent()
+			.appendingPathComponent("TestFiles/models/simple.3mf")
+		let payload = try await PreviewExecutor.run {
+			try PreviewCoreBridge.parseThreeMF(at: fixtureURL)
+		}
+		XCTAssertEqual(payload.triangleCount, 1)
+		XCTAssertEqual(payload.boundsMin, [2, 3, 4])
+		XCTAssertEqual(payload.boundsMax, [12, 23, 4])
+
+		let generated = try await ThreeMFPreview().createPreviewVC(file: File(url: fixtureURL))
+		let previewVC = try XCTUnwrap(generated as? ModelPreviewVC)
+		previewVC.loadViewIfNeeded()
+		let sceneView = try XCTUnwrap(previewVC.view.subviews.compactMap { $0 as? SCNView }.first)
+		XCTAssertTrue(sceneView.allowsCameraControl)
+		XCTAssertEqual(sceneView.scene?.rootNode.childNodes.isEmpty, false)
+	}
+
+	func testThreeMFPreviewRejectsMalformedContainerOffMain() async throws {
+		let fileURL = try writeFile(named: "malformed.3mf", contents: "not a ZIP")
+		await XCTAssertThrowsErrorAsync {
+			_ = try await ThreeMFPreview().createPreviewVC(file: File(url: fileURL))
+		}
+	}
+
+	func testThreeMFCameraFramesAfterZeroWidthLayout() {
+		let camera = ModelCamera(
+			target: SCNVector3Zero,
+			corners: [SCNVector3(-1, -1, -1), SCNVector3(1, 1, 1)],
+			radius: 2
+		)
+		let previewVC = ModelPreviewVC(scene: SCNScene(), camera: camera, labelText: "Model")
+		previewVC.loadViewIfNeeded()
+		let initialPosition = camera.node.position
+
+		previewVC.view.frame = NSRect(x: 0, y: 0, width: 0, height: 400)
+		previewVC.viewDidLayout()
+		XCTAssertEqual(camera.node.position.x, initialPosition.x)
+		XCTAssertEqual(camera.node.position.y, initialPosition.y)
+		XCTAssertEqual(camera.node.position.z, initialPosition.z)
+
+		previewVC.view.frame = NSRect(x: 0, y: 0, width: 600, height: 400)
+		previewVC.viewDidLayout()
+		XCTAssertNotEqual(camera.node.position.x, initialPosition.x)
 	}
 
 	func testHTMLRendererPreservesBinarySafeUnicodeAndEmptyInputs() throws {
