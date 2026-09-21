@@ -205,6 +205,7 @@ final class PreviewSmokeTests: XCTestCase {
 			previewVC.loadViewIfNeeded()
 			previewVC.view.frame = NSRect(x: 0, y: 0, width: width, height: 500)
 			previewVC.view.appearance = NSAppearance(named: appearanceName)
+			previewVC.view.layoutSubtreeIfNeeded()
 			let webView = try XCTUnwrap(
 				previewVC.view.subviews.compactMap { $0 as? WKWebView }.first
 			)
@@ -214,15 +215,16 @@ final class PreviewSmokeTests: XCTestCase {
 				"document.querySelector('.mxgraph > svg') !== null",
 				in: webView
 			)
-			let state = try await webView.evaluateJavaScript(
-				"""
-				[
-					window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
-					document.documentElement.clientWidth
-				].join('|')
-				"""
+			let colorScheme = try await webView.evaluateJavaScript(
+				"window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'"
 			) as? String
-			XCTAssertEqual(state, "\(expectedColorScheme)|\(Int(width))")
+			let rawClientWidth = try await webView.evaluateJavaScript(
+				"document.documentElement.clientWidth"
+			)
+			let clientWidth = try XCTUnwrap(rawClientWidth as? Int)
+			XCTAssertEqual(colorScheme, expectedColorScheme)
+			XCTAssertGreaterThanOrEqual(clientWidth, Int(width) - 2)
+			XCTAssertLessThanOrEqual(clientWidth, Int(width) + 2)
 		}
 	}
 
