@@ -19,6 +19,8 @@ class PreviewVCFactory {
 				return JupyterPreview.self
 			case .tar:
 				return TARPreview.self
+			case .threeMF:
+				return ThreeMFPreview.self
 			case .tsv:
 				return TSVPreview.self
 			case .sevenZip:

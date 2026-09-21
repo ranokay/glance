@@ -6,6 +6,7 @@ enum PreviewFileType: Equatable {
 	case markdown
 	case sevenZip
 	case tar
+	case threeMF
 	case tsv
 	case unsupported
 	case zip

@@ -1,5 +1,6 @@
 import Cocoa
 import Foundation
+import SceneKit
 import WebKit
 import XCTest
 
@@ -31,6 +32,32 @@ final class PreviewSmokeTests: XCTestCase {
 		let previewVC = try await CodePreview().createPreviewVC(file: File(url: fileURL))
 
 		XCTAssertTrue(previewVC is WebPreviewVC)
+	}
+
+	func testThreeMFPreviewBuildsInteractiveSceneFromRustPayload() async throws {
+		let fixtureURL = URL(fileURLWithPath: #filePath)
+			.deletingLastPathComponent()
+			.appendingPathComponent("TestFiles/models/simple.3mf")
+		let payload = try await PreviewExecutor.run {
+			try PreviewCoreBridge.parseThreeMF(at: fixtureURL)
+		}
+		XCTAssertEqual(payload.triangleCount, 1)
+		XCTAssertEqual(payload.boundsMin, [2, 3, 4])
+		XCTAssertEqual(payload.boundsMax, [12, 23, 4])
+
+		let generated = try await ThreeMFPreview().createPreviewVC(file: File(url: fixtureURL))
+		let previewVC = try XCTUnwrap(generated as? ModelPreviewVC)
+		previewVC.loadViewIfNeeded()
+		let sceneView = try XCTUnwrap(previewVC.view.subviews.compactMap { $0 as? SCNView }.first)
+		XCTAssertTrue(sceneView.allowsCameraControl)
+		XCTAssertEqual(sceneView.scene?.rootNode.childNodes.isEmpty, false)
+	}
+
+	func testThreeMFPreviewRejectsMalformedContainerOffMain() async throws {
+		let fileURL = try writeFile(named: "malformed.3mf", contents: "not a ZIP")
+		await XCTAssertThrowsErrorAsync {
+			_ = try await ThreeMFPreview().createPreviewVC(file: File(url: fileURL))
+		}
 	}
 
 	func testHTMLRendererPreservesBinarySafeUnicodeAndEmptyInputs() throws {

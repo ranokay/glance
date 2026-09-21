@@ -32,6 +32,7 @@ License texts are available from the linked standard licenses and each crate's s
 | miniz_oxide | 0.8.9 | MIT OR Zlib OR Apache-2.0 |
 | onig, onig_sys | 6.5.3, 69.9.3 | MIT |
 | ppmd-rust | 1.4.0 | CC0-1.0 OR MIT-0 |
+| quick-xml | 0.41.0 | MIT |
 | ryu | 1.0.23 | Apache-2.0 OR BSL-1.0 |
 | serde, serde_core, serde_derive | 1.0.229 | MIT OR Apache-2.0 |
 | serde_json | 1.0.151 | MIT OR Apache-2.0 |

@@ -41,6 +41,7 @@ final class FileTests: XCTestCase {
 
 	func testArchiveDetectionCoversEveryArchivePreviewAlias() throws {
 		let archiveNames = [
+			"model.3mf",
 			"archive.7z",
 			"archive.ear",
 			"archive.jar",
