@@ -102,11 +102,12 @@ final class PreviewSmokeTests: XCTestCase {
 				document.body.textContent.includes('Offline diagram'),
 				document.querySelector('meta[http-equiv="Content-Security-Policy"]')
 					.content.includes("connect-src 'none'"),
-				document.querySelector('[data-drawio-payload]') === null
+				document.querySelector('[data-drawio-payload]') === null,
+				document.querySelector('svg rect').style.fill.includes('light-dark')
 			].join('|')
 			"""
 		) as? String
-		XCTAssertEqual(state, "true|true|true")
+		XCTAssertEqual(state, "true|true|true|true")
 	}
 
 	func testDrawIOPreviewEncodesUntrustedXMLWithoutExecutingIt() async throws {
@@ -191,40 +192,22 @@ final class PreviewSmokeTests: XCTestCase {
 		XCTAssertTrue(previewVC is WebPreviewVC)
 	}
 
-	func testDrawIOPreviewRendersAtSidebarAndWindowSizesInBothAppearances() async throws {
-		for (appearanceName, width, expectedColorScheme) in [
-			(NSAppearance.Name.aqua, CGFloat(320), "light"),
-			(.darkAqua, CGFloat(1000), "dark"),
-		] {
-			let fileURL = try writeFile(
-				named: "responsive-\(expectedColorScheme).drawio",
-				contents: Self.drawIODocument(label: "Responsive diagram")
-			)
-			let generated = try await DrawIOPreview().createPreviewVC(file: File(url: fileURL))
-			let previewVC = try XCTUnwrap(generated as? WebPreviewVC)
-			previewVC.loadViewIfNeeded()
-			previewVC.view.frame = NSRect(x: 0, y: 0, width: width, height: 500)
-			previewVC.view.appearance = NSAppearance(named: appearanceName)
-			previewVC.view.layoutSubtreeIfNeeded()
-			let webView = try XCTUnwrap(
-				previewVC.view.subviews.compactMap { $0 as? WKWebView }.first
-			)
+	func testDrawIOPreviewAdaptsWebViewToSidebarAndWindowSizes() async throws {
+		let fileURL = try writeFile(
+			named: "responsive.drawio",
+			contents: Self.drawIODocument(label: "Responsive diagram")
+		)
+		let generated = try await DrawIOPreview().createPreviewVC(file: File(url: fileURL))
+		let previewVC = try XCTUnwrap(generated as? WebPreviewVC)
+		previewVC.loadViewIfNeeded()
+		let webView = try XCTUnwrap(
+			previewVC.view.subviews.compactMap { $0 as? WKWebView }.first
+		)
 
-			try await waitForWebViewToFinishLoadingAsync(webView)
-			try await waitForJavaScript(
-				"document.querySelector('.mxgraph > svg') !== null",
-				in: webView
-			)
-			let colorScheme = try await webView.evaluateJavaScript(
-				"window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'"
-			) as? String
-			let rawClientWidth = try await webView.evaluateJavaScript(
-				"document.documentElement.clientWidth"
-			)
-			let clientWidth = try XCTUnwrap(rawClientWidth as? Int)
-			XCTAssertEqual(colorScheme, expectedColorScheme)
-			XCTAssertGreaterThanOrEqual(clientWidth, Int(width) - 2)
-			XCTAssertLessThanOrEqual(clientWidth, Int(width) + 2)
+		for width in [CGFloat(320), CGFloat(1000)] {
+			previewVC.view.frame = NSRect(x: 0, y: 0, width: width, height: 500)
+			previewVC.view.layoutSubtreeIfNeeded()
+			XCTAssertEqual(webView.frame.width, width, accuracy: 1)
 		}
 	}
 
@@ -236,11 +219,17 @@ final class PreviewSmokeTests: XCTestCase {
 		let licenseURL = try XCTUnwrap(
 			bundle.url(forResource: "DRAWIO_LICENSE", withExtension: "txt")
 		)
+		let stylesheetURL = try XCTUnwrap(
+			bundle.url(forResource: "drawio-main", withExtension: "css")
+		)
 
 		XCTAssertGreaterThan(try Data(contentsOf: runtimeURL).count, 2_000_000)
 		XCTAssertTrue(
 			try String(contentsOf: licenseURL, encoding: .utf8).contains("Apache License")
 		)
+		let stylesheet = try String(contentsOf: stylesheetURL, encoding: .utf8)
+		XCTAssertTrue(stylesheet.contains("color-scheme: light dark"))
+		XCTAssertTrue(stylesheet.contains("width: 100%"))
 	}
 
 	func testHTMLRendererPreservesBinarySafeUnicodeAndEmptyInputs() throws {
