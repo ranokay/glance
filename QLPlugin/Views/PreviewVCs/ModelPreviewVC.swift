@@ -57,7 +57,7 @@ final class ModelPreviewVC: NSViewController, PreviewVC {
 
 	override func viewDidLayout() {
 		super.viewDidLayout()
-		guard !hasFramedCamera, view.bounds.height > 0 else {
+		guard !hasFramedCamera, view.bounds.width > 0, view.bounds.height > 0 else {
 			return
 		}
 		camera.frame(aspectRatio: view.bounds.width / view.bounds.height)

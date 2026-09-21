@@ -60,6 +60,27 @@ final class PreviewSmokeTests: XCTestCase {
 		}
 	}
 
+	func testThreeMFCameraFramesAfterZeroWidthLayout() {
+		let camera = ModelCamera(
+			target: SCNVector3Zero,
+			corners: [SCNVector3(-1, -1, -1), SCNVector3(1, 1, 1)],
+			radius: 2
+		)
+		let previewVC = ModelPreviewVC(scene: SCNScene(), camera: camera, labelText: "Model")
+		previewVC.loadViewIfNeeded()
+		let initialPosition = camera.node.position
+
+		previewVC.view.frame = NSRect(x: 0, y: 0, width: 0, height: 400)
+		previewVC.viewDidLayout()
+		XCTAssertEqual(camera.node.position.x, initialPosition.x)
+		XCTAssertEqual(camera.node.position.y, initialPosition.y)
+		XCTAssertEqual(camera.node.position.z, initialPosition.z)
+
+		previewVC.view.frame = NSRect(x: 0, y: 0, width: 600, height: 400)
+		previewVC.viewDidLayout()
+		XCTAssertNotEqual(camera.node.position.x, initialPosition.x)
+	}
+
 	func testHTMLRendererPreservesBinarySafeUnicodeAndEmptyInputs() throws {
 		let html = try HTMLRenderer.renderCode("let cafe = \"\u{2615}\"\n", lexer: "swift")
 

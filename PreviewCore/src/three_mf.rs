@@ -270,6 +270,7 @@ fn parse_model_part(
                 )?;
                 handle_end(
                     &name,
+                    &stack,
                     stack.len(),
                     model,
                     &mut current_object,
@@ -282,6 +283,7 @@ fn parse_model_part(
                 let name = local_name(element.name().as_ref()).to_vec();
                 handle_end(
                     &name,
+                    &stack,
                     stack.len(),
                     model,
                     &mut current_object,
@@ -477,6 +479,7 @@ fn handle_start(
 
 fn handle_end(
     name: &[u8],
+    stack: &[Vec<u8>],
     depth: usize,
     model: &mut ParsedModel,
     current_object: &mut Option<(String, Object)>,
@@ -492,7 +495,7 @@ fn handle_end(
             .ok_or_else(|| CoreError::parse("3MF mesh is outside an object"))?
             .1
             .mesh = Some(mesh);
-    } else if name == b"object" {
+    } else if name == b"object" && path_ends_with(stack, &[b"resources", b"object"]) {
         let (key, object) = current_object
             .take()
             .ok_or_else(|| CoreError::parse("3MF object end is unmatched"))?;
@@ -925,6 +928,17 @@ mod tests {
         assert_eq!(payload.bounds_min, [15.0, 0.0, 0.0]);
         assert_eq!(payload.bounds_max, [16.0, 1.0, 0.0]);
         assert_eq!(payload.unit_millimeters, 25.4);
+        fs::remove_file(path).unwrap();
+    }
+
+    #[test]
+    fn ignores_extension_elements_named_object() {
+        let model = r#"<model xmlns:vendor="urn:vendor"><resources><object id="1"><vendor:object/><mesh><vertices><vertex x="0" y="0" z="0"/><vertex x="1" y="0" z="0"/><vertex x="0" y="1" z="0"/></vertices><triangles><triangle v1="0" v2="1" v3="2"/></triangles></mesh></object></resources><build><item objectid="1"/></build></model>"#;
+        let path = write_archive(&[("3D/3dmodel.model", model)]);
+
+        let payload = parse_three_mf(&path).unwrap();
+
+        assert_eq!(payload.triangle_count, 1);
         fs::remove_file(path).unwrap();
     }
 
