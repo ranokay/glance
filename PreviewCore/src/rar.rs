@@ -3,6 +3,7 @@ use crate::model::{ArchiveEntry, ArchiveEntryType, ArchivePayload};
 use rars::{Archive, ArchiveReader, Error as RarError};
 use std::fs::File;
 use std::io::{Read, Seek, SeekFrom};
+use std::os::fd::AsRawFd;
 use std::path::Path;
 
 const RAR4_SIGNATURE: &[u8; 7] = b"Rar!\x1a\x07\x00";
@@ -28,7 +29,7 @@ pub(crate) fn scan_rar(path: &Path) -> Result<ArchivePayload, CoreError> {
     }
 
     let format = preflight_archive(&mut file, file_size)?;
-    let archive = ArchiveReader::read_path(path).map_err(map_rar_error)?;
+    let archive = read_preflighted_archive(&mut file)?;
     match (&format, &archive) {
         (RarFormat::Rar4, Archive::Rar15To40(_)) | (RarFormat::Rar5, Archive::Rar50Plus(_)) => {}
         _ => {
@@ -108,6 +109,15 @@ pub(crate) fn scan_rar(path: &Path) -> Result<ArchivePayload, CoreError> {
         scanned_uncompressed_size: None,
         truncated: false,
     })
+}
+
+fn read_preflighted_archive(file: &mut File) -> Result<Archive, CoreError> {
+    // Reopening the user-controlled path would let another process replace the file between
+    // validation and parsing. /dev/fd duplicates this already validated open file description.
+    file.seek(SeekFrom::Start(0))
+        .map_err(|error| CoreError::io(format!("Could not seek RAR archive: {error}")))?;
+    let descriptor_path = format!("/dev/fd/{}", file.as_raw_fd());
+    ArchiveReader::read_path(descriptor_path).map_err(map_rar_error)
 }
 
 #[derive(Default)]
@@ -571,6 +581,33 @@ mod tests {
             scanner.entries[1].modified_unix_seconds,
             Some(1_700_000_000.0)
         );
+    }
+
+    #[test]
+    fn parses_the_validated_file_after_its_original_path_is_replaced() {
+        let path = temporary_path();
+        let moved_path = path.with_extension("validated.rar");
+        fs::copy(fixture("example-rar5.rar"), &path).unwrap();
+        let mut file = File::open(&path).unwrap();
+        let file_size = file.metadata().unwrap().len();
+        assert_eq!(
+            preflight_archive(&mut file, file_size).unwrap(),
+            RarFormat::Rar5
+        );
+
+        fs::rename(&path, &moved_path).unwrap();
+        fs::write(&path, b"replacement").unwrap();
+        let archive = read_preflighted_archive(&mut file).unwrap();
+        let Archive::Rar50Plus(archive) = archive else {
+            panic!("expected the validated RAR5 archive");
+        };
+        assert!(archive.blocks.iter().any(|block| matches!(
+            block,
+            rars::rar50::Block::File(entry) if entry.name_lossy() == "hello.txt"
+        )));
+
+        fs::remove_file(path).unwrap();
+        fs::remove_file(moved_path).unwrap();
     }
 
     #[test]
