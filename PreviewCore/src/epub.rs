@@ -6,6 +6,7 @@ use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::{Read, Seek, SeekFrom};
 use std::path::Path;
+use std::sync::Arc;
 
 pub(crate) const MAX_FILE_SIZE: u64 = 200_000_000;
 const MAX_ENTRY_COUNT: usize = 10_000;
@@ -42,6 +43,10 @@ struct Package {
 
 /// Produces one self-contained, script-free HTML article from a DRM-free EPUB 2 or EPUB 3 book.
 pub(crate) fn render_epub(path: &Path) -> Result<String, CoreError> {
+    render_epub_with_output_limit(path, MAX_OUTPUT_SIZE)
+}
+
+fn render_epub_with_output_limit(path: &Path, output_limit: usize) -> Result<String, CoreError> {
     let mut file =
         File::open(path).map_err(|error| CoreError::io(format!("Could not open EPUB: {error}")))?;
     let file_size = file
@@ -177,6 +182,7 @@ pub(crate) fn render_epub(path: &Path) -> Result<String, CoreError> {
         html.push_str("</a></li>");
     }
     html.push_str("</ol></nav>");
+    ensure_output_limit(html.len(), output_limit)?;
 
     let mut total_chapter_size = 0_u64;
     let mut total_image_size = 0_u64;
@@ -218,6 +224,7 @@ pub(crate) fn render_epub(path: &Path) -> Result<String, CoreError> {
             &mut archive,
             &mut image_cache,
             &mut total_image_size,
+            output_limit.saturating_sub(html.len()),
         )?;
         html.push_str("<section class=\"epub-chapter\" id=\"glance-chapter-");
         html.push_str(&(index + 1).to_string());
@@ -235,14 +242,20 @@ pub(crate) fn render_epub(path: &Path) -> Result<String, CoreError> {
             html.push_str("\">Next</a>");
         }
         html.push_str("</nav></section>");
-        if html.len() > MAX_OUTPUT_SIZE {
-            return Err(CoreError::limit(format!(
-                "EPUB preview exceeds the {MAX_OUTPUT_SIZE} byte output limit"
-            )));
-        }
+        ensure_output_limit(html.len(), output_limit)?;
     }
     html.push_str("</article>");
+    ensure_output_limit(html.len(), output_limit)?;
     Ok(html)
+}
+
+fn ensure_output_limit(size: usize, output_limit: usize) -> Result<(), CoreError> {
+    if size > output_limit {
+        return Err(CoreError::limit(format!(
+            "EPUB preview exceeds the {output_limit} byte output limit"
+        )));
+    }
+    Ok(())
 }
 
 fn validate_mimetype<R: Read + Seek>(
@@ -441,8 +454,9 @@ fn render_chapter<R: Read + Seek>(
     manifest: &HashMap<String, ManifestItem>,
     entries: &HashMap<String, EntryIndex>,
     archive: &mut zip::ZipArchive<R>,
-    image_cache: &mut HashMap<String, String>,
+    image_cache: &mut HashMap<String, Arc<str>>,
     total_image_size: &mut u64,
+    output_limit: usize,
 ) -> Result<String, CoreError> {
     let mut reader = Reader::from_reader(xml);
     reader.config_mut().trim_text(false);
@@ -478,6 +492,7 @@ fn render_chapter<R: Read + Seek>(
                         archive,
                         image_cache,
                         total_image_size,
+                        output_limit,
                         &mut output,
                     )?;
                 }
@@ -497,6 +512,7 @@ fn render_chapter<R: Read + Seek>(
                         archive,
                         image_cache,
                         total_image_size,
+                        output_limit,
                         &mut output,
                     )?;
                     if !void_tag(&name) {
@@ -545,6 +561,7 @@ fn render_chapter<R: Read + Seek>(
                 )));
             }
         }
+        ensure_output_limit(output.len(), output_limit)?;
     }
     if !body_seen {
         return Err(CoreError::parse(
@@ -570,8 +587,9 @@ fn write_start_tag<R: Read + Seek>(
     manifest: &HashMap<String, ManifestItem>,
     entries: &HashMap<String, EntryIndex>,
     archive: &mut zip::ZipArchive<R>,
-    image_cache: &mut HashMap<String, String>,
+    image_cache: &mut HashMap<String, Arc<str>>,
     total_image_size: &mut u64,
+    output_limit: usize,
     output: &mut String,
 ) -> Result<(), CoreError> {
     output.push('<');
@@ -607,8 +625,14 @@ fn write_start_tag<R: Read + Seek>(
                 total_image_size,
             )?
         {
+            let projected_size = output
+                .len()
+                .checked_add(" src=\"\"".len())
+                .and_then(|size| size.checked_add(data_url.len()))
+                .ok_or_else(|| CoreError::limit("EPUB output size overflow"))?;
+            ensure_output_limit(projected_size, output_limit)?;
             output.push_str(" src=\"");
-            output.push_str(&data_url);
+            output.push_str(data_url.as_ref());
             output.push('"');
         }
     } else if name == b"td" || name == b"th" {
@@ -662,9 +686,9 @@ fn image_data_url<R: Read + Seek>(
     manifest: &HashMap<String, ManifestItem>,
     entries: &HashMap<String, EntryIndex>,
     archive: &mut zip::ZipArchive<R>,
-    cache: &mut HashMap<String, String>,
+    cache: &mut HashMap<String, Arc<str>>,
     total_image_size: &mut u64,
-) -> Result<Option<String>, CoreError> {
+) -> Result<Option<Arc<str>>, CoreError> {
     if src.trim().is_empty() || is_external_reference(src) || src.contains('#') {
         return Ok(None);
     }
@@ -696,10 +720,11 @@ fn image_data_url<R: Read + Seek>(
         )));
     }
     let bytes = read_entry(archive, entry, MAX_IMAGE_SIZE, "EPUB image")?;
-    let value = format!(
+    let value: Arc<str> = format!(
         "data:{media_type};base64,{}",
         base64::engine::general_purpose::STANDARD.encode(bytes)
-    );
+    )
+    .into();
     cache.insert(path, value.clone());
     Ok(Some(value))
 }
@@ -1098,6 +1123,25 @@ mod tests {
 
         let traversal = br#"<container><rootfiles><rootfile full-path="OPS/%2e%2e/%2e%2e/package.opf"/></rootfiles></container>"#;
         assert!(parse_container(traversal).is_err());
+    }
+
+    #[test]
+    fn enforces_output_budget_while_rendering_cached_images() {
+        let package = br#"<package version="3.0"><metadata><dc:title>Book</dc:title></metadata><manifest><item id="main" href="main.xhtml" media-type="application/xhtml+xml"/><item id="image" href="image.png" media-type="image/png"/></manifest><spine><itemref idref="main"/></spine></package>"#;
+        let images = "<img src=\"image.png\"/>".repeat(100);
+        let chapter = format!("<html><body>{images}</body></html>");
+        let fixture = epub(
+            package,
+            &[
+                ("OPS/main.xhtml", chapter.as_bytes()),
+                ("OPS/image.png", b"png"),
+            ],
+        );
+
+        assert!(matches!(
+            render_epub_with_output_limit(&fixture.0, 512),
+            Err(CoreError::ResourceLimit(_))
+        ));
     }
 
     #[test]
