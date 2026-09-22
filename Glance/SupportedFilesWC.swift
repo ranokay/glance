@@ -21,7 +21,7 @@ final class SupportedFilesWC: NSWindowController {
 		SupportedFileSection(title: "Diagrams", details: ".drawio • Uncompressed diagrams.net files"),
 		SupportedFileSection(
 			title: "Archive",
-			details: ".7z, .ear, .jar, .tar, .tar.gz, .tgz, .war, .zip"
+			details: ".7z, .ear, .jar, .rar, .tar, .tar.gz, .tgz, .war, .zip"
 		),
 		SupportedFileSection(title: "Jupyter Notebook", details: ".ipynb"),
 		SupportedFileSection(title: "Tab-separated Values", details: ".tab, .tsv"),

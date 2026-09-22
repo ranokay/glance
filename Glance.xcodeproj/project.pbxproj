@@ -14,6 +14,8 @@
 		21A000000000000000000013 /* drawio-viewer-31.4.6.min.js in Resources */ = {isa = PBXBuildFile; fileRef = 21A000000000000000000002 /* drawio-viewer-31.4.6.min.js */; };
 		21A000000000000000000014 /* DRAWIO_LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = 21A000000000000000000003 /* DRAWIO_LICENSE.txt */; };
 		21A000000000000000000015 /* drawio-main.css in Resources */ = {isa = PBXBuildFile; fileRef = 21A000000000000000000004 /* drawio-main.css */; };
+		22A000000000000000000011 /* RARPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22A000000000000000000001 /* RARPreview.swift */; };
+		22A000000000000000000012 /* RARPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22A000000000000000000001 /* RARPreview.swift */; };
 		3F0000000000000000000011 /* SCNVector3.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F0000000000000000000001 /* SCNVector3.swift */; };
 		3F0000000000000000000012 /* ThreeMFSceneBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F0000000000000000000002 /* ThreeMFSceneBuilder.swift */; };
 		3F0000000000000000000013 /* ModelCamera.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F0000000000000000000003 /* ModelCamera.swift */; };
@@ -207,6 +209,7 @@
 		21A000000000000000000002 /* drawio-viewer-31.4.6.min.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = "drawio-viewer-31.4.6.min.js"; sourceTree = "<group>"; };
 		21A000000000000000000003 /* DRAWIO_LICENSE.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = DRAWIO_LICENSE.txt; sourceTree = "<group>"; };
 		21A000000000000000000004 /* drawio-main.css */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.css; path = "drawio-main.css"; sourceTree = "<group>"; };
+		22A000000000000000000001 /* RARPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RARPreview.swift; sourceTree = "<group>"; };
 		3F0000000000000000000001 /* SCNVector3.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SCNVector3.swift; sourceTree = "<group>"; };
 		3F0000000000000000000002 /* ThreeMFSceneBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreeMFSceneBuilder.swift; sourceTree = "<group>"; };
 		3F0000000000000000000003 /* ModelCamera.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelCamera.swift; sourceTree = "<group>"; };
@@ -402,6 +405,7 @@
 			isa = PBXGroup;
 			children = (
 				21A000000000000000000001 /* DrawIOPreview.swift */,
+				22A000000000000000000001 /* RARPreview.swift */,
 				3F0000000000000000000005 /* ThreeMFPreview.swift */,
 				D1A000000000000000000001 /* DirectoryPreview.swift */,
 				103654F32F72623D006F2538 /* SevenZipPreview.swift */,
@@ -825,6 +829,7 @@
 				"$(PROJECT_DIR)/PreviewCore/src/markdown.rs",
 				"$(PROJECT_DIR)/PreviewCore/src/model.rs",
 				"$(PROJECT_DIR)/PreviewCore/src/notebook.rs",
+				"$(PROJECT_DIR)/PreviewCore/src/rar.rs",
 				"$(PROJECT_DIR)/PreviewCore/src/sevenzip.rs",
 				"$(PROJECT_DIR)/PreviewCore/src/tar.rs",
 				"$(PROJECT_DIR)/PreviewCore/src/three_mf.rs",
@@ -896,6 +901,7 @@
 				C0DE00000000000000000202 /* FileTests.swift in Sources */,
 				C0DE00000000000000000322 /* OutlinePreviewVC.swift in Sources */,
 				C0DE00000000000000000319 /* SevenZipPreview.swift in Sources */,
+				22A000000000000000000012 /* RARPreview.swift in Sources */,
 				C0DE00000000000000000308 /* WebAsset.swift in Sources */,
 				C0DE00000000000000000203 /* PreviewFactoryTests.swift in Sources */,
 				C0DE00000000000000000314 /* JupyterPreview.swift in Sources */,
@@ -945,6 +951,7 @@
 				7E9F0D7E24168870007F1008 /* Script.swift in Sources */,
 				7EB3648A244B665700D7F96F /* ZIPPreview.swift in Sources */,
 				103654F42F726241006F2538 /* SevenZipPreview.swift in Sources */,
+				22A000000000000000000011 /* RARPreview.swift in Sources */,
 				7E9F0D7D24168870007F1008 /* Stylesheet.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

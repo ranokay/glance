@@ -19,6 +19,8 @@ class PreviewVCFactory {
 				return MarkdownPreview.self
 			case .jupyter:
 				return JupyterPreview.self
+			case .rar:
+				return RARPreview.self
 			case .tar:
 				return TARPreview.self
 			case .threeMF:

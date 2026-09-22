@@ -27,7 +27,7 @@ extension FileError: LocalizedError {
 
 /// Utility class for reading the content and metadata of the corresponding file.
 class File {
-	let archiveExtensions = ["3mf", "7z", "ear", "jar", "tar", "tgz", "war", "zip"]
+	let archiveExtensions = ["3mf", "7z", "ear", "jar", "rar", "tar", "tgz", "war", "zip"]
 	let fileManager = FileManager.default
 
 	var attributes: [FileAttributeKey: Any]

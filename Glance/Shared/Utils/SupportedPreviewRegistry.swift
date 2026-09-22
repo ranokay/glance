@@ -126,6 +126,7 @@ enum SupportedPreviewRegistry {
 		extensionEntry("7z", group: .archive, previewFileType: .sevenZip, searchTokens: ["7-zip"]),
 		extensionEntry("ear", group: .archive, previewFileType: .zip, searchTokens: ["java", "archive"]),
 		extensionEntry("jar", group: .archive, previewFileType: .zip, searchTokens: ["java", "archive"]),
+		extensionEntry("rar", group: .archive, previewFileType: .rar, searchTokens: ["archive"]),
 		extensionEntry("tar", group: .archive, previewFileType: .tar, searchTokens: ["archive"]),
 		extensionEntry("tgz", group: .archive, previewFileType: .tar, searchTokens: ["gzip", "tar"]),
 		extensionEntry("war", group: .archive, previewFileType: .zip, searchTokens: ["java", "archive"]),

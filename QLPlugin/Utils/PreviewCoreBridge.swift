@@ -141,6 +141,13 @@ enum PreviewCoreBridge {
 		)
 	}
 
+	static func scanRAR(at url: URL) throws -> ArchivePreviewPayload {
+		try decode(
+			ArchivePreviewPayload.self,
+			result: pathResult(for: url, call: glance_scan_rar)
+		)
+	}
+
 	private static func pathResult(
 		for url: URL,
 		call: (UnsafePointer<UInt8>?, Int) -> GlanceRenderResult

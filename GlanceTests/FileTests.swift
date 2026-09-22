@@ -45,6 +45,7 @@ final class FileTests: XCTestCase {
 			"archive.7z",
 			"archive.ear",
 			"archive.jar",
+			"archive.rar",
 			"archive.tar",
 			"archive.tar.gz",
 			"archive.tgz",

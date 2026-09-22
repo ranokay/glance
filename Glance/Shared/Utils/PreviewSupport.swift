@@ -5,6 +5,7 @@ enum PreviewFileType: Equatable {
 	case drawIO
 	case jupyter
 	case markdown
+	case rar
 	case sevenZip
 	case tar
 	case threeMF

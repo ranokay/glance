@@ -77,7 +77,7 @@ Release DMGs are currently unsigned and unnotarized. To install Glance:
 
 - **Draw.io diagrams** (rendered locally with the bundled diagrams.net viewer): uncompressed `.drawio`
 
-- **Archive**: `.7z`, `.ear`, `.jar`, `.tar`, `.tar.gz`, `.tgz`, `.war`, `.zip`
+- **Archive**: `.7z`, `.ear`, `.jar`, `.rar`, `.tar`, `.tar.gz`, `.tgz`, `.war`, `.zip`
 
   <p><img src="./AppStore/Assets/Screenshots/ScreenshotArchive.png" alt="" width="600"></p>
 
