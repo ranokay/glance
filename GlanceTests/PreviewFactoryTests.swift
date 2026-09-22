@@ -23,6 +23,7 @@ final class PreviewFactoryTests: XCTestCase {
 			("/tmp/table.tab", TSVPreview.self),
 			("/tmp/table.tsv", TSVPreview.self),
 			("/tmp/archive.7z", SevenZipPreview.self),
+			("/tmp/archive.rar", RARPreview.self),
 			("/tmp/archive.ear", ZIPPreview.self),
 			("/tmp/archive.jar", ZIPPreview.self),
 			("/tmp/archive.war", ZIPPreview.self),

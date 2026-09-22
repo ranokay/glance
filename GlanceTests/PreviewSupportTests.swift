@@ -20,6 +20,7 @@ final class PreviewSupportTests: XCTestCase {
 			("/tmp/table.tsv", "tsv.extension.tsv", .tsv),
 			("/tmp/archive.zip", "archive.extension.zip", .zip),
 			("/tmp/archive.7z", "archive.extension.7z", .sevenZip),
+			("/tmp/archive.rar", "archive.extension.rar", .rar),
 			("/tmp/.elrc", "code.extension.elrc", .code),
 			("/tmp/config.elrc", "code.extension.elrc", .code),
 			("/tmp/config.ini", "code.extension.ini", .code),
@@ -62,6 +63,7 @@ final class PreviewSupportTests: XCTestCase {
 			("/tmp/table.tab", .tsv),
 			("/tmp/table.tsv", .tsv),
 			("/tmp/archive.7z", .sevenZip),
+			("/tmp/archive.rar", .rar),
 			("/tmp/archive.ear", .zip),
 			("/tmp/archive.jar", .zip),
 			("/tmp/archive.war", .zip),
@@ -95,6 +97,10 @@ final class PreviewSupportTests: XCTestCase {
 		XCTAssertEqual(
 			PreviewSupport.getPreviewFileType(fileURL: URL(fileURLWithPath: "/tmp/ARCHIVE.ZIP")),
 			.zip
+		)
+		XCTAssertEqual(
+			PreviewSupport.getPreviewFileType(fileURL: URL(fileURLWithPath: "/tmp/ARCHIVE.RAR")),
+			.rar
 		)
 	}
 

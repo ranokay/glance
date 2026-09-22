@@ -167,6 +167,19 @@ pub unsafe extern "C" fn glance_scan_seven_zip(
     })
 }
 
+/// Scans a RAR4 or RAR5 archive at a raw filesystem path into a typed JSON payload.
+///
+/// # Safety
+///
+/// The pointer must be valid for reads of `path_length` bytes for the duration of this call.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn glance_scan_rar(
+    path_data: *const u8,
+    path_length: usize,
+) -> GlanceRenderResult {
+    ffi_call(|| unsafe { json_bytes(&crate::rar::scan_rar(path_input(path_data, path_length)?)?) })
+}
+
 /// Releases a renderer result buffer.
 ///
 /// # Safety
@@ -347,6 +360,11 @@ mod tests {
         assert_eq!(status, STATUS_INVALID_INPUT);
         assert!(message.contains("null"));
 
+        let result = unsafe { glance_scan_rar(ptr::null(), 1) };
+        let (status, message) = take(result);
+        assert_eq!(status, STATUS_INVALID_INPUT);
+        assert!(message.contains("null"));
+
         let result = unsafe { glance_parse_three_mf(ptr::null(), 1) };
         let (status, message) = take(result);
         assert_eq!(status, STATUS_INVALID_INPUT);
@@ -364,6 +382,14 @@ mod tests {
         let (status, json) = take(result);
         assert_eq!(status, STATUS_OK);
         assert!(json.contains("\"triangle_count\":1"));
+
+        let rar = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../GlanceTests/TestFiles/archives/example-rar5.rar");
+        let rar_bytes = rar.as_os_str().as_bytes();
+        let result = unsafe { glance_scan_rar(rar_bytes.as_ptr(), rar_bytes.len()) };
+        let (status, json) = take(result);
+        assert_eq!(status, STATUS_OK);
+        assert!(json.contains("\"path\":\"hello.txt\""));
     }
 
     #[test]
@@ -386,6 +412,13 @@ mod tests {
         let encrypted_bytes = encrypted.as_os_str().as_bytes();
         let result =
             unsafe { glance_scan_seven_zip(encrypted_bytes.as_ptr(), encrypted_bytes.len()) };
+        assert_eq!(take(result).0, STATUS_UNSUPPORTED);
+
+        let encrypted_rar = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../GlanceTests/TestFiles/archives/encrypted-rar5.rar");
+        let encrypted_rar_bytes = encrypted_rar.as_os_str().as_bytes();
+        let result =
+            unsafe { glance_scan_rar(encrypted_rar_bytes.as_ptr(), encrypted_rar_bytes.len()) };
         assert_eq!(take(result).0, STATUS_UNSUPPORTED);
 
         let result = ffi_call(|| panic!("FFI panic test"));

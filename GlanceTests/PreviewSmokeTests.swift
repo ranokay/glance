@@ -977,6 +977,43 @@ final class PreviewSmokeTests: XCTestCase {
 		}
 	}
 
+	func testRARPreviewHandlesRAR4AndRAR5Fixtures() async throws {
+		let fixtures = URL(fileURLWithPath: #filePath)
+			.deletingLastPathComponent()
+			.appendingPathComponent("TestFiles/archives", isDirectory: true)
+		let rar4Preview = try await RARPreview().createPreviewVC(
+			file: File(url: fixtures.appendingPathComponent("example-rar4.rar"))
+		)
+		let rar5Preview = try await RARPreview().createPreviewVC(
+			file: File(url: fixtures.appendingPathComponent("example-rar5.rar"))
+		)
+		let rar4VC = try XCTUnwrap(rar4Preview as? OutlinePreviewVC)
+		let rar5VC = try XCTUnwrap(rar5Preview as? OutlinePreviewVC)
+
+		XCTAssertNotNil(node(named: "payload.txt", in: rar4VC.rootNodes))
+		XCTAssertNotNil(node(named: "hello.txt", in: rar5VC.rootNodes))
+		XCTAssertFalse(rar4VC.previewStatusText.contains("\n"))
+		XCTAssertTrue(rar5VC.previewStatusText.contains("Compressed "))
+	}
+
+	func testRARPreviewRejectsMalformedEncryptedAndMultipartArchives() async throws {
+		let fixtures = URL(fileURLWithPath: #filePath)
+			.deletingLastPathComponent()
+			.appendingPathComponent("TestFiles/archives", isDirectory: true)
+		let malformed = try writeFile(named: "malformed.rar", contents: "not-a-rar")
+		let rejectedURLs = [
+			malformed,
+			fixtures.appendingPathComponent("encrypted-rar5.rar"),
+			fixtures.appendingPathComponent("multipart-rar5.rar"),
+		]
+
+		for rejectedURL in rejectedURLs {
+			await XCTAssertThrowsErrorAsync {
+				_ = try await RARPreview().createPreviewVC(file: File(url: rejectedURL))
+			}
+		}
+	}
+
 	func testParserPerformance() async throws {
 		guard ProcessInfo.processInfo.environment["GLANCE_RUN_PARSER_BENCHMARKS"] == "1" else {
 			throw XCTSkip("Set GLANCE_RUN_PARSER_BENCHMARKS=1 to collect parser baselines")
@@ -1010,6 +1047,11 @@ final class PreviewSmokeTests: XCTestCase {
 		try await benchmarkParser("7z") {
 			_ = try await SevenZipPreview().createPreviewVC(
 				file: File(url: fixtures.appendingPathComponent("archives/example.7z"))
+			)
+		}
+		try await benchmarkParser("rar") {
+			_ = try await RARPreview().createPreviewVC(
+				file: File(url: fixtures.appendingPathComponent("archives/example-rar5.rar"))
 			)
 		}
 	}

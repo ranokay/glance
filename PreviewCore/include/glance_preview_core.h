@@ -44,6 +44,7 @@ GlanceRenderResult glance_scan_tar(
 	bool is_gzipped
 );
 GlanceRenderResult glance_scan_seven_zip(const uint8_t *path_data, size_t path_length);
+GlanceRenderResult glance_scan_rar(const uint8_t *path_data, size_t path_length);
 void glance_render_buffer_free(uint8_t *data, size_t length);
 
 #endif

@@ -241,7 +241,10 @@ fn read_u64(bytes: &[u8], offset: usize) -> Option<u64> {
 mod tests {
     use super::*;
     use std::fs;
+    use std::sync::atomic::{AtomicU64, Ordering};
     use std::time::{SystemTime, UNIX_EPOCH};
+
+    static TEMPORARY_PATH_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 
     fn fixture(name: &str) -> std::path::PathBuf {
         Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -448,12 +451,13 @@ mod tests {
 
     fn temporary_path() -> std::path::PathBuf {
         std::env::temp_dir().join(format!(
-            "glance-zip-test-{}-{}.zip",
+            "glance-zip-test-{}-{}-{}.zip",
             std::process::id(),
             SystemTime::now()
                 .duration_since(UNIX_EPOCH)
                 .unwrap()
-                .as_nanos()
+                .as_nanos(),
+            TEMPORARY_PATH_SEQUENCE.fetch_add(1, Ordering::Relaxed)
         ))
     }
 }
