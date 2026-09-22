@@ -267,12 +267,12 @@ fn parse_container(xml: &[u8]) -> Result<String, CoreError> {
                 check_depth(depth)?;
                 if local_name(element.name().as_ref()) == b"rootfile" {
                     let path = required_attribute(reader.decoder(), &element, b"full-path")?;
-                    return canonical_path(&path);
+                    return canonical_path(&percent_decode(&path)?);
                 }
             }
             Ok(Event::Empty(element)) if local_name(element.name().as_ref()) == b"rootfile" => {
                 let path = required_attribute(reader.decoder(), &element, b"full-path")?;
-                return canonical_path(&path);
+                return canonical_path(&percent_decode(&path)?);
             }
             Ok(Event::End(_)) => depth = depth.saturating_sub(1),
             Ok(Event::DocType(_)) => {
@@ -1086,6 +1086,18 @@ mod tests {
         let html = render_epub(&fixture.0).unwrap();
         assert!(html.contains("Main"));
         assert!(!html.contains("Notes"));
+    }
+
+    #[test]
+    fn decodes_container_rootfile_paths_before_validating_them() {
+        let empty = br#"<container><rootfiles><rootfile full-path="OPS/package%20file.opf"/></rootfiles></container>"#;
+        assert_eq!(parse_container(empty).unwrap(), "OPS/package file.opf");
+
+        let paired = br#"<container><rootfiles><rootfile full-path="OPS/package%20file.opf"></rootfile></rootfiles></container>"#;
+        assert_eq!(parse_container(paired).unwrap(), "OPS/package file.opf");
+
+        let traversal = br#"<container><rootfiles><rootfile full-path="OPS/%2e%2e/%2e%2e/package.opf"/></rootfiles></container>"#;
+        assert!(parse_container(traversal).is_err());
     }
 
     #[test]

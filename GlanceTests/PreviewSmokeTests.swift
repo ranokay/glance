@@ -70,12 +70,13 @@ final class PreviewSmokeTests: XCTestCase {
 				document.querySelectorAll('.epub-chapter').length,
 				document.querySelector('a[href="#glance-c2-finish"]') !== null,
 				document.querySelector('img[src^="data:image/png;base64,"]') !== null,
+				document.querySelector('img[src^="data:image/png;base64,"]')?.naturalWidth > 0,
 				document.querySelector('script') === null,
 				document.querySelector('[onclick]') === null
 			].join('|')
 			"""
 		) as? String
-		XCTAssertEqual(state, "Glance EPUB Fixture|2|true|true|true|true")
+		XCTAssertEqual(state, "Glance EPUB Fixture|2|true|true|true|true|true")
 
 		let bundle = WebPreviewVC.resourceBundle
 		XCTAssertNotNil(bundle.url(forResource: "epub-main", withExtension: "css"))
