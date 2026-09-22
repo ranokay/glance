@@ -23,6 +23,10 @@ final class SupportedFilesWC: NSWindowController {
 			title: "Archive",
 			details: ".7z, .ear, .jar, .rar, .tar, .tar.gz, .tgz, .war, .zip"
 		),
+		SupportedFileSection(
+			title: "E-books",
+			details: ".epub • DRM-free EPUB 2 and EPUB 3 books"
+		),
 		SupportedFileSection(title: "Jupyter Notebook", details: ".ipynb"),
 		SupportedFileSection(title: "Tab-separated Values", details: ".tab, .tsv"),
 		SupportedFileSection(

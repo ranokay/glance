@@ -1,3 +1,4 @@
+mod epub;
 mod error;
 mod ffi;
 mod highlight;
@@ -13,8 +14,8 @@ mod zip;
 
 pub use ffi::{
     GlanceRenderResult, glance_parse_three_mf, glance_parse_tsv, glance_render_buffer_free,
-    glance_render_code, glance_render_markdown, glance_render_notebook, glance_scan_rar,
-    glance_scan_seven_zip, glance_scan_tar, glance_scan_zip,
+    glance_render_code, glance_render_epub, glance_render_markdown, glance_render_notebook,
+    glance_scan_rar, glance_scan_seven_zip, glance_scan_tar, glance_scan_zip,
 };
 
 #[cfg(test)]

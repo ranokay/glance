@@ -3,6 +3,7 @@ import Foundation
 enum SupportedPreviewGroup: CaseIterable {
 	case archive
 	case diagram
+	case ebook
 	case markdown
 	case jupyter
 	case tsv
@@ -14,6 +15,8 @@ enum SupportedPreviewGroup: CaseIterable {
 				"Archive"
 			case .diagram:
 				"Diagram"
+			case .ebook:
+				"E-book"
 			case .markdown:
 				"Markdown"
 			case .jupyter:
@@ -31,6 +34,8 @@ enum SupportedPreviewGroup: CaseIterable {
 				"archive"
 			case .diagram:
 				"diagram"
+			case .ebook:
+				"ebook"
 			case .markdown:
 				"markdown"
 			case .jupyter:
@@ -102,6 +107,13 @@ enum SupportedPreviewMatchRule: Equatable {
 
 enum SupportedPreviewRegistry {
 	static let all: [SupportedPreviewType] = [
+		extensionEntry(
+			"epub",
+			group: .ebook,
+			previewFileType: .epub,
+			searchTokens: ["book", "EPUB 2", "EPUB 3"]
+		),
+
 		extensionEntry(
 			"drawio",
 			group: .diagram,

@@ -44,6 +44,10 @@ final class NestedPreviewTests: XCTestCase {
 			provider.route(for: node(named: "archive.rar", type: .archive)),
 			expected: RARPreview.self
 		)
+		assertGlanceRoute(
+			provider.route(for: node(named: "book.epub", type: .data)),
+			expected: EPUBPreview.self
+		)
 		assertNativeRoute(provider.route(for: node(named: "image.png", type: .png)))
 		assertMediaRoute(provider.route(for: node(named: "movie.mp4", type: .mpeg4Movie)))
 		assertMediaRoute(provider.route(for: node(named: "audio.m4a", type: .mpeg4Audio)))

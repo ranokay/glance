@@ -54,6 +54,9 @@
 				<string>public.tar-archive</string> <!-- .tar -->
 				<string>public.zip-archive</string> <!-- .zip -->
 
+				<!-- E-book -->
+				<string>org.idpf.epub-container</string> <!-- .epub -->
+
 				<!-- Jupyter Notebook -->
 				<string>dyn.ah62d4rv4ge80w6d3r3va</string> <!-- .ipynb -->
 				<string>org.jupyter.ipynb</string> <!-- .ipynb -->

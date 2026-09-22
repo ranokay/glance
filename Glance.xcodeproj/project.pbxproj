@@ -16,6 +16,9 @@
 		21A000000000000000000015 /* drawio-main.css in Resources */ = {isa = PBXBuildFile; fileRef = 21A000000000000000000004 /* drawio-main.css */; };
 		22A000000000000000000011 /* RARPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22A000000000000000000001 /* RARPreview.swift */; };
 		22A000000000000000000012 /* RARPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22A000000000000000000001 /* RARPreview.swift */; };
+		23A000000000000000000011 /* EPUBPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23A000000000000000000001 /* EPUBPreview.swift */; };
+		23A000000000000000000012 /* EPUBPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23A000000000000000000001 /* EPUBPreview.swift */; };
+		23A000000000000000000013 /* epub-main.css in Resources */ = {isa = PBXBuildFile; fileRef = 23A000000000000000000002 /* epub-main.css */; };
 		3F0000000000000000000011 /* SCNVector3.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F0000000000000000000001 /* SCNVector3.swift */; };
 		3F0000000000000000000012 /* ThreeMFSceneBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F0000000000000000000002 /* ThreeMFSceneBuilder.swift */; };
 		3F0000000000000000000013 /* ModelCamera.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F0000000000000000000003 /* ModelCamera.swift */; };
@@ -210,6 +213,8 @@
 		21A000000000000000000003 /* DRAWIO_LICENSE.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = DRAWIO_LICENSE.txt; sourceTree = "<group>"; };
 		21A000000000000000000004 /* drawio-main.css */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.css; path = "drawio-main.css"; sourceTree = "<group>"; };
 		22A000000000000000000001 /* RARPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RARPreview.swift; sourceTree = "<group>"; };
+		23A000000000000000000001 /* EPUBPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EPUBPreview.swift; sourceTree = "<group>"; };
+		23A000000000000000000002 /* epub-main.css */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.css; path = "epub-main.css"; sourceTree = "<group>"; };
 		3F0000000000000000000001 /* SCNVector3.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SCNVector3.swift; sourceTree = "<group>"; };
 		3F0000000000000000000002 /* ThreeMFSceneBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreeMFSceneBuilder.swift; sourceTree = "<group>"; };
 		3F0000000000000000000003 /* ModelCamera.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelCamera.swift; sourceTree = "<group>"; };
@@ -394,6 +399,7 @@
 			isa = PBXGroup;
 			children = (
 				21A000000000000000000005 /* drawio */,
+				23A000000000000000000005 /* epub */,
 				7EB363F6244B03CC00D7F96F /* jupyter */,
 				7EB3643B244B03CC00D7F96F /* markdown */,
 				7EB36438244B03CC00D7F96F /* shared */,
@@ -405,6 +411,7 @@
 			isa = PBXGroup;
 			children = (
 				21A000000000000000000001 /* DrawIOPreview.swift */,
+				23A000000000000000000001 /* EPUBPreview.swift */,
 				22A000000000000000000001 /* RARPreview.swift */,
 				3F0000000000000000000005 /* ThreeMFPreview.swift */,
 				D1A000000000000000000001 /* DirectoryPreview.swift */,
@@ -427,6 +434,14 @@
 				21A000000000000000000002 /* drawio-viewer-31.4.6.min.js */,
 			);
 			path = drawio;
+			sourceTree = "<group>";
+		};
+		23A000000000000000000005 /* epub */ = {
+			isa = PBXGroup;
+			children = (
+				23A000000000000000000002 /* epub-main.css */,
+			);
+			path = epub;
 			sourceTree = "<group>";
 		};
 		7E21C88F24390E2400818EB2 /* Utils */ = {
@@ -759,6 +774,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				21A000000000000000000014 /* DRAWIO_LICENSE.txt in Resources */,
+				23A000000000000000000013 /* epub-main.css in Resources */,
 				21A000000000000000000015 /* drawio-main.css in Resources */,
 				21A000000000000000000013 /* drawio-viewer-31.4.6.min.js in Resources */,
 				20A000000000000000000004 /* MERMAID_LICENSE.txt in Resources */,
@@ -823,6 +839,7 @@
 				"$(PROJECT_DIR)/PreviewCore/Cargo.lock",
 				"$(PROJECT_DIR)/PreviewCore/build-xcode.sh",
 				"$(PROJECT_DIR)/PreviewCore/src/error.rs",
+				"$(PROJECT_DIR)/PreviewCore/src/epub.rs",
 				"$(PROJECT_DIR)/PreviewCore/src/ffi.rs",
 				"$(PROJECT_DIR)/PreviewCore/src/highlight.rs",
 				"$(PROJECT_DIR)/PreviewCore/src/lib.rs",
@@ -902,6 +919,7 @@
 				C0DE00000000000000000322 /* OutlinePreviewVC.swift in Sources */,
 				C0DE00000000000000000319 /* SevenZipPreview.swift in Sources */,
 				22A000000000000000000012 /* RARPreview.swift in Sources */,
+				23A000000000000000000012 /* EPUBPreview.swift in Sources */,
 				C0DE00000000000000000308 /* WebAsset.swift in Sources */,
 				C0DE00000000000000000203 /* PreviewFactoryTests.swift in Sources */,
 				C0DE00000000000000000314 /* JupyterPreview.swift in Sources */,
@@ -952,6 +970,7 @@
 				7EB3648A244B665700D7F96F /* ZIPPreview.swift in Sources */,
 				103654F42F726241006F2538 /* SevenZipPreview.swift in Sources */,
 				22A000000000000000000011 /* RARPreview.swift in Sources */,
+				23A000000000000000000011 /* EPUBPreview.swift in Sources */,
 				7E9F0D7D24168870007F1008 /* Stylesheet.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

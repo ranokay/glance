@@ -20,6 +20,7 @@
 > - newer Quick Look and WebKit fixes
 > - `.ini`, `.toml`, `.ttml`, and `.elrc` source-code previews
 > - expanded archive support
+> - secure, offline EPUB 2 and EPUB 3 previews
 > - secure, interactive 3MF model previews
 > - safer bundled WebKit rendering
 > - a bounded Rust preview core with responsive off-main rendering and parsing
@@ -80,6 +81,9 @@ Release DMGs are currently unsigned and unnotarized. To install Glance:
 - **Archive**: `.7z`, `.ear`, `.jar`, `.rar`, `.tar`, `.tar.gz`, `.tgz`, `.war`, `.zip`
 
   <p><img src="./AppStore/Assets/Screenshots/ScreenshotArchive.png" alt="" width="600"></p>
+
+- **E-books** (rendered offline by Glance's bounded Rust preview core): DRM-free `.epub` files,
+  including package metadata, reading order, internal links, and embedded images
 
 - **3D models** (parsed by Glance's bounded Rust preview core): `.3mf`, with rotation, pan, zoom,
   transforms, units, multipart assemblies, and basic colors

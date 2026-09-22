@@ -82,6 +82,21 @@ pub unsafe extern "C" fn glance_render_notebook(
     })
 }
 
+/// Renders a DRM-free EPUB 2 or EPUB 3 book at a raw filesystem path.
+///
+/// # Safety
+///
+/// The pointer must be valid for reads of `path_length` bytes for the duration of this call.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn glance_render_epub(
+    path_data: *const u8,
+    path_length: usize,
+) -> GlanceRenderResult {
+    ffi_call(|| unsafe {
+        crate::epub::render_epub(path_input(path_data, path_length)?).map(String::into_bytes)
+    })
+}
+
 /// Parses TSV bytes into a typed JSON payload.
 ///
 /// # Safety
@@ -270,12 +285,12 @@ unsafe fn byte_input<'a>(
 }
 
 unsafe fn path_input<'a>(data: *const u8, length: usize) -> Result<&'a Path, CoreError> {
-    let bytes = unsafe { byte_input(data, length, "Archive path")? };
+    let bytes = unsafe { byte_input(data, length, "File path")? };
     if bytes.is_empty() {
-        return Err(CoreError::invalid("Archive path must not be empty"));
+        return Err(CoreError::invalid("File path must not be empty"));
     }
     if bytes.contains(&0) {
-        return Err(CoreError::invalid("Archive path contains a null byte"));
+        return Err(CoreError::invalid("File path contains a null byte"));
     }
     Ok(Path::new(OsStr::from_bytes(bytes)))
 }
@@ -365,6 +380,11 @@ mod tests {
         assert_eq!(status, STATUS_INVALID_INPUT);
         assert!(message.contains("null"));
 
+        let result = unsafe { glance_render_epub(ptr::null(), 1) };
+        let (status, message) = take(result);
+        assert_eq!(status, STATUS_INVALID_INPUT);
+        assert!(message.contains("null"));
+
         let result = unsafe { glance_parse_three_mf(ptr::null(), 1) };
         let (status, message) = take(result);
         assert_eq!(status, STATUS_INVALID_INPUT);
@@ -405,6 +425,11 @@ mod tests {
         let missing = Path::new("/definitely/missing/glance-preview.zip");
         let missing_bytes = missing.as_os_str().as_bytes();
         let result = unsafe { glance_scan_zip(missing_bytes.as_ptr(), missing_bytes.len()) };
+        assert_eq!(take(result).0, STATUS_IO_ERROR);
+
+        let missing = Path::new("/definitely/missing/glance-preview.epub");
+        let missing_bytes = missing.as_os_str().as_bytes();
+        let result = unsafe { glance_render_epub(missing_bytes.as_ptr(), missing_bytes.len()) };
         assert_eq!(take(result).0, STATUS_IO_ERROR);
 
         let encrypted = Path::new(env!("CARGO_MANIFEST_DIR"))

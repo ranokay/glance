@@ -15,6 +15,7 @@ final class PlistCoverageTests: XCTestCase {
 			"org.gnu.gnu-zip-tar-archive",
 			"public.tar-archive",
 			"public.zip-archive",
+			"org.idpf.epub-container",
 			"org.jupyter.ipynb",
 			"public.jupyter-notebook",
 			"com.microsoft.ini",
