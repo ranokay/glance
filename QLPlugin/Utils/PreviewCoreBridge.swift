@@ -93,12 +93,20 @@ enum PreviewCoreBridgeError: LocalizedError {
 			case let .coreFailure(_, message):
 				message.isEmpty ? "PreviewCore failed without details" : message
 			case .invalidFileSystemPath:
-				"The archive path cannot be represented by the filesystem"
+				"The file path cannot be represented by the filesystem"
 		}
 	}
 }
 
 enum PreviewCoreBridge {
+	static func renderEPUB(at url: URL) throws -> String {
+		let data = try consume(pathResult(for: url, call: glance_render_epub))
+		guard let html = String(data: data, encoding: .utf8) else {
+			throw PreviewCoreBridgeError.invalidUTF8
+		}
+		return html
+	}
+
 	static func parseTSV(_ data: Data) throws -> TSVPreviewPayload {
 		let result = data.withUnsafeBytes { buffer in
 			glance_parse_tsv(

@@ -44,6 +44,7 @@ final class FileTests: XCTestCase {
 			"model.3mf",
 			"archive.7z",
 			"archive.ear",
+			"book.epub",
 			"archive.jar",
 			"archive.rar",
 			"archive.tar",

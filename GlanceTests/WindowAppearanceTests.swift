@@ -161,6 +161,7 @@ final class WindowAppearanceTests: XCTestCase {
 				"Markdown",
 				"Diagrams",
 				"Archive",
+				"E-books",
 				"Jupyter Notebook",
 				"Tab-separated Values",
 				"Folders",

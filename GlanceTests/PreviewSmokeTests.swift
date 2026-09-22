@@ -34,6 +34,61 @@ final class PreviewSmokeTests: XCTestCase {
 		XCTAssertTrue(previewVC is WebPreviewVC)
 	}
 
+	func testEPUBPreviewRendersOfflineContentAndSanitizesActiveMarkup() async throws {
+		let fixtureText = try String(
+			contentsOf: URL(fileURLWithPath: #filePath)
+				.deletingLastPathComponent()
+				.appendingPathComponent("TestFiles/epub/example.epub.b64"),
+			encoding: .utf8
+		)
+		let fixtureData = try XCTUnwrap(
+			Data(base64Encoded: fixtureText.trimmingCharacters(in: .whitespacesAndNewlines))
+		)
+		let fixtureURL = try writeDataFile(named: "example.epub", data: fixtureData)
+
+		let html = try await PreviewExecutor.run {
+			try PreviewCoreBridge.renderEPUB(at: fixtureURL)
+		}
+		XCTAssertTrue(html.contains("Glance EPUB Fixture"))
+		XCTAssertTrue(html.contains("href=\"#glance-c2-finish\""))
+		XCTAssertTrue(html.contains("data:image/png;base64,"))
+		XCTAssertFalse(html.contains("<script"))
+		XCTAssertFalse(html.contains("onclick"))
+		XCTAssertFalse(html.contains("https://example.com"))
+
+		let generated = try await EPUBPreview().createPreviewVC(file: File(url: fixtureURL))
+		let previewVC = try XCTUnwrap(generated as? WebPreviewVC)
+		previewVC.loadViewIfNeeded()
+		let webView = try XCTUnwrap(
+			previewVC.view.subviews.compactMap { $0 as? WKWebView }.first
+		)
+		try await waitForWebViewToFinishLoadingAsync(webView)
+		let state = try await webView.evaluateJavaScript(
+			"""
+			[
+				document.querySelector('.epub-book h1')?.textContent || '',
+				document.querySelectorAll('.epub-chapter').length,
+				document.querySelector('a[href="#glance-c2-finish"]') !== null,
+				document.querySelector('img[src^="data:image/png;base64,"]') !== null,
+				document.querySelector('img[src^="data:image/png;base64,"]')?.naturalWidth > 0,
+				document.querySelector('script') === null,
+				document.querySelector('[onclick]') === null
+			].join('|')
+			"""
+		) as? String
+		XCTAssertEqual(state, "Glance EPUB Fixture|2|true|true|true|true|true")
+
+		let bundle = WebPreviewVC.resourceBundle
+		XCTAssertNotNil(bundle.url(forResource: "epub-main", withExtension: "css"))
+	}
+
+	func testEPUBPreviewRejectsMalformedArchives() async throws {
+		let fileURL = try writeFile(named: "malformed.epub", contents: "not a ZIP")
+		await XCTAssertThrowsErrorAsync {
+			_ = try await EPUBPreview().createPreviewVC(file: File(url: fileURL))
+		}
+	}
+
 	func testThreeMFPreviewBuildsInteractiveSceneFromRustPayload() async throws {
 		let fixtureURL = URL(fileURLWithPath: #filePath)
 			.deletingLastPathComponent()

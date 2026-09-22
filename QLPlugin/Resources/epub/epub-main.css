@@ -1,0 +1,84 @@
+.epub-book {
+	box-sizing: border-box;
+	max-width: 52rem;
+	margin: 0 auto;
+	padding: 2.5rem clamp(1.25rem, 5vw, 4rem) 5rem;
+	font-family: ui-serif, Georgia, serif;
+	font-size: 1.05rem;
+	line-height: 1.65;
+}
+
+.epub-metadata {
+	padding-bottom: 1.5rem;
+	border-bottom: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+}
+
+.epub-metadata h1 {
+	margin: 0 0 0.35rem;
+	font-size: clamp(2rem, 6vw, 3.2rem);
+	line-height: 1.08;
+}
+
+.epub-creator,
+.epub-language {
+	margin: 0.2rem 0;
+	opacity: 0.72;
+}
+
+.epub-contents {
+	margin: 2rem 0 3rem;
+	padding: 1rem 1.25rem;
+	border-radius: 0.75rem;
+	background: color-mix(in srgb, currentColor 6%, transparent);
+}
+
+.epub-contents ol {
+	columns: 2 15rem;
+	margin: 0;
+	padding-left: 1.5rem;
+}
+
+.epub-chapter {
+	scroll-margin-top: 1.5rem;
+	margin: 0 0 4rem;
+}
+
+.epub-chapter img {
+	display: block;
+	max-width: 100%;
+	height: auto;
+	margin: 1.5rem auto;
+}
+
+.epub-chapter table {
+	display: block;
+	max-width: 100%;
+	overflow-x: auto;
+	border-collapse: collapse;
+}
+
+.epub-chapter td,
+.epub-chapter th {
+	padding: 0.35rem 0.6rem;
+	border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+}
+
+.epub-chapter-navigation {
+	display: flex;
+	justify-content: space-between;
+	gap: 1rem;
+	margin-top: 3rem;
+	padding-top: 1rem;
+	border-top: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+}
+
+@media (max-width: 480px) {
+	.epub-book {
+		padding: 1.25rem 1rem 3rem;
+		font-size: 1rem;
+	}
+
+	.epub-contents ol {
+		columns: 1;
+	}
+}
