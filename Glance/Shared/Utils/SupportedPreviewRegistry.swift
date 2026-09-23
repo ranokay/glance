@@ -1,6 +1,7 @@
 import Foundation
 
 enum SupportedPreviewGroup: CaseIterable {
+	case audio
 	case archive
 	case diagram
 	case ebook
@@ -11,6 +12,8 @@ enum SupportedPreviewGroup: CaseIterable {
 
 	var title: String {
 		switch self {
+			case .audio:
+				"Audio"
 			case .archive:
 				"Archive"
 			case .diagram:
@@ -30,6 +33,8 @@ enum SupportedPreviewGroup: CaseIterable {
 
 	var idPrefix: String {
 		switch self {
+			case .audio:
+				"audio"
 			case .archive:
 				"archive"
 			case .diagram:
@@ -107,6 +112,12 @@ enum SupportedPreviewMatchRule: Equatable {
 
 enum SupportedPreviewRegistry {
 	static let all: [SupportedPreviewType] = [
+		extensionEntry(
+			"flac",
+			group: .audio,
+			previewFileType: .flac,
+			searchTokens: ["lossless", "waveform"]
+		),
 		extensionEntry(
 			"epub",
 			group: .ebook,

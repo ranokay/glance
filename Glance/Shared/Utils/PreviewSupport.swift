@@ -4,6 +4,7 @@ enum PreviewFileType: Equatable {
 	case code
 	case drawIO
 	case epub
+	case flac
 	case jupyter
 	case markdown
 	case rar

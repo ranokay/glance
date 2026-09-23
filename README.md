@@ -62,6 +62,8 @@ Release DMGs are currently unsigned and unnotarized. To install Glance:
 
 ## Supported file types
 
+- **Lossless audio**: `.flac` files with native playback controls and a bounded waveform overview
+
 - **Folders**: lazy, expandable trees with Finder-style icons and progressive image, video, and PDF
   thumbnails. Glance loads one directory at a time in pages of 500 and skips hidden items.
   Double-click a folder to navigate into it with multi-level Back navigation, or double-click a file

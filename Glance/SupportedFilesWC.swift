@@ -11,6 +11,10 @@ final class SupportedFilesWC: NSWindowController {
 
 	static let sections = [
 		SupportedFileSection(
+			title: "Audio",
+			details: ".flac • Native playback with waveform overview"
+		),
+		SupportedFileSection(
 			title: "Source Code",
 			details: ".cpp, .elrc, .ini, .js, .json, .jsonl, .py, .swift, .toml, .ttml, .yml and many more"
 		),
