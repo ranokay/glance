@@ -51,6 +51,7 @@ final class NestedPreviewTests: XCTestCase {
 		assertNativeRoute(provider.route(for: node(named: "image.png", type: .png)))
 		assertMediaRoute(provider.route(for: node(named: "movie.mp4", type: .mpeg4Movie)))
 		assertMediaRoute(provider.route(for: node(named: "audio.m4a", type: .mpeg4Audio)))
+		assertMediaRoute(provider.route(for: node(named: "track.flac", type: .data)))
 		assertNativeRoute(provider.route(for: node(named: "unknown.bin", type: .data)))
 		assertNativeRoute(provider.route(for: node(
 			named: "Project.screenstudio",

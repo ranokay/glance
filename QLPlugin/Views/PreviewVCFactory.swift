@@ -17,6 +17,8 @@ class PreviewVCFactory {
 				return DrawIOPreview.self
 			case .epub:
 				return EPUBPreview.self
+			case .flac:
+				return FLACPreview.self
 			case .markdown:
 				return MarkdownPreview.self
 			case .jupyter:

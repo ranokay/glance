@@ -11,6 +11,7 @@ final class PreviewSupportTests: XCTestCase {
 		let cases: [(path: String, expectedID: String?, expectedType: PreviewFileType)] = [
 			("/tmp/diagram.drawio", "diagram.extension.drawio", .drawIO),
 			("/tmp/book.epub", "ebook.extension.epub", .epub),
+			("/tmp/track.flac", "audio.extension.flac", .flac),
 			("/tmp/archive.tar.gz", "archive.extension.tar-gz", .tar),
 			("/tmp/model.3mf", "archive.extension.3mf", .threeMF),
 			("/tmp/ARCHIVE.TAR.GZ", "archive.extension.tar-gz", .tar),
@@ -50,6 +51,7 @@ final class PreviewSupportTests: XCTestCase {
 	func testPreviewTypeUsesSpecializedPreviewForSupportedExtensionAliases() {
 		let cases: [(path: String, expected: PreviewFileType)] = [
 			("/tmp/book.epub", .epub),
+			("/tmp/track.flac", .flac),
 			("/tmp/readme.md", .markdown),
 			("/tmp/readme.markdown", .markdown),
 			("/tmp/readme.mdown", .markdown),
@@ -107,6 +109,10 @@ final class PreviewSupportTests: XCTestCase {
 		XCTAssertEqual(
 			PreviewSupport.getPreviewFileType(fileURL: URL(fileURLWithPath: "/tmp/BOOK.EPUB")),
 			.epub
+		)
+		XCTAssertEqual(
+			PreviewSupport.getPreviewFileType(fileURL: URL(fileURLWithPath: "/tmp/TRACK.FLAC")),
+			.flac
 		)
 	}
 

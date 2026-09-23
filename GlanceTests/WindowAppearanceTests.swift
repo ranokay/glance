@@ -157,6 +157,7 @@ final class WindowAppearanceTests: XCTestCase {
 		XCTAssertEqual(
 			SupportedFilesWC.sections.map(\.title),
 			[
+				"Audio",
 				"Source Code",
 				"Markdown",
 				"Diagrams",

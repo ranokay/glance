@@ -15,6 +15,7 @@ Features:
 • Light and dark appearance, Reduce Transparency and Increase Contrast support
 
 Supported file types:
+• Lossless audio with native playback and a waveform overview (.flac)
 • Folders (lazy trees with icons, thumbnails, 500-item pages, and Back navigation)
 • Source code (.cpp, .elrc, .ini, .js, .json, .py, .swift, .toml, .ttml, .yml and many more)
 • Markdown and offline Mermaid diagrams (.md, .markdown, .mdown, .mkdn, .mkd, .Rmd, .qmd)

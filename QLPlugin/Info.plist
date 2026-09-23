@@ -39,6 +39,9 @@
 				<!-- Directory -->
 				<string>public.folder</string>
 
+				<!-- Lossless audio -->
+				<string>org.xiph.flac</string> <!-- .flac -->
+
 				<!-- Draw.io -->
 				<string>dyn.ah62d4rv4ge80k6xbs7y08</string> <!-- .drawio -->
 

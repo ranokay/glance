@@ -64,7 +64,8 @@ struct DefaultNestedPreviewProvider: NestedPreviewProviding {
 		}
 
 		let contentType = node.contentTypeIdentifier.flatMap(UTType.init)
-		let isPlayableMedia = contentType?.conforms(to: .movie) == true
+		let isPlayableMedia = PreviewSupport.getPreviewFileType(fileURL: fileURL) == .flac
+			|| contentType?.conforms(to: .movie) == true
 			|| contentType?.conforms(to: .audio) == true
 		if isPlayableMedia {
 			return .media
@@ -125,6 +126,9 @@ final class AVPlayerPreviewVC: NSViewController, PreviewVC {
 	let fileURL: URL
 	private(set) var playerView: AVPlayerView?
 	private(set) var player: AVPlayer?
+	private(set) var waveformView: FLACWaveformView?
+	private var waveformAnalysisTask: Task<[Float], Error>?
+	private var waveformPresentationTask: Task<Void, Never>?
 
 	init(fileURL: URL) {
 		self.fileURL = fileURL
@@ -148,8 +152,25 @@ final class AVPlayerPreviewVC: NSViewController, PreviewVC {
 		playerView.player = player
 		playerView.translatesAutoresizingMaskIntoConstraints = false
 		view.addSubview(playerView)
+		let playerTopAnchor: NSLayoutYAxisAnchor
+		if fileURL.pathExtension.lowercased() == "flac" {
+			let waveformView = FLACWaveformView(frame: .zero)
+			waveformView.translatesAutoresizingMaskIntoConstraints = false
+			view.addSubview(waveformView)
+			NSLayoutConstraint.activate([
+				waveformView.topAnchor.constraint(equalTo: view.topAnchor, constant: 12),
+				waveformView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 12),
+				waveformView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -12),
+				waveformView.heightAnchor.constraint(equalToConstant: 72),
+			])
+			self.waveformView = waveformView
+			playerTopAnchor = waveformView.bottomAnchor
+			startWaveformAnalysis()
+		} else {
+			playerTopAnchor = view.topAnchor
+		}
 		NSLayoutConstraint.activate([
-			playerView.topAnchor.constraint(equalTo: view.topAnchor),
+			playerView.topAnchor.constraint(equalTo: playerTopAnchor),
 			playerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
 			playerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
 			playerView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
@@ -158,7 +179,28 @@ final class AVPlayerPreviewVC: NSViewController, PreviewVC {
 		self.playerView = playerView
 	}
 
+	private func startWaveformAnalysis() {
+		let fileURL = fileURL
+		let analysisTask = Task.detached(priority: .utility) {
+			try await FLACWaveformAnalyzer.envelope(for: fileURL)
+		}
+		waveformAnalysisTask = analysisTask
+		waveformPresentationTask = Task { [weak self] in
+			let amplitudes = await (try? analysisTask.value) ?? []
+			guard !Task.isCancelled else {
+				return
+			}
+			self?.waveformView?.isLoading = false
+			self?.waveformView?.amplitudes = amplitudes
+		}
+	}
+
 	func tearDown() {
+		waveformPresentationTask?.cancel()
+		waveformAnalysisTask?.cancel()
+		waveformPresentationTask = nil
+		waveformAnalysisTask = nil
+		waveformView = nil
 		player?.pause()
 		player?.replaceCurrentItem(with: nil)
 		playerView?.player = nil

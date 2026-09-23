@@ -18,6 +18,9 @@
 		22A000000000000000000012 /* RARPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22A000000000000000000001 /* RARPreview.swift */; };
 		23A000000000000000000011 /* EPUBPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23A000000000000000000001 /* EPUBPreview.swift */; };
 		23A000000000000000000012 /* EPUBPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23A000000000000000000001 /* EPUBPreview.swift */; };
+		24A000000000000000000002 /* FLACPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24A000000000000000000001 /* FLACPreview.swift */; };
+		24A000000000000000000003 /* FLACPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24A000000000000000000001 /* FLACPreview.swift */; };
+		24A000000000000000000005 /* FLACPreviewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24A000000000000000000004 /* FLACPreviewTests.swift */; };
 		23A000000000000000000013 /* epub-main.css in Resources */ = {isa = PBXBuildFile; fileRef = 23A000000000000000000002 /* epub-main.css */; };
 		3F0000000000000000000011 /* SCNVector3.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F0000000000000000000001 /* SCNVector3.swift */; };
 		3F0000000000000000000012 /* ThreeMFSceneBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F0000000000000000000002 /* ThreeMFSceneBuilder.swift */; };
@@ -214,6 +217,8 @@
 		21A000000000000000000004 /* drawio-main.css */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.css; path = "drawio-main.css"; sourceTree = "<group>"; };
 		22A000000000000000000001 /* RARPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RARPreview.swift; sourceTree = "<group>"; };
 		23A000000000000000000001 /* EPUBPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EPUBPreview.swift; sourceTree = "<group>"; };
+		24A000000000000000000001 /* FLACPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FLACPreview.swift; sourceTree = "<group>"; };
+		24A000000000000000000004 /* FLACPreviewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FLACPreviewTests.swift; sourceTree = "<group>"; };
 		23A000000000000000000002 /* epub-main.css */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.css; path = "epub-main.css"; sourceTree = "<group>"; };
 		3F0000000000000000000001 /* SCNVector3.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SCNVector3.swift; sourceTree = "<group>"; };
 		3F0000000000000000000002 /* ThreeMFSceneBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreeMFSceneBuilder.swift; sourceTree = "<group>"; };
@@ -354,6 +359,7 @@
 				D1A000000000000000000004 /* DirectoryPreviewTests.swift */,
 				D2A000000000000000000004 /* DirectoryThumbnailTests.swift */,
 				D4A000000000000000000004 /* NestedPreviewTests.swift */,
+				24A000000000000000000004 /* FLACPreviewTests.swift */,
 				D5A000000000000000000004 /* OpenWithTests.swift */,
 				F2A000000000000000000001 /* WindowAppearanceTests.swift */,
 				C0DE00000000000000000102 /* FileTests.swift */,
@@ -412,6 +418,7 @@
 			children = (
 				21A000000000000000000001 /* DrawIOPreview.swift */,
 				23A000000000000000000001 /* EPUBPreview.swift */,
+				24A000000000000000000001 /* FLACPreview.swift */,
 				22A000000000000000000001 /* RARPreview.swift */,
 				3F0000000000000000000005 /* ThreeMFPreview.swift */,
 				D1A000000000000000000001 /* DirectoryPreview.swift */,
@@ -883,6 +890,7 @@
 				D2A000000000000000000005 /* DirectoryThumbnailTests.swift in Sources */,
 				D4A000000000000000000003 /* NestedPreviewProvider.swift in Sources */,
 				D4A000000000000000000005 /* NestedPreviewTests.swift in Sources */,
+				24A000000000000000000005 /* FLACPreviewTests.swift in Sources */,
 				D4A000000000000000000006 /* MainVC.swift in Sources */,
 				D4A000000000000000000007 /* Stats.swift in Sources */,
 				D5A000000000000000000003 /* OpenWithService.swift in Sources */,
@@ -920,6 +928,7 @@
 				C0DE00000000000000000319 /* SevenZipPreview.swift in Sources */,
 				22A000000000000000000012 /* RARPreview.swift in Sources */,
 				23A000000000000000000012 /* EPUBPreview.swift in Sources */,
+				24A000000000000000000003 /* FLACPreview.swift in Sources */,
 				C0DE00000000000000000308 /* WebAsset.swift in Sources */,
 				C0DE00000000000000000203 /* PreviewFactoryTests.swift in Sources */,
 				C0DE00000000000000000314 /* JupyterPreview.swift in Sources */,
@@ -971,6 +980,7 @@
 				103654F42F726241006F2538 /* SevenZipPreview.swift in Sources */,
 				22A000000000000000000011 /* RARPreview.swift in Sources */,
 				23A000000000000000000011 /* EPUBPreview.swift in Sources */,
+				24A000000000000000000002 /* FLACPreview.swift in Sources */,
 				7E9F0D7D24168870007F1008 /* Stylesheet.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
