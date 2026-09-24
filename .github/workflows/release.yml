@@ -155,4 +155,4 @@ jobs:
             "dist/Glance-${VERSION}.dmg.sha256" \
             --repo "$GITHUB_REPOSITORY" \
             --title "Glance ${VERSION}" \
-            --notes-file RELEASE_NOTES.md
+            --notes-file CHANGELOG.md
