@@ -2,7 +2,7 @@ import Foundation
 import OSLog
 
 enum Log {
-	// Subsystems
+	/// Subsystems
 	static let subsystem = Bundle.main.bundleIdentifier ?? "com.chamburr.Glance"
 
 	// Categories

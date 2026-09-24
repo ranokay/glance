@@ -19,53 +19,27 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Assert macOS 26 Apple Silicon toolchain
-        run: |
-          set -euo pipefail
-          if [ "$(uname -m)" != "arm64" ]; then
-            echo "Release builds must run on Apple Silicon, got $(uname -m)" >&2
-            exit 1
-          fi
-
-          macos_major="$(sw_vers -productVersion | cut -d. -f1)"
-          if [ "$macos_major" != "26" ]; then
-            echo "Release builds require macOS 26, got $(sw_vers -productVersion)" >&2
-            exit 1
-          fi
-
-          xcode_major="$(xcodebuild -version | awk 'NR == 1 { split($2, version, "."); print version[1] }')"
-          if [ "$xcode_major" != "26" ]; then
-            echo "Release builds require Xcode 26, got $(xcodebuild -version | head -1)" >&2
-            exit 1
-          fi
-
-      - name: Install mise
-        run: |
-          set -euo pipefail
-          MISE_VERSION="2026.6.0"
-          MISE_ARCH="arm64"
-          MISE_SHA256="8830cf720025583bfbc5ca77bcf15958bf6efb4743fb84be6b572fd85d3a6cd0"
-
-          MISE_TARBALL="mise-v${MISE_VERSION}-macos-${MISE_ARCH}.tar.gz"
-          curl -fsSLO "https://github.com/jdx/mise/releases/download/v${MISE_VERSION}/${MISE_TARBALL}"
-          echo "${MISE_SHA256}  ${MISE_TARBALL}" | shasum -a 256 -c -
-          tar -xzf "$MISE_TARBALL"
-          mkdir -p "$HOME/.local/bin"
-          cp mise/bin/mise "$HOME/.local/bin/mise"
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-          export PATH="$HOME/.local/bin:$PATH"
-
-          mise --version
-
-      - name: Install pinned tools
+      - name: Shared toolchain and pinned tools
+        uses: ./.github/actions/setup
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          MISE_YES: "1"
-        run: |
-          set -euo pipefail
-          mise trust mise.toml
-          mise install
-          mise exec -- rustup component add rustfmt clippy
+
+      - name: Cache pinned tool downloads (keyed by tool-versions hash)
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/share/mise
+          key: mise-${{ hashFiles('mise.toml') }}
+          restore-keys: mise-
+
+      - name: Cache Rust build (keyed by lockfile plus toolchain version)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            PreviewCore/target
+          key: rust-1.97.1-${{ hashFiles('PreviewCore/Cargo.lock') }}
+          restore-keys: rust-1.97.1-
 
       - name: Run production verification
         run: |
@@ -75,7 +49,7 @@ jobs:
       - name: Verify release app
         run: |
           set -euo pipefail
-          mise run verify:app
+          mise run verify:app 2>&1 | tee build/verify-app.log
 
       - name: Package DMG
         env:

@@ -7,7 +7,7 @@ final class PreviewSupportTests: XCTestCase {
 		XCTAssertEqual(Set(ids).count, ids.count)
 	}
 
-	func testSupportedPreviewRegistryMatchesAliasesAndFallbacks() throws {
+	func testSupportedPreviewRegistryMatchesAliasesAndFallbacks() {
 		let cases: [(path: String, expectedID: String?, expectedType: PreviewFileType)] = [
 			("/tmp/diagram.drawio", "diagram.extension.drawio", .drawIO),
 			("/tmp/book.epub", "ebook.extension.epub", .epub),

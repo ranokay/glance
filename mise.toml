@@ -16,9 +16,13 @@ echo "Build complete"
 
 [tasks.install]
 description = "Install the application into INSTALL_PATH, /Applications by default"
-depends = ["build"]
 run = '''
 set -e
+if [ "${GLANCE_CONFIRM_DESTRUCTIVE:-}" != "1" ]; then
+	echo "Human gate: install removes $INSTALL_PATH/${APP_NAME:-Glance}.app unattended." >&2
+	echo "Re-run with GLANCE_CONFIRM_DESTRUCTIVE=1 after confirming the target path." >&2
+	exit 1
+fi
 APP_NAME="${APP_NAME:-Glance}"
 INSTALL_PATH="${INSTALL_PATH:-/Applications}"
 echo "Installing to $INSTALL_PATH..."
@@ -39,9 +43,14 @@ echo "Registration complete"
 '''
 
 [tasks.reset]
-description = "Reset Quick Look"
+description = "Reset Quick Look (destructive: restarts Finder/quicklookd)"
 run = '''
 set -e
+if [ "${GLANCE_CONFIRM_DESTRUCTIVE:-}" != "1" ]; then
+	echo "Human gate: reset kills Finder and quicklookd." >&2
+	echo "Re-run with GLANCE_CONFIRM_DESTRUCTIVE=1 when a GUI session can tolerate it." >&2
+	exit 1
+fi
 echo "Resetting Quick Look..."
 qlmanage -r
 qlmanage -r cache
@@ -67,9 +76,14 @@ echo ""
 '''
 
 [tasks.clean]
-description = "Clean build artifacts"
+description = "Clean build artifacts (destructive: wipes shared DerivedData and full cargo target)"
 run = '''
 set -e
+if [ "${GLANCE_CONFIRM_DESTRUCTIVE:-}" != "1" ]; then
+	echo "Human gate: clean wipes shared DerivedData and the full cargo target." >&2
+	echo "Re-run with GLANCE_CONFIRM_DESTRUCTIVE=1 to confirm." >&2
+	exit 1
+fi
 APP_NAME="${APP_NAME:-Glance}"
 echo "Cleaning build artifacts..."
 rm -rf build
@@ -80,9 +94,14 @@ echo "Clean complete"
 '''
 
 [tasks.uninstall]
-description = "Uninstall the application from INSTALL_PATH, /Applications by default"
+description = "Uninstall the application from INSTALL_PATH, /Applications by default (destructive)"
 run = '''
 set -e
+if [ "${GLANCE_CONFIRM_DESTRUCTIVE:-}" != "1" ]; then
+	echo "Human gate: uninstall removes the installed app and wipes build state." >&2
+	echo "Re-run with GLANCE_CONFIRM_DESTRUCTIVE=1 to confirm." >&2
+	exit 1
+fi
 APP_NAME="${APP_NAME:-Glance}"
 INSTALL_PATH="${INSTALL_PATH:-/Applications}"
 echo "Uninstalling..."
@@ -122,11 +141,11 @@ cargo audit --file PreviewCore/Cargo.lock --deny warnings \
 '''
 
 [tasks."test:xcode"]
-description = "Run Xcode tests"
+description = "Run Xcode tests (Debug, isolated dir, retained result bundle)"
 run = '''
 set -e
 APP_NAME="${APP_NAME:-Glance}"
-xcodebuild test -scheme "$APP_NAME" -configuration Debug -derivedDataPath build -quiet
+xcodebuild test -scheme "$APP_NAME" -configuration Debug -derivedDataPath build/test -resultBundlePath build/TestResults/Glance.xcresult -quiet
 '''
 
 [tasks.test]
@@ -137,13 +156,21 @@ mise run test:rust
 mise run test:xcode
 '''
 
-[tasks.verify]
-description = "Run tests and build the release app from a clean build directory"
+[tasks.lint]
+description = "Run pinned Swift lint and format checks (merge gate)"
 run = '''
 set -e
+swiftlint lint --strict
+swiftformat --lint .
+'''
+
+[tasks.verify]
+description = "Run tests, audit, then build the release app (no wipe; test artifacts survive)"
+run = '''
+set -e
+mise run lint
 mise run test
 mise run audit:rust
-mise run clean
 mise run build
 '''
 
@@ -194,4 +221,10 @@ if find "$APP_PATH" -type d \( -name SwiftCSV.framework -o -name ZIPFoundation.f
 fi
 
 codesign --verify --deep --strict --verbose=2 "$APP_PATH"
+
+echo "--- pin cadence ---"
+grep -E '^(rust|swiftformat|swiftlint|"cargo:cargo-audit")' mise.toml || true
+echo "--- entitlement review (least-privilege: sandbox + network.client, plugin adds user-selected.read-only) ---"
+codesign -d --entitlements :- "$APP_PATH" 2>/dev/null | grep -E "com.apple.security" || true
+codesign -d --entitlements :- "$QL_EXECUTABLE" 2>/dev/null | grep -E "com.apple.security" || true
 '''

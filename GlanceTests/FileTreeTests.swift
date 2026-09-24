@@ -32,8 +32,8 @@ class FileTreeTests: XCTestCase {
 
 	// No files
 
-	func testInit() {
-		XCTAssert(fileTree!.root.children.isEmpty)
+	func testInit() throws {
+		XCTAssert(try XCTUnwrap(fileTree?.root.children.isEmpty))
 	}
 
 	func testAddEmptyPathDoesNothing() throws {
@@ -44,7 +44,7 @@ class FileTreeTests: XCTestCase {
 			dateModified: now
 		)
 
-		XCTAssert(fileTree!.root.children.isEmpty)
+		XCTAssert(try XCTUnwrap(fileTree?.root.children.isEmpty))
 	}
 
 	func testChildrenUseLocalizedNaturalNameOrder() throws {
@@ -76,7 +76,7 @@ class FileTreeTests: XCTestCase {
 		)
 
 		_ = assertNode(
-			parent: fileTree!.root,
+			parent: try XCTUnwrap(fileTree?.root),
 			name: "file",
 			size: 123,
 			isDirectory: false,
@@ -97,7 +97,7 @@ class FileTreeTests: XCTestCase {
 		)
 
 		_ = assertNode(
-			parent: fileTree!.root,
+			parent: try XCTUnwrap(fileTree?.root),
 			name: "empty-directory",
 			size: 0,
 			isDirectory: true,
@@ -133,7 +133,7 @@ class FileTreeTests: XCTestCase {
 		)
 
 		let nonEmptyDirectory = assertNode(
-			parent: fileTree!.root,
+			parent: try XCTUnwrap(fileTree?.root),
 			name: "non-empty-directory",
 			size: 0,
 			isDirectory: true,
@@ -177,7 +177,7 @@ class FileTreeTests: XCTestCase {
 		)
 
 		let nonEmptyDirectory = assertNode(
-			parent: fileTree!.root,
+			parent: try XCTUnwrap(fileTree?.root),
 			name: "non-empty-directory",
 			size: 0,
 			isDirectory: true,
@@ -221,7 +221,7 @@ class FileTreeTests: XCTestCase {
 		)
 
 		let nonEmptyDirectory = assertNode(
-			parent: fileTree!.root,
+			parent: try XCTUnwrap(fileTree?.root),
 			name: "non-empty-directory",
 			size: 0,
 			isDirectory: true,
@@ -259,7 +259,7 @@ class FileTreeTests: XCTestCase {
 		)
 
 		let nonEmptyDirectory = assertNode(
-			parent: fileTree!.root,
+			parent: try XCTUnwrap(fileTree?.root),
 			name: "non-empty-directory",
 			size: 0,
 			isDirectory: true,
@@ -322,21 +322,21 @@ class FileTreeTests: XCTestCase {
 		)
 
 		_ = assertNode(
-			parent: fileTree!.root,
+			parent: try XCTUnwrap(fileTree?.root),
 			name: "empty-directory",
 			size: 0,
 			isDirectory: true,
 			dateModified: now
 		)
 		_ = assertNode(
-			parent: fileTree!.root,
+			parent: try XCTUnwrap(fileTree?.root),
 			name: "file-1",
 			size: 123,
 			isDirectory: false,
 			dateModified: now
 		)
 		let nonEmptyDirectory = assertNode(
-			parent: fileTree!.root,
+			parent: try XCTUnwrap(fileTree?.root),
 			name: "non-empty-directory",
 			size: 0,
 			isDirectory: true,
@@ -367,7 +367,7 @@ class FileTreeTests: XCTestCase {
 		)
 
 		let directory = assertNode(
-			parent: fileTree!.root,
+			parent: try XCTUnwrap(fileTree?.root),
 			name: "directory",
 			size: 0,
 			isDirectory: true,
@@ -398,7 +398,7 @@ class FileTreeTests: XCTestCase {
 		)
 
 		let directory = assertNode(
-			parent: fileTree!.root,
+			parent: try XCTUnwrap(fileTree?.root),
 			name: "folder with spaces",
 			size: 0,
 			isDirectory: true,
