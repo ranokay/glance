@@ -43,27 +43,27 @@ class MainVC: NSViewController, QLPreviewingController {
 		).isEmpty
 	}
 
-	private(set) var currentPreviewController: PreviewVC?
-	private(set) var topLevelPreviewController: PreviewVC?
-	private(set) var folderPreviewController: OutlinePreviewVC?
-	private(set) var nestedPreviewController: PreviewVC?
-	private(set) var topLevelFile: File?
-	private(set) var selectedFolderNode: FileTreeNode?
+	var currentPreviewController: PreviewVC?
+	var topLevelPreviewController: PreviewVC?
+	var folderPreviewController: OutlinePreviewVC?
+	var nestedPreviewController: PreviewVC?
+	var topLevelFile: File?
+	var selectedFolderNode: FileTreeNode?
 	private(set) var contentContainerView = NSView()
 	private(set) var utilityBarView = NSView()
 	private(set) var backButton = NSButton()
 	private(set) var statusLabel = NSTextField(labelWithString: "")
 	private(set) var openWithButton = NSPopUpButton()
-	private(set) var openWithTargetURL: URL?
-	private(set) var previewNavigationStack = [PreviewVC]()
+	var openWithTargetURL: URL?
+	var previewNavigationStack = [PreviewVC]()
 	var baseStatusText = ""
 	private var utilityBarHeightConstraint: NSLayoutConstraint?
-	private var nestedOpenWithTargetURL: URL?
+	var nestedOpenWithTargetURL: URL?
 	var statusResetTask: Task<Void, Never>?
 	var previewPreparationTask: Task<Void, Error>?
 	var previewPreparationID: UUID?
 	var nestedPreviewTask: Task<Void, Never>?
-	private weak var boundStatusProvider: (any PreviewStatusProviding)?
+	weak var boundStatusProvider: (any PreviewStatusProviding)?
 
 	override func loadView() {
 		view = PreviewBackgroundView(frame: NSRect(x: 0, y: 0, width: 800, height: 500))
@@ -166,23 +166,7 @@ class MainVC: NSViewController, QLPreviewingController {
 		}
 	}
 
-	func installTopLevelPreview(_ previewVC: PreviewVC, file: File) {
-		clearPreviewControllers()
-		topLevelFile = file
-		topLevelPreviewController = previewVC
-		currentPreviewController = previewVC
-		previewNavigationStack = [previewVC]
-		if file.isDirectory, let outlinePreview = previewVC as? OutlinePreviewVC {
-			folderPreviewController = outlinePreview
-			outlinePreview.interactionDelegate = self
-		}
-		nestedOpenWithTargetURL = nil
-		bindStatus(to: previewVC)
-		show(previewVC)
-		updateOpenWithTarget()
-	}
-
-	private func show(_ previewVC: PreviewVC) {
+	func show(_ previewVC: PreviewVC) {
 		if previewVC.parent == nil {
 			addChild(previewVC)
 		}
@@ -204,7 +188,7 @@ class MainVC: NSViewController, QLPreviewingController {
 		previewVC.view.isHidden = false
 	}
 
-	private func bindStatus(to previewVC: PreviewVC) {
+	func bindStatus(to previewVC: PreviewVC) {
 		boundStatusProvider?.previewStatusDidChange = nil
 		boundStatusProvider = nil
 		guard let statusProvider = previewVC as? PreviewStatusProviding else {
@@ -218,7 +202,7 @@ class MainVC: NSViewController, QLPreviewingController {
 		}
 	}
 
-	private func setBaseStatus(_ status: String) {
+	func setBaseStatus(_ status: String) {
 		baseStatusText = status
 		setDisplayedStatus(status)
 	}
@@ -230,7 +214,7 @@ class MainVC: NSViewController, QLPreviewingController {
 		updateChrome()
 	}
 
-	private func updateOpenWithTarget() {
+	func updateOpenWithTarget() {
 		let selectedFolderNodeIsOpenable = selectedFolderNode.map {
 			!$0.isSymbolicLink && (!$0.isDirectory || $0.isPackage)
 		} == true
@@ -248,7 +232,7 @@ class MainVC: NSViewController, QLPreviewingController {
 		updateChrome()
 	}
 
-	private func refreshOpenWithMenu() {
+	func refreshOpenWithMenu() {
 		let menu = NSMenu()
 		menu.autoenablesItems = false
 		let titleItem = NSMenuItem(title: "Open With…", action: nil, keyEquivalent: "")
@@ -281,7 +265,7 @@ class MainVC: NSViewController, QLPreviewingController {
 		openWithButton.selectItem(at: 0)
 	}
 
-	private func updateChrome() {
+	func updateChrome() {
 		guard isViewLoaded else {
 			return
 		}
@@ -302,82 +286,6 @@ class MainVC: NSViewController, QLPreviewingController {
 			return
 		}
 		openWithApplication(at: applicationURL)
-	}
-
-	func pushPreview(_ previewVC: PreviewVC, openWithTargetURL: URL?) {
-		if let outlinePreview = previewVC as? OutlinePreviewVC,
-		   outlinePreview.isDirectoryBrowser
-		{
-			outlinePreview.interactionDelegate = self
-			folderPreviewController = outlinePreview
-			nestedPreviewController = nil
-			selectedFolderNode = outlinePreview.selectedNode
-		} else {
-			nestedPreviewController = previewVC
-			selectedFolderNode = nil
-		}
-		previewNavigationStack.append(previewVC)
-		currentPreviewController = previewVC
-		nestedOpenWithTargetURL = openWithTargetURL
-		bindStatus(to: previewVC)
-		show(previewVC)
-		updateOpenWithTarget()
-	}
-
-	@objc
-	func showFolderPreview() {
-		nestedPreviewTask?.cancel()
-		nestedPreviewTask = nil
-		guard previewNavigationStack.count > 1,
-		      let removedController = previewNavigationStack.popLast(),
-		      let previousController = previewNavigationStack.last
-		else {
-			return
-		}
-		removedController.tearDown()
-		removedController.view.removeFromSuperview()
-		removedController.removeFromParent()
-		currentPreviewController = previousController
-		if let outlinePreview = previousController as? OutlinePreviewVC,
-		   outlinePreview.isDirectoryBrowser
-		{
-			folderPreviewController = outlinePreview
-			nestedPreviewController = nil
-			selectedFolderNode = outlinePreview.selectedNode
-		} else {
-			folderPreviewController = nil
-			nestedPreviewController = previousController
-			selectedFolderNode = nil
-		}
-		nestedOpenWithTargetURL = nil
-		bindStatus(to: previousController)
-		show(previousController)
-		updateOpenWithTarget()
-	}
-
-	private func clearPreviewControllers() {
-		nestedPreviewTask?.cancel()
-		nestedPreviewTask = nil
-		statusResetTask?.cancel()
-		boundStatusProvider?.previewStatusDidChange = nil
-		boundStatusProvider = nil
-		for child in children {
-			(child as? PreviewVC)?.tearDown()
-			child.view.removeFromSuperview()
-			child.removeFromParent()
-		}
-		currentPreviewController = nil
-		topLevelPreviewController = nil
-		folderPreviewController = nil
-		nestedPreviewController = nil
-		previewNavigationStack.removeAll()
-		topLevelFile = nil
-		selectedFolderNode = nil
-		nestedOpenWithTargetURL = nil
-		openWithTargetURL = nil
-		refreshOpenWithMenu()
-		setBaseStatus("")
-		updateChrome()
 	}
 }
 
