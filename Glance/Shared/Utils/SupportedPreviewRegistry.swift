@@ -235,6 +235,8 @@ enum SupportedPreviewRegistry {
 		extensionEntry("sv", group: .code, codeLexer: "systemverilog", searchTokens: ["SystemVerilog", "HDL"]),
 		extensionEntry("svh", group: .code, codeLexer: "systemverilog", searchTokens: ["SystemVerilog header", "HDL"]),
 		extensionEntry("targets", group: .code, codeLexer: "xml", searchTokens: ["MSBuild", "XML"]),
+		extensionEntry("tmpl", group: .code, searchTokens: ["template"]),
+		extensionEntry("ts", group: .code, codeLexer: "ts", searchTokens: ["TypeScript"]),
 		extensionEntry("ttml", group: .code, codeLexer: "xml", searchTokens: ["Timed Text", "XML"]),
 		extensionEntry("vtt", group: .code, codeLexer: "txt", searchTokens: ["WebVTT", "subtitle"]),
 		extensionEntry("wdl", group: .code, codeLexer: "txt", searchTokens: ["Workflow Description Language"]),
