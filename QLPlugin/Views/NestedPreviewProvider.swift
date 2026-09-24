@@ -47,7 +47,10 @@ struct DefaultNestedPreviewProvider: NestedPreviewProviding {
 				try PreviewPolicy.validateFileSize(file)
 				return try await previewType.init().createPreviewVC(file: file)
 			case .media:
-				return AVPlayerPreviewVC(fileURL: fileURL)
+				let showsWaveform = PreviewSupport.getPreviewFileType(fileURL: fileURL) == .flac
+					? await PreviewSettingsClient.shared.flacWaveformEnabled()
+					: false
+				return AVPlayerPreviewVC(fileURL: fileURL, showsWaveform: showsWaveform)
 			case .native:
 				let previewVC = NativePreviewVC(fileURL: fileURL)
 				previewVC.loadViewIfNeeded()
@@ -124,14 +127,21 @@ final class NativePreviewVC: NSViewController, PreviewVC {
 
 final class AVPlayerPreviewVC: NSViewController, PreviewVC {
 	let fileURL: URL
+	let showsWaveform: Bool
 	private(set) var playerView: AVPlayerView?
 	private(set) var player: AVPlayer?
 	private(set) var waveformView: FLACWaveformView?
+	private weak var observedWindow: NSWindow?
+	private var playbackTimeObserver: Any?
 	private var waveformAnalysisTask: Task<[Float], Error>?
 	private var waveformPresentationTask: Task<Void, Never>?
+	private var isFLAC: Bool {
+		fileURL.pathExtension.lowercased() == "flac"
+	}
 
-	init(fileURL: URL) {
+	init(fileURL: URL, showsWaveform: Bool = AppSettingsStore.shared.flacWaveformEnabled) {
 		self.fileURL = fileURL
+		self.showsWaveform = showsWaveform
 		super.init(nibName: nil, bundle: nil)
 	}
 
@@ -153,7 +163,7 @@ final class AVPlayerPreviewVC: NSViewController, PreviewVC {
 		playerView.translatesAutoresizingMaskIntoConstraints = false
 		view.addSubview(playerView)
 		let playerTopAnchor: NSLayoutYAxisAnchor
-		if fileURL.pathExtension.lowercased() == "flac" {
+		if isFLAC, showsWaveform {
 			let waveformView = FLACWaveformView(frame: .zero)
 			waveformView.translatesAutoresizingMaskIntoConstraints = false
 			view.addSubview(waveformView)
@@ -177,6 +187,87 @@ final class AVPlayerPreviewVC: NSViewController, PreviewVC {
 		])
 		self.player = player
 		self.playerView = playerView
+		if waveformView != nil {
+			playbackTimeObserver = player.addPeriodicTimeObserver(
+				forInterval: CMTime(seconds: 0.1, preferredTimescale: 600),
+				queue: .main
+			) { [weak self, weak player] time in
+				Task { @MainActor [weak self, weak player] in
+					guard let player else {
+						return
+					}
+					self?.updateWaveformProgress(
+						elapsed: time.seconds,
+						duration: player.currentItem?.duration.seconds ?? .nan
+					)
+				}
+			}
+		}
+	}
+
+	override func viewDidAppear() {
+		super.viewDidAppear()
+		observePreviewWindow()
+		if isFLAC, Self.shouldAutoplay(in: view.window) {
+			player?.play()
+		}
+	}
+
+	override func viewWillDisappear() {
+		super.viewWillDisappear()
+		player?.pause()
+	}
+
+	/// Finder hosts its preview sidebar in a normal-level window. Only a floating
+	/// Quick Look preview should start audio without an explicit play action.
+	static func shouldAutoplay(in window: NSWindow?) -> Bool {
+		guard let window else {
+			return false
+		}
+		return window.level.rawValue >= NSWindow.Level.floating.rawValue
+	}
+
+	private func observePreviewWindow() {
+		guard let window = view.window, observedWindow !== window else {
+			return
+		}
+		stopObservingPreviewWindow()
+		observedWindow = window
+		for name in [NSWindow.didChangeOcclusionStateNotification, NSWindow.willCloseNotification] {
+			NotificationCenter.default.addObserver(
+				self,
+				selector: #selector(handlePreviewWindowChange),
+				name: name,
+				object: window
+			)
+		}
+	}
+
+	@objc
+	func handlePreviewWindowChange(_ notification: Notification) {
+		guard let window = notification.object as? NSWindow else {
+			return
+		}
+		if notification.name == NSWindow.willCloseNotification || !window.isVisible {
+			player?.pause()
+		}
+	}
+
+	private func stopObservingPreviewWindow() {
+		guard let observedWindow else {
+			return
+		}
+		for name in [NSWindow.didChangeOcclusionStateNotification, NSWindow.willCloseNotification] {
+			NotificationCenter.default.removeObserver(self, name: name, object: observedWindow)
+		}
+		self.observedWindow = nil
+	}
+
+	func updateWaveformProgress(elapsed: Double, duration: Double) {
+		guard elapsed.isFinite, duration.isFinite, duration > 0 else {
+			return
+		}
+		waveformView?.progress = elapsed / duration
 	}
 
 	private func startWaveformAnalysis() {
@@ -196,11 +287,16 @@ final class AVPlayerPreviewVC: NSViewController, PreviewVC {
 	}
 
 	func tearDown() {
+		stopObservingPreviewWindow()
 		waveformPresentationTask?.cancel()
 		waveformAnalysisTask?.cancel()
 		waveformPresentationTask = nil
 		waveformAnalysisTask = nil
 		waveformView = nil
+		if let playbackTimeObserver {
+			player?.removeTimeObserver(playbackTimeObserver)
+			self.playbackTimeObserver = nil
+		}
 		player?.pause()
 		player?.replaceCurrentItem(with: nil)
 		playerView?.player = nil

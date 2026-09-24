@@ -46,6 +46,19 @@ final class WindowAppearanceTests: XCTestCase {
 		)
 	}
 
+	func testFLACWaveformPreferenceDefaultsOnAndCanBeDisabled() throws {
+		let (store, suiteName) = try makeSettingsStore()
+		defer { UserDefaults(suiteName: suiteName)?.removePersistentDomain(forName: suiteName) }
+		XCTAssertTrue(store.flacWaveformEnabled)
+
+		let controller = SettingsWC(settingsStore: store, fontFamilies: [])
+		XCTAssertEqual(controller.flacWaveformCheckbox.state, .on)
+		controller.flacWaveformCheckbox.performClick(nil)
+		XCTAssertFalse(store.flacWaveformEnabled)
+		controller.syncState()
+		XCTAssertEqual(controller.flacWaveformCheckbox.state, .off)
+	}
+
 	func testPreviewAppearancePreferencesRejectInvalidStoredValuesAndReset() throws {
 		let (store, suiteName) = try makeSettingsStore()
 		defer { UserDefaults.standard.removePersistentDomain(forName: suiteName) }

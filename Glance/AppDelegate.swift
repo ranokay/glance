@@ -6,9 +6,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, DockIconVisibilityUpdating {
 	private var mainWindowController: NSWindowController?
 	private var statusItem: NSStatusItem?
 	private let openWithBridgeServer = OpenWithBridgeServer()
+	private let previewSettingsServer = PreviewSettingsServer()
 
 	func applicationWillFinishLaunching(_: Notification) {
 		openWithBridgeServer.start()
+		previewSettingsServer.start()
 	}
 
 	func applicationDidFinishLaunching(_: Notification) {

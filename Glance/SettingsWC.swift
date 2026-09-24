@@ -45,6 +45,11 @@ final class SettingsWC: NSWindowController {
 		target: nil,
 		action: nil
 	)
+	let flacWaveformCheckbox = NSButton(
+		checkboxWithTitle: "Show FLAC waveform",
+		target: nil,
+		action: nil
+	)
 	let resetAppearanceButton = NSButton(
 		title: "Reset Preview Appearance",
 		target: nil,
@@ -84,7 +89,7 @@ final class SettingsWC: NSWindowController {
 		}
 
 		let window = NSWindow(
-			contentRect: NSRect(x: 0, y: 0, width: 440, height: 400),
+			contentRect: NSRect(x: 0, y: 0, width: 440, height: 490),
 			styleMask: [.titled, .closable],
 			backing: .buffered,
 			defer: false
@@ -164,6 +169,8 @@ final class SettingsWC: NSWindowController {
 
 		lineWrappingCheckbox.target = self
 		lineWrappingCheckbox.action = #selector(lineWrappingChanged)
+		flacWaveformCheckbox.target = self
+		flacWaveformCheckbox.action = #selector(flacWaveformChanged)
 
 		resetAppearanceButton.bezelStyle = .rounded
 		resetAppearanceButton.target = self
@@ -184,6 +191,9 @@ final class SettingsWC: NSWindowController {
 		let appearanceDescriptionLabel = descriptionLabel(
 			"Changes apply to new code, Markdown, and Jupyter previews."
 		)
+		let waveformDescriptionLabel = descriptionLabel(
+			"The waveform appears in new FLAC previews. Playback works either way."
+		)
 
 		let stackView = NSStackView(views: [
 			sectionLabel("General"),
@@ -198,12 +208,17 @@ final class SettingsWC: NSWindowController {
 			lineWrappingCheckbox,
 			appearanceDescriptionLabel,
 			resetAppearanceButton,
+			separator(),
+			sectionLabel("Audio Previews"),
+			flacWaveformCheckbox,
+			waveformDescriptionLabel,
 		])
 		stackView.orientation = .vertical
 		stackView.alignment = .leading
 		stackView.spacing = 8
 		stackView.setCustomSpacing(16, after: openLoginItemsButton)
 		stackView.setCustomSpacing(12, after: appearanceDescriptionLabel)
+		stackView.setCustomSpacing(16, after: resetAppearanceButton)
 		stackView.translatesAutoresizingMaskIntoConstraints = false
 		contentView.addSubview(stackView)
 
@@ -240,6 +255,7 @@ final class SettingsWC: NSWindowController {
 		fontSizeField.doubleValue = settingsStore.previewFontSize
 		fontSizeStepper.doubleValue = settingsStore.previewFontSize
 		lineWrappingCheckbox.state = settingsStore.previewLineWrapping ? .on : .off
+		flacWaveformCheckbox.state = settingsStore.flacWaveformEnabled ? .on : .off
 	}
 
 	@objc
@@ -310,6 +326,11 @@ final class SettingsWC: NSWindowController {
 	@objc
 	private func lineWrappingChanged(_ sender: NSButton) {
 		settingsStore.previewLineWrapping = sender.state == .on
+	}
+
+	@objc
+	private func flacWaveformChanged(_ sender: NSButton) {
+		settingsStore.flacWaveformEnabled = sender.state == .on
 	}
 
 	@objc
