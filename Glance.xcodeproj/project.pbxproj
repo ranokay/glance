@@ -59,6 +59,8 @@
 		C0DE00000000000000000309 /* Script.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E9F0D7B24168870007F1008 /* Script.swift */; };
 		C0DE00000000000000000310 /* Stylesheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E9F0D7A24168870007F1008 /* Stylesheet.swift */; };
 		C0DE00000000000000000311 /* PreviewVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E1DC51E240E6CE300D0A061 /* PreviewVC.swift */; };
+		52CE020000000000000011 /* PreviewPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52CE020000000000000001 /* PreviewPolicy.swift */; };
+		52CE020000000000000012 /* ArchiveStatusFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52CE020000000000000002 /* ArchiveStatusFormatter.swift */; };
 		C0DE00000000000000000312 /* PreviewVCFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E1DC527240E6F4A00D0A061 /* PreviewVCFactory.swift */; };
 		C0DE00000000000000000313 /* MarkdownPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E1DC520240E6D8000D0A061 /* MarkdownPreview.swift */; };
 		C0DE00000000000000000314 /* JupyterPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EB7491824228549007265A4 /* JupyterPreview.swift */; };
@@ -100,6 +102,8 @@
 		7E08A5102454372200B7FF53 /* TablePreviewVC.xib in Resources */ = {isa = PBXBuildFile; fileRef = 7E08A50E2454372200B7FF53 /* TablePreviewVC.xib */; };
 		7E1B16922455D93E00E2B84D /* HTMLRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E1B16912455D93E00E2B84D /* HTMLRenderer.swift */; };
 		7E1DC51F240E6CE300D0A061 /* PreviewVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E1DC51E240E6CE300D0A061 /* PreviewVC.swift */; };
+		52CE020000000000000021 /* PreviewPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52CE020000000000000001 /* PreviewPolicy.swift */; };
+		52CE020000000000000022 /* ArchiveStatusFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52CE020000000000000002 /* ArchiveStatusFormatter.swift */; };
 		7E1DC521240E6D8000D0A061 /* MarkdownPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E1DC520240E6D8000D0A061 /* MarkdownPreview.swift */; };
 		7E1DC528240E6F4A00D0A061 /* PreviewVCFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E1DC527240E6F4A00D0A061 /* PreviewVCFactory.swift */; };
 		7E1DC52A240E6FDE00D0A061 /* CodePreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E1DC529240E6FDE00D0A061 /* CodePreview.swift */; };
@@ -258,6 +262,8 @@
 		7E1B16902455D8DB00E2B84D /* module.modulemap */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.module-map"; path = module.modulemap; sourceTree = "<group>"; };
 		7E1B16912455D93E00E2B84D /* HTMLRenderer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HTMLRenderer.swift; sourceTree = "<group>"; };
 		7E1DC51E240E6CE300D0A061 /* PreviewVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewVC.swift; sourceTree = "<group>"; };
+		52CE020000000000000001 /* PreviewPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewPolicy.swift; sourceTree = "<group>"; };
+		52CE020000000000000002 /* ArchiveStatusFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArchiveStatusFormatter.swift; sourceTree = "<group>"; };
 		7E1DC520240E6D8000D0A061 /* MarkdownPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownPreview.swift; sourceTree = "<group>"; };
 		7E1DC527240E6F4A00D0A061 /* PreviewVCFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewVCFactory.swift; sourceTree = "<group>"; };
 		7E1DC529240E6FDE00D0A061 /* CodePreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodePreview.swift; sourceTree = "<group>"; };
@@ -394,6 +400,8 @@
 				D4A000000000000000000001 /* NestedPreviewProvider.swift */,
 				D5A000000000000000000001 /* OpenWithService.swift */,
 				7E1DC51E240E6CE300D0A061 /* PreviewVC.swift */,
+				52CE020000000000000001 /* PreviewPolicy.swift */,
+				52CE020000000000000002 /* ArchiveStatusFormatter.swift */,
 				7E616BB324499A380043F7AB /* PreviewVCs */,
 				7E1DC52C240E9A3700D0A061 /* Previews */,
 			);
@@ -904,6 +912,8 @@
 				C0DE00000000000000000303 /* Date.swift in Sources */,
 				C0DE00000000000000000302 /* Log.swift in Sources */,
 				C0DE00000000000000000311 /* PreviewVC.swift in Sources */,
+				52CE020000000000000011 /* PreviewPolicy.swift in Sources */,
+				52CE020000000000000012 /* ArchiveStatusFormatter.swift in Sources */,
 				C0DE00000000000000000320 /* WebPreviewVC.swift in Sources */,
 				C0DE00000000000000000313 /* MarkdownPreview.swift in Sources */,
 				C0DE00000000000000000321 /* TablePreviewVC.swift in Sources */,
@@ -964,6 +974,8 @@
 				B38FB6C9D7D7332C12C244CE /* SupportedPreviewRegistry.swift in Sources */,
 				7E21C88E24390BE400818EB2 /* Stats.swift in Sources */,
 				7E1DC51F240E6CE300D0A061 /* PreviewVC.swift in Sources */,
+				52CE020000000000000021 /* PreviewPolicy.swift in Sources */,
+				52CE020000000000000022 /* ArchiveStatusFormatter.swift in Sources */,
 				7E45F899244DA45500BFB869 /* FileTree.swift in Sources */,
 				7E9F0D7F24168870007F1008 /* WebAsset.swift in Sources */,
 				7E022BE52452181F000EFCD3 /* WebPreviewVC.swift in Sources */,
