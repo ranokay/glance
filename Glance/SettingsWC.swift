@@ -1,8 +1,35 @@
 import Cocoa
+import ServiceManagement
 
 @MainActor
 protocol DockIconVisibilityUpdating: AnyObject {
 	func updateDockIconVisibility()
+}
+
+@MainActor
+protocol LoginItemManaging {
+	var status: SMAppService.Status { get }
+	func register() throws
+	func unregister() throws
+	func openSystemSettings()
+}
+
+private struct MainAppLoginItem: LoginItemManaging {
+	var status: SMAppService.Status {
+		SMAppService.mainApp.status
+	}
+
+	func register() throws {
+		try SMAppService.mainApp.register()
+	}
+
+	func unregister() throws {
+		try SMAppService.mainApp.unregister()
+	}
+
+	func openSystemSettings() {
+		SMAppService.openSystemSettingsLoginItems()
+	}
 }
 
 final class SettingsWC: NSWindowController {
@@ -23,8 +50,20 @@ final class SettingsWC: NSWindowController {
 		target: nil,
 		action: nil
 	)
+	let startAtLoginCheckbox = NSButton(
+		checkboxWithTitle: "Start at Login",
+		target: nil,
+		action: nil
+	)
+	let loginItemStatusLabel = NSTextField(labelWithString: "")
+	let openLoginItemsButton = NSButton(
+		title: "Open Login Items Settings…",
+		target: nil,
+		action: nil
+	)
 
 	private let settingsStore: AppSettingsStore
+	private let loginItem: any LoginItemManaging
 	private let fontFamilies: [String]
 	private let fontSizeStepper = NSStepper()
 	private let hideDockIconCheckbox = NSButton(
@@ -33,14 +72,19 @@ final class SettingsWC: NSWindowController {
 		action: nil
 	)
 
-	init(settingsStore: AppSettingsStore, fontFamilies: [String]) {
+	init(
+		settingsStore: AppSettingsStore,
+		fontFamilies: [String],
+		loginItem: any LoginItemManaging = MainAppLoginItem()
+	) {
 		self.settingsStore = settingsStore
+		self.loginItem = loginItem
 		self.fontFamilies = Array(Set(fontFamilies)).sorted {
 			$0.localizedCaseInsensitiveCompare($1) == .orderedAscending
 		}
 
 		let window = NSWindow(
-			contentRect: NSRect(x: 0, y: 0, width: 440, height: 340),
+			contentRect: NSRect(x: 0, y: 0, width: 440, height: 400),
 			styleMask: [.titled, .closable],
 			backing: .buffered,
 			defer: false
@@ -77,6 +121,13 @@ final class SettingsWC: NSWindowController {
 
 		hideDockIconCheckbox.target = self
 		hideDockIconCheckbox.action = #selector(hideDockIconChanged)
+		startAtLoginCheckbox.target = self
+		startAtLoginCheckbox.action = #selector(startAtLoginChanged)
+		loginItemStatusLabel.textColor = .secondaryLabelColor
+		loginItemStatusLabel.font = .systemFont(ofSize: NSFont.smallSystemFontSize)
+		loginItemStatusLabel.maximumNumberOfLines = 0
+		openLoginItemsButton.target = self
+		openLoginItemsButton.action = #selector(openLoginItemsSettings)
 
 		let dockDescriptionLabel = descriptionLabel(
 			"The Dock icon is hidden when all windows are closed. Glance stays available from the menu bar."
@@ -138,6 +189,9 @@ final class SettingsWC: NSWindowController {
 			sectionLabel("General"),
 			hideDockIconCheckbox,
 			dockDescriptionLabel,
+			startAtLoginCheckbox,
+			loginItemStatusLabel,
+			openLoginItemsButton,
 			separator(),
 			sectionLabel("Preview Appearance"),
 			appearanceGrid,
@@ -148,7 +202,7 @@ final class SettingsWC: NSWindowController {
 		stackView.orientation = .vertical
 		stackView.alignment = .leading
 		stackView.spacing = 8
-		stackView.setCustomSpacing(16, after: dockDescriptionLabel)
+		stackView.setCustomSpacing(16, after: openLoginItemsButton)
 		stackView.setCustomSpacing(12, after: appearanceDescriptionLabel)
 		stackView.translatesAutoresizingMaskIntoConstraints = false
 		contentView.addSubview(stackView)
@@ -172,6 +226,7 @@ final class SettingsWC: NSWindowController {
 
 	func syncState() {
 		hideDockIconCheckbox.state = settingsStore.hideDockIcon ? .on : .off
+		syncLoginItemState()
 		if
 			let fontFamily = settingsStore.previewFontFamily,
 			let canonicalFontFamily = fontFamilyPopUpButton.itemTitles.first(where: {
@@ -191,6 +246,45 @@ final class SettingsWC: NSWindowController {
 	private func hideDockIconChanged(_ sender: NSButton) {
 		settingsStore.hideDockIcon = sender.state == .on
 		(NSApp.delegate as? DockIconVisibilityUpdating)?.updateDockIconVisibility()
+	}
+
+	private func syncLoginItemState(error: Error? = nil) {
+		let status = loginItem.status
+		startAtLoginCheckbox.state = status == .enabled || status == .requiresApproval ? .on : .off
+		let message = switch status {
+			case .requiresApproval:
+				"Allow Glance to start at login in System Settings."
+			case .notFound:
+				"The Glance login item is unavailable."
+			case .enabled, .notRegistered:
+				""
+			@unknown default:
+				"The Glance login item status is unknown."
+		}
+		loginItemStatusLabel.stringValue = error.map {
+			"Couldn’t update Start at Login: \($0.localizedDescription)"
+		} ?? message
+		loginItemStatusLabel.isHidden = loginItemStatusLabel.stringValue.isEmpty
+		openLoginItemsButton.isHidden = status != .requiresApproval && error == nil
+	}
+
+	@objc
+	private func startAtLoginChanged(_ sender: NSButton) {
+		do {
+			if sender.state == .on {
+				try loginItem.register()
+			} else {
+				try loginItem.unregister()
+			}
+			syncLoginItemState()
+		} catch {
+			syncLoginItemState(error: error)
+		}
+	}
+
+	@objc
+	private func openLoginItemsSettings(_: NSButton) {
+		loginItem.openSystemSettings()
 	}
 
 	@objc

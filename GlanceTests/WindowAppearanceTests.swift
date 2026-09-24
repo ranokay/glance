@@ -1,5 +1,32 @@
 import AppKit
+import ServiceManagement
 import XCTest
+
+@MainActor
+private final class StubLoginItem: LoginItemManaging {
+	var status: SMAppService.Status = .notRegistered
+	var registrationError: Error?
+	var unregistrationError: Error?
+	var registerCount = 0
+	var unregisterCount = 0
+	var openedSystemSettings = false
+
+	func register() throws {
+		registerCount += 1
+		if let registrationError { throw registrationError }
+		status = .enabled
+	}
+
+	func unregister() throws {
+		unregisterCount += 1
+		if let unregistrationError { throw unregistrationError }
+		status = .notRegistered
+	}
+
+	func openSystemSettings() {
+		openedSystemSettings = true
+	}
+}
 
 @MainActor
 final class WindowAppearanceTests: XCTestCase {
@@ -116,6 +143,75 @@ final class WindowAppearanceTests: XCTestCase {
 		controller.syncState()
 
 		XCTAssertEqual(controller.fontFamilyPopUpButton.titleOfSelectedItem, "Menlo")
+	}
+
+	func testStartAtLoginRegistersAndUnregistersTheMainApp() throws {
+		let (store, suiteName) = try makeSettingsStore()
+		defer { UserDefaults.standard.removePersistentDomain(forName: suiteName) }
+		let loginItem = StubLoginItem()
+		let controller = SettingsWC(
+			settingsStore: store,
+			fontFamilies: [],
+			loginItem: loginItem
+		)
+
+		XCTAssertEqual(controller.startAtLoginCheckbox.state, .off)
+		controller.startAtLoginCheckbox.performClick(nil)
+		XCTAssertEqual(loginItem.registerCount, 1)
+		XCTAssertEqual(controller.startAtLoginCheckbox.state, .on)
+
+		controller.startAtLoginCheckbox.performClick(nil)
+		XCTAssertEqual(loginItem.unregisterCount, 1)
+		XCTAssertEqual(controller.startAtLoginCheckbox.state, .off)
+	}
+
+	func testStartAtLoginReflectsSystemApprovalAndExternalChanges() throws {
+		let (store, suiteName) = try makeSettingsStore()
+		defer { UserDefaults.standard.removePersistentDomain(forName: suiteName) }
+		let loginItem = StubLoginItem()
+		let controller = SettingsWC(
+			settingsStore: store,
+			fontFamilies: [],
+			loginItem: loginItem
+		)
+
+		loginItem.status = .requiresApproval
+		controller.syncState()
+		XCTAssertEqual(controller.startAtLoginCheckbox.state, .on)
+		XCTAssertFalse(controller.loginItemStatusLabel.isHidden)
+		XCTAssertFalse(controller.openLoginItemsButton.isHidden)
+		controller.openLoginItemsButton.performClick(nil)
+		XCTAssertTrue(loginItem.openedSystemSettings)
+
+		loginItem.status = .notRegistered
+		controller.syncState()
+		XCTAssertEqual(controller.startAtLoginCheckbox.state, .off)
+		XCTAssertTrue(controller.loginItemStatusLabel.isHidden)
+		XCTAssertTrue(controller.openLoginItemsButton.isHidden)
+	}
+
+	func testStartAtLoginFailuresRestoreTheSystemState() throws {
+		let (store, suiteName) = try makeSettingsStore()
+		defer { UserDefaults.standard.removePersistentDomain(forName: suiteName) }
+		let loginItem = StubLoginItem()
+		let controller = SettingsWC(
+			settingsStore: store,
+			fontFamilies: [],
+			loginItem: loginItem
+		)
+		loginItem.registrationError = NSError(domain: "GlanceTests", code: 1)
+		controller.startAtLoginCheckbox.performClick(nil)
+		XCTAssertEqual(controller.startAtLoginCheckbox.state, .off)
+		XCTAssertFalse(controller.loginItemStatusLabel.isHidden)
+		XCTAssertFalse(controller.openLoginItemsButton.isHidden)
+
+		loginItem.registrationError = nil
+		loginItem.status = .enabled
+		loginItem.unregistrationError = NSError(domain: "GlanceTests", code: 2)
+		controller.syncState()
+		controller.startAtLoginCheckbox.performClick(nil)
+		XCTAssertEqual(controller.startAtLoginCheckbox.state, .on)
+		XCTAssertFalse(controller.loginItemStatusLabel.isHidden)
 	}
 
 	func testWindowAppearanceUsesOneAdaptiveMaterialBackground() throws {
