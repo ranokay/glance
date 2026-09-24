@@ -5,7 +5,8 @@ struct FLACPreview: Preview {
 	init() {}
 
 	func createPreviewVC(file: File) async throws -> PreviewVC {
-		AVPlayerPreviewVC(fileURL: file.url)
+		let showsWaveform = await PreviewSettingsClient.shared.flacWaveformEnabled()
+		return AVPlayerPreviewVC(fileURL: file.url, showsWaveform: showsWaveform)
 	}
 }
 
@@ -168,6 +169,13 @@ final class FLACWaveformView: NSView {
 		didSet { needsDisplay = true }
 	}
 
+	var progress: Double = 0 {
+		didSet {
+			progress = min(max(progress.isFinite ? progress : 0, 0), 1)
+			needsDisplay = true
+		}
+	}
+
 	var isLoading = true {
 		didSet { needsDisplay = true }
 	}
@@ -175,7 +183,7 @@ final class FLACWaveformView: NSView {
 	override init(frame frameRect: NSRect) {
 		super.init(frame: frameRect)
 		setAccessibilityRole(.image)
-		setAccessibilityLabel("FLAC waveform overview")
+		setAccessibilityLabel("FLAC waveform playback progress")
 	}
 
 	@available(*, unavailable)
@@ -199,10 +207,13 @@ final class FLACWaveformView: NSView {
 			)
 			return
 		}
-		NSColor.controlAccentColor.setFill()
 		let step = bounds.width / CGFloat(amplitudes.count)
 		let barWidth = max(1, step * 0.62)
 		for (index, amplitude) in amplitudes.enumerated() {
+			let barProgress = Double(index) / Double(amplitudes.count)
+			let color = NSColor.controlAccentColor
+				.withAlphaComponent(barProgress <= progress ? 1 : 0.3)
+			color.setFill()
 			let height = max(2, bounds.height * CGFloat(amplitude))
 			let bar = NSRect(
 				x: bounds.minX + CGFloat(index) * step + (step - barWidth) / 2,
@@ -211,6 +222,15 @@ final class FLACWaveformView: NSView {
 				height: height
 			)
 			NSBezierPath(roundedRect: bar, xRadius: barWidth / 2, yRadius: barWidth / 2).fill()
+		}
+		if progress > 0, progress < 1 {
+			NSColor.controlAccentColor.setFill()
+			NSRect(
+				x: bounds.minX + bounds.width * CGFloat(progress),
+				y: bounds.minY,
+				width: 2,
+				height: bounds.height
+			).fill()
 		}
 	}
 }

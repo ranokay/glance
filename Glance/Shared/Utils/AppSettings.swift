@@ -82,6 +82,7 @@ struct AppSettingsStore {
 	static let previewFontFamilyKey = "previewFontFamily"
 	static let previewFontSizeKey = "previewFontSize"
 	static let previewLineWrappingKey = "previewLineWrapping"
+	static let flacWaveformEnabledKey = "flacWaveformEnabled"
 	private static let standardDefaultsMigrationKey = "didMigrateStandardDefaults"
 	private static let previewDefaultsMigrationKey = "didMigratePreviewDefaults"
 
@@ -149,6 +150,11 @@ struct AppSettingsStore {
 		nonmutating set { defaults.set(newValue, forKey: Self.previewLineWrappingKey) }
 	}
 
+	var flacWaveformEnabled: Bool {
+		get { defaults.object(forKey: Self.flacWaveformEnabledKey) as? Bool ?? true }
+		nonmutating set { defaults.set(newValue, forKey: Self.flacWaveformEnabledKey) }
+	}
+
 	var previewAppearance: PreviewAppearancePreferences {
 		PreviewAppearancePreferences(
 			fontFamily: previewFontFamily,
@@ -201,4 +207,145 @@ struct AppSettingsStore {
 
 	private static let minimumPreviewFontSize = PreviewAppearancePreferences.minimumFontSize
 	private static let maximumPreviewFontSize = PreviewAppearancePreferences.maximumFontSize
+}
+
+private enum PreviewSettingsBridge {
+	static let request = Notification.Name("com.chamburr.Glance.PreviewSettings.request")
+	static let response = Notification.Name("com.chamburr.Glance.PreviewSettings.response")
+
+	static func response(for requestID: UUID, enabled: Bool) -> String {
+		"\(requestID.uuidString)|\(enabled ? "1" : "0")"
+	}
+
+	static func decodeResponse(_ value: String) -> (UUID, Bool)? {
+		let parts = value.split(separator: "|", omittingEmptySubsequences: false)
+		guard parts.count == 2, let requestID = UUID(uuidString: String(parts[0])) else {
+			return nil
+		}
+		switch parts[1] {
+			case "1":
+				return (requestID, true)
+			case "0":
+				return (requestID, false)
+			default:
+				return nil
+		}
+	}
+}
+
+/// The main app owns preferences; the unsigned Quick Look extension has a separate sandbox.
+@MainActor
+final class PreviewSettingsServer {
+	private let settingsStore: AppSettingsStore
+	private let notificationCenter: OpenWithBridgeNotifying
+	private var observer: NSObjectProtocol?
+
+	init(
+		settingsStore: AppSettingsStore = .shared,
+		notificationCenter: OpenWithBridgeNotifying = SystemOpenWithBridgeNotificationCenter()
+	) {
+		self.settingsStore = settingsStore
+		self.notificationCenter = notificationCenter
+	}
+
+	isolated deinit {
+		if let observer {
+			notificationCenter.removeObserver(observer)
+		}
+	}
+
+	func start() {
+		guard observer == nil else {
+			return
+		}
+		observer = notificationCenter
+			.addObserver(forName: PreviewSettingsBridge.request) { [weak self] value in
+				guard let self, let requestID = UUID(uuidString: value) else {
+					return
+				}
+				notificationCenter.post(
+					name: PreviewSettingsBridge.response,
+					object: PreviewSettingsBridge.response(
+						for: requestID,
+						enabled: settingsStore.flacWaveformEnabled
+					)
+				)
+			}
+	}
+}
+
+/// Only a non-sensitive display preference crosses this unauthenticated local notification channel.
+@MainActor
+final class PreviewSettingsClient {
+	static let shared = PreviewSettingsClient()
+
+	private struct PendingRequest {
+		let observer: NSObjectProtocol
+		let timeoutTask: Task<Void, Never>
+		let continuation: CheckedContinuation<Bool, Never>
+	}
+
+	private let notificationCenter: OpenWithBridgeNotifying
+	private let timeout: Duration
+	private var pendingRequests = [UUID: PendingRequest]()
+
+	init(
+		notificationCenter: OpenWithBridgeNotifying = SystemOpenWithBridgeNotificationCenter(),
+		timeout: Duration = .milliseconds(300)
+	) {
+		self.notificationCenter = notificationCenter
+		self.timeout = timeout
+	}
+
+	func flacWaveformEnabled() async -> Bool {
+		let requestID = UUID()
+		return await withTaskCancellationHandler {
+			await withCheckedContinuation { continuation in
+				guard !Task.isCancelled else {
+					continuation.resume(returning: true)
+					return
+				}
+				let observer = notificationCenter.addObserver(
+					forName: PreviewSettingsBridge.response
+				) { [weak self] value in
+					guard let (responseID, enabled) = PreviewSettingsBridge.decodeResponse(value),
+					      responseID == requestID
+					else {
+						return
+					}
+					self?.finish(requestID: requestID, enabled: enabled)
+				}
+				let timeout = timeout
+				let timeoutTask = Task { @MainActor [weak self] in
+					try? await Task.sleep(for: timeout)
+					guard !Task.isCancelled else {
+						return
+					}
+					self?.finish(requestID: requestID, enabled: true)
+				}
+				pendingRequests[requestID] = PendingRequest(
+					observer: observer,
+					timeoutTask: timeoutTask,
+					continuation: continuation
+				)
+				notificationCenter.post(
+					name: PreviewSettingsBridge.request,
+					object: requestID.uuidString
+				)
+			}
+		} onCancel: {
+			Task { @MainActor [weak self] in
+				self?.finish(requestID: requestID, enabled: true)
+			}
+		}
+	}
+
+	private func finish(requestID: UUID, enabled: Bool) {
+		guard let request = pendingRequests.removeValue(forKey: requestID) else {
+			return
+		}
+		notificationCenter.removeObserver(request.observer)
+		request.timeoutTask.cancel()
+		request.continuation.resume(returning: enabled)
+	}
 }

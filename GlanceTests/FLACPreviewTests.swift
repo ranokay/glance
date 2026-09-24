@@ -24,11 +24,9 @@ final class FLACPreviewTests: XCTestCase {
 		try super.tearDownWithError()
 	}
 
-	func testFLACUsesNativePlaybackAndFitsANarrowPreview() async throws {
+	func testFLACUsesNativePlaybackAndFitsANarrowPreview() throws {
 		let fileURL = try makeFLACFixture()
-		let file = try File(url: fileURL)
-		let generated = try await FLACPreview().createPreviewVC(file: file)
-		let preview = try XCTUnwrap(generated as? AVPlayerPreviewVC)
+		let preview = AVPlayerPreviewVC(fileURL: fileURL, showsWaveform: true)
 		preview.loadViewIfNeeded()
 		preview.view.frame = NSRect(x: 0, y: 0, width: 260, height: 340)
 		preview.view.layoutSubtreeIfNeeded()
@@ -52,7 +50,6 @@ final class FLACPreviewTests: XCTestCase {
 		mainVC.loadViewIfNeeded()
 		try await mainVC.previewFile(file: file)
 		let topLevel = try XCTUnwrap(mainVC.currentPreviewController as? AVPlayerPreviewVC)
-		XCTAssertNotNil(topLevel.waveformView)
 
 		let node = FileTreeNode(
 			name: fileURL.lastPathComponent,
@@ -65,9 +62,125 @@ final class FLACPreviewTests: XCTestCase {
 		let nested = try await DefaultNestedPreviewProvider().makePreviewController(for: node)
 		let nestedMedia = try XCTUnwrap(nested as? AVPlayerPreviewVC)
 		nestedMedia.loadViewIfNeeded()
-		XCTAssertNotNil(nestedMedia.waveformView)
+		XCTAssertEqual(topLevel.waveformView != nil, nestedMedia.waveformView != nil)
 		topLevel.tearDown()
 		nestedMedia.tearDown()
+	}
+
+	func testFLACAutoplaysAndStopsWhenPreviewWindowIsHidden() throws {
+		let preview = AVPlayerPreviewVC(fileURL: try makeFLACFixture())
+		preview.loadViewIfNeeded()
+		defer { preview.tearDown() }
+		let window = NSWindow(
+			contentRect: NSRect(x: 0, y: 0, width: 360, height: 300),
+			styleMask: [.titled],
+			backing: .buffered,
+			defer: false
+		)
+		window.level = .floating
+		window.contentView = preview.view
+		preview.viewDidAppear()
+		let player = try XCTUnwrap(preview.player)
+		XCTAssertNotEqual(player.timeControlStatus, .paused)
+
+		preview.handlePreviewWindowChange(
+			Notification(name: NSWindow.didChangeOcclusionStateNotification, object: window)
+		)
+		XCTAssertEqual(player.timeControlStatus, .paused)
+		XCTAssertEqual(player.rate, 0)
+	}
+
+	func testFinderSidebarDoesNotAutoplayFLAC() throws {
+		let preview = AVPlayerPreviewVC(fileURL: try makeFLACFixture())
+		preview.loadViewIfNeeded()
+		defer { preview.tearDown() }
+		let window = NSWindow(
+			contentRect: NSRect(x: 0, y: 0, width: 313, height: 406),
+			styleMask: [.titled],
+			backing: .buffered,
+			defer: false
+		)
+		window.level = .normal
+		window.contentView = preview.view
+		preview.viewDidAppear()
+		XCTAssertFalse(AVPlayerPreviewVC.shouldAutoplay(in: window))
+		XCTAssertEqual(preview.player?.timeControlStatus, .paused)
+		XCTAssertEqual(preview.player?.rate, 0)
+	}
+
+	func testFLACStopsWhenPreviewDisappears() throws {
+		let preview = AVPlayerPreviewVC(fileURL: try makeFLACFixture())
+		preview.loadViewIfNeeded()
+		defer { preview.tearDown() }
+		let player = try XCTUnwrap(preview.player)
+		player.play()
+
+		preview.viewWillDisappear()
+
+		XCTAssertEqual(player.timeControlStatus, .paused)
+		XCTAssertEqual(player.rate, 0)
+	}
+
+	func testWaveformProgressTracksPlaybackAndClampsInvalidPositions() throws {
+		let preview = AVPlayerPreviewVC(fileURL: try makeFLACFixture(), showsWaveform: true)
+		preview.loadViewIfNeeded()
+		defer { preview.tearDown() }
+		let waveform = try XCTUnwrap(preview.waveformView)
+
+		preview.updateWaveformProgress(elapsed: 2, duration: 8)
+		XCTAssertEqual(waveform.progress, 0.25)
+		preview.updateWaveformProgress(elapsed: 20, duration: 8)
+		XCTAssertEqual(waveform.progress, 1)
+		preview.updateWaveformProgress(elapsed: -2, duration: 8)
+		XCTAssertEqual(waveform.progress, 0)
+		preview.updateWaveformProgress(elapsed: 1, duration: .nan)
+		XCTAssertEqual(waveform.progress, 0)
+	}
+
+	func testFLACPlaybackWorksWhenWaveformIsDisabled() throws {
+		let preview = AVPlayerPreviewVC(fileURL: try makeFLACFixture(), showsWaveform: false)
+		preview.loadViewIfNeeded()
+		defer { preview.tearDown() }
+		XCTAssertNil(preview.waveformView)
+		XCTAssertEqual(preview.playerView?.controlsStyle, .inline)
+		let window = NSWindow(
+			contentRect: NSRect(x: 0, y: 0, width: 360, height: 300),
+			styleMask: [.titled],
+			backing: .buffered,
+			defer: false
+		)
+		window.level = .floating
+		window.contentView = preview.view
+		preview.viewDidAppear()
+		XCTAssertNotEqual(preview.player?.timeControlStatus, .paused)
+	}
+
+	func testWaveformPreferenceCrossesThePreviewSettingsBridge() async throws {
+		let suiteName = "GlanceTests.FLACSettings.\(UUID().uuidString)"
+		let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+		defer { defaults.removePersistentDomain(forName: suiteName) }
+		let store = AppSettingsStore(defaults: defaults)
+		let center = StubPreviewSettingsCenter()
+		let server = PreviewSettingsServer(settingsStore: store, notificationCenter: center)
+		server.start()
+		let client = PreviewSettingsClient(notificationCenter: center, timeout: .seconds(1))
+
+		store.flacWaveformEnabled = false
+		let disabled = await client.flacWaveformEnabled()
+		XCTAssertFalse(disabled)
+		store.flacWaveformEnabled = true
+		let enabled = await client.flacWaveformEnabled()
+		XCTAssertTrue(enabled)
+		XCTAssertEqual(center.observerCount, 1)
+	}
+
+	func testWaveformPreferenceDefaultsOnWhenTheBridgeIsUnavailable() async {
+		let client = PreviewSettingsClient(
+			notificationCenter: StubPreviewSettingsCenter(),
+			timeout: .milliseconds(1)
+		)
+		let enabled = await client.flacWaveformEnabled()
+		XCTAssertTrue(enabled)
 	}
 
 	func testWaveformSamplesARealFLACIntoABoundedEnvelopeOffMain() async throws {
@@ -196,5 +309,39 @@ final class FLACPreviewTests: XCTestCase {
 		let fileURL = temporaryDirectory.appendingPathComponent("sine.flac")
 		try data.write(to: fileURL)
 		return fileURL
+	}
+}
+
+@MainActor
+private final class StubPreviewSettingsCenter: OpenWithBridgeNotifying {
+	private final class ObserverToken: NSObject {}
+
+	private struct Observer {
+		let name: Notification.Name
+		let handler: @MainActor @Sendable (String) -> Void
+	}
+
+	private var observers = [ObjectIdentifier: Observer]()
+	var observerCount: Int {
+		observers.count
+	}
+
+	func addObserver(
+		forName name: Notification.Name,
+		handler: @escaping @MainActor @Sendable (String) -> Void
+	) -> NSObjectProtocol {
+		let token = ObserverToken()
+		observers[ObjectIdentifier(token)] = Observer(name: name, handler: handler)
+		return token
+	}
+
+	func removeObserver(_ observer: NSObjectProtocol) {
+		observers[ObjectIdentifier(observer as AnyObject)] = nil
+	}
+
+	func post(name: Notification.Name, object: String) {
+		for observer in Array(observers.values) where observer.name == name {
+			observer.handler(object)
+		}
 	}
 }
