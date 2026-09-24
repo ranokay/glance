@@ -100,7 +100,11 @@ final class PlistCoverageTests: XCTestCase {
 		)
 
 		XCTAssertTrue(projectContents.contains("MACOSX_DEPLOYMENT_TARGET = 26.0;"))
-		XCTAssertTrue(rustBuildScriptContents.contains("MACOSX_DEPLOYMENT_TARGET:-26.0"))
+		// PreviewCore pins its own deployment target to 11.0: Xcode 27 mis-links
+		// release proc-macros with 26.0+ ("mis-aligned LINKEDIT"), while the final
+		// app minos 26.0 is still enforced by Xcode at link time.
+		XCTAssertTrue(rustBuildScriptContents.contains("MACOSX_DEPLOYMENT_TARGET=\"11.0\""))
+		XCTAssertFalse(rustBuildScriptContents.contains("MACOSX_DEPLOYMENT_TARGET:-26.0"))
 		XCTAssertFalse(projectContents.contains("MACOSX_DEPLOYMENT_TARGET = 15.0;"))
 		XCTAssertTrue(workflowContents.contains("runs-on: macos-26"))
 		XCTAssertTrue(workflowContents.contains("Release builds require Xcode 26"))

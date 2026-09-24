@@ -12,7 +12,16 @@ CORE_ROOT="$PROJECT_ROOT/PreviewCore"
 TARGET="aarch64-apple-darwin"
 OUTPUT_DIRECTORY="$CORE_ROOT/build/${CONFIGURATION:-Debug}"
 export CARGO_TARGET_DIR="$CORE_ROOT/target"
-export MACOSX_DEPLOYMENT_TARGET="${MACOSX_DEPLOYMENT_TARGET:-26.0}"
+# Xcode 27 (LD 27037.1, SDK 27.0) mis-links release proc-macro dylibs when
+# MACOSX_DEPLOYMENT_TARGET is 26.0 or newer: dyld then rejects them with
+# "mis-aligned LINKEDIT string pool" and the release build fails with
+# "can't find crate for zerofrom_derive/thiserror_impl/serde_derive".
+# Pin the Rust/C build to 11.0 (Rust's default, known-good with LTO thin);
+# the final minos 26.0 is still enforced by Xcode when it links this
+# staticlib into the app bundle (verified by `mise run verify:app`),
+# and 11.0 objects link into the 26.0 app without "built for newer"
+# warnings.
+export MACOSX_DEPLOYMENT_TARGET="11.0"
 
 MISE_BIN="${MISE_BIN:-}"
 if [ -z "$MISE_BIN" ]; then
