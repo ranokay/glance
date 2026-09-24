@@ -27,6 +27,9 @@ final class PreviewSupportTests: XCTestCase {
 			("/tmp/config.elrc", "code.extension.elrc", .code),
 			("/tmp/config.ini", "code.extension.ini", .code),
 			("/tmp/CONFIG.INI", "code.extension.ini", .code),
+			("/tmp/component.ts", "code.extension.ts", .code),
+			("/tmp/COMPONENT.TS", "code.extension.ts", .code),
+			("/tmp/view.tmpl", "code.extension.tmpl", .code),
 			("/tmp/events.jsonl", "code.extension.jsonl", .code),
 			("/tmp/Makefile", "code.filename.makefile", .code),
 			("/tmp/example.unknownext", "code.other-source-text", .code),
@@ -77,6 +80,8 @@ final class PreviewSupportTests: XCTestCase {
 			("/tmp/config.elrc", .code),
 			("/tmp/config.ini", .code),
 			("/tmp/source.swift", .code),
+			("/tmp/component.ts", .code),
+			("/tmp/view.tmpl", .code),
 		]
 
 		for testCase in cases {
@@ -183,6 +188,8 @@ final class PreviewSupportTests: XCTestCase {
 			("stringsdict", "xml"),
 			("sty", "tex"),
 			("targets", "xml"),
+			("tmpl", "tmpl"),
+			("ts", "ts"),
 			("webmanifest", "json"),
 			("xcscheme", "xml"),
 			("xib", "xml"),

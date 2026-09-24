@@ -20,6 +20,8 @@ final class PlistCoverageTests: XCTestCase {
 			"org.jupyter.ipynb",
 			"public.jupyter-notebook",
 			"com.microsoft.ini",
+			"public.mpeg-2-transport-stream", // .ts
+			"dyn.ah62d4rv4ge81k5puru", // .tmpl
 			"dyn.ah62d4rv4ge80y65tr30a",
 			"public.markdown",
 			"net.daringfireball.markdown",

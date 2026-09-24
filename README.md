@@ -71,7 +71,7 @@ Release DMGs are currently unsigned and unnotarized. To install Glance:
   or package to preview it in place. The utility bar can open a selected nested item once with any
   compatible app without changing its macOS default.
 
-- **Source code and text** (with [two-face/syntect](https://github.com/CosmicHorrorDev/two-face) syntax highlighting): `.cpp`, `.elrc`, `.ini`, `.js`, `.json`, `.py`, `.swift`, `.toml`, `.ttml`, `.yml`, common extensionless configuration files, and many more
+- **Source code and text** (with [two-face/syntect](https://github.com/CosmicHorrorDev/two-face) syntax highlighting): `.cpp`, `.elrc`, `.ini`, `.js`, `.json`, `.py`, `.swift`, `.tmpl`, `.toml`, `.ts`, `.ttml`, `.yml`, common extensionless configuration files, and many more
 
   <p><img src="./AppStore/Assets/Screenshots/ScreenshotSourceCode.png" alt="" width="600"></p>
 
@@ -128,7 +128,9 @@ No. Glance opens the selected file once with the chosen compatible app. It does 
 
 Feel free to [open an issue](https://github.com/ranokay/glance/issues/new) or [contribute](#contributing)! When opening an issue, please describe what kind of preview you'd expect for your file.
 
-Please note that macOS doesn't allow the handling of some file types (e.g. `.plist`, `.ts` and `.xml`).
+Please note that macOS doesn't allow the handling of some file types (e.g. `.plist` and `.xml`).
+
+`.ts` files preview as TypeScript source (macOS also uses this extension for MPEG-2 video).
 
 **How do I disable Glance for a file type?**
 

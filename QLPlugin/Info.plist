@@ -32,8 +32,10 @@
 					File types that Glance cannot provide previews for:
 					- Files that are already supported by macOS (e.g. .csv)
 					- com.apple.property-list (.plist)
-					- public.mpeg-2-transport-stream (.ts)
 					- public.xml (.xml)
+
+					Note: .ts is claimed as TypeScript source even though the extension
+					is also used by MPEG-2 transport stream video.
 				-->
 
 				<!-- Directory -->
@@ -114,6 +116,8 @@
 				<string>com.microsoft.f-sharp</string> <!-- .fsx (F Sharp) -->
 				<string>dyn.ah62d4rv4ge80q652</string> <!-- .fsx -->
 				<string>com.netscape.javascript-source</string> <!-- .js, .mjs -->
+				<string>public.mpeg-2-transport-stream</string> <!-- .ts (TypeScript source; also MPEG-2 video) -->
+				<string>dyn.ah62d4rv4ge81k5puru</string> <!-- .tmpl -->
 				<string>com.runningwithcrayons.alfred.appearance</string> <!-- Alfred theme (.alfredappearance) -->
 				<string>dyn.ah62d4rv4ge80c5dgsmw0k2pusbw0c6xbr3v0n</string> <!-- .alfredappearance -->
 				<string>com.sequelpro.sequelpro.spf</string> <!-- .spf (Sequel Pro query favorites file) -->
