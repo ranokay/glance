@@ -5,5 +5,7 @@
 --maxwidth 100
 --tabwidth 4
 --exclude build
+--exclude PreviewCore/target
+--exclude PreviewCore/build
 
 --disable hoistTry

@@ -175,7 +175,7 @@ class FileTreeNode: NSObject {
 /// and provides functionality to insert new nodes.
 class FileTree {
 	static let defaultMaxPathDepth = 128
-	static let defaultMaxNodeCount = 50_000
+	static let defaultMaxNodeCount = 50000
 
 	var root = FileTreeNode(name: "Root", size: 0, isDirectory: true, dateModified: Date())
 	private let maxPathDepth: Int

@@ -35,6 +35,7 @@ final class PreviewFactoryTests: XCTestCase {
 
 		for testCase in cases {
 			let fileURL = URL(fileURLWithPath: testCase.path)
+			// swiftlint:disable:next xct_specific_matcher
 			XCTAssertTrue(
 				PreviewVCFactory.getPreviewInitializer(fileURL: fileURL) == testCase.expected,
 				testCase.path

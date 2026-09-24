@@ -22,7 +22,10 @@ final class SupportedFilesWC: NSWindowController {
 			title: "Markdown",
 			details: ".md, .markdown, .mdown, .mkdn, .mkd, .Rmd, .qmd • Mermaid diagrams"
 		),
-		SupportedFileSection(title: "Diagrams", details: ".drawio • Uncompressed diagrams.net files"),
+		SupportedFileSection(
+			title: "Diagrams",
+			details: ".drawio • Uncompressed diagrams.net files"
+		),
 		SupportedFileSection(
 			title: "Archive",
 			details: ".7z, .ear, .jar, .rar, .tar, .tar.gz, .tgz, .war, .zip"

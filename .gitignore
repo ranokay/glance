@@ -7,3 +7,6 @@ build/
 # Rust build output
 PreviewCore/build/
 PreviewCore/target/
+
+# Release artifacts (never committed; attached to GitHub releases)
+dist/

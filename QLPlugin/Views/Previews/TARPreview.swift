@@ -2,7 +2,7 @@ import Foundation
 
 /// Presentation adapter for TAR and gzip-compressed TAR metadata parsed by PreviewCore.
 class TARPreview: Preview {
-	private let maxEntryCount = 50_000
+	private let maxEntryCount = 50000
 
 	required init() {}
 

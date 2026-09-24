@@ -94,6 +94,14 @@ final class PlistCoverageTests: XCTestCase {
 				.appendingPathComponent("release.yml"),
 			encoding: .utf8
 		)
+		let setupActionContents = try String(
+			contentsOf: repositoryRoot()
+				.appendingPathComponent(".github", isDirectory: true)
+				.appendingPathComponent("actions", isDirectory: true)
+				.appendingPathComponent("setup", isDirectory: true)
+				.appendingPathComponent("action.yml"),
+			encoding: .utf8
+		)
 		let rustBuildScriptContents = try String(
 			contentsOf: repositoryRoot()
 				.appendingPathComponent("PreviewCore", isDirectory: true)
@@ -105,7 +113,8 @@ final class PlistCoverageTests: XCTestCase {
 		XCTAssertTrue(rustBuildScriptContents.contains("MACOSX_DEPLOYMENT_TARGET:-26.0"))
 		XCTAssertFalse(projectContents.contains("MACOSX_DEPLOYMENT_TARGET = 15.0;"))
 		XCTAssertTrue(workflowContents.contains("runs-on: macos-26"))
-		XCTAssertTrue(workflowContents.contains("Release builds require Xcode 26"))
+		XCTAssertTrue(workflowContents.contains("./.github/actions/setup"))
+		XCTAssertTrue(setupActionContents.contains("Release builds require Xcode 26"))
 	}
 
 	func testMiseUsesDeterministicToolVersions() throws {

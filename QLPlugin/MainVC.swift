@@ -362,7 +362,8 @@ class MainVC: NSViewController, QLPreviewingController {
 		} == true
 		if currentPreviewController is OutlinePreviewVC,
 		   let selectedFolderNode,
-		   selectedFolderNodeIsOpenable {
+		   selectedFolderNodeIsOpenable
+		{
 			openWithTargetURL = selectedFolderNode.fileURL
 		} else if previewNavigationStack.count > 1 {
 			openWithTargetURL = nestedOpenWithTargetURL
@@ -504,7 +505,8 @@ class MainVC: NSViewController, QLPreviewingController {
 
 	private func pushPreview(_ previewVC: PreviewVC, openWithTargetURL: URL?) {
 		if let outlinePreview = previewVC as? OutlinePreviewVC,
-		   outlinePreview.isDirectoryBrowser {
+		   outlinePreview.isDirectoryBrowser
+		{
 			outlinePreview.interactionDelegate = self
 			folderPreviewController = outlinePreview
 			nestedPreviewController = nil
@@ -536,7 +538,8 @@ class MainVC: NSViewController, QLPreviewingController {
 		removedController.removeFromParent()
 		currentPreviewController = previousController
 		if let outlinePreview = previousController as? OutlinePreviewVC,
-		   outlinePreview.isDirectoryBrowser {
+		   outlinePreview.isDirectoryBrowser
+		{
 			folderPreviewController = outlinePreview
 			nestedPreviewController = nil
 			selectedFolderNode = outlinePreview.selectedNode
