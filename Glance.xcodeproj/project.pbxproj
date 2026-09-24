@@ -393,7 +393,6 @@
 			children = (
 				D4A000000000000000000001 /* NestedPreviewProvider.swift */,
 				D5A000000000000000000001 /* OpenWithService.swift */,
-				7E1DC527240E6F4A00D0A061 /* PreviewVCFactory.swift */,
 				7E1DC51E240E6CE300D0A061 /* PreviewVC.swift */,
 				7E616BB324499A380043F7AB /* PreviewVCs */,
 				7E1DC52C240E9A3700D0A061 /* Previews */,
@@ -461,6 +460,7 @@
 				A19F4D4526218B2B008A903C /* PreviewSupport.swift */,
 				7E21C88C2438CAA500818EB2 /* Stats.swift */,
 				0E5E45E8BA05C598C36B7211 /* SupportedPreviewRegistry.swift */,
+				7E1DC527240E6F4A00D0A061 /* PreviewVCFactory.swift */,
 			);
 			path = Utils;
 			sourceTree = "<group>";
