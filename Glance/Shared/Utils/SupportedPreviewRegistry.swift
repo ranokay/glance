@@ -1,6 +1,6 @@
 import Foundation
 
-enum SupportedPreviewGroup: CaseIterable {
+public enum SupportedPreviewGroup: CaseIterable, Sendable {
 	case audio
 	case archive
 	case diagram
@@ -10,7 +10,7 @@ enum SupportedPreviewGroup: CaseIterable {
 	case tsv
 	case code
 
-	var title: String {
+	public var title: String {
 		switch self {
 			case .audio:
 				"Audio"
@@ -31,7 +31,7 @@ enum SupportedPreviewGroup: CaseIterable {
 		}
 	}
 
-	var idPrefix: String {
+	public var idPrefix: String {
 		switch self {
 			case .audio:
 				"audio"
@@ -53,24 +53,24 @@ enum SupportedPreviewGroup: CaseIterable {
 	}
 }
 
-struct SupportedPreviewType: Equatable {
-	let id: String
-	let displayName: String
-	let group: SupportedPreviewGroup
-	let searchTokens: [String]
-	let previewFileType: PreviewFileType
+public struct SupportedPreviewType: Equatable, Sendable {
+	public let id: String
+	public let displayName: String
+	public let group: SupportedPreviewGroup
+	public let searchTokens: [String]
+	public let previewFileType: PreviewFileType
 
 	/// The syntax name or alias to use for highlighting. Only meaningful for `.code` entries.
 	/// When `nil`, `getCodeLexer` falls back to the file extension or `"autodetect"`.
-	let codeLexer: String?
+	public let codeLexer: String?
 
-	let matchRule: SupportedPreviewMatchRule
+	public let matchRule: SupportedPreviewMatchRule
 
-	func matches(fileURL: URL) -> Bool {
+	public func matches(fileURL: URL) -> Bool {
 		matchRule.matches(fileURL: fileURL)
 	}
 
-	func matchesSearch(_ query: String) -> Bool {
+	public func matchesSearch(_ query: String) -> Bool {
 		let normalizedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
 		guard !normalizedQuery.isEmpty else {
 			return true
@@ -82,7 +82,7 @@ struct SupportedPreviewType: Equatable {
 	}
 }
 
-enum SupportedPreviewMatchRule: Equatable {
+public enum SupportedPreviewMatchRule: Equatable, Sendable {
 	case any([SupportedPreviewMatchRule])
 	case fileExtension(String)
 	case fileName(String)
@@ -94,7 +94,7 @@ enum SupportedPreviewMatchRule: Equatable {
 	/// unrecognized file as a potential source/text file and attempts syntax-highlighted rendering.
 	case defaultTextFallback
 
-	func matches(fileURL: URL) -> Bool {
+	public func matches(fileURL: URL) -> Bool {
 		switch self {
 			case let .any(rules):
 				rules.contains { $0.matches(fileURL: fileURL) }
@@ -112,8 +112,8 @@ enum SupportedPreviewMatchRule: Equatable {
 	}
 }
 
-enum SupportedPreviewRegistry {
-	static let all: [SupportedPreviewType] = [
+public enum SupportedPreviewRegistry {
+	public static let all: [SupportedPreviewType] = [
 		extensionEntry(
 			"flac",
 			group: .audio,
@@ -486,15 +486,15 @@ enum SupportedPreviewRegistry {
 		),
 	]
 
-	static func entries(in group: SupportedPreviewGroup) -> [SupportedPreviewType] {
+	public static func entries(in group: SupportedPreviewGroup) -> [SupportedPreviewType] {
 		all.filter { $0.group == group }
 	}
 
-	static func entry(matching fileURL: URL) -> SupportedPreviewType? {
+	public static func entry(matching fileURL: URL) -> SupportedPreviewType? {
 		all.first { $0.matches(fileURL: fileURL) }
 	}
 
-	static var allIDs: Set<String> {
+	public static var allIDs: Set<String> {
 		Set(all.map(\.id))
 	}
 

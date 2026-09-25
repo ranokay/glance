@@ -1,3 +1,4 @@
+import GlanceKit
 import XCTest
 
 final class PlistCoverageTests: XCTestCase {

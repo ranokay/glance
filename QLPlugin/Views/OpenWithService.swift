@@ -1,4 +1,5 @@
 import Cocoa
+import GlanceKit
 
 struct OpenWithApplication {
 	let applicationURL: URL

@@ -1,14 +1,14 @@
 import AppKit
 import Foundation
 
-enum OpenWithBridgeError: Error, LocalizedError {
+public enum OpenWithBridgeError: Error, LocalizedError {
 	case bridgeUnavailable
 	case incompatibleApplication
 	case invalidRequest
 	case requestTimedOut
 	case securityScopeUnavailable
 
-	var errorDescription: String? {
+	public var errorDescription: String? {
 		switch self {
 			case .bridgeUnavailable:
 				"The Glance Open With bridge is unavailable."
@@ -24,18 +24,18 @@ enum OpenWithBridgeError: Error, LocalizedError {
 	}
 }
 
-struct OpenWithBridgeRemoteError: Error, LocalizedError {
-	let domain: String
-	let code: Int
-	let message: String
+public struct OpenWithBridgeRemoteError: Error, LocalizedError {
+	public let domain: String
+	public let code: Int
+	public let message: String
 
-	var errorDescription: String? {
+	public var errorDescription: String? {
 		message
 	}
 }
 
 @MainActor
-protocol OpenWithBridgeSending {
+public protocol OpenWithBridgeSending {
 	func open(
 		fileURL: URL,
 		with applicationURL: URL,
@@ -44,7 +44,7 @@ protocol OpenWithBridgeSending {
 }
 
 @MainActor
-protocol OpenWithLaunching {
+public protocol OpenWithLaunching {
 	func isApplication(_ applicationURL: URL, compatibleWith fileURL: URL) -> Bool
 	func open(
 		fileURL: URL,
@@ -54,14 +54,14 @@ protocol OpenWithLaunching {
 }
 
 @MainActor
-protocol OpenWithSecurityScopeManaging {
+public protocol OpenWithSecurityScopeManaging {
 	func resolveBookmark(_ bookmarkData: Data) throws -> URL
 	func startAccessing(_ url: URL) -> Bool
 	func stopAccessing(_ url: URL)
 }
 
 @MainActor
-protocol OpenWithBridgeDispatching {
+public protocol OpenWithBridgeDispatching {
 	func dispatch(
 		requestURL: URL,
 		completion: @escaping @MainActor (Error?) -> Void
@@ -69,14 +69,14 @@ protocol OpenWithBridgeDispatching {
 }
 
 @MainActor
-protocol OpenWithBridgeRequestStoring {
+public protocol OpenWithBridgeRequestStoring {
 	func store(_ requestString: String) throws -> String
 	func take(named name: String) throws -> String
 	func remove(named name: String)
 }
 
 @MainActor
-protocol OpenWithBridgeNotifying: AnyObject {
+public protocol OpenWithBridgeNotifying: AnyObject {
 	func addObserver(
 		forName name: Notification.Name,
 		handler: @escaping @MainActor @Sendable (String) -> Void
@@ -86,14 +86,14 @@ protocol OpenWithBridgeNotifying: AnyObject {
 }
 
 @MainActor
-final class SystemOpenWithBridgeNotificationCenter: OpenWithBridgeNotifying {
+public final class SystemOpenWithBridgeNotificationCenter: OpenWithBridgeNotifying {
 	private let center: DistributedNotificationCenter
 
-	init(center: DistributedNotificationCenter = .default()) {
+	public init(center: DistributedNotificationCenter = .default()) {
 		self.center = center
 	}
 
-	func addObserver(
+	public func addObserver(
 		forName name: Notification.Name,
 		handler: @escaping @MainActor @Sendable (String) -> Void
 	) -> NSObjectProtocol {
@@ -107,11 +107,11 @@ final class SystemOpenWithBridgeNotificationCenter: OpenWithBridgeNotifying {
 		}
 	}
 
-	func removeObserver(_ observer: NSObjectProtocol) {
+	public func removeObserver(_ observer: NSObjectProtocol) {
 		center.removeObserver(observer)
 	}
 
-	func post(name: Notification.Name, object: String) {
+	public func post(name: Notification.Name, object: String) {
 		center.postNotificationName(
 			name,
 			object: object,
@@ -121,52 +121,79 @@ final class SystemOpenWithBridgeNotificationCenter: OpenWithBridgeNotifying {
 	}
 }
 
-enum OpenWithBridgeConstants {
-	static let requestScheme = "glance-open-with"
-	static let requestHost = "request"
-	static let handoffHost = "handoff"
-	static let requestNotification = Notification.Name(
+public enum OpenWithBridgeConstants {
+	public static let requestScheme = "glance-open-with"
+	public static let requestHost = "request"
+	public static let handoffHost = "handoff"
+	public static let requestNotification = Notification.Name(
 		"com.chamburr.Glance.OpenWithBridge.request"
 	)
-	static let responseNotification = Notification.Name(
+	public static let responseNotification = Notification.Name(
 		"com.chamburr.Glance.OpenWithBridge.response"
 	)
-	static let currentVersion = 1
-	static let maximumPayloadSize = 128 * 1024
+	public static let currentVersion = 1
+	public static let maximumPayloadSize = 128 * 1024
 }
 
-enum OpenWithApplicationIdentity {
-	static let excludedBundleIdentifiers: Set<String> = [
+public enum OpenWithApplicationIdentity {
+	public static let excludedBundleIdentifiers: Set<String> = [
 		"com.chamburr.Glance",
 		"com.chamburr.Glance.QLPlugin",
 	]
 
-	static func key(for applicationURL: URL) -> String {
+	public static func key(for applicationURL: URL) -> String {
 		applicationURL.resolvingSymlinksInPath().standardizedFileURL.path.lowercased()
 	}
 }
 
-struct OpenWithBridgeRequest: Codable {
-	let version: Int
-	let requestID: UUID
-	let fileBookmark: Data
-	let applicationPath: String
+public struct OpenWithBridgeRequest: Codable {
+	public let version: Int
+	public let requestID: UUID
+	public let fileBookmark: Data
+	public let applicationPath: String
+
+	public init(version: Int, requestID: UUID, fileBookmark: Data, applicationPath: String) {
+		self.version = version
+		self.requestID = requestID
+		self.fileBookmark = fileBookmark
+		self.applicationPath = applicationPath
+	}
 }
 
-struct OpenWithBridgeHandoff: Codable {
-	let version: Int
-	let requestID: UUID
-	let requestStoreName: String
+public struct OpenWithBridgeHandoff: Codable {
+	public let version: Int
+	public let requestID: UUID
+	public let requestStoreName: String
+
+	public init(version: Int, requestID: UUID, requestStoreName: String) {
+		self.version = version
+		self.requestID = requestID
+		self.requestStoreName = requestStoreName
+	}
 }
 
-struct OpenWithBridgeResponse: Codable {
-	let version: Int
-	let requestID: UUID
-	let errorDomain: String?
-	let errorCode: Int?
-	let errorMessage: String?
+public struct OpenWithBridgeResponse: Codable {
+	public let version: Int
+	public let requestID: UUID
+	public let errorDomain: String?
+	public let errorCode: Int?
+	public let errorMessage: String?
 
-	static func success(requestID: UUID) -> Self {
+	public init(
+		version: Int,
+		requestID: UUID,
+		errorDomain: String?,
+		errorCode: Int?,
+		errorMessage: String?
+	) {
+		self.version = version
+		self.requestID = requestID
+		self.errorDomain = errorDomain
+		self.errorCode = errorCode
+		self.errorMessage = errorMessage
+	}
+
+	public static func success(requestID: UUID) -> Self {
 		Self(
 			version: OpenWithBridgeConstants.currentVersion,
 			requestID: requestID,
@@ -176,7 +203,7 @@ struct OpenWithBridgeResponse: Codable {
 		)
 	}
 
-	static func failure(requestID: UUID, error: Error) -> Self {
+	public static func failure(requestID: UUID, error: Error) -> Self {
 		let nsError = error as NSError
 		return Self(
 			version: OpenWithBridgeConstants.currentVersion,
@@ -187,7 +214,7 @@ struct OpenWithBridgeResponse: Codable {
 		)
 	}
 
-	func validatedError() throws -> Error? {
+	public func validatedError() throws -> Error? {
 		switch (errorDomain, errorCode, errorMessage) {
 			case (nil, nil, nil):
 				return nil
@@ -210,10 +237,10 @@ struct OpenWithBridgeResponse: Codable {
 	}
 }
 
-enum OpenWithBridgeCodec {
+public enum OpenWithBridgeCodec {
 	private static let payloadQueryName = "payload"
 
-	static func requestURL(for request: OpenWithBridgeRequest) throws -> URL {
+	public static func requestURL(for request: OpenWithBridgeRequest) throws -> URL {
 		var components = URLComponents()
 		components.scheme = OpenWithBridgeConstants.requestScheme
 		components.host = OpenWithBridgeConstants.requestHost
@@ -231,7 +258,7 @@ enum OpenWithBridgeCodec {
 		return url
 	}
 
-	static func request(from url: URL) throws -> OpenWithBridgeRequest {
+	public static func request(from url: URL) throws -> OpenWithBridgeRequest {
 		guard url.scheme == OpenWithBridgeConstants.requestScheme,
 		      url.host == OpenWithBridgeConstants.requestHost,
 		      url.user == nil,
@@ -250,7 +277,7 @@ enum OpenWithBridgeCodec {
 		return try decodedValue(OpenWithBridgeRequest.self, from: payload)
 	}
 
-	static func handoffURL(for handoff: OpenWithBridgeHandoff) throws -> URL {
+	public static func handoffURL(for handoff: OpenWithBridgeHandoff) throws -> URL {
 		var components = URLComponents()
 		components.scheme = OpenWithBridgeConstants.requestScheme
 		components.host = OpenWithBridgeConstants.handoffHost
@@ -268,7 +295,7 @@ enum OpenWithBridgeCodec {
 		return url
 	}
 
-	static func handoff(from url: URL) throws -> OpenWithBridgeHandoff {
+	public static func handoff(from url: URL) throws -> OpenWithBridgeHandoff {
 		guard url.scheme == OpenWithBridgeConstants.requestScheme,
 		      url.host == OpenWithBridgeConstants.handoffHost,
 		      url.user == nil,
@@ -287,11 +314,11 @@ enum OpenWithBridgeCodec {
 		return try decodedValue(OpenWithBridgeHandoff.self, from: payload)
 	}
 
-	static func responseString(for response: OpenWithBridgeResponse) throws -> String {
+	public static func responseString(for response: OpenWithBridgeResponse) throws -> String {
 		try encodedString(for: response)
 	}
 
-	static func response(from string: String) throws -> OpenWithBridgeResponse {
+	public static func response(from string: String) throws -> OpenWithBridgeResponse {
 		try decodedValue(OpenWithBridgeResponse.self, from: string)
 	}
 
@@ -319,8 +346,10 @@ enum OpenWithBridgeCodec {
 }
 
 @MainActor
-final class SystemOpenWithSecurityScopeManager: OpenWithSecurityScopeManaging {
-	func resolveBookmark(_ bookmarkData: Data) throws -> URL {
+public final class SystemOpenWithSecurityScopeManager: OpenWithSecurityScopeManaging {
+	public init() {}
+
+	public func resolveBookmark(_ bookmarkData: Data) throws -> URL {
 		var bookmarkDataIsStale = false
 		let fileURL = try URL(
 			resolvingBookmarkData: bookmarkData,
@@ -334,23 +363,25 @@ final class SystemOpenWithSecurityScopeManager: OpenWithSecurityScopeManaging {
 		return fileURL.resolvingSymlinksInPath().standardizedFileURL
 	}
 
-	func startAccessing(_ url: URL) -> Bool {
+	public func startAccessing(_ url: URL) -> Bool {
 		url.startAccessingSecurityScopedResource()
 	}
 
-	func stopAccessing(_ url: URL) {
+	public func stopAccessing(_ url: URL) {
 		url.stopAccessingSecurityScopedResource()
 	}
 }
 
 @MainActor
-final class SystemOpenWithBridgeRequestStore: OpenWithBridgeRequestStoring {
+public final class SystemOpenWithBridgeRequestStore: OpenWithBridgeRequestStoring {
+	public init() {}
+
 	private static let namePrefix = "com.chamburr.Glance.OpenWithBridge."
 	private static let pasteboardType = NSPasteboard.PasteboardType(
 		"com.chamburr.Glance.open-with-request"
 	)
 
-	func store(_ requestString: String) throws -> String {
+	public func store(_ requestString: String) throws -> String {
 		guard requestString.utf8.count <= OpenWithBridgeConstants.maximumPayloadSize else {
 			throw OpenWithBridgeError.invalidRequest
 		}
@@ -363,7 +394,7 @@ final class SystemOpenWithBridgeRequestStore: OpenWithBridgeRequestStoring {
 		return name
 	}
 
-	func take(named name: String) throws -> String {
+	public func take(named name: String) throws -> String {
 		guard Self.isValidName(name) else {
 			throw OpenWithBridgeError.invalidRequest
 		}
@@ -380,7 +411,7 @@ final class SystemOpenWithBridgeRequestStore: OpenWithBridgeRequestStoring {
 		return requestString
 	}
 
-	func remove(named name: String) {
+	public func remove(named name: String) {
 		guard Self.isValidName(name) else {
 			return
 		}
@@ -404,14 +435,14 @@ private struct UncheckedOpenWithBridgeValue<Value>: @unchecked Sendable {
 }
 
 @MainActor
-final class WorkspaceOpenWithLauncher: OpenWithLaunching {
+public final class WorkspaceOpenWithLauncher: OpenWithLaunching {
 	private let workspace: NSWorkspace
 
-	init(workspace: NSWorkspace = .shared) {
+	public init(workspace: NSWorkspace = .shared) {
 		self.workspace = workspace
 	}
 
-	func isApplication(_ applicationURL: URL, compatibleWith fileURL: URL) -> Bool {
+	public func isApplication(_ applicationURL: URL, compatibleWith fileURL: URL) -> Bool {
 		guard applicationURL.isFileURL,
 		      applicationURL.pathExtension.caseInsensitiveCompare("app") == .orderedSame,
 		      let bundleIdentifier = Bundle(url: applicationURL)?.bundleIdentifier,
@@ -425,7 +456,7 @@ final class WorkspaceOpenWithLauncher: OpenWithLaunching {
 		}
 	}
 
-	func open(
+	public func open(
 		fileURL: URL,
 		with applicationURL: URL,
 		completion: @escaping @MainActor (Error?) -> Void
@@ -442,7 +473,7 @@ final class WorkspaceOpenWithLauncher: OpenWithLaunching {
 		}
 	}
 
-	static func makeOpenConfiguration() -> NSWorkspace.OpenConfiguration {
+	public static func makeOpenConfiguration() -> NSWorkspace.OpenConfiguration {
 		let configuration = NSWorkspace.OpenConfiguration()
 		configuration.activates = true
 		configuration.promptsUserIfNeeded = false
@@ -452,12 +483,12 @@ final class WorkspaceOpenWithLauncher: OpenWithLaunching {
 }
 
 @MainActor
-final class WorkspaceOpenWithRequestDispatcher: OpenWithBridgeDispatching {
+public final class WorkspaceOpenWithRequestDispatcher: OpenWithBridgeDispatching {
 	private let workspace: NSWorkspace
 	private let notificationCenter: OpenWithBridgeNotifying
 	private let containingApplicationURL: URL
 
-	init(
+	public init(
 		workspace: NSWorkspace = .shared,
 		notificationCenter: OpenWithBridgeNotifying = SystemOpenWithBridgeNotificationCenter(),
 		containingApplicationURL: URL = WorkspaceOpenWithRequestDispatcher
@@ -468,7 +499,7 @@ final class WorkspaceOpenWithRequestDispatcher: OpenWithBridgeDispatching {
 		self.containingApplicationURL = containingApplicationURL
 	}
 
-	func dispatch(
+	public func dispatch(
 		requestURL: URL,
 		completion: @escaping @MainActor (Error?) -> Void
 	) {
@@ -524,7 +555,7 @@ final class WorkspaceOpenWithRequestDispatcher: OpenWithBridgeDispatching {
 		)
 	}
 
-	static func makeOpenConfiguration() -> NSWorkspace.OpenConfiguration {
+	public static func makeOpenConfiguration() -> NSWorkspace.OpenConfiguration {
 		let configuration = NSWorkspace.OpenConfiguration()
 		configuration.activates = false
 		configuration.promptsUserIfNeeded = false
@@ -533,7 +564,7 @@ final class WorkspaceOpenWithRequestDispatcher: OpenWithBridgeDispatching {
 		return configuration
 	}
 
-	private static var defaultContainingApplicationURL: URL {
+	public static var defaultContainingApplicationURL: URL {
 		var candidate = Bundle.main.bundleURL.standardizedFileURL
 		while candidate.pathComponents.count > 1 {
 			guard candidate.pathExtension.caseInsensitiveCompare("app") != .orderedSame else {
@@ -546,14 +577,14 @@ final class WorkspaceOpenWithRequestDispatcher: OpenWithBridgeDispatching {
 }
 
 @MainActor
-final class OpenWithBridgeServer {
+public final class OpenWithBridgeServer {
 	private let notificationCenter: OpenWithBridgeNotifying
 	private let launcher: OpenWithLaunching
 	private let securityScopeManager: OpenWithSecurityScopeManaging
 	private let requestStore: OpenWithBridgeRequestStoring
 	private var requestObserver: NSObjectProtocol?
 
-	init(
+	public init(
 		notificationCenter: OpenWithBridgeNotifying = SystemOpenWithBridgeNotificationCenter(),
 		launcher: OpenWithLaunching = WorkspaceOpenWithLauncher(),
 		securityScopeManager: OpenWithSecurityScopeManaging = SystemOpenWithSecurityScopeManager(),
@@ -571,7 +602,7 @@ final class OpenWithBridgeServer {
 		}
 	}
 
-	func start() {
+	public func start() {
 		guard requestObserver == nil else {
 			return
 		}
@@ -588,13 +619,13 @@ final class OpenWithBridgeServer {
 		}
 	}
 
-	func canHandle(_ url: URL) -> Bool {
+	public func canHandle(_ url: URL) -> Bool {
 		url.scheme == OpenWithBridgeConstants.requestScheme
 			&& (url.host == OpenWithBridgeConstants.requestHost
 				|| url.host == OpenWithBridgeConstants.handoffHost)
 	}
 
-	func handle(_ requestURL: URL) {
+	public func handle(_ requestURL: URL) {
 		var responseRequestID: UUID?
 		do {
 			let request: OpenWithBridgeRequest
@@ -673,7 +704,7 @@ final class OpenWithBridgeServer {
 }
 
 @MainActor
-final class OpenWithBridgeClient: OpenWithBridgeSending {
+public final class OpenWithBridgeClient: OpenWithBridgeSending {
 	private struct PendingRequest {
 		let observer: NSObjectProtocol
 		let timeoutTask: Task<Void, Never>
@@ -687,7 +718,7 @@ final class OpenWithBridgeClient: OpenWithBridgeSending {
 	private let timeout: Duration
 	private var pendingRequests = [UUID: PendingRequest]()
 
-	init(
+	public init(
 		notificationCenter: OpenWithBridgeNotifying = SystemOpenWithBridgeNotificationCenter(),
 		dispatcher: OpenWithBridgeDispatching = WorkspaceOpenWithRequestDispatcher(),
 		requestStore: OpenWithBridgeRequestStoring = SystemOpenWithBridgeRequestStore(),
@@ -703,7 +734,7 @@ final class OpenWithBridgeClient: OpenWithBridgeSending {
 		cancelAllPendingRequests(error: OpenWithBridgeError.bridgeUnavailable)
 	}
 
-	func open(
+	public func open(
 		fileURL: URL,
 		with applicationURL: URL,
 		completion: @escaping @MainActor (Error?) -> Void

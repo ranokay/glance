@@ -1,4 +1,5 @@
 import Foundation
+import GlanceKit
 
 class ZIPPreview: Preview {
 	required init() {}

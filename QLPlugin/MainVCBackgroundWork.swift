@@ -1,4 +1,5 @@
 import Cocoa
+import GlanceKit
 
 enum PreviewError: Error {
 	case fileSizeError(path: String)

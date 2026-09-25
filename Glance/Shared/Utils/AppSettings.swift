@@ -1,20 +1,26 @@
 import Foundation
 
-struct PreviewAppearancePreferences: Equatable {
-	static let defaultFontSize = 14.0
-	static let minimumFontSize = 9.0
-	static let maximumFontSize = 32.0
-	static let `default` = PreviewAppearancePreferences(
+public struct PreviewAppearancePreferences: Equatable, Sendable {
+	public static let defaultFontSize = 14.0
+	public static let minimumFontSize = 9.0
+	public static let maximumFontSize = 32.0
+	public static let `default` = PreviewAppearancePreferences(
 		fontFamily: nil,
 		fontSize: defaultFontSize,
 		wrapsLines: false
 	)
 
-	let fontFamily: String?
-	let fontSize: Double
-	let wrapsLines: Bool
+	public let fontFamily: String?
+	public let fontSize: Double
+	public let wrapsLines: Bool
 
-	func stylesheet(availableFontFamilies: [String]) -> String {
+	public init(fontFamily: String?, fontSize: Double, wrapsLines: Bool) {
+		self.fontFamily = fontFamily
+		self.fontSize = fontSize
+		self.wrapsLines = wrapsLines
+	}
+
+	public func stylesheet(availableFontFamilies: [String]) -> String {
 		var bodyDeclarations = ["font-size: \(fontSize)px;"]
 		if
 			let fontFamily,
@@ -61,8 +67,8 @@ struct PreviewAppearancePreferences: Equatable {
 	}
 }
 
-struct AppSettingsStore {
-	static let sharedDefaultsSuiteName = "group.com.chamburr.glance"
+public struct AppSettingsStore {
+	public static let sharedDefaultsSuiteName = "group.com.chamburr.glance"
 
 	nonisolated(unsafe) static let sharedDefaults: UserDefaults = {
 		guard let defaults = UserDefaults(suiteName: sharedDefaultsSuiteName) else {
@@ -73,35 +79,35 @@ struct AppSettingsStore {
 		return defaults
 	}()
 
-	nonisolated(unsafe) static let shared = AppSettingsStore(
+	public nonisolated(unsafe) static let shared = AppSettingsStore(
 		defaults: sharedDefaults,
 		standardDefaults: .standard
 	)
 
 	private static let hideDockIconKey = "hideDockIcon"
-	static let previewFontFamilyKey = "previewFontFamily"
-	static let previewFontSizeKey = "previewFontSize"
-	static let previewLineWrappingKey = "previewLineWrapping"
-	static let flacWaveformEnabledKey = "flacWaveformEnabled"
+	public static let previewFontFamilyKey = "previewFontFamily"
+	public static let previewFontSizeKey = "previewFontSize"
+	public static let previewLineWrappingKey = "previewLineWrapping"
+	public static let flacWaveformEnabledKey = "flacWaveformEnabled"
 	private static let standardDefaultsMigrationKey = "didMigrateStandardDefaults"
 	private static let previewDefaultsMigrationKey = "didMigratePreviewDefaults"
 
 	private let defaults: UserDefaults
 	private let standardDefaults: UserDefaults?
 
-	init(defaults: UserDefaults, standardDefaults: UserDefaults? = nil) {
+	public init(defaults: UserDefaults, standardDefaults: UserDefaults? = nil) {
 		self.defaults = defaults
 		self.standardDefaults = standardDefaults
 	}
 
-	var hideDockIcon: Bool {
+	public var hideDockIcon: Bool {
 		get { defaults.bool(forKey: Self.hideDockIconKey) }
 		nonmutating set {
 			defaults.set(newValue, forKey: Self.hideDockIconKey)
 		}
 	}
 
-	var previewFontFamily: String? {
+	public var previewFontFamily: String? {
 		get {
 			guard let value = defaults.string(forKey: Self.previewFontFamilyKey)?
 				.trimmingCharacters(in: .whitespacesAndNewlines), !value.isEmpty
@@ -121,7 +127,7 @@ struct AppSettingsStore {
 		}
 	}
 
-	var previewFontSize: Double {
+	public var previewFontSize: Double {
 		get {
 			guard
 				let storedValue = defaults.object(forKey: Self.previewFontSizeKey) as? NSNumber,
@@ -145,17 +151,17 @@ struct AppSettingsStore {
 		}
 	}
 
-	var previewLineWrapping: Bool {
+	public var previewLineWrapping: Bool {
 		get { defaults.bool(forKey: Self.previewLineWrappingKey) }
 		nonmutating set { defaults.set(newValue, forKey: Self.previewLineWrappingKey) }
 	}
 
-	var flacWaveformEnabled: Bool {
+	public var flacWaveformEnabled: Bool {
 		get { defaults.object(forKey: Self.flacWaveformEnabledKey) as? Bool ?? true }
 		nonmutating set { defaults.set(newValue, forKey: Self.flacWaveformEnabledKey) }
 	}
 
-	var previewAppearance: PreviewAppearancePreferences {
+	public var previewAppearance: PreviewAppearancePreferences {
 		PreviewAppearancePreferences(
 			fontFamily: previewFontFamily,
 			fontSize: previewFontSize,
@@ -163,13 +169,13 @@ struct AppSettingsStore {
 		)
 	}
 
-	func resetPreviewAppearance() {
+	public func resetPreviewAppearance() {
 		defaults.removeObject(forKey: Self.previewFontFamilyKey)
 		defaults.removeObject(forKey: Self.previewFontSizeKey)
 		defaults.removeObject(forKey: Self.previewLineWrappingKey)
 	}
 
-	func migrateStandardDefaultsIfNeeded() {
+	public func migrateStandardDefaultsIfNeeded() {
 		guard let standardDefaults else {
 			return
 		}
@@ -235,12 +241,12 @@ private enum PreviewSettingsBridge {
 
 /// The main app owns preferences; the unsigned Quick Look extension has a separate sandbox.
 @MainActor
-final class PreviewSettingsServer {
+public final class PreviewSettingsServer {
 	private let settingsStore: AppSettingsStore
 	private let notificationCenter: OpenWithBridgeNotifying
 	private var observer: NSObjectProtocol?
 
-	init(
+	public init(
 		settingsStore: AppSettingsStore = .shared,
 		notificationCenter: OpenWithBridgeNotifying = SystemOpenWithBridgeNotificationCenter()
 	) {
@@ -254,7 +260,7 @@ final class PreviewSettingsServer {
 		}
 	}
 
-	func start() {
+	public func start() {
 		guard observer == nil else {
 			return
 		}
@@ -276,8 +282,8 @@ final class PreviewSettingsServer {
 
 /// Only a non-sensitive display preference crosses this unauthenticated local notification channel.
 @MainActor
-final class PreviewSettingsClient {
-	static let shared = PreviewSettingsClient()
+public final class PreviewSettingsClient {
+	public static let shared = PreviewSettingsClient()
 
 	private struct PendingRequest {
 		let observer: NSObjectProtocol
@@ -289,7 +295,7 @@ final class PreviewSettingsClient {
 	private let timeout: Duration
 	private var pendingRequests = [UUID: PendingRequest]()
 
-	init(
+	public init(
 		notificationCenter: OpenWithBridgeNotifying = SystemOpenWithBridgeNotificationCenter(),
 		timeout: Duration = .milliseconds(300)
 	) {
@@ -297,7 +303,7 @@ final class PreviewSettingsClient {
 		self.timeout = timeout
 	}
 
-	func flacWaveformEnabled() async -> Bool {
+	public func flacWaveformEnabled() async -> Bool {
 		let requestID = UUID()
 		return await withTaskCancellationHandler {
 			await withCheckedContinuation { continuation in

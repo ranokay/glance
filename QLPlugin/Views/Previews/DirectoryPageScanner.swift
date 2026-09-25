@@ -1,4 +1,5 @@
 import Foundation
+import GlanceKit
 import UniformTypeIdentifiers
 
 struct DirectoryPageCandidate {

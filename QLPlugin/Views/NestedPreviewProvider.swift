@@ -1,5 +1,6 @@
 import AVKit
 import Cocoa
+import GlanceKit
 import QuickLookUI
 import UniformTypeIdentifiers
 

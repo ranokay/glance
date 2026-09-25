@@ -1,4 +1,5 @@
 import Foundation
+import GlanceKit
 
 /// Returns a `PreviewVC` subclass that can be used to generate a preview of the provided file.
 /// Returns `nil` if the file type is not supported.

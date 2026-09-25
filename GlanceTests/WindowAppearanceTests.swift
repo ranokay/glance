@@ -1,4 +1,5 @@
 import AppKit
+import GlanceKit
 import ServiceManagement
 import XCTest
 

@@ -1,4 +1,5 @@
 import Cocoa
+import GlanceKit
 
 @main
 @MainActor

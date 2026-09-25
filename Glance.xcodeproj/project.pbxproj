@@ -41,8 +41,6 @@
 		A5A000000000000000000004 /* PreviewCoreBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A000000000000000000001 /* PreviewCoreBridge.swift */; };
 		A5A000000000000000000005 /* PreviewExecutor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A000000000000000000002 /* PreviewExecutor.swift */; };
 		A5A000000000000000000006 /* PreviewExecutor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A000000000000000000002 /* PreviewExecutor.swift */; };
-		A19F4D4226218B2B008A903C /* PreviewSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = A19F4D4526218B2B008A903C /* PreviewSupport.swift */; };
-		A19F4D4326218B2B008A903C /* PreviewSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = A19F4D4526218B2B008A903C /* PreviewSupport.swift */; };
 		A19F4D4426218B2B008A903C /* PreviewSupportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A19F4D4626218B2B008A903C /* PreviewSupportTests.swift */; };
 		C0DE00000000000000000201 /* FileTreeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE00000000000000000101 /* FileTreeTests.swift */; };
 		C0DE00000000000000000202 /* FileTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE00000000000000000102 /* FileTests.swift */; };
@@ -50,9 +48,6 @@
 		C0DE00000000000000000204 /* PreviewSmokeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE00000000000000000104 /* PreviewSmokeTests.swift */; };
 		C0DE00000000000000000205 /* PlistCoverageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE00000000000000000105 /* PlistCoverageTests.swift */; };
 		C0DE00000000000000000209 /* libglance_preview_core.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7E42B61D245857D9008D7116 /* libglance_preview_core.a */; };
-		C0DE00000000000000000301 /* PreviewSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = A19F4D4526218B2B008A903C /* PreviewSupport.swift */; };
-		C0DE00000000000000000302 /* Log.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EE10F82244F6774007214D8 /* Log.swift */; };
-		C0DE00000000000000000303 /* Date.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E21C89024390E3100818EB2 /* Date.swift */; };
 		C0DE00000000000000000304 /* String.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EB36487244B65D900D7F96F /* String.swift */; };
 		C0DE00000000000000000305 /* File.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EAC01EB240D220B009505D0 /* File.swift */; };
 		C0DE00000000000000000306 /* FileTree.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E45F898244DA45500BFB869 /* FileTree.swift */; };
@@ -93,13 +88,9 @@
 		D4A000000000000000000006 /* MainVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 102D56C426206A36000B5C0E /* MainVC.swift */; };
 		54CE040000000000000021 /* MainVCNavigation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54CE040000000000000001 /* MainVCNavigation.swift */; };
 		53CE030000000000000021 /* MainVCBackgroundWork.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53CE030000000000000001 /* MainVCBackgroundWork.swift */; };
-		D4A000000000000000000007 /* Stats.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E21C88C2438CAA500818EB2 /* Stats.swift */; };
 		D5A000000000000000000002 /* OpenWithService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5A000000000000000000001 /* OpenWithService.swift */; };
 		D5A000000000000000000003 /* OpenWithService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5A000000000000000000001 /* OpenWithService.swift */; };
 		D5A000000000000000000005 /* OpenWithTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5A000000000000000000004 /* OpenWithTests.swift */; };
-		D6A000000000000000000002 /* OpenWithBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6A000000000000000000001 /* OpenWithBridge.swift */; };
-		D6A000000000000000000003 /* OpenWithBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6A000000000000000000001 /* OpenWithBridge.swift */; };
-		D6A000000000000000000004 /* OpenWithBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6A000000000000000000001 /* OpenWithBridge.swift */; };
 		F1A000000000000000000002 /* WindowAppearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A000000000000000000001 /* WindowAppearance.swift */; };
 		F1A000000000000000000003 /* WindowAppearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A000000000000000000001 /* WindowAppearance.swift */; };
 		F2A000000000000000000002 /* WindowAppearanceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2A000000000000000000001 /* WindowAppearanceTests.swift */; };
@@ -121,11 +112,7 @@
 		7E1DC528240E6F4A00D0A061 /* PreviewVCFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E1DC527240E6F4A00D0A061 /* PreviewVCFactory.swift */; };
 		7E1DC52A240E6FDE00D0A061 /* CodePreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E1DC529240E6FDE00D0A061 /* CodePreview.swift */; };
 		7E21C88B2438818100818EB2 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 7E3DF744242CBE7F00DE7CD6 /* Main.storyboard */; };
-		7E21C88D2438CAA500818EB2 /* Stats.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E21C88C2438CAA500818EB2 /* Stats.swift */; };
-		7E21C88E24390BE400818EB2 /* Stats.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E21C88C2438CAA500818EB2 /* Stats.swift */; };
-		7E21C89124390E3100818EB2 /* Date.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E21C89024390E3100818EB2 /* Date.swift */; };
 		7E413F802418DD6200CFBB1D /* TSVPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E413F7F2418DD6200CFBB1D /* TSVPreview.swift */; };
-		7E458AED2439176B0091BD0F /* Date.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E21C89024390E3100818EB2 /* Date.swift */; };
 		7E458AF0243944810091BD0F /* URL.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E458AEF243944810091BD0F /* URL.swift */; };
 		7E458AF52439481F0091BD0F /* Menu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E458AF42439481F0091BD0F /* Menu.swift */; };
 		7E45F899244DA45500BFB869 /* FileTree.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E45F898244DA45500BFB869 /* FileTree.swift */; };
@@ -168,12 +155,6 @@
 		7EB36488244B65D900D7F96F /* String.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EB36487244B65D900D7F96F /* String.swift */; };
 		7EB3648A244B665700D7F96F /* ZIPPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EB36489244B665700D7F96F /* ZIPPreview.swift */; };
 		7EB7491924228549007265A4 /* JupyterPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EB7491824228549007265A4 /* JupyterPreview.swift */; };
-		0DD9FAE6C6A22D86C26594E8 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77CBD1B8E3D86A3D965DD6D0 /* AppSettings.swift */; };
-		B67B634287C4C853BAA1F946 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77CBD1B8E3D86A3D965DD6D0 /* AppSettings.swift */; };
-		1B0D39C0B31C21309338CCF4 /* SupportedPreviewRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E5E45E8BA05C598C36B7211 /* SupportedPreviewRegistry.swift */; };
-		B38FB6C9D7D7332C12C244CE /* SupportedPreviewRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E5E45E8BA05C598C36B7211 /* SupportedPreviewRegistry.swift */; };
-		3190EA51FD47FD7107E09140 /* SupportedPreviewRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E5E45E8BA05C598C36B7211 /* SupportedPreviewRegistry.swift */; };
-		B0DAFC86DF163898CC16D716 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77CBD1B8E3D86A3D965DD6D0 /* AppSettings.swift */; };
 		E978FD0ADCD5765A54672E67 /* SettingsWC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3048855925A27D336EC30FC7 /* SettingsWC.swift */; };
 		7ECC8CF2240CB4CC000D6970 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ECC8CF1240CB4CC000D6970 /* AppDelegate.swift */; };
 		7ECC8CF4240CB4CC000D6970 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ECC8CF3240CB4CC000D6970 /* ViewController.swift */; };
@@ -181,8 +162,17 @@
 		7ED140642450C4A7007A7C70 /* Credits.rtf in Resources */ = {isa = PBXBuildFile; fileRef = 7ED140632450C4A7007A7C70 /* Credits.rtf */; };
 		7ED140662450C671007A7C70 /* SupportedFilesWC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ED140652450C671007A7C70 /* SupportedFilesWC.swift */; };
 		7EE0465C246EB5DE006172D9 /* AppIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EE0465B246EB5DE006172D9 /* AppIcon.swift */; };
-		7EE10F84244F679B007214D8 /* Log.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EE10F82244F6774007214D8 /* Log.swift */; };
-		7EE10F85244F696F007214D8 /* Log.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EE10F82244F6774007214D8 /* Log.swift */; };
+		60CE09000000000000000101 /* PreviewSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = A19F4D4526218B2B008A903C /* PreviewSupport.swift */; };
+		60CE09000000000000000102 /* Log.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EE10F82244F6774007214D8 /* Log.swift */; };
+		60CE09000000000000000103 /* Date.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E21C89024390E3100818EB2 /* Date.swift */; };
+		60CE09000000000000000104 /* OpenWithBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6A000000000000000000001 /* OpenWithBridge.swift */; };
+		60CE09000000000000000105 /* Stats.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E21C88C2438CAA500818EB2 /* Stats.swift */; };
+		60CE09000000000000000106 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77CBD1B8E3D86A3D965DD6D0 /* AppSettings.swift */; };
+		60CE09000000000000000107 /* SupportedPreviewRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E5E45E8BA05C598C36B7211 /* SupportedPreviewRegistry.swift */; };
+		60CE09000000000000000051 /* GlanceKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 60CE09000000000000000001 /* GlanceKit.framework */; };
+		60CE09000000000000000052 /* GlanceKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 60CE09000000000000000001 /* GlanceKit.framework */; };
+		60CE09000000000000000053 /* GlanceKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 60CE09000000000000000001 /* GlanceKit.framework */; };
+		60CE09000000000000000031 /* GlanceKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 60CE09000000000000000001 /* GlanceKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -199,6 +189,27 @@
 			proxyType = 1;
 			remoteGlobalIDString = 7E6EF1F9240CC802009E4199;
 			remoteInfo = QLPlugin;
+		};
+		60CE09000000000000000071 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 7ECC8CE6240CB4CC000D6970 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 60CE09000000000000000010;
+			remoteInfo = GlanceKit;
+		};
+		60CE09000000000000000072 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 7ECC8CE6240CB4CC000D6970 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 60CE09000000000000000010;
+			remoteInfo = GlanceKit;
+		};
+		60CE09000000000000000073 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 7ECC8CE6240CB4CC000D6970 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 60CE09000000000000000010;
+			remoteInfo = GlanceKit;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -222,6 +233,17 @@
 			files = (
 			);
 			name = "Copy Files";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		60CE09000000000000000030 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				60CE09000000000000000031 /* GlanceKit.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
@@ -350,6 +372,7 @@
 		7ED140652450C671007A7C70 /* SupportedFilesWC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SupportedFilesWC.swift; sourceTree = "<group>"; };
 		7EE0465B246EB5DE006172D9 /* AppIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIcon.swift; sourceTree = "<group>"; };
 		7EE10F82244F6774007214D8 /* Log.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Log.swift; sourceTree = "<group>"; };
+		60CE09000000000000000001 /* GlanceKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = GlanceKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -358,6 +381,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				C0DE00000000000000000209 /* libglance_preview_core.a in Frameworks */,
+				60CE09000000000000000053 /* GlanceKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -367,10 +391,19 @@
 			files = (
 				10779C50262198EA008A903C /* libglance_preview_core.a in Frameworks */,
 				7E6EF1FD240CC802009E4199 /* Quartz.framework in Frameworks */,
+				60CE09000000000000000052 /* GlanceKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		7ECC8CEB240CB4CC000D6970 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				60CE09000000000000000051 /* GlanceKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		60CE09000000000000000022 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -670,6 +703,7 @@
 				7ECC8CEE240CB4CC000D6970 /* Glance.app */,
 				7E6EF1FA240CC802009E4199 /* QLPlugin.appex */,
 				10779C0D26218B2B008A903C /* GlanceTests.xctest */,
+				60CE09000000000000000001 /* GlanceKit.framework */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -709,6 +743,7 @@
 			);
 			dependencies = (
 				10779C1326218B2B008A903C /* PBXTargetDependency */,
+				60CE09000000000000000063 /* PBXTargetDependency */,
 			);
 			name = GlanceTests;
 			packageProductDependencies = (
@@ -730,6 +765,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				60CE09000000000000000062 /* PBXTargetDependency */,
 			);
 			name = QLPlugin;
 			packageProductDependencies = (
@@ -745,12 +781,14 @@
 				7ECC8CEA240CB4CC000D6970 /* Sources */,
 				7ECC8CEB240CB4CC000D6970 /* Frameworks */,
 				7ECC8CEC240CB4CC000D6970 /* Resources */,
+				60CE09000000000000000030 /* Embed Frameworks */,
 				7E6EF209240CC802009E4199 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 				7E6EF207240CC802009E4199 /* PBXTargetDependency */,
+				60CE09000000000000000061 /* PBXTargetDependency */,
 			);
 			name = Glance;
 			packageProductDependencies = (
@@ -758,6 +796,25 @@
 			productName = Glance;
 			productReference = 7ECC8CEE240CB4CC000D6970 /* Glance.app */;
 			productType = "com.apple.product-type.application";
+		};
+		60CE09000000000000000010 /* GlanceKit */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 60CE09000000000000000020 /* Build configuration list for PBXNativeTarget "GlanceKit" */;
+			buildPhases = (
+				60CE09000000000000000021 /* Sources */,
+				60CE09000000000000000022 /* Frameworks */,
+				60CE09000000000000000023 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = GlanceKit;
+			packageProductDependencies = (
+			);
+			productName = GlanceKit;
+			productReference = 60CE09000000000000000001 /* GlanceKit.framework */;
+			productType = "com.apple.product-type.framework";
 		};
 /* End PBXNativeTarget section */
 
@@ -773,6 +830,9 @@
 					10779C0C26218B2B008A903C = {
 						CreatedOnToolsVersion = 12.4;
 						TestTargetID = 7ECC8CED240CB4CC000D6970;
+					};
+					60CE09000000000000000010 = {
+						CreatedOnToolsVersion = 16.0;
 					};
 					7E6EF1F9240CC802009E4199 = {
 						CreatedOnToolsVersion = 11.3.1;
@@ -800,6 +860,7 @@
 				7ECC8CED240CB4CC000D6970 /* Glance */,
 				7E6EF1F9240CC802009E4199 /* QLPlugin */,
 				10779C0C26218B2B008A903C /* GlanceTests */,
+			60CE09000000000000000010 /* GlanceKit */,
 			);
 		};
 /* End PBXProject section */
@@ -863,6 +924,13 @@
 				7ECC8CF6240CB4CC000D6970 /* Assets.xcassets in Resources */,
 				7E21C88B2438818100818EB2 /* Main.storyboard in Resources */,
 				7ED140642450C4A7007A7C70 /* Credits.rtf in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		60CE09000000000000000023 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -932,17 +1000,13 @@
 				D4A000000000000000000006 /* MainVC.swift in Sources */,
 				53CE030000000000000021 /* MainVCBackgroundWork.swift in Sources */,
 				54CE040000000000000021 /* MainVCNavigation.swift in Sources */,
-				D4A000000000000000000007 /* Stats.swift in Sources */,
 				D5A000000000000000000003 /* OpenWithService.swift in Sources */,
 				D5A000000000000000000005 /* OpenWithTests.swift in Sources */,
-				D6A000000000000000000004 /* OpenWithBridge.swift in Sources */,
 				F1A000000000000000000003 /* WindowAppearance.swift in Sources */,
 				F2A000000000000000000002 /* WindowAppearanceTests.swift in Sources */,
 				F3A000000000000000000001 /* SupportedFilesWC.swift in Sources */,
 				F4A000000000000000000001 /* SettingsWC.swift in Sources */,
 				C0DE00000000000000000315 /* CodePreview.swift in Sources */,
-				C0DE00000000000000000303 /* Date.swift in Sources */,
-				C0DE00000000000000000302 /* Log.swift in Sources */,
 				C0DE00000000000000000311 /* PreviewVC.swift in Sources */,
 				52CE020000000000000011 /* PreviewPolicy.swift in Sources */,
 				52CE020000000000000012 /* ArchiveStatusFormatter.swift in Sources */,
@@ -954,14 +1018,11 @@
 				C0DE00000000000000000316 /* TSVPreview.swift in Sources */,
 				C0DE00000000000000000318 /* ZIPPreview.swift in Sources */,
 				C0DE00000000000000000304 /* String.swift in Sources */,
-				B67B634287C4C853BAA1F946 /* AppSettings.swift in Sources */,
 				C0DE00000000000000000312 /* PreviewVCFactory.swift in Sources */,
 				C0DE00000000000000000204 /* PreviewSmokeTests.swift in Sources */,
 				C0DE00000000000000000317 /* TARPreview.swift in Sources */,
 				C0DE00000000000000000306 /* FileTree.swift in Sources */,
 				58CE080000000000000011 /* LegacyFileTree.swift in Sources */,
-				C0DE00000000000000000301 /* PreviewSupport.swift in Sources */,
-				3190EA51FD47FD7107E09140 /* SupportedPreviewRegistry.swift in Sources */,
 				C0DE00000000000000000310 /* Stylesheet.swift in Sources */,
 				C0DE00000000000000000309 /* Script.swift in Sources */,
 				C0DE00000000000000000205 /* PlistCoverageTests.swift in Sources */,
@@ -999,17 +1060,10 @@
 				A5A000000000000000000005 /* PreviewExecutor.swift in Sources */,
 				D4A000000000000000000002 /* NestedPreviewProvider.swift in Sources */,
 				D5A000000000000000000002 /* OpenWithService.swift in Sources */,
-				D6A000000000000000000002 /* OpenWithBridge.swift in Sources */,
 				7EB36488244B65D900D7F96F /* String.swift in Sources */,
 				7EAC01EC240D220B009505D0 /* File.swift in Sources */,
-				7E458AED2439176B0091BD0F /* Date.swift in Sources */,
 				7EB7491924228549007265A4 /* JupyterPreview.swift in Sources */,
 				7E1B16922455D93E00E2B84D /* HTMLRenderer.swift in Sources */,
-				7EE10F84244F679B007214D8 /* Log.swift in Sources */,
-				0DD9FAE6C6A22D86C26594E8 /* AppSettings.swift in Sources */,
-				A19F4D4226218B2B008A903C /* PreviewSupport.swift in Sources */,
-				B38FB6C9D7D7332C12C244CE /* SupportedPreviewRegistry.swift in Sources */,
-				7E21C88E24390BE400818EB2 /* Stats.swift in Sources */,
 				7E1DC51F240E6CE300D0A061 /* PreviewVC.swift in Sources */,
 				52CE020000000000000021 /* PreviewPolicy.swift in Sources */,
 				52CE020000000000000022 /* ArchiveStatusFormatter.swift in Sources */,
@@ -1046,18 +1100,25 @@
 				7EE0465C246EB5DE006172D9 /* AppIcon.swift in Sources */,
 				7E458AF0243944810091BD0F /* URL.swift in Sources */,
 				7ECC8CF4240CB4CC000D6970 /* ViewController.swift in Sources */,
-				B0DAFC86DF163898CC16D716 /* AppSettings.swift in Sources */,
-				7EE10F85244F696F007214D8 /* Log.swift in Sources */,
 				7E458AF52439481F0091BD0F /* Menu.swift in Sources */,
-				7E21C88D2438CAA500818EB2 /* Stats.swift in Sources */,
-				A19F4D4326218B2B008A903C /* PreviewSupport.swift in Sources */,
-				1B0D39C0B31C21309338CCF4 /* SupportedPreviewRegistry.swift in Sources */,
-				D6A000000000000000000003 /* OpenWithBridge.swift in Sources */,
 				F1A000000000000000000002 /* WindowAppearance.swift in Sources */,
 				7ECC8CF2240CB4CC000D6970 /* AppDelegate.swift in Sources */,
 				7ED140662450C671007A7C70 /* SupportedFilesWC.swift in Sources */,
 				E978FD0ADCD5765A54672E67 /* SettingsWC.swift in Sources */,
-				7E21C89124390E3100818EB2 /* Date.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		60CE09000000000000000021 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				60CE09000000000000000101 /* PreviewSupport.swift in Sources */,
+				60CE09000000000000000102 /* Log.swift in Sources */,
+				60CE09000000000000000103 /* Date.swift in Sources */,
+				60CE09000000000000000104 /* OpenWithBridge.swift in Sources */,
+				60CE09000000000000000105 /* Stats.swift in Sources */,
+				60CE09000000000000000106 /* AppSettings.swift in Sources */,
+				60CE09000000000000000107 /* SupportedPreviewRegistry.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1073,6 +1134,21 @@
 			isa = PBXTargetDependency;
 			target = 7E6EF1F9240CC802009E4199 /* QLPlugin */;
 			targetProxy = 7E6EF206240CC802009E4199 /* PBXContainerItemProxy */;
+		};
+		60CE09000000000000000061 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 7ECC8CED240CB4CC000D6970 /* Glance */;
+			targetProxy = 60CE09000000000000000071 /* PBXContainerItemProxy */;
+		};
+		60CE09000000000000000062 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 7E6EF1F9240CC802009E4199 /* QLPlugin */;
+			targetProxy = 60CE09000000000000000072 /* PBXContainerItemProxy */;
+		};
+		60CE09000000000000000063 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 10779C0C26218B2B008A903C /* GlanceTests */;
+			targetProxy = 60CE09000000000000000073 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -1369,6 +1445,40 @@
 			};
 			name = Release;
 		};
+		60CE09000000000000000041 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				DEFINES_MODULE = YES;
+				DEVELOPMENT_TEAM = "";
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				GENERATE_INFOPLIST_FILE = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.chamburr.Glance.GlanceKit;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		60CE09000000000000000042 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				DEFINES_MODULE = YES;
+				DEVELOPMENT_TEAM = "";
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				GENERATE_INFOPLIST_FILE = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.chamburr.Glance.GlanceKit;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1404,6 +1514,15 @@
 			buildConfigurations = (
 				7ECC8CFF240CB4CC000D6970 /* Debug */,
 				7ECC8D00240CB4CC000D6970 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		60CE09000000000000000020 /* Build configuration list for PBXNativeTarget "GlanceKit" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				60CE09000000000000000041 /* Debug */,
+				60CE09000000000000000042 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

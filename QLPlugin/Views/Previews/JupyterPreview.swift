@@ -1,4 +1,5 @@
 import Foundation
+import GlanceKit
 
 class JupyterPreview: Preview {
 	private let chromaStylesheetURL = WebPreviewVC.resourceBundle.url(

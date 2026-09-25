@@ -1,4 +1,5 @@
 import Foundation
+import GlanceKit
 
 /// Presentation adapter for TAR and gzip-compressed TAR metadata parsed by PreviewCore.
 class TARPreview: Preview {

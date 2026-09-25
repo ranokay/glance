@@ -1,4 +1,5 @@
 import Foundation
+import GlanceKit
 
 final class Script: WebAsset {
 	private enum Source {
