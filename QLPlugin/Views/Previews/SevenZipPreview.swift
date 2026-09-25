@@ -1,4 +1,5 @@
 import Foundation
+import GlanceKit
 
 class SevenZipPreview: Preview {
 	required init() {}

@@ -1,4 +1,5 @@
 import Cocoa
+import GlanceKit
 
 /// NUL cannot occur in a filesystem name, so these internal dictionary keys cannot replace a
 /// real child. The node's display name remains the user-facing loading/action text.

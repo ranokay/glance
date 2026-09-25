@@ -1,4 +1,5 @@
 import Foundation
+import GlanceKit
 
 class CodePreview: Preview {
 	private let chromaStylesheetURL = WebPreviewVC.resourceBundle.url(

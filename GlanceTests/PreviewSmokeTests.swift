@@ -1,5 +1,6 @@
 import Cocoa
 import Foundation
+import GlanceKit
 import SceneKit
 import WebKit
 import XCTest

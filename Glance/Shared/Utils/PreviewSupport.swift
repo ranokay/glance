@@ -1,6 +1,6 @@
 import Foundation
 
-enum PreviewFileType: Equatable {
+public enum PreviewFileType: Equatable, Sendable {
 	case code
 	case drawIO
 	case epub
@@ -16,8 +16,8 @@ enum PreviewFileType: Equatable {
 	case zip
 }
 
-enum PreviewSupport {
-	static func getCodeLexer(fileURL: URL) -> String {
+public enum PreviewSupport {
+	public static func getCodeLexer(fileURL: URL) -> String {
 		// Recurse through .dist wrapper extensions
 		if fileURL.pathExtension.lowercased() == "dist" {
 			return getCodeLexer(fileURL: fileURL.deletingPathExtension())
@@ -34,7 +34,7 @@ enum PreviewSupport {
 		return fileURL.pathExtension.isEmpty ? "autodetect" : fileURL.pathExtension
 	}
 
-	static func getPreviewFileType(fileURL: URL) -> PreviewFileType {
+	public static func getPreviewFileType(fileURL: URL) -> PreviewFileType {
 		SupportedPreviewRegistry.entry(matching: fileURL)?.previewFileType ?? .unsupported
 	}
 }

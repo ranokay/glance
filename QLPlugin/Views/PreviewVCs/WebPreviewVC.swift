@@ -1,4 +1,5 @@
 import Cocoa
+import GlanceKit
 import WebKit
 
 class WebPreviewVC: NSViewController, PreviewVC, WKNavigationDelegate {

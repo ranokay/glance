@@ -15,7 +15,7 @@ extension Date {
 	)
 
 	/// Converts the `Date` to a `yyyy-MM-dd` string
-	func toDateString() -> String {
+	public func toDateString() -> String {
 		Self.dateStringFormatterQueue.sync {
 			Self.dateStringFormatter.string(from: self)
 		}

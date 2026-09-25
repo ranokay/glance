@@ -1,34 +1,34 @@
 import Foundation
 
 /// Class for reading and updating usage statistics.
-class Stats {
+public class Stats {
 	private let dateCountsKey = "dateCount"
 	private let extensionCountsKey = "extensionCount"
 	private let totalCountKey = "totalCount"
 
 	private let defaults: UserDefaults
 
-	init() {
+	public init() {
 		defaults = AppSettingsStore.sharedDefaults
 	}
 
 	/// Returns the stored dictionary with number of previews generated per day
-	func getDateCounts() -> [String: Int] {
+	public func getDateCounts() -> [String: Int] {
 		defaults.dictionary(forKey: dateCountsKey) as? [String: Int] ?? [String: Int]()
 	}
 
 	/// Returns the stored dictionary with number of previews generated per file extension
-	func getExtensionCounts() -> [String: Int] {
+	public func getExtensionCounts() -> [String: Int] {
 		defaults.dictionary(forKey: extensionCountsKey) as? [String: Int] ?? [String: Int]()
 	}
 
 	/// Returns the total number of generated previews
-	func getTotalCount() -> Int {
+	public func getTotalCount() -> Int {
 		defaults.integer(forKey: totalCountKey)
 	}
 
 	/// Updates all statistics to record that a new preview has been generated
-	func increaseStatsCounts(fileExtension: String) {
+	public func increaseStatsCounts(fileExtension: String) {
 		let todayString = Date().toDateString()
 
 		// Increase today's date count by 1

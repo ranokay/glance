@@ -1,4 +1,5 @@
 import Foundation
+import GlanceKit
 
 enum DrawIOPreviewError: LocalizedError {
 	case compressedDiagramUnsupported

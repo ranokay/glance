@@ -1,5 +1,6 @@
 import AVFoundation
 import Cocoa
+import GlanceKit
 
 struct FLACPreview: Preview {
 	init() {}

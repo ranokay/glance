@@ -1,4 +1,5 @@
 import Cocoa
+import GlanceKit
 import QuickLookThumbnailing
 import UniformTypeIdentifiers
 
