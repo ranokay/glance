@@ -35,3 +35,12 @@ ticket. One capture per ticket, not per commit.
 Desktop-automation drivers (cua-driver and friends) are exploratory-only:
 useful for ad-hoc walkthroughs, never a merge gate, never a CI dependency.
 No new screenshot or automation dependencies without a ticket.
+
+## Human gates
+
+Canonical list lives in `STATE.md` and is enforced by blocking checklist, not
+by convention alone: destructive (reset/uninstall/shared-DerivedData clean),
+publishing (releases, App Store), credentials (Apple ID, notarization,
+keychain, VM secrets), and signing/entitlement/deployment-target changes.
+Agents act alone on code, verify, and issue edits; anything on the gate list
+goes through the `wizard` skill's blocking checklist with a human first.

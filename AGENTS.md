@@ -15,3 +15,11 @@ Use a single-context layout with `CONTEXT.md` at the root and ADRs under `docs/a
 ### Verification
 
 Automated gates, manual capture convention, and exploratory-automation rules. See `docs/agents/verification.md`.
+
+### Release checklists
+
+Version-bump, type-add, and web-runtime-bump procedures. See `docs/agents/release-checklists.md`.
+
+### Glossary
+
+Crystallised terms only (`slice` so far). See `docs/agents/glossary.md`.

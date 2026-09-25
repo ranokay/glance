@@ -12,4 +12,4 @@ Kickoff: `read STATE.md and run the kickoff`
 
 Human gates (agent stops, wizard checklist blocks the step): destructive (reset/uninstall/shared-DerivedData clean), publishing (gh release, App Store), credentials (Apple ID, notarization, keychain, VM secrets), signing/entitlement/deployment-target changes.
 
-Context: transient [AUDIT.md](./AUDIT.md) (delete after ticketing) + [CHANGELOG.md](./CHANGELOG.md). Locked: slices/no-big-bang [#46](https://github.com/ranokay/glance/issues/46), docs/lifecycle [#47](https://github.com/ranokay/glance/issues/47), automation/evidence/stack [#48](https://github.com/ranokay/glance/issues/48).
+Context: transient AUDIT.md (deleted after ticketing per #63) + [CHANGELOG.md](./CHANGELOG.md). Locked: slices/no-big-bang [#46](https://github.com/ranokay/glance/issues/46), docs/lifecycle [#47](https://github.com/ranokay/glance/issues/47), automation/evidence/stack [#48](https://github.com/ranokay/glance/issues/48).
