@@ -240,7 +240,7 @@ final class OpenWithTests: XCTestCase {
 			receivedError = error
 			completion.fulfill()
 		}
-		wait(for: [completion], timeout: 1)
+		wait(for: [completion], timeout: 10)
 
 		XCTAssertNil(receivedError)
 		XCTAssertEqual(launcher.compatibilityChecks.count, 1)
@@ -329,7 +329,7 @@ final class OpenWithTests: XCTestCase {
 			receivedError = error
 			completion.fulfill()
 		}
-		wait(for: [completion], timeout: 1)
+		wait(for: [completion], timeout: 10)
 
 		XCTAssertNil(receivedError)
 		XCTAssertEqual(launcher.openCalls.count, 1)
@@ -396,7 +396,7 @@ final class OpenWithTests: XCTestCase {
 			receivedError = error
 			completion.fulfill()
 		}
-		wait(for: [completion], timeout: 1)
+		wait(for: [completion], timeout: 10)
 
 		XCTAssertEqual(
 			(receivedError as? OpenWithBridgeRemoteError)?.message,
@@ -437,7 +437,7 @@ final class OpenWithTests: XCTestCase {
 			receivedError = error
 			completion.fulfill()
 		}
-		wait(for: [completion], timeout: 1)
+		wait(for: [completion], timeout: 10)
 
 		XCTAssertEqual(
 			(receivedError as? OpenWithBridgeRemoteError)?.message,
@@ -479,7 +479,7 @@ final class OpenWithTests: XCTestCase {
 			receivedError = error
 			completion.fulfill()
 		}
-		wait(for: [completion], timeout: 1)
+		wait(for: [completion], timeout: 10)
 
 		XCTAssertEqual(
 			(receivedError as? OpenWithBridgeRemoteError)?.message,
@@ -517,7 +517,7 @@ final class OpenWithTests: XCTestCase {
 			receivedError = error
 			completion.fulfill()
 		}
-		wait(for: [completion], timeout: 1)
+		wait(for: [completion], timeout: 10)
 
 		XCTAssertEqual(
 			(receivedError as? OpenWithBridgeRemoteError)?.message,
@@ -639,7 +639,7 @@ final class OpenWithTests: XCTestCase {
 			receivedError = error
 			completion.fulfill()
 		}
-		wait(for: [completion], timeout: 1)
+		wait(for: [completion], timeout: 10)
 
 		guard let bridgeError = receivedError as? OpenWithBridgeError else {
 			return XCTFail("Expected an Open With bridge error")

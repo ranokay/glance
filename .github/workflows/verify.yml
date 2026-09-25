@@ -56,11 +56,21 @@ jobs:
           key: rust-1.97.1-${{ hashFiles('PreviewCore/Cargo.lock') }}
           restore-keys: rust-1.97.1-
 
+      - name: Check release metadata strings
+        run: |
+          set -euo pipefail
+          sh scripts/check-release-metadata.sh
+
       - name: Run production verification (lint gate first, no mid-run wipe)
         run: |
           set -euo pipefail
           mise run verify
           mise run verify:app 2>&1 | tee build/verify-app.log
+
+      - name: Run scripted Quick Look corpus (fuzzy, fail on missing/crash)
+        run: |
+          set -euo pipefail
+          sh scripts/qlmanage-corpus.sh 2>&1 | tee build/qlmanage-corpus.log
 
       - name: Retain evidence bundle keyed by commit
         if: always()
@@ -70,4 +80,5 @@ jobs:
           path: |
             build/TestResults/Glance.xcresult
             build/verify-app.log
+            build/qlmanage-corpus.log
           if-no-files-found: warn
