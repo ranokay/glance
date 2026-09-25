@@ -77,7 +77,11 @@
 		55CE050000000000000011 /* OutlineTransformers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55CE050000000000000001 /* OutlineTransformers.swift */; };
 		56CE060000000000000011 /* OutlinePagination.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56CE060000000000000001 /* OutlinePagination.swift */; };
 		D1A000000000000000000002 /* DirectoryPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A000000000000000000001 /* DirectoryPreview.swift */; };
+		57CE070000000000000011 /* DirectoryPageLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57CE070000000000000001 /* DirectoryPageLoader.swift */; };
+		57CE070000000000000012 /* DirectoryPageScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57CE070000000000000002 /* DirectoryPageScanner.swift */; };
 		D1A000000000000000000003 /* DirectoryPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A000000000000000000001 /* DirectoryPreview.swift */; };
+		57CE070000000000000021 /* DirectoryPageLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57CE070000000000000001 /* DirectoryPageLoader.swift */; };
+		57CE070000000000000022 /* DirectoryPageScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57CE070000000000000002 /* DirectoryPageScanner.swift */; };
 		D1A000000000000000000005 /* DirectoryPreviewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A000000000000000000004 /* DirectoryPreviewTests.swift */; };
 		D2A000000000000000000002 /* DirectoryThumbnailLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2A000000000000000000001 /* DirectoryThumbnailLoader.swift */; };
 		D2A000000000000000000003 /* DirectoryThumbnailLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2A000000000000000000001 /* DirectoryThumbnailLoader.swift */; };
@@ -253,6 +257,8 @@
 		C0DE00000000000000000104 /* PreviewSmokeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewSmokeTests.swift; sourceTree = "<group>"; };
 		C0DE00000000000000000105 /* PlistCoverageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlistCoverageTests.swift; sourceTree = "<group>"; };
 		D1A000000000000000000001 /* DirectoryPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DirectoryPreview.swift; sourceTree = "<group>"; };
+		57CE070000000000000001 /* DirectoryPageLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DirectoryPageLoader.swift; sourceTree = "<group>"; };
+		57CE070000000000000002 /* DirectoryPageScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DirectoryPageScanner.swift; sourceTree = "<group>"; };
 		D1A000000000000000000004 /* DirectoryPreviewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DirectoryPreviewTests.swift; sourceTree = "<group>"; };
 		D2A000000000000000000001 /* DirectoryThumbnailLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DirectoryThumbnailLoader.swift; sourceTree = "<group>"; };
 		D2A000000000000000000004 /* DirectoryThumbnailTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DirectoryThumbnailTests.swift; sourceTree = "<group>"; };
@@ -441,6 +447,8 @@
 				22A000000000000000000001 /* RARPreview.swift */,
 				3F0000000000000000000005 /* ThreeMFPreview.swift */,
 				D1A000000000000000000001 /* DirectoryPreview.swift */,
+				57CE070000000000000001 /* DirectoryPageLoader.swift */,
+				57CE070000000000000002 /* DirectoryPageScanner.swift */,
 				103654F32F72623D006F2538 /* SevenZipPreview.swift */,
 				7E1DC529240E6FDE00D0A061 /* CodePreview.swift */,
 				7EB7491824228549007265A4 /* JupyterPreview.swift */,
@@ -907,6 +915,8 @@
 				3F0000000000000000000024 /* ModelPreviewVC.swift in Sources */,
 				3F0000000000000000000025 /* ThreeMFPreview.swift in Sources */,
 				D1A000000000000000000003 /* DirectoryPreview.swift in Sources */,
+				57CE070000000000000011 /* DirectoryPageLoader.swift in Sources */,
+				57CE070000000000000012 /* DirectoryPageScanner.swift in Sources */,
 				D1A000000000000000000005 /* DirectoryPreviewTests.swift in Sources */,
 				D2A000000000000000000003 /* DirectoryThumbnailLoader.swift in Sources */,
 				A5A000000000000000000004 /* PreviewCoreBridge.swift in Sources */,
@@ -977,6 +987,8 @@
 				3F0000000000000000000014 /* ModelPreviewVC.swift in Sources */,
 				3F0000000000000000000015 /* ThreeMFPreview.swift in Sources */,
 				D1A000000000000000000002 /* DirectoryPreview.swift in Sources */,
+				57CE070000000000000021 /* DirectoryPageLoader.swift in Sources */,
+				57CE070000000000000022 /* DirectoryPageScanner.swift in Sources */,
 				D2A000000000000000000002 /* DirectoryThumbnailLoader.swift in Sources */,
 				A5A000000000000000000003 /* PreviewCoreBridge.swift in Sources */,
 				A5A000000000000000000005 /* PreviewExecutor.swift in Sources */,
