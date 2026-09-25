@@ -56,6 +56,7 @@
 		C0DE00000000000000000304 /* String.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EB36487244B65D900D7F96F /* String.swift */; };
 		C0DE00000000000000000305 /* File.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EAC01EB240D220B009505D0 /* File.swift */; };
 		C0DE00000000000000000306 /* FileTree.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E45F898244DA45500BFB869 /* FileTree.swift */; };
+		58CE080000000000000011 /* LegacyFileTree.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58CE080000000000000001 /* LegacyFileTree.swift */; };
 		C0DE00000000000000000307 /* HTMLRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E1B16912455D93E00E2B84D /* HTMLRenderer.swift */; };
 		C0DE00000000000000000308 /* WebAsset.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E9F0D7C24168870007F1008 /* WebAsset.swift */; };
 		C0DE00000000000000000309 /* Script.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E9F0D7B24168870007F1008 /* Script.swift */; };
@@ -128,6 +129,7 @@
 		7E458AF0243944810091BD0F /* URL.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E458AEF243944810091BD0F /* URL.swift */; };
 		7E458AF52439481F0091BD0F /* Menu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E458AF42439481F0091BD0F /* Menu.swift */; };
 		7E45F899244DA45500BFB869 /* FileTree.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E45F898244DA45500BFB869 /* FileTree.swift */; };
+		58CE080000000000000021 /* LegacyFileTree.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58CE080000000000000001 /* LegacyFileTree.swift */; };
 		7E616BB2244998650043F7AB /* MainVC.xib in Resources */ = {isa = PBXBuildFile; fileRef = 7E616BB1244998650043F7AB /* MainVC.xib */; };
 		7E6EF1FD240CC802009E4199 /* Quartz.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7E6EF1FC240CC802009E4199 /* Quartz.framework */; };
 		7E6EF208240CC802009E4199 /* QLPlugin.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 7E6EF1FA240CC802009E4199 /* QLPlugin.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -294,6 +296,7 @@
 		7E458AEF243944810091BD0F /* URL.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URL.swift; sourceTree = "<group>"; };
 		7E458AF42439481F0091BD0F /* Menu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Menu.swift; sourceTree = "<group>"; };
 		7E45F898244DA45500BFB869 /* FileTree.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileTree.swift; sourceTree = "<group>"; };
+		58CE080000000000000001 /* LegacyFileTree.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegacyFileTree.swift; sourceTree = "<group>"; };
 		7E616BB1244998650043F7AB /* MainVC.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = MainVC.xib; sourceTree = "<group>"; };
 		7E6EF1FA240CC802009E4199 /* QLPlugin.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = QLPlugin.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		7E6EF1FC240CC802009E4199 /* Quartz.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Quartz.framework; path = System/Library/Frameworks/Quartz.framework; sourceTree = SDKROOT; };
@@ -404,6 +407,7 @@
 				D2A000000000000000000001 /* DirectoryThumbnailLoader.swift */,
 				7EAC01EB240D220B009505D0 /* File.swift */,
 				7E45F898244DA45500BFB869 /* FileTree.swift */,
+				58CE080000000000000001 /* LegacyFileTree.swift */,
 				7E1B16912455D93E00E2B84D /* HTMLRenderer.swift */,
 				A5A000000000000000000001 /* PreviewCoreBridge.swift */,
 				A5A000000000000000000002 /* PreviewExecutor.swift */,
@@ -955,6 +959,7 @@
 				C0DE00000000000000000204 /* PreviewSmokeTests.swift in Sources */,
 				C0DE00000000000000000317 /* TARPreview.swift in Sources */,
 				C0DE00000000000000000306 /* FileTree.swift in Sources */,
+				58CE080000000000000011 /* LegacyFileTree.swift in Sources */,
 				C0DE00000000000000000301 /* PreviewSupport.swift in Sources */,
 				3190EA51FD47FD7107E09140 /* SupportedPreviewRegistry.swift in Sources */,
 				C0DE00000000000000000310 /* Stylesheet.swift in Sources */,
@@ -1009,6 +1014,7 @@
 				52CE020000000000000021 /* PreviewPolicy.swift in Sources */,
 				52CE020000000000000022 /* ArchiveStatusFormatter.swift in Sources */,
 				7E45F899244DA45500BFB869 /* FileTree.swift in Sources */,
+				58CE080000000000000021 /* LegacyFileTree.swift in Sources */,
 				7E9F0D7F24168870007F1008 /* WebAsset.swift in Sources */,
 				7E022BE52452181F000EFCD3 /* WebPreviewVC.swift in Sources */,
 				7E08A50F2454372200B7FF53 /* TablePreviewVC.swift in Sources */,
