@@ -38,6 +38,16 @@
                ReferencedContainer = "container:Glance.xcodeproj">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "62CE0C000000000000000020"
+               BuildableName = "GlanceUITests.xctest"
+               BlueprintName = "GlanceUITests"
+               ReferencedContainer = "container:Glance.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction
