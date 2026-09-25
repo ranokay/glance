@@ -4,7 +4,7 @@
 	<p><strong>All-in-one Quick Look plugin</strong></p>
 	<p>Glance provides Quick Look previews for files that macOS doesn't support out of the box.</p>
 	<p><strong>Version 1.6.1 (build 21)</strong> · macOS 26 or later · Apple silicon</p>
-	<p><a href="#installation">Installation Steps</a></p>
+	<p><a href="#installation">Installation Steps</a> · <a href="https://github.com/ranokay/glance/releases"><img src="./AppStore/Assets/DownloadBadge.svg" alt="Download" height="40"></a></p>
 	<p><img src="./AppStore/Listing/Screenshots/Screenshot1.jpg" alt=""></p>
 </div>
 
@@ -98,6 +98,23 @@ Release DMGs are currently unsigned and unnotarized. To install Glance:
 - **Tab-separated values** (parsed by Glance's bounded Rust preview core): `.tab`, `.tsv`
 
   <p><img src="./AppStore/Assets/Screenshots/ScreenshotTSV.png" alt="" width="600"></p>
+
+## Images
+
+Two sets, two jobs. The App Store submission set is canonical for the store
+listing; the docs set illustrates this README. Neither set is committed by CI —
+only deliberate human captures land here.
+
+- Submission (canonical): `AppStore/Listing/Screenshots/Screenshot1.jpg`
+  (file-type collage), `Screenshot2.jpg` (Quick Look, Finder and Spotlight),
+  `Screenshot3.jpg` (light and dark mode). `Screenshot2.jpg` predates the
+  current chrome — refresh pending: capture a current Quick Look preview
+  window next to Finder on a staging Mac and replace the file in place.
+- Docs: `AppStore/Assets/Screenshots/` per file type (`SourceCode`,
+  `Markdown`, `Archive`, `JupyterNotebook`, `TSV`), embedded in the
+  Supported file types section above.
+- `AppStore/Assets/DownloadBadge.svg`: the releases badge wired in the hero
+  above, linking to this fork's GitHub Releases.
 
 ## FAQ
 
