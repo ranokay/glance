@@ -67,7 +67,12 @@ jobs:
           mise run verify
           mise run verify:app 2>&1 | tee build/verify-app.log
 
-      - name: Run scripted Quick Look corpus (fuzzy, fail on missing/crash)
+      - name: Run scripted Quick Look corpus (exploratory signal, not gating)
+        # Runner proof (PR #74): the hosted thumbnail daemon serves only
+        # Apple-owned types and never dispatches to the registered appex,
+        # so this stays exploratory until the daemon story is resolved.
+        # The gating corpus check is CorpusSweepTests in the unit suite.
+        continue-on-error: true
         run: |
           set -euo pipefail
           sh scripts/qlmanage-corpus.sh 2>&1 | tee build/qlmanage-corpus.log

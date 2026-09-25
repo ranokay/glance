@@ -16,7 +16,10 @@ confirm only what automation cannot.
   construct. Only the encryption-gated archives in its allowlist may throw.
 - Scripted Quick Look corpus (`scripts/qlmanage-corpus.sh`): fuzzy over the
   same fixtures — fails on missing output, crashes, or hangs, never on pixel
-  drift. Runs after the build in CI.
+  drift. Currently exploratory (CI `continue-on-error`): the hosted thumbnail
+  daemon serves only Apple-owned types and never dispatches to the registered
+  appex, so it cannot gate until that daemon story is resolved. The gating
+  corpus check is `CorpusSweepTests` in the unit suite.
 - Fulfillment waits are always bounded with generous ceilings
   (Open-With round-trips 10 s, WebView loads 15 s); XCTest returns early on
   fulfillment, so generous ceilings only slow down genuine failures.
