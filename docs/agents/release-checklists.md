@@ -4,7 +4,7 @@ Step-by-step bump procedures. `scripts/check-release-metadata.sh` is the
 machine-readable mirror of the version checklist — update its literals in the
 same commit as any intentional bump, then run it.
 
-## Version bump (1.6.1 build 21 → next)
+## Version bump (1.6.2 build 22 → next)
 
 1. `Glance.xcodeproj/project.pbxproj`: `MARKETING_VERSION` (×4: app + plugin ×
    Debug/Release) and `CURRENT_PROJECT_VERSION` (×4, same scopes). The app
