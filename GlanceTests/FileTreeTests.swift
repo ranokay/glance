@@ -63,6 +63,21 @@ class FileTreeTests: XCTestCase {
 		)
 	}
 
+	func testCaseOnlyVariantsAreDistinctChildren() throws {
+		for name in ["a.txt", "A.txt"] {
+			try fileTree?.addNode(
+				path: name,
+				isDirectory: false,
+				size: 0,
+				dateModified: now
+			)
+		}
+
+		XCTAssertEqual(fileTree?.root.children.count, 2)
+		XCTAssertNotNil(fileTree?.root.children["a.txt"])
+		XCTAssertNotNil(fileTree?.root.children["A.txt"])
+	}
+
 	// Tree:
 	//
 	// └── file

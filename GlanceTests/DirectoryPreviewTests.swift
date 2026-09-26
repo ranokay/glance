@@ -120,6 +120,26 @@ final class DirectoryPreviewTests: XCTestCase {
 			.first { if case .loadMore = $0.role { true } else { false } })
 	}
 
+	func testNonPaddedNumericFilenamesPageContinuouslyThroughCursors() async throws {
+		let rootURL = try makeDirectory(named: "numeric")
+		for index in 1 ... 12 {
+			_ = try writeFile(named: "numeric/file\(index).txt", contents: "x")
+		}
+
+		let previewVC = try await makePreview(for: rootURL, pageSize: 5)
+		let outlineView = try loadOutlineView(for: previewVC)
+
+		XCTAssertEqual(previewVC.rootNodes.count { $0.role == .item }, 5)
+		try activateLoadMore(in: previewVC, outlineView: outlineView)
+		try await waitUntil { previewVC.rootNodes.count { $0.role == .item } == 10 }
+		try activateLoadMore(in: previewVC, outlineView: outlineView)
+		try await waitUntil { previewVC.rootNodes.count { $0.role == .item } == 12 }
+
+		let names = previewVC.rootNodes.filter { $0.role == .item }.map(\.name)
+		XCTAssertEqual(names, (1 ... 12).map { "file\($0).txt" })
+		XCTAssertEqual(previewVC.previewStatusText, "12 items")
+	}
+
 	func testPaginationSnapshotRefreshesWhenDirectoryChanges() async throws {
 		let rootURL = try makeDirectory(named: "changing")
 		_ = try writeFile(named: "changing/b.txt", contents: "b")
