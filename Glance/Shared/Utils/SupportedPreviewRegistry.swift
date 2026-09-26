@@ -70,6 +70,11 @@ public struct SupportedPreviewType: Equatable, Sendable {
 		matchRule.matches(fileURL: fileURL)
 	}
 
+	/// Whether this entry is the catch-all text fallback rather than an explicit type.
+	public var isDefaultTextFallback: Bool {
+		matchRule == .defaultTextFallback
+	}
+
 	public func matchesSearch(_ query: String) -> Bool {
 		let normalizedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
 		guard !normalizedQuery.isEmpty else {

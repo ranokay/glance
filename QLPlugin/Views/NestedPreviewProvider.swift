@@ -48,7 +48,7 @@ struct DefaultNestedPreviewProvider: NestedPreviewProviding {
 				try PreviewPolicy.validateFileSize(file)
 				return try await previewType.init().createPreviewVC(file: file)
 			case .media:
-				let showsWaveform = PreviewSupport.getPreviewFileType(fileURL: fileURL) == .flac
+				let showsWaveform = PreviewSupport.isStreamedAudio(fileURL: fileURL)
 					? await PreviewSettingsClient.shared.flacWaveformEnabled()
 					: false
 				return AVPlayerPreviewVC(fileURL: fileURL, showsWaveform: showsWaveform)
@@ -68,7 +68,7 @@ struct DefaultNestedPreviewProvider: NestedPreviewProviding {
 		}
 
 		let contentType = node.contentTypeIdentifier.flatMap(UTType.init)
-		let isPlayableMedia = PreviewSupport.getPreviewFileType(fileURL: fileURL) == .flac
+		let isPlayableMedia = PreviewSupport.isStreamedAudio(fileURL: fileURL)
 			|| contentType?.conforms(to: .movie) == true
 			|| contentType?.conforms(to: .audio) == true
 		if isPlayableMedia {
@@ -86,7 +86,7 @@ struct DefaultNestedPreviewProvider: NestedPreviewProviding {
 		else {
 			return .native
 		}
-		let isExplicitGlanceType = registryEntry.id != "code.other-source-text"
+		let isExplicitGlanceType = !registryEntry.isDefaultTextFallback
 		let isTextType = contentType?.conforms(to: .text) == true
 		return isExplicitGlanceType || isTextType ? .glance(previewType) : .native
 	}
@@ -137,7 +137,7 @@ final class AVPlayerPreviewVC: NSViewController, PreviewVC {
 	private var waveformAnalysisTask: Task<[Float], Error>?
 	private var waveformPresentationTask: Task<Void, Never>?
 	private var isFLAC: Bool {
-		fileURL.pathExtension.lowercased() == "flac"
+		PreviewSupport.isStreamedAudio(fileURL: fileURL)
 	}
 
 	init(fileURL: URL, showsWaveform: Bool = AppSettingsStore.shared.flacWaveformEnabled) {

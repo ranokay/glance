@@ -161,7 +161,7 @@ final class DirectoryThumbnailLoader {
 		else {
 			return true
 		}
-		return registryEntry.id == "code.other-source-text"
+		return registryEntry.isDefaultTextFallback
 	}
 
 	private func startPendingRequests() {
