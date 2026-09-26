@@ -3,10 +3,6 @@ import UniformTypeIdentifiers
 
 class DirectoryPreview: Preview {
 	static let defaultPageSize = 500
-	// Kept as source compatibility for older tests and callers; traversal is now one level at a
-	// time.
-	static let defaultMaxItemCount = defaultPageSize
-	static let defaultMaxDepth = 5
 	private static let defaultExcludedRootURLs = [
 		FileManager.default.temporaryDirectory,
 		URL(fileURLWithPath: "/private/var/folders", isDirectory: true),
@@ -22,7 +18,6 @@ class DirectoryPreview: Preview {
 		self.init(
 			fileManager: .default,
 			maxItemCount: Self.defaultPageSize,
-			maxDepth: Self.defaultMaxDepth,
 			excludedRootURLs: Self.defaultExcludedRootURLs
 		)
 	}
@@ -30,7 +25,6 @@ class DirectoryPreview: Preview {
 	init(
 		fileManager: sending FileManager,
 		maxItemCount: Int,
-		maxDepth _: Int,
 		excludedRootURLs: [URL]
 	) {
 		pageLoader = DirectoryPageLoader(

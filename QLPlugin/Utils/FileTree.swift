@@ -67,7 +67,8 @@ class FileTreeNode: NSObject {
 		children.values.count
 	}
 
-	/// List of child nodes (required for rendering the tree in an `NSOutlineView`)
+	/// List of child nodes (required for rendering the tree in an `NSOutlineView`).
+	/// Display order only; page cursors resolve names in the scanner's ordering.
 	@objc var childrenList: [FileTreeNode] {
 		children.values.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
 	}
@@ -96,6 +97,11 @@ class FileTreeNode: NSObject {
 	/// Keeps loading, retry, and pagination actions after real entries for every sort direction.
 	@objc var auxiliarySortRank: Int {
 		role == .item ? 0 : 1
+	}
+
+	/// Whether the node is a loading, pagination, or retry row rather than a real entry.
+	var isAuxiliary: Bool {
+		role != .item
 	}
 
 	convenience init(name: String, size: Int, isDirectory: Bool) {

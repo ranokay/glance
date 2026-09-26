@@ -111,7 +111,7 @@ extension OutlinePreviewVC {
 		guard let directoryURL, rootPageLoadTask == nil else {
 			return
 		}
-		rootNodes.removeAll { $0.role != .item }
+		rootNodes.removeAll { $0.isAuxiliary }
 		rootNodes.append(.loadingNode())
 		reloadTree()
 		rootPageLoadTask = Task { @MainActor [weak self] in
@@ -126,7 +126,7 @@ extension OutlinePreviewVC {
 					session: directoryPaginationSession
 				)
 				try Task.checkCancellation()
-				rootNodes.removeAll { $0.role != .item }
+				rootNodes.removeAll { $0.isAuxiliary }
 				rootNodes.append(contentsOf: DirectoryPreview.makeNodes(from: page.entries))
 				if let nextOffset = page.nextOffset {
 					rootNodes.append(.loadMoreNode(offset: nextOffset))
@@ -139,7 +139,7 @@ extension OutlinePreviewVC {
 				Log.general.error(
 					"Could not load more items from \(directoryURL.path, privacy: .private): \(error.localizedDescription, privacy: .private)"
 				)
-				rootNodes.removeAll { $0.role != .item }
+				rootNodes.removeAll { $0.isAuxiliary }
 				rootNodes.append(.retryNode(offset: offset))
 				reloadTree()
 			}
@@ -167,7 +167,7 @@ extension OutlinePreviewVC {
 	}
 
 	func removeAuxiliaryChildren(from parent: FileTreeNode) {
-		parent.children = parent.children.filter { $0.value.role == .item }
+		parent.children = parent.children.filter { !$0.value.isAuxiliary }
 	}
 
 	func updateDirectoryStatus() {
