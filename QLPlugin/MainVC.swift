@@ -44,8 +44,10 @@ class MainVC: NSViewController, QLPreviewingController {
 		).isEmpty
 	}
 
-	var currentPreviewController: PreviewVC?
-	var topLevelPreviewController: PreviewVC?
+	var currentPreviewController: PreviewVC? {
+		previewNavigationStack.last
+	}
+
 	var folderPreviewController: OutlinePreviewVC?
 	var nestedPreviewController: PreviewVC?
 	var topLevelFile: File?
