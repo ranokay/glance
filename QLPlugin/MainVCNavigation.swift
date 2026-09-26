@@ -4,8 +4,6 @@ extension MainVC {
 	func installTopLevelPreview(_ previewVC: PreviewVC, file: File) {
 		clearPreviewControllers()
 		topLevelFile = file
-		topLevelPreviewController = previewVC
-		currentPreviewController = previewVC
 		previewNavigationStack = [previewVC]
 		if file.isDirectory, let outlinePreview = previewVC as? OutlinePreviewVC {
 			folderPreviewController = outlinePreview
@@ -30,7 +28,6 @@ extension MainVC {
 			selectedFolderNode = nil
 		}
 		previewNavigationStack.append(previewVC)
-		currentPreviewController = previewVC
 		nestedOpenWithTargetURL = openWithTargetURL
 		bindStatus(to: previewVC)
 		show(previewVC)
@@ -50,7 +47,6 @@ extension MainVC {
 		removedController.tearDown()
 		removedController.view.removeFromSuperview()
 		removedController.removeFromParent()
-		currentPreviewController = previousController
 		if let outlinePreview = previousController as? OutlinePreviewVC,
 		   outlinePreview.isDirectoryBrowser
 		{
@@ -79,8 +75,6 @@ extension MainVC {
 			child.view.removeFromSuperview()
 			child.removeFromParent()
 		}
-		currentPreviewController = nil
-		topLevelPreviewController = nil
 		folderPreviewController = nil
 		nestedPreviewController = nil
 		previewNavigationStack.removeAll()
