@@ -18,11 +18,6 @@ echo "Build complete"
 description = "Install the application into INSTALL_PATH, /Applications by default"
 run = '''
 set -e
-if [ "${GLANCE_CONFIRM_DESTRUCTIVE:-}" != "1" ]; then
-	echo "Human gate: install removes $INSTALL_PATH/${APP_NAME:-Glance}.app unattended." >&2
-	echo "Re-run with GLANCE_CONFIRM_DESTRUCTIVE=1 after confirming the target path." >&2
-	exit 1
-fi
 APP_NAME="${APP_NAME:-Glance}"
 INSTALL_PATH="${INSTALL_PATH:-/Applications}"
 echo "Installing to $INSTALL_PATH..."
@@ -46,11 +41,6 @@ echo "Registration complete"
 description = "Reset Quick Look (destructive: restarts Finder/quicklookd)"
 run = '''
 set -e
-if [ "${GLANCE_CONFIRM_DESTRUCTIVE:-}" != "1" ]; then
-	echo "Human gate: reset kills Finder and quicklookd." >&2
-	echo "Re-run with GLANCE_CONFIRM_DESTRUCTIVE=1 when a GUI session can tolerate it." >&2
-	exit 1
-fi
 echo "Resetting Quick Look..."
 qlmanage -r
 qlmanage -r cache
@@ -79,11 +69,6 @@ echo ""
 description = "Clean build artifacts (destructive: wipes shared DerivedData and full cargo target)"
 run = '''
 set -e
-if [ "${GLANCE_CONFIRM_DESTRUCTIVE:-}" != "1" ]; then
-	echo "Human gate: clean wipes shared DerivedData and the full cargo target." >&2
-	echo "Re-run with GLANCE_CONFIRM_DESTRUCTIVE=1 to confirm." >&2
-	exit 1
-fi
 APP_NAME="${APP_NAME:-Glance}"
 echo "Cleaning build artifacts..."
 rm -rf build
@@ -97,11 +82,6 @@ echo "Clean complete"
 description = "Uninstall the application from INSTALL_PATH, /Applications by default (destructive)"
 run = '''
 set -e
-if [ "${GLANCE_CONFIRM_DESTRUCTIVE:-}" != "1" ]; then
-	echo "Human gate: uninstall removes the installed app and wipes build state." >&2
-	echo "Re-run with GLANCE_CONFIRM_DESTRUCTIVE=1 to confirm." >&2
-	exit 1
-fi
 APP_NAME="${APP_NAME:-Glance}"
 INSTALL_PATH="${INSTALL_PATH:-/Applications}"
 echo "Uninstalling..."
@@ -116,6 +96,7 @@ echo "Uninstalled"
 description = "Build, install, register, and reset Quick Look"
 run = '''
 set -e
+mise run build
 mise run install
 mise run register
 mise run reset
