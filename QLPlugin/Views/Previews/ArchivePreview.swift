@@ -96,8 +96,7 @@ extension ArchivePreview.Policy {
 					overLimit: ZIPPreviewError.metadataSizeLimitExceeded
 				)
 			},
-			// Bridge match never fires; kept byte-identical pending #82.
-			rethrowsEntryError: { $0 is ZIPPreviewError || $0 is PreviewCoreBridgeError },
+			rethrowsEntryError: { $0 is ZIPPreviewError },
 			validateTotal: {
 				_ = try ArchivePreview.boundedInt(
 					$0.uncompressedSize,
@@ -148,8 +147,13 @@ extension ArchivePreview.Policy {
 
 	static func tar(isGzipped: Bool, maxEntryCount: Int) -> Self {
 		Self(
-			entrySize: { $0 > UInt64(Int.max) ? Int.max : Int($0) },
-			rethrowsEntryError: { _ in false },
+			entrySize: {
+				try ArchivePreview.boundedInt(
+					$0,
+					overLimit: TARPreviewError.metadataSizeLimitExceeded
+				)
+			},
+			rethrowsEntryError: { $0 is TARPreviewError },
 			validateTotal: {
 				_ = try ArchivePreview.boundedInt64(
 					$0.scannedUncompressedSize ?? 0,
