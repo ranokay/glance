@@ -116,6 +116,19 @@ jobs:
           trap - EXIT
           rmdir "$MOUNT_DIR"
 
+      - name: Extract current version release notes
+        env:
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          VERSION="${TAG_NAME#v}"
+          awk -v version="$VERSION" '
+            /^# Glance / { if (found) exit; if ($0 == "# Glance " version) found=1; next }
+            found { print }
+          ' CHANGELOG.md > dist/release-notes.md
+          test -s dist/release-notes.md
+
       - name: Create GitHub release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -129,4 +142,4 @@ jobs:
             "dist/Glance-${VERSION}.dmg.sha256" \
             --repo "$GITHUB_REPOSITORY" \
             --title "Glance ${VERSION}" \
-            --notes-file CHANGELOG.md
+            --notes-file dist/release-notes.md
