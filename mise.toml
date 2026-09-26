@@ -145,6 +145,7 @@ description = "Run Xcode tests (Debug, isolated dir, retained result bundle)"
 run = '''
 set -e
 APP_NAME="${APP_NAME:-Glance}"
+rm -rf build/TestResults/Glance.xcresult
 xcodebuild test -scheme "$APP_NAME" -configuration Debug -derivedDataPath build/test -resultBundlePath build/TestResults/Glance.xcresult -quiet
 '''
 

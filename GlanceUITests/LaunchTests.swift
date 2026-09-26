@@ -6,6 +6,7 @@ import XCTest
 /// behavior stays covered by WindowAppearanceTests plus the manual Quick Look
 /// capture convention in docs/agents/verification.md.
 final class LaunchTests: XCTestCase {
+	@MainActor
 	func testAppLaunchesToForeground() {
 		let app = XCUIApplication(bundleIdentifier: "com.chamburr.Glance")
 		app.launch()
