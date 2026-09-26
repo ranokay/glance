@@ -2,6 +2,17 @@
 
 Append-only. Newest entry first.
 
+# Glance 1.6.2
+
+Glance 1.6.2 adds new preview kinds, appearance preferences, and reliability fixes.
+
+- New previews: Mermaid diagrams in Markdown, Draw.io diagrams, 3MF models, RAR archives, EPUB books, FLAC waveform playback, Jupyter LaTeX outputs, and TypeScript and template source files, with broader source and data format recognition.
+- Preview appearance preferences for font family, font size, and line wrapping, plus a Start at Login option.
+- Fixes: FLAC audio stops when Quick Look closes, the app no longer quits silently in the background while previews need it running, archives reject oversized entries in every format, and folder navigation keeps cursor continuity.
+- Shared Swift code now lives in the GlanceKit framework, and rendering, parsing, and directory enumeration run off the main thread with cancelled work discarded.
+
+This release remains Apple-silicon-only for macOS 26 or later. The app is ad hoc signed; its DMG is not Developer ID-signed or notarized, so verify the published SHA-256 checksum before installation.
+
 # Glance 1.6.1
 
 Glance 1.6.1 improves folder browsing, preview transitions, media playback, and Quick Look chrome.

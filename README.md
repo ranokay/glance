@@ -3,7 +3,7 @@
 	<h1>Glance</h1>
 	<p><strong>All-in-one Quick Look plugin</strong></p>
 	<p>Glance provides Quick Look previews for files that macOS doesn't support out of the box.</p>
-	<p><strong>Version 1.6.1 (build 21)</strong> · macOS 26 or later · Apple silicon</p>
+	<p><strong>Version 1.6.2 (build 22)</strong> · macOS 26 or later · Apple silicon</p>
 	<p><a href="#installation">Installation Steps</a> · <a href="https://github.com/ranokay/glance/releases"><img src="./AppStore/Assets/DownloadBadge.svg" alt="Download" height="40"></a></p>
 	<p><img src="./AppStore/Listing/Screenshots/Screenshot1.jpg" alt=""></p>
 </div>
@@ -34,7 +34,7 @@
 
 Glance extends the native Quick Look experience in Finder, Spotlight, and the Space-bar preview window. This maintained fork builds on [chamburr/glance](https://github.com/chamburr/glance) and the [original Glance plugin](https://github.com/samuelmeuli/glance), modernizing the app for current macOS releases while retaining local, lightweight previews.
 
-Version **1.6.1** (build **21**) requires an Apple silicon Mac running macOS 26 or later. It uses native macOS materials and controls without stacking custom glass effects inside Quick Look's own window chrome.
+Version **1.6.2** (build **22**) requires an Apple silicon Mac running macOS 26 or later. It uses native macOS materials and controls without stacking custom glass effects inside Quick Look's own window chrome.
 
 ## Installation
 
