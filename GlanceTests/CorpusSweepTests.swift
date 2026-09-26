@@ -12,6 +12,7 @@ import XCTest
 /// test gates the same production path — factory plus preview construction —
 /// deterministically on every run.
 final class CorpusSweepTests: XCTestCase {
+	@MainActor
 	func testPreviewCorpusResolvesAndRendersEveryFixture() async throws {
 		let corpusRoot = URL(fileURLWithPath: #filePath)
 			.deletingLastPathComponent()
@@ -82,7 +83,7 @@ final class CorpusSweepTests: XCTestCase {
 
 	private func allFixtureFiles(under root: URL) throws -> [URL] {
 		let modelParts = "models/simple/"
-		return try FileManager.default
+		return FileManager.default
 			.enumerator(at: root, includingPropertiesForKeys: [.isDirectoryKey])?
 			.compactMap { $0 as? URL }
 			.filter { url in
