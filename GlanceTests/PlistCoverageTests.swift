@@ -81,6 +81,27 @@ final class PlistCoverageTests: XCTestCase {
 		XCTAssertTrue(urlSchemes.contains(OpenWithBridgeConstants.requestScheme))
 	}
 
+	func testAppDisablesAutomaticAndSuddenTermination() throws {
+		let plistURL = repositoryRoot()
+			.appendingPathComponent("Glance", isDirectory: true)
+			.appendingPathComponent("Info.plist")
+		let data = try Data(contentsOf: plistURL)
+		guard
+			let plist = try PropertyListSerialization.propertyList(
+				from: data,
+				options: [],
+				format: nil
+			) as? [String: Any]
+		else {
+			throw PlistCoverageError.missingURLTypes(plistURL)
+		}
+
+		// The Quick Look extension declines previews unless the app is running,
+		// so macOS must never terminate it silently in the background.
+		XCTAssertEqual(plist["NSSupportsAutomaticTermination"] as? Bool, false)
+		XCTAssertEqual(plist["NSSupportsSuddenTermination"] as? Bool, false)
+	}
+
 	func testUserFacingRepositoryLinksPointToMaintainedFork() throws {
 		let repositoryURL = "https://github.com/ranokay/glance"
 		let menuContents = try String(
