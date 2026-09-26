@@ -60,6 +60,7 @@
 		C0DE00000000000000000311 /* PreviewVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E1DC51E240E6CE300D0A061 /* PreviewVC.swift */; };
 		52CE020000000000000011 /* PreviewPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52CE020000000000000001 /* PreviewPolicy.swift */; };
 		52CE020000000000000012 /* ArchiveStatusFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52CE020000000000000002 /* ArchiveStatusFormatter.swift */; };
+		52CE030000000000000013 /* ArchivePreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52CE030000000000000003 /* ArchivePreview.swift */; };
 		C0DE00000000000000000312 /* PreviewVCFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E1DC527240E6F4A00D0A061 /* PreviewVCFactory.swift */; };
 		C0DE00000000000000000313 /* MarkdownPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E1DC520240E6D8000D0A061 /* MarkdownPreview.swift */; };
 		C0DE00000000000000000314 /* JupyterPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EB7491824228549007265A4 /* JupyterPreview.swift */; };
@@ -109,6 +110,7 @@
 		7E1DC51F240E6CE300D0A061 /* PreviewVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E1DC51E240E6CE300D0A061 /* PreviewVC.swift */; };
 		52CE020000000000000021 /* PreviewPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52CE020000000000000001 /* PreviewPolicy.swift */; };
 		52CE020000000000000022 /* ArchiveStatusFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52CE020000000000000002 /* ArchiveStatusFormatter.swift */; };
+		52CE030000000000000023 /* ArchivePreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52CE030000000000000003 /* ArchivePreview.swift */; };
 		7E1DC521240E6D8000D0A061 /* MarkdownPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E1DC520240E6D8000D0A061 /* MarkdownPreview.swift */; };
 		7E1DC528240E6F4A00D0A061 /* PreviewVCFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E1DC527240E6F4A00D0A061 /* PreviewVCFactory.swift */; };
 		7E1DC52A240E6FDE00D0A061 /* CodePreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E1DC529240E6FDE00D0A061 /* CodePreview.swift */; };
@@ -316,6 +318,7 @@
 		7E1DC51E240E6CE300D0A061 /* PreviewVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewVC.swift; sourceTree = "<group>"; };
 		52CE020000000000000001 /* PreviewPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewPolicy.swift; sourceTree = "<group>"; };
 		52CE020000000000000002 /* ArchiveStatusFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArchiveStatusFormatter.swift; sourceTree = "<group>"; };
+		52CE030000000000000003 /* ArchivePreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArchivePreview.swift; sourceTree = "<group>"; };
 		7E1DC520240E6D8000D0A061 /* MarkdownPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownPreview.swift; sourceTree = "<group>"; };
 		7E1DC527240E6F4A00D0A061 /* PreviewVCFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewVCFactory.swift; sourceTree = "<group>"; };
 		7E1DC529240E6FDE00D0A061 /* CodePreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodePreview.swift; sourceTree = "<group>"; };
@@ -511,6 +514,7 @@
 				7EB7491824228549007265A4 /* JupyterPreview.swift */,
 				7E1DC520240E6D8000D0A061 /* MarkdownPreview.swift */,
 				7E7A9DAC244F24B900276E51 /* TARPreview.swift */,
+				52CE030000000000000003 /* ArchivePreview.swift */,
 				7E413F7F2418DD6200CFBB1D /* TSVPreview.swift */,
 				7EB36489244B665700D7F96F /* ZIPPreview.swift */,
 			);
@@ -1072,6 +1076,7 @@
 				C0DE00000000000000000311 /* PreviewVC.swift in Sources */,
 				52CE020000000000000011 /* PreviewPolicy.swift in Sources */,
 				52CE020000000000000012 /* ArchiveStatusFormatter.swift in Sources */,
+				52CE030000000000000013 /* ArchivePreview.swift in Sources */,
 				C0DE00000000000000000320 /* WebPreviewVC.swift in Sources */,
 				C0DE00000000000000000313 /* MarkdownPreview.swift in Sources */,
 				C0DE00000000000000000321 /* TablePreviewVC.swift in Sources */,
@@ -1130,6 +1135,7 @@
 				7E1DC51F240E6CE300D0A061 /* PreviewVC.swift in Sources */,
 				52CE020000000000000021 /* PreviewPolicy.swift in Sources */,
 				52CE020000000000000022 /* ArchiveStatusFormatter.swift in Sources */,
+				52CE030000000000000023 /* ArchivePreview.swift in Sources */,
 				7E45F899244DA45500BFB869 /* FileTree.swift in Sources */,
 				58CE080000000000000021 /* LegacyFileTree.swift in Sources */,
 				7E9F0D7F24168870007F1008 /* WebAsset.swift in Sources */,
