@@ -37,4 +37,9 @@ public enum PreviewSupport {
 	public static func getPreviewFileType(fileURL: URL) -> PreviewFileType {
 		SupportedPreviewRegistry.entry(matching: fileURL)?.previewFileType ?? .unsupported
 	}
+
+	/// Whether the file is streamed audio exempt from the size limit and routed to media playback.
+	public static func isStreamedAudio(fileURL: URL) -> Bool {
+		getPreviewFileType(fileURL: fileURL) == .flac
+	}
 }

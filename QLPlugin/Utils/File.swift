@@ -1,4 +1,5 @@
 import Foundation
+import GlanceKit
 
 enum FileError: Error {
 	case fileAttributeError(path: String, message: String)
@@ -27,7 +28,6 @@ extension FileError: LocalizedError {
 
 /// Utility class for reading the content and metadata of the corresponding file.
 class File {
-	let archiveExtensions = ["3mf", "7z", "ear", "epub", "jar", "rar", "tar", "tgz", "war", "zip"]
 	let fileManager = FileManager.default
 
 	var attributes: [FileAttributeKey: Any]
@@ -36,9 +36,11 @@ class File {
 	var url: URL
 
 	var isArchive: Bool {
-		let path = url.path(percentEncoded: false).lowercased()
-		return path.hasSuffix(".tar.gz") || archiveExtensions
-			.contains(url.pathExtension.lowercased())
+		guard let entry = SupportedPreviewRegistry.entry(matching: url) else {
+			return false
+		}
+		// EPUB parses as a document but is exempt from the size limit like archives.
+		return entry.group == .archive || entry.previewFileType == .epub
 	}
 
 	var size: Int {
