@@ -213,7 +213,6 @@ final class NestedPreviewTests: XCTestCase {
 		let generatedRootPreview = try await DirectoryPreview(
 			fileManager: .default,
 			maxItemCount: 500,
-			maxDepth: DirectoryPreview.defaultMaxDepth,
 			excludedRootURLs: []
 		).createPreviewVC(file: File(url: rootURL))
 		let rootPreview = try XCTUnwrap(generatedRootPreview as? OutlinePreviewVC)

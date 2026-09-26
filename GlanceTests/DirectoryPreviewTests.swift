@@ -286,7 +286,6 @@ final class DirectoryPreviewTests: XCTestCase {
 		let generatedPreview = try await DirectoryPreview(
 			fileManager: .default,
 			maxItemCount: pageSize,
-			maxDepth: DirectoryPreview.defaultMaxDepth,
 			excludedRootURLs: []
 		).createPreviewVC(file: File(url: directoryURL))
 		return try XCTUnwrap(generatedPreview as? OutlinePreviewVC)

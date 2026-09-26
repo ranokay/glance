@@ -158,6 +158,7 @@ struct DirectoryPageScanner: @unchecked Sendable {
 	}
 
 	private static func compareNames(_ lhs: String, _ rhs: String) -> ComparisonResult {
+		// Page cursors resolve names by binary search in this ordering; keep it total.
 		let comparison = lhs.compare(
 			rhs,
 			options: [.caseInsensitive, .numeric],
