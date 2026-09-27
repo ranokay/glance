@@ -56,6 +56,22 @@ final class SettingsWC: NSWindowController {
 		target: nil,
 		action: nil
 	)
+	let updateStatusLabel = NSTextField(labelWithString: "Never checked.")
+	let checkForUpdatesButton = NSButton(
+		title: "Check for Updates…",
+		target: nil,
+		action: nil
+	)
+	let updateNowButton = NSButton(
+		title: "Update Now…",
+		target: nil,
+		action: nil
+	)
+	let autoUpdateCheckbox = NSButton(
+		checkboxWithTitle: "Automatically check for updates",
+		target: nil,
+		action: nil
+	)
 	let startAtLoginCheckbox = NSButton(
 		checkboxWithTitle: "Start at Login",
 		target: nil,
@@ -77,6 +93,9 @@ final class SettingsWC: NSWindowController {
 		target: nil,
 		action: nil
 	)
+
+	private var pendingUpdateURL: URL?
+	private var pendingUpdateVersion: String?
 
 	init(
 		settingsStore: AppSettingsStore,
@@ -172,6 +191,13 @@ final class SettingsWC: NSWindowController {
 		lineWrappingCheckbox.action = #selector(lineWrappingChanged)
 		flacWaveformCheckbox.target = self
 		flacWaveformCheckbox.action = #selector(flacWaveformChanged)
+		checkForUpdatesButton.target = self
+		checkForUpdatesButton.action = #selector(checkForUpdates)
+		updateNowButton.target = self
+		updateNowButton.action = #selector(openUpdate)
+		updateNowButton.isHidden = true
+		autoUpdateCheckbox.target = self
+		autoUpdateCheckbox.action = #selector(autoUpdateChanged)
 
 		resetAppearanceButton.bezelStyle = .rounded
 		resetAppearanceButton.target = self
@@ -213,6 +239,12 @@ final class SettingsWC: NSWindowController {
 			sectionLabel("Audio Previews"),
 			flacWaveformCheckbox,
 			waveformDescriptionLabel,
+			separator(),
+			sectionLabel("Software Update"),
+			updateStatusLabel,
+			checkForUpdatesButton,
+			updateNowButton,
+			autoUpdateCheckbox,
 		])
 		stackView.orientation = .vertical
 		stackView.alignment = .leading
@@ -257,6 +289,8 @@ final class SettingsWC: NSWindowController {
 		fontSizeStepper.doubleValue = settingsStore.previewFontSize
 		lineWrappingCheckbox.state = settingsStore.previewLineWrapping ? .on : .off
 		flacWaveformCheckbox.state = settingsStore.flacWaveformEnabled ? .on : .off
+		autoUpdateCheckbox.state = settingsStore.autoUpdateCheckEnabled ? .on : .off
+		updateNowButton.isHidden = pendingUpdateURL == nil
 	}
 
 	@objc
@@ -338,6 +372,51 @@ final class SettingsWC: NSWindowController {
 	private func resetAppearance(_: NSButton) {
 		settingsStore.resetPreviewAppearance()
 		syncState()
+	}
+
+	@objc
+	private func checkForUpdates(_: NSButton) {
+		updateStatusLabel.stringValue = "Checking…"
+		checkForUpdatesButton.isEnabled = false
+		let current = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
+		Task { [weak self] in
+			guard let self else {
+				return
+			}
+			let service = UpdateCheckService(
+				settings: settingsStore,
+				currentVersion: current,
+				fetch: UpdateCheckService.liveFetcher(),
+				notified: { _, _ in }
+			)
+			let result = await service.checkNow()
+			await MainActor.run {
+				switch result {
+					case let .available(version, url):
+						pendingUpdateVersion = version
+						pendingUpdateURL = url
+						updateStatusLabel.stringValue = "Glance \(version) is available."
+					case .upToDate:
+						pendingUpdateURL = nil
+						pendingUpdateVersion = nil
+						updateStatusLabel.stringValue = "You’re up to date."
+					case .checking, .unknown:
+						updateStatusLabel.stringValue = "Couldn’t check just now."
+				}
+				checkForUpdatesButton.isEnabled = true
+				syncState()
+			}
+		}
+	}
+
+	@objc
+	private func openUpdate(_: NSButton) {
+		(pendingUpdateURL ?? AppLinks.releases).open()
+	}
+
+	@objc
+	private func autoUpdateChanged(_ sender: NSButton) {
+		settingsStore.autoUpdateCheckEnabled = sender.state == .on
 	}
 
 	// MARK: - View Helpers

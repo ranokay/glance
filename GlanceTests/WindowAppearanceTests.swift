@@ -14,13 +14,17 @@ private final class StubLoginItem: LoginItemManaging {
 
 	func register() throws {
 		registerCount += 1
-		if let registrationError { throw registrationError }
+		if let registrationError {
+			throw registrationError
+		}
 		status = .enabled
 	}
 
 	func unregister() throws {
 		unregisterCount += 1
-		if let unregistrationError { throw unregistrationError }
+		if let unregistrationError {
+			throw unregistrationError
+		}
 		status = .notRegistered
 	}
 
@@ -58,6 +62,17 @@ final class WindowAppearanceTests: XCTestCase {
 		XCTAssertFalse(store.flacWaveformEnabled)
 		controller.syncState()
 		XCTAssertEqual(controller.flacWaveformCheckbox.state, .off)
+	}
+
+	func testSettingsShowsSoftwareUpdateSection() throws {
+		let (store, suiteName) = try makeSettingsStore()
+		defer { UserDefaults.standard.removePersistentDomain(forName: suiteName) }
+		let controller = SettingsWC(settingsStore: store, fontFamilies: [])
+		controller.loadWindow()
+		let labels = allTextFields(in: try XCTUnwrap(controller.window?.contentView))
+		XCTAssertTrue(labels.contains { $0.stringValue == "Software Update" })
+		XCTAssertNotNil(controller.checkForUpdatesButton)
+		XCTAssertNotNil(controller.updateStatusLabel)
 	}
 
 	func testPreviewAppearancePreferencesRejectInvalidStoredValuesAndReset() throws {
