@@ -39,4 +39,20 @@ final class UpdateCheckerTests: XCTestCase {
 			.available(version: "v9.9.9", url: release.htmlURL)
 		)
 	}
+
+	func testUpdatePreferencesDefaultOnAndPersist() throws {
+		let suiteName = "GlanceTests.UpdatePrefs.\(UUID().uuidString)"
+		let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+		defer { defaults.removePersistentDomain(forName: suiteName) }
+		let store = AppSettingsStore(defaults: defaults)
+		XCTAssertTrue(store.autoUpdateCheckEnabled)
+		XCTAssertNil(store.lastUpdateCheckDate)
+		XCTAssertNil(store.lastNotifiedUpdateVersion)
+		store.autoUpdateCheckEnabled = false
+		store.lastUpdateCheckDate = Date(timeIntervalSince1970: 1_000)
+		store.lastNotifiedUpdateVersion = "v9.9.9"
+		XCTAssertFalse(store.autoUpdateCheckEnabled)
+		XCTAssertEqual(store.lastUpdateCheckDate, Date(timeIntervalSince1970: 1_000))
+		XCTAssertEqual(store.lastNotifiedUpdateVersion, "v9.9.9")
+	}
 }
