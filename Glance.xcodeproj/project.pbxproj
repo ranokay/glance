@@ -173,6 +173,7 @@
 		60CE09000000000000000105 /* Stats.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E21C88C2438CAA500818EB2 /* Stats.swift */; };
 		60CE09000000000000000106 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77CBD1B8E3D86A3D965DD6D0 /* AppSettings.swift */; };
 		60CE09000000000000000108 /* UpdateChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60CE09000000000000000109 /* UpdateChecker.swift */; };
+		60CE09000000000000000110 /* UpdateCheckService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60CE09000000000000000111 /* UpdateCheckService.swift */; };
 		60CE09000000000000000107 /* SupportedPreviewRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E5E45E8BA05C598C36B7211 /* SupportedPreviewRegistry.swift */; };
 		60CE09000000000000000051 /* GlanceKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 60CE09000000000000000001 /* GlanceKit.framework */; };
 		60CE09000000000000000052 /* GlanceKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 60CE09000000000000000001 /* GlanceKit.framework */; };
@@ -377,6 +378,7 @@
 		7EB7491824228549007265A4 /* JupyterPreview.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = JupyterPreview.swift; sourceTree = "<group>"; };
 		77CBD1B8E3D86A3D965DD6D0 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
 		60CE09000000000000000109 /* UpdateChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateChecker.swift; sourceTree = "<group>"; };
+		60CE09000000000000000111 /* UpdateCheckService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateCheckService.swift; sourceTree = "<group>"; };
 		0E5E45E8BA05C598C36B7211 /* SupportedPreviewRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupportedPreviewRegistry.swift; sourceTree = "<group>"; };
 		3048855925A27D336EC30FC7 /* SettingsWC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsWC.swift; sourceTree = "<group>"; };
 		7ECC8CEE240CB4CC000D6970 /* Glance.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Glance.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -550,6 +552,7 @@
 				7EE10F82244F6774007214D8 /* Log.swift */,
 				77CBD1B8E3D86A3D965DD6D0 /* AppSettings.swift */,
 				60CE09000000000000000109 /* UpdateChecker.swift */,
+				60CE09000000000000000111 /* UpdateCheckService.swift */,
 				D6A000000000000000000001 /* OpenWithBridge.swift */,
 				F1A000000000000000000001 /* WindowAppearance.swift */,
 				A19F4D4526218B2B008A903C /* PreviewSupport.swift */,
@@ -1195,6 +1198,7 @@
 				60CE09000000000000000105 /* Stats.swift in Sources */,
 				60CE09000000000000000106 /* AppSettings.swift in Sources */,
 				60CE09000000000000000108 /* UpdateChecker.swift in Sources */,
+				60CE09000000000000000110 /* UpdateCheckService.swift in Sources */,
 				60CE09000000000000000107 /* SupportedPreviewRegistry.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -1,6 +1,14 @@
 import GlanceKit
 import XCTest
 
+private final class TestBox<T>: @unchecked Sendable {
+	var value: T
+
+	init(_ value: T) {
+		self.value = value
+	}
+}
+
 final class UpdateCheckerTests: XCTestCase {
 	func testNewerTagBeatsCurrentVersion() {
 		XCTAssertTrue(UpdateChecker.isNewer(latestTag: "v9.9.9", currentVersion: "9.9.8"))
@@ -54,5 +62,50 @@ final class UpdateCheckerTests: XCTestCase {
 		XCTAssertFalse(store.autoUpdateCheckEnabled)
 		XCTAssertEqual(store.lastUpdateCheckDate, Date(timeIntervalSince1970: 1_000))
 		XCTAssertEqual(store.lastNotifiedUpdateVersion, "v9.9.9")
+	}
+
+	func testServiceNotifiesOncePerVersionAndGatesDaily() async throws {
+		let suiteName = "GlanceTests.UpdateService.\(UUID().uuidString)"
+		let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+		defer { defaults.removePersistentDomain(forName: suiteName) }
+		let store = AppSettingsStore(defaults: defaults)
+		let url = try XCTUnwrap(URL(string: "https://github.com/ranokay/glance/releases/tag/v9.9.9"))
+		let release = GitHubRelease(tagName: "v9.9.9", htmlURL: url, draft: false, prerelease: false)
+		let fetchCount = TestBox(0)
+		let notified = TestBox([String]())
+		let service = UpdateCheckService(
+			settings: store,
+			currentVersion: "9.9.0",
+			fetch: { _ in fetchCount.value += 1; return release },
+			now: { Date() },
+			notified: { version, _ in notified.value.append(version) }
+		)
+		let first = await service.checkNow()
+		let second = await service.checkNow()
+		XCTAssertEqual(first, .available(version: "v9.9.9", url: url))
+		XCTAssertEqual(second, .available(version: "v9.9.9", url: url))
+		XCTAssertEqual(fetchCount.value, 2)
+		XCTAssertEqual(notified.value, ["v9.9.9"])
+		let due = await service.checkIfDue()
+		XCTAssertNil(due)
+	}
+
+	func testServiceFailureIsSilentAndRetryable() async throws {
+		let suiteName = "GlanceTests.UpdateServiceFail.\(UUID().uuidString)"
+		let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+		defer { defaults.removePersistentDomain(forName: suiteName) }
+		let store = AppSettingsStore(defaults: defaults)
+		let notified = TestBox(0)
+		let service = UpdateCheckService(
+			settings: store,
+			currentVersion: "9.9.0",
+			fetch: { _ in throw URLError(.notConnectedToInternet) },
+			now: { Date() },
+			notified: { _, _ in notified.value += 1 }
+		)
+		let result = await service.checkNow()
+		XCTAssertEqual(result, .unknown(message: "Couldn’t check just now."))
+		XCTAssertEqual(notified.value, 0)
+		XCTAssertNil(store.lastUpdateCheckDate)
 	}
 }
