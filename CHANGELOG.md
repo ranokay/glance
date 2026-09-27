@@ -2,6 +2,19 @@
 
 Append-only. Newest entry first.
 
+# Glance 1.7.0
+
+Glance 1.7.0 adds software-update checks based on GitHub Releases.
+
+- Settings gains a Software Update section showing whether Glance is up to date, with
+  Check for Updates, Update Now (opens the release page), and an automatic-check option.
+- Glance checks the latest stable release on launch and about daily, and posts one
+  notification per new version. Checks are on by default and never download anything.
+- Unparseable version data and failed checks stay silent and retry later instead of
+  notifying.
+
+This release remains Apple-silicon-only for macOS 26 or later. The app is ad hoc signed; its DMG is not Developer ID-signed or notarized, so verify the published SHA-256 checksum before installation.
+
 # Glance 1.6.2
 
 Glance 1.6.2 adds new preview kinds, appearance preferences, and reliability fixes.
