@@ -1,5 +1,6 @@
 import Cocoa
 import GlanceKit
+import UserNotifications
 
 @main
 @MainActor
@@ -33,6 +34,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, DockIconVisibilityUpdating {
 		)
 
 		updateDockIconVisibility()
+		UNUserNotificationCenter.current().delegate = self
+		checkForUpdatesIfDue()
 	}
 
 	func applicationShouldTerminateAfterLastWindowClosed(_: NSApplication) -> Bool {
@@ -78,6 +81,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, DockIconVisibilityUpdating {
 		menu.addItem(NSMenuItem(
 			title: "Settings\u{2026}",
 			action: #selector(openSettingsWindow(_:)),
+			keyEquivalent: ""
+		))
+		menu.addItem(NSMenuItem(
+			title: "Check for Updates…",
+			action: #selector(checkForUpdates(_:)),
 			keyEquivalent: ""
 		))
 		menu.addItem(.separator())
@@ -144,6 +152,44 @@ class AppDelegate: NSObject, NSApplicationDelegate, DockIconVisibilityUpdating {
 	}
 
 	@objc
+	private func checkForUpdates(_: Any?) {
+		SettingsWC.shared.showSettingsWindow()
+		SettingsWC.shared.checkForUpdatesButton.performClick(nil)
+	}
+
+	private func checkForUpdatesIfDue() {
+		Task { @MainActor in
+			let center = UNUserNotificationCenter.current()
+			_ = try? await center.requestAuthorization(options: [.alert])
+			let current =
+				Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
+			let service = UpdateCheckService(
+				settings: AppSettingsStore.shared,
+				currentVersion: current,
+				fetch: UpdateCheckService.liveFetcher(),
+				notified: { version, url in
+					let center = UNUserNotificationCenter.current()
+					let settings = await center.notificationSettings()
+					guard settings.authorizationStatus == .authorized else {
+						return
+					}
+					let content = UNMutableNotificationContent()
+					content.title = "Glance \(version) available"
+					content.body = "Update now opens the release page."
+					content.userInfo = ["url": url.absoluteString]
+					let request = UNNotificationRequest(
+						identifier: version,
+						content: content,
+						trigger: nil
+					)
+					try? await center.add(request)
+				}
+			)
+			_ = await service.checkIfDue()
+		}
+	}
+
+	@objc
 	private func quitGlance(_: Any?) {
 		NSApp.terminate(nil)
 	}
@@ -194,5 +240,20 @@ class AppDelegate: NSObject, NSApplicationDelegate, DockIconVisibilityUpdating {
 		Task { @MainActor [weak self] in
 			self?.updateDockIconVisibility()
 		}
+	}
+}
+
+extension AppDelegate: UNUserNotificationCenterDelegate {
+	nonisolated func userNotificationCenter(
+		_: UNUserNotificationCenter,
+		didReceive response: UNNotificationResponse,
+		withCompletionHandler completionHandler: @escaping () -> Void
+	) {
+		let urlString = response.notification.request.content.userInfo["url"] as? String
+		let url = urlString.flatMap(URL.init(string:)) ?? AppLinks.releases
+		DispatchQueue.main.async {
+			url.open()
+		}
+		completionHandler()
 	}
 }

@@ -115,4 +115,29 @@ final class UpdateCheckerTests: XCTestCase {
 		XCTAssertEqual(notified.value, 0)
 		XCTAssertNil(store.lastUpdateCheckDate)
 	}
+
+	func testDeniedNotificationStillReturnsAvailableState() async throws {
+		let suiteName = "GlanceTests.UpdateNotifyDenied.\(UUID().uuidString)"
+		let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+		defer { defaults.removePersistentDomain(forName: suiteName) }
+		let store = AppSettingsStore(defaults: defaults)
+		let url =
+			try XCTUnwrap(URL(string: "https://github.com/ranokay/glance/releases/tag/v9.9.9"))
+		let release = GitHubRelease(
+			tagName: "v9.9.9",
+			htmlURL: url,
+			draft: false,
+			prerelease: false
+		)
+		let service = UpdateCheckService(
+			settings: store,
+			currentVersion: "9.9.0",
+			fetch: { _ in release },
+			now: { Date() },
+			notified: { _, _ in }
+		)
+		let result = await service.checkNow()
+		XCTAssertEqual(result, .available(version: "v9.9.9", url: url))
+		XCTAssertEqual(store.lastNotifiedUpdateVersion, "v9.9.9")
+	}
 }
