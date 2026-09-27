@@ -140,4 +140,26 @@ final class UpdateCheckerTests: XCTestCase {
 		XCTAssertEqual(result, .available(version: "v9.9.9", url: url))
 		XCTAssertEqual(store.lastNotifiedUpdateVersion, "v9.9.9")
 	}
+
+	func testUnparseableVersionsNeverNotify() throws {
+		XCTAssertFalse(UpdateChecker.isNewer(latestTag: "v9.9.9", currentVersion: ""))
+		XCTAssertFalse(UpdateChecker.isNewer(latestTag: "not-a-version", currentVersion: "9.9.0"))
+		let url =
+			try XCTUnwrap(URL(string: "https://github.com/ranokay/glance/releases/tag/v9.9.9"))
+		let good = GitHubRelease(tagName: "v9.9.9", htmlURL: url, draft: false, prerelease: false)
+		XCTAssertEqual(
+			UpdateChecker.state(latest: good, currentVersion: ""),
+			.unknown(message: "Couldn’t check just now.")
+		)
+		let garbage = GitHubRelease(
+			tagName: "not-a-version",
+			htmlURL: url,
+			draft: false,
+			prerelease: false
+		)
+		XCTAssertEqual(
+			UpdateChecker.state(latest: garbage, currentVersion: "9.9.0"),
+			.unknown(message: "Couldn’t check just now.")
+		)
+	}
 }

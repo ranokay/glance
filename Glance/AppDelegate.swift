@@ -159,8 +159,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, DockIconVisibilityUpdating {
 
 	private func checkForUpdatesIfDue() {
 		Task { @MainActor in
-			let center = UNUserNotificationCenter.current()
-			_ = try? await center.requestAuthorization(options: [.alert])
 			let current =
 				Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
 			let service = UpdateCheckService(
@@ -169,6 +167,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, DockIconVisibilityUpdating {
 				fetch: UpdateCheckService.liveFetcher(),
 				notified: { version, url in
 					let center = UNUserNotificationCenter.current()
+					_ = try? await center.requestAuthorization(options: [.alert])
 					let settings = await center.notificationSettings()
 					guard settings.authorizationStatus == .authorized else {
 						return
@@ -244,6 +243,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, DockIconVisibilityUpdating {
 }
 
 extension AppDelegate: UNUserNotificationCenterDelegate {
+	nonisolated func userNotificationCenter(
+		_: UNUserNotificationCenter,
+		willPresent _: UNNotification,
+		withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions)
+			-> Void
+	) {
+		completionHandler([.banner, .list])
+	}
+
 	nonisolated func userNotificationCenter(
 		_: UNUserNotificationCenter,
 		didReceive response: UNNotificationResponse,

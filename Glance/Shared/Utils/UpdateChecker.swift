@@ -35,7 +35,10 @@ public enum UpdateChecker {
 	public static let checkInterval: TimeInterval = 24 * 60 * 60
 
 	public static func isNewer(latestTag: String, currentVersion: String) -> Bool {
-		compare(normalize(latestTag), normalize(currentVersion)) == .orderedDescending
+		guard isValid(latestTag), isValid(currentVersion) else {
+			return false
+		}
+		return compare(normalize(latestTag), normalize(currentVersion)) == .orderedDescending
 	}
 
 	public static func state(
@@ -48,18 +51,33 @@ public enum UpdateChecker {
 		guard !latest.draft, !latest.prerelease else {
 			return .upToDate
 		}
+		guard isValid(latest.tagName), isValid(currentVersion) else {
+			return .unknown(message: "Couldn’t check just now.")
+		}
 		guard isNewer(latestTag: latest.tagName, currentVersion: currentVersion) else {
 			return .upToDate
 		}
 		return .available(version: latest.tagName, url: latest.htmlURL)
 	}
 
-	private static func normalize(_ value: String) -> [Int] {
+	private static func stripped(_ value: String) -> String {
 		var tag = value.trimmingCharacters(in: .whitespacesAndNewlines)
 		if tag.hasPrefix("v") || tag.hasPrefix("V") {
 			tag = String(tag.dropFirst())
 		}
-		return tag.split(separator: ".").map { Int($0) ?? 0 }
+		return tag
+	}
+
+	private static func isValid(_ value: String) -> Bool {
+		let tag = stripped(value)
+		guard !tag.isEmpty else {
+			return false
+		}
+		return tag.split(separator: ".").allSatisfy { Int($0) != nil }
+	}
+
+	private static func normalize(_ value: String) -> [Int] {
+		stripped(value).split(separator: ".").map { Int($0) ?? 0 }
 	}
 
 	private static func compare(_ lhs: [Int], _ rhs: [Int]) -> ComparisonResult {

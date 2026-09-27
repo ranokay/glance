@@ -56,7 +56,7 @@ final class SettingsWC: NSWindowController {
 		target: nil,
 		action: nil
 	)
-	let updateStatusLabel = NSTextField(labelWithString: "You’re up to date.")
+	let updateStatusLabel = NSTextField(labelWithString: "Never checked.")
 	let checkForUpdatesButton = NSButton(
 		title: "Check for Updates…",
 		target: nil,
@@ -377,6 +377,7 @@ final class SettingsWC: NSWindowController {
 	@objc
 	private func checkForUpdates(_: NSButton) {
 		updateStatusLabel.stringValue = "Checking…"
+		checkForUpdatesButton.isEnabled = false
 		let current = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
 		Task { [weak self] in
 			guard let self else {
@@ -402,6 +403,7 @@ final class SettingsWC: NSWindowController {
 					case .checking, .unknown:
 						updateStatusLabel.stringValue = "Couldn’t check just now."
 				}
+				checkForUpdatesButton.isEnabled = true
 				syncState()
 			}
 		}
