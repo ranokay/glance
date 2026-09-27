@@ -7,4 +7,5 @@ enum AppLinks {
 		string: "https://github.com/ranokay/glance/blob/main/PRIVACY.md"
 	)!
 	static let website = URL(string: "https://github.com/ranokay/glance")!
+	static let releases = URL(string: "https://github.com/ranokay/glance/releases/latest")!
 }

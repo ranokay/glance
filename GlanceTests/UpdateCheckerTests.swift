@@ -22,7 +22,8 @@ final class UpdateCheckerTests: XCTestCase {
 	}
 
 	func testDraftAndPrereleaseNeverNotify() throws {
-		let url = try XCTUnwrap(URL(string: "https://github.com/ranokay/glance/releases/tag/v9.9.9"))
+		let url =
+			try XCTUnwrap(URL(string: "https://github.com/ranokay/glance/releases/tag/v9.9.9"))
 		let draft = GitHubRelease(tagName: "v9.9.9", htmlURL: url, draft: true, prerelease: false)
 		let pre = GitHubRelease(tagName: "v9.9.9", htmlURL: url, draft: false, prerelease: true)
 		XCTAssertEqual(UpdateChecker.state(latest: draft, currentVersion: "9.9.0"), .upToDate)
@@ -57,10 +58,10 @@ final class UpdateCheckerTests: XCTestCase {
 		XCTAssertNil(store.lastUpdateCheckDate)
 		XCTAssertNil(store.lastNotifiedUpdateVersion)
 		store.autoUpdateCheckEnabled = false
-		store.lastUpdateCheckDate = Date(timeIntervalSince1970: 1_000)
+		store.lastUpdateCheckDate = Date(timeIntervalSince1970: 1000)
 		store.lastNotifiedUpdateVersion = "v9.9.9"
 		XCTAssertFalse(store.autoUpdateCheckEnabled)
-		XCTAssertEqual(store.lastUpdateCheckDate, Date(timeIntervalSince1970: 1_000))
+		XCTAssertEqual(store.lastUpdateCheckDate, Date(timeIntervalSince1970: 1000))
 		XCTAssertEqual(store.lastNotifiedUpdateVersion, "v9.9.9")
 	}
 
@@ -69,8 +70,14 @@ final class UpdateCheckerTests: XCTestCase {
 		let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
 		defer { defaults.removePersistentDomain(forName: suiteName) }
 		let store = AppSettingsStore(defaults: defaults)
-		let url = try XCTUnwrap(URL(string: "https://github.com/ranokay/glance/releases/tag/v9.9.9"))
-		let release = GitHubRelease(tagName: "v9.9.9", htmlURL: url, draft: false, prerelease: false)
+		let url =
+			try XCTUnwrap(URL(string: "https://github.com/ranokay/glance/releases/tag/v9.9.9"))
+		let release = GitHubRelease(
+			tagName: "v9.9.9",
+			htmlURL: url,
+			draft: false,
+			prerelease: false
+		)
 		let fetchCount = TestBox(0)
 		let notified = TestBox([String]())
 		let service = UpdateCheckService(

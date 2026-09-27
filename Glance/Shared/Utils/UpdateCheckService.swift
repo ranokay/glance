@@ -39,7 +39,9 @@ public final class UpdateCheckService: @unchecked Sendable {
 			let release = try await fetch(UpdateChecker.latestReleaseURL)
 			settings.lastUpdateCheckDate = now()
 			let result = UpdateChecker.state(latest: release, currentVersion: currentVersion)
-			if case let .available(version, url) = result, settings.lastNotifiedUpdateVersion != version {
+			if case let .available(version, url) = result,
+			   settings.lastNotifiedUpdateVersion != version
+			{
 				settings.lastNotifiedUpdateVersion = version
 				await notified(version, url)
 			}

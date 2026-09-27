@@ -1081,6 +1081,8 @@
 				F2A000000000000000000002 /* WindowAppearanceTests.swift in Sources */,
 				F3A000000000000000000001 /* SupportedFilesWC.swift in Sources */,
 				F4A000000000000000000001 /* SettingsWC.swift in Sources */,
+				7E458AF52439481F0091BD0F /* Menu.swift in Sources */,
+				7E458AF0243944810091BD0F /* URL.swift in Sources */,
 				C0DE00000000000000000315 /* CodePreview.swift in Sources */,
 				C0DE00000000000000000311 /* PreviewVC.swift in Sources */,
 				52CE020000000000000011 /* PreviewPolicy.swift in Sources */,
