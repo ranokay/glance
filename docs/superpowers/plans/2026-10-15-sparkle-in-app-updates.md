@@ -119,16 +119,16 @@ exit 0
 - [x] **Step 2: Add root `appcast.xml`** — empty-feed shell with a comment pinning CI's minimum-OS inference
 - [x] **Step 3: Dry-verified locally with the real app zip** — `generate_appcast` produced a signed item (`sparkle:edSignature`, correct `sparkle:version` 23 / `shortVersionString` 1.7.0, auto-inferred `minimumSystemVersion` 26.0 + `hardwareRequirements` arm64). *Two fixes vs. step 1:* the URL prefixes need **trailing slashes** (without one the tool swallows the last path segment) and release notes need `--release-notes-url-prefix` pointing at the release-asset host (default guesses raw.githubusercontent). release.yml patched accordingly.
 - [x] **Step 4: Docs edits** — README install narrative, PRIVACY.md (feed host + profiling off), CHANGELOG `# Glance Unreleased`, release-checklists Sparkle prerequisites section
-- [ ] **Step 5: `mise run lint`** — in flight with the full gate
-- [ ] **Step 6: Commit** (following the verify gate)
+- [x] **Step 5: `mise run lint`** — green (run with the full `verify` gate; docs + release.yml folded into neighboring commits by the `git add -A` commits rather than a distinct CI commit)
+- [x] **Step 6: Commit** — release.yml + appcast landed in `ef65bcf`, docs + checker removal in `dfbc17d`, CI prefix fixes in `01229cd`
 
 ### Task 4: Full gates + manual handoff
 
 **Files:** none.
 
-- [ ] **Step 1: `mise run verify`** (lint + rust + xcode tests + audit + release build) — expect exit 0.
-- [ ] **Step 2: `mise run verify:app`** — expect exit 0 with Sparkle in the bundle.
-- [ ] **Step 3: Manual probe (user/human):** install built app, wait for or trigger check → Sparkle dialog appears; after dismissing, Settings shows matching status text. Record snapshot for the PR (verification.md manual capture).
+- [x] **Step 1: `mise run verify`** — green (after one out-of-scope but gate-blocking fix: locked `ammonia` bumped to 4.2.3 for RUSTSEC-2021-0157/0158, `635f0ec`)
+- [x] **Step 2: `mise run verify:app`** — green after arm64-strip + `Sparkle.framework` minos exemption (`01229cd`); re-run with the final gate green. Live smoke: the built app launched, ran its first check (feed not yet published — 404 path), and exited cleanly via AppleScript.
+- [ ] **Step 3: Manual probe (user/human):** install built app → trigger check → Sparkle dialog appears; Settings shows matching status text. Record snapshot for the PR (verification.md manual capture).
 - [ ] **Step 4: Human gates handed over (do not self-execute):** (a) add GitHub secret `SPARKLE_EDDSA_PRIVATE_KEY` (contents = private key from local Keychain; instruction doc from `bin/generate_keys` output — retrieve via `bin/generate_keys -p`? No: private key export instruction = `keychain` → use `security find-generic-password -s sparkle-eddsa -w` or regenerate on user's terminal); (b) tag the next release to exercise appcast publishing; (c) verify first live update installs (Review Focus 1).
 
 ---
