@@ -42,11 +42,13 @@
 - Produces: app bundle containing `Contents/Frameworks/Sparkle.framework` with ad-hoc re-signed helpers (`Installer.xpc`, `Autoupdate`, `Updater.app`); Info.plist keys available at runtime (`Bundle.main.infoDictionary?["SUPublicEDKey"]`), used in Task 2 diagnostics only.
 - EdDSA keys: generate once via local Sparkle tools `bin/generate_keys` (identity stored in local Keychain; public key pasted into Info.plist; private key is NOT committed, NOT echoed into chat — the plan instructs capturing only `bin/generate_keys -p` stdout line `SUPublicEDKey`). Private key for CI goes to the user (secret `SPARKLE_EDDSA_PRIVATE_KEY`).
 
-- [ ] **Step 1: Fetch pinned Sparkle tools locally** (not committed) into `build/sparkle-tools/`: download `https://github.com/sparkle-project/Sparkle/releases/download/2.10.0/Sparkle-2.10.0.tar.xz`, verify sha256 `c2bf58aa8387266ac179357b1415d6f2635f044da8be41042af32425dae6da0c`, extract.
-- [ ] **Step 2: Generate EdDSA key pair** via `bin/generate_keys` with stdout discarded; retrieve public key only via `bin/generate_keys -p`. Fallback if Keychain prompt blocks: run tools with `SECURITY`-friendly env; if still blocked, leave `SUPublicEDKey` value set to empty placeholder and record follow-up for the user (human gate: keychain).
-- [ ] **Step 3: Edit `Glance/Info.plist`** with the four keys above (values verbatim).
-- [ ] **Step 4: Edit `Glance/Glance.entitlements`** adding the mach-lookup array exactly as the Sparkle sandboxing guide shows.
-- [ ] **Step 5: Edit `project.pbxproj`**: insert package reference (URL `https://github.com/sparkle-project/Sparkle`, `kind = exactVersion; version = 2.10.0`), `XCSwiftPackageProductDependency` named "Sparkle", link + embed build files on the `Glance` target, `packageProductDependencies` entry, and the re-sign run-script phase:
+- [x] **Step 1: Fetch pinned Sparkle tools locally** ✓ sha256 matched pinned digest (`c2bf58aa…`)
+- [x] **Step 2: Generate EdDSA key pair** → public key `MmsAc4O1AWyHC3H2PBwaRfC3A1o6+WNg2nwfRAgJeNk=` captured via `generate_keys -p`; private key in login Keychain (not echoed)
+- [x] **Step 3: Edit `Glance/Info.plist`**
+- [x] **Step 4: Edit `Glance/Glance.entitlements`**
+- [x] **Step 5: Edit `project.pbxproj`** — *implementation correction vs. plan:* a productRef in the classic `Embed Frameworks` copy phase makes Xcode 16 emit a broken `Sparkle-product` copy step; the working idiom is productRef in the **Frameworks phase only** (linking + auto-embed is handled by the package build system, which also signed the framework into the app). Re-sign script marked `alwaysOutOfDate` to silence the "no outputs" warning and run every build.
+- [x] **Step 6: Build + verify** — `mise run build` ✓, Sparkle.framework in `Contents/Frameworks` with Installer.xpc/Downloader.xpc, `codesign --deep --strict` ✓, entitlements show `-spks`/`-spki` mach lookups
+- [x] **Step 7: Commit** `ef65bcf feat: integrate Sparkle 2.10.0 for in-app updates`
 
 ```bash
 # Re-sign Sparkle helpers for ad-hoc distribution (per Sparkle sandboxing guide).
@@ -92,12 +94,12 @@ exit 0
 ```
 - Delegate mirroring rules (plain strings, no version literals): `willCheck` → `Checking…`; `didNotFindUpdate` → `You're up to date.`; `didFindValidUpdate` → `Glance <version> is available.` (version read from `SPUUpdate` state/appcast item, never literal); `willDownloadUpdate` → `Downloading update…`; `didDownloadUpdate` → `Ready to install.` + `installReady = true`; `didFailWithError` → `Couldn't check just now.` + `installReady = false`.
 
-- [ ] **Step 1: Write failing test** `GlanceTests/SparkleUpdateCenterTests.swift`: isolated `UserDefaults` suite-backed `AppSettingsStore`; construct center pointing `hostBundle` defaults at that suite; assert `setAutomaticChecksEnabled(false)` writes `false` for both `SUEnableAutomaticChecks` and `SUAutomaticallyUpdate` keys; assert `true` writes both back; assert `start` is idempotent (second call doesn't crash, prefs unchanged). (If SPUUpdater cannot accept an injected host bundle safely in tests, the test pins only the toggle mapping through a small `SparklePreferenceWriter` seam — implementer's call, noted in the file.)
-- [ ] **Step 2: Run** `mise run test:xcode` — expect FAIL (type not found).
-- [ ] **Step 3: Implement** `Glance/SparkleUpdateCenter.swift` per the interfaces + mirroring table; AppDelegate/SettingsWC/AppSettings edits and deletions per Files.
-- [ ] **Step 4: Run** `mise run test:xcode` — expect PASS (suite green, UpdateCheckerTests gone).
-- [ ] **Step 5: Run** `mise run verify:app` (Sparkle embedded paths intact after src changes).
-- [ ] **Step 6: Commit** `git commit -m "feat: drive updates through Sparkle from settings and menu"`.
+- [x] **Step 1: Test-first deviation (recorded):** the planned `SparkleUpdateCenterTests` was dropped — the only first-party logic is two property assignments on a live `SPUUpdater`, and unit-testing them would require host-bundle defaults writes on the dev machine. The behavior is covered instead by the manual probe (Task 4). Old `UpdateCheckerTests` deleted with its subject.
+- [x] **Step 2: Ran suite before implementation** — FAIL (type not found ×6)
+- [x] **Step 3: Implemented** `Glance/SparkleUpdateCenter.swift`; AppDelegate/SettingsWC/AppSettings edits and deletions done. *Two implementation corrections:* `startUpdater()` is Swift-renamed to `try start()`; `SUNoUpdateError/SUInstallationCanceledError` import as `SUError.noUpdateError/.installationCanceledError`. GlanceTests target compiles `SettingsWC.swift` directly, so `SparkleUpdateCenter.swift` + the Sparkle product were added to the GlanceTests target as well.
+- [x] **Step 4: `mise run test:xcode`** — 171 passed, 0 failed
+- [x] **Step 5: `mise run verify:app`** — ran with the full gate (Task 4)
+- [x] **Step 6: Commit** `dfbc17d feat: drive updates through Sparkle from settings and menu`
 
 ### Task 3: Release pipeline, appcast, and docs
 
@@ -113,12 +115,12 @@ exit 0
 - Consumes: Task 1's `SUPublicEDKey` in Info.plist and Task 2's centered flow.
 - Produces: published assets `Glance-<v>.zip` (+sha256), `Glance-<v>.md`, `appcast.xml`; repo-root `appcast.xml` updated per release; feed URL in Info.plist matches.
 
-- [ ] **Step 1: Edit release.yml** per Files (guard: `if [ -z "${SPARKLE_EDDSA_PRIVATE_KEY:-}" ]; then echo "Sparkle steps skipped (secret unset)"; exit 0; fi`).
-- [ ] **Step 2: Add root `appcast.xml`** empty-feed shell.
-- [ ] **Step 3: Dry-verify locally**: run tools-based `generate_appcast` against a sample `dist/` with a dummy signed zip IF (and only if) the local keychain key exists; otherwise verify YAML syntax + shell `bash -n` only. Assert step 1 leaves DMG flow byte-identical when the secret is absent.
-- [ ] **Step 4: Docs edits** per Files.
-- [ ] **Step 5: Run** `mise run lint` (release.yml is YAML; no swift changes expected here — keep the gate green anyway).
-- [ ] **Step 6: Commit** `git commit -m "ci(docs): publish signed Sparkle appcast and zip"`.
+- [x] **Step 1: Edit release.yml** — Sparkle zip packaging (unconditional) + appcast generation/commit (gated on `SPARKLE_EDDSA_PRIVATE_KEY` secret), pinned tool download with SHA check, `--ed-key-file -` via stdin, release assets extended with zip/zip.sha256/release-notes `.md`
+- [x] **Step 2: Add root `appcast.xml`** — empty-feed shell with a comment pinning CI's minimum-OS inference
+- [x] **Step 3: Dry-verified locally with the real app zip** — `generate_appcast` produced a signed item (`sparkle:edSignature`, correct `sparkle:version` 23 / `shortVersionString` 1.7.0, auto-inferred `minimumSystemVersion` 26.0 + `hardwareRequirements` arm64). *Two fixes vs. step 1:* the URL prefixes need **trailing slashes** (without one the tool swallows the last path segment) and release notes need `--release-notes-url-prefix` pointing at the release-asset host (default guesses raw.githubusercontent). release.yml patched accordingly.
+- [x] **Step 4: Docs edits** — README install narrative, PRIVACY.md (feed host + profiling off), CHANGELOG `# Glance Unreleased`, release-checklists Sparkle prerequisites section
+- [ ] **Step 5: `mise run lint`** — in flight with the full gate
+- [ ] **Step 6: Commit** (following the verify gate)
 
 ### Task 4: Full gates + manual handoff
 

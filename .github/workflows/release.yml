@@ -176,13 +176,14 @@ jobs:
 
           echo "$SPARKLE_EDDSA_PRIVATE_KEY" | /tmp/sparkle-tools/bin/generate_appcast \
             --ed-key-file - \
-            --download-url-prefix "$RELEASE_PREFIX" \
+            --download-url-prefix "$RELEASE_PREFIX/" \
+            --release-notes-url-prefix "$RELEASE_PREFIX/" \
             --link "https://github.com/${GITHUB_REPOSITORY}/releases/tag/${TAG_NAME}" \
             -o "$SPARKLE_DIR/appcast.xml" \
             "$SPARKLE_DIR"
 
           test -s "$SPARKLE_DIR/appcast.xml"
-          grep -q "Glance-${VERSION}.zip" "$SPARKLE_DIR/appcast.xml"
+          grep -q "releases/download/${TAG_NAME}/Glance-${VERSION}.zip" "$SPARKLE_DIR/appcast.xml"
           grep -q "edSignature" "$SPARKLE_DIR/appcast.xml"
 
           cp -f "$SPARKLE_DIR/appcast.xml" appcast.xml

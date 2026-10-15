@@ -1069,7 +1069,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/bash;
-			shellScript = "SPARKLE_FRAMEWORK=\"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Sparkle.framework\"\nif [ -d \"$SPARKLE_FRAMEWORK\" ]; then\n\tcodesign -f -s \"${CODE_SIGN_IDENTITY:--}\" -o runtime \"$SPARKLE_FRAMEWORK/Versions/B/XPCServices/Installer.xpc\"\n\tcodesign -f -s \"${CODE_SIGN_IDENTITY:--}\" -o runtime \"$SPARKLE_FRAMEWORK/Versions/B/Autoupdate\"\n\tcodesign -f -s \"${CODE_SIGN_IDENTITY:--}\" -o runtime \"$SPARKLE_FRAMEWORK/Versions/B/Updater.app\"\n\tcodesign -f -s \"${CODE_SIGN_IDENTITY:--}\" -o runtime \"$SPARKLE_FRAMEWORK\"\nfi\nexit 0\n";
+			shellScript = "\"$PROJECT_DIR/scripts/embed-sparkle.sh\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
