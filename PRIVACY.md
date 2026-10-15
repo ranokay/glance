@@ -9,7 +9,8 @@ Glance stores app settings and aggregate preview counters (date, file extension,
 local system preferences. These values stay on your Mac and are not transmitted by Glance.
 
 When checking for updates, Glance contacts `github.com` to read this fork's update
-feed (the current release's hosted appcast) and download the update. Requests carry no identifiers beyond
+feed (the current release's hosted appcast) and download the update; GitHub serves
+release downloads from `release-assets.githubusercontent.com`. Requests carry no identifiers beyond
 Sparkle's standard user-agent string, and system profiling is disabled.
 
 Remote assets referenced by Markdown or notebook content are blocked. Local referenced assets may
