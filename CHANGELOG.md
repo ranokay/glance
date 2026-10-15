@@ -2,9 +2,9 @@
 
 Append-only. Newest entry first.
 
-# Glance Unreleased
+# Glance 1.8.0
 
-Glance now installs its own updates from inside the app, without opening the
+Glance 1.8.0 installs its own updates from inside the app, without opening the
 browser.
 
 - Sparkle (`https://github.com/sparkle-project/Sparkle`, 2.10.0) drives
