@@ -168,12 +168,15 @@ jobs:
             "dist/sparkle/Glance-${VERSION}.zip.sha256"
             "dist/sparkle/Glance-${VERSION}.md"
           )
-          # Rerun/draft-recovery path data; empty on a fresh release.
+          RELEASE_EXISTS=false
           EXISTING=""
 
           if gh release view "$TAG_NAME" \
             --repo "$GITHUB_REPOSITORY" \
             >/dev/null 2>&1; then
+            # Rerun or interrupted-draft recovery: the release object exists
+            # even when its asset list is empty, so track both separately.
+            RELEASE_EXISTS=true
             EXISTING="$(gh release view "$TAG_NAME" \
               --repo "$GITHUB_REPOSITORY" \
               --json assets \
@@ -190,7 +193,8 @@ jobs:
                 gh release download "$TAG_NAME" \
                   --repo "$GITHUB_REPOSITORY" \
                   --pattern "$name" \
-                  --output "$path"
+                  --output "$path" \
+                  --clobber
               fi
             done
           else
@@ -212,7 +216,7 @@ jobs:
               | tee "Glance-${VERSION}.zip.sha256"
           )
 
-          if [ -n "$EXISTING" ]; then
+          if [ "$RELEASE_EXISTS" = "true" ]; then
             index=0
             for asset in "${ASSETS[@]}"; do
               name="$(basename "$asset")"
@@ -224,6 +228,14 @@ jobs:
               fi
               index=$((index + 1))
             done
+            # The two checksums are always re-uploaded over whatever is on the
+            # release: their bytes were just recomputed from the artifacts
+            # that actually ship.
+            gh release upload "$TAG_NAME" \
+              --repo "$GITHUB_REPOSITORY" \
+              --clobber \
+              "dist/Glance-${VERSION}.dmg.sha256" \
+              "dist/sparkle/Glance-${VERSION}.zip.sha256"
           fi
 
       - name: Generate Sparkle appcast
@@ -262,11 +274,13 @@ jobs:
             gh release download "$TAG_NAME" \
               --repo "$GITHUB_REPOSITORY" \
               --pattern "Glance-${VERSION}.zip" \
-              --output "$SPARKLE_DIR/Glance-${VERSION}.zip"
+              --output "$SPARKLE_DIR/Glance-${VERSION}.zip" \
+              --clobber
             gh release download "$TAG_NAME" \
               --repo "$GITHUB_REPOSITORY" \
               --pattern "Glance-${VERSION}.md" \
-              --output "$SPARKLE_DIR/Glance-${VERSION}.md"
+              --output "$SPARKLE_DIR/Glance-${VERSION}.md" \
+              --clobber
           fi
 
           curl -fsSL -o /tmp/sparkle.tar.xz \
@@ -287,10 +301,31 @@ jobs:
           grep -q "releases/download/${TAG_NAME}/Glance-${VERSION}.zip" "$SPARKLE_DIR/appcast.xml"
           grep -q "edSignature" "$SPARKLE_DIR/appcast.xml"
 
-          gh release upload "$TAG_NAME" \
+          # Replace a live appcast only when its content actually changed:
+          # deleting the asset and stale-uploading identical bytes otherwise
+          # risks a feed-404 window on every rerun.
+          if gh release view "$TAG_NAME" \
             --repo "$GITHUB_REPOSITORY" \
-            --clobber \
-            "$SPARKLE_DIR/appcast.xml"
+            --json assets \
+            --jq '[.assets[].name] | join("\n")' | grep -Fxq "appcast.xml"; then
+            gh release download "$TAG_NAME" \
+              --repo "$GITHUB_REPOSITORY" \
+              --pattern "appcast.xml" \
+              --output /tmp/existing-appcast.xml \
+              --clobber
+            if cmp -s /tmp/existing-appcast.xml "$SPARKLE_DIR/appcast.xml"; then
+              echo "Published appcast is already current; leaving the live asset in place."
+            else
+              gh release upload "$TAG_NAME" \
+                --repo "$GITHUB_REPOSITORY" \
+                --clobber \
+                "$SPARKLE_DIR/appcast.xml"
+            fi
+          else
+            gh release upload "$TAG_NAME" \
+              --repo "$GITHUB_REPOSITORY" \
+              "$SPARKLE_DIR/appcast.xml"
+          fi
 
           # Published only now, with the appcast asset attached: the redirect
           # never serves a release whose feed is incomplete.
