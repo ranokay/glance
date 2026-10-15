@@ -8,6 +8,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: release-${{ github.ref_name }}
+  cancel-in-progress: false
+
 jobs:
   release:
     name: Build and publish DMG
@@ -157,15 +161,82 @@ jobs:
           set -euo pipefail
 
           VERSION="${TAG_NAME#v}"
-          gh release create "$TAG_NAME" \
-            "dist/Glance-${VERSION}.dmg" \
-            "dist/Glance-${VERSION}.dmg.sha256" \
-            "dist/sparkle/Glance-${VERSION}.zip" \
-            "dist/sparkle/Glance-${VERSION}.zip.sha256" \
-            "dist/sparkle/Glance-${VERSION}.md" \
+          ASSETS=(
+            "dist/Glance-${VERSION}.dmg"
+            "dist/Glance-${VERSION}.dmg.sha256"
+            "dist/sparkle/Glance-${VERSION}.zip"
+            "dist/sparkle/Glance-${VERSION}.zip.sha256"
+            "dist/sparkle/Glance-${VERSION}.md"
+          )
+          RELEASE_EXISTS=false
+          EXISTING=""
+
+          if gh release view "$TAG_NAME" \
             --repo "$GITHUB_REPOSITORY" \
-            --title "Glance ${VERSION}" \
-            --notes-file dist/release-notes.md
+            >/dev/null 2>&1; then
+            # Rerun or interrupted-draft recovery: the release object exists
+            # even when its asset list is empty, so track both separately.
+            RELEASE_EXISTS=true
+            EXISTING="$(gh release view "$TAG_NAME" \
+              --repo "$GITHUB_REPOSITORY" \
+              --json assets \
+              --jq '[.assets[].name] | join("\n")')"
+            # Retained published artifacts win over fresh ones: a binary kept
+            # from the original run is re-referenced by its own checksum.
+            for pair in \
+              "Glance-${VERSION}.zip|dist/sparkle/Glance-${VERSION}.zip" \
+              "Glance-${VERSION}.dmg|dist/Glance-${VERSION}.dmg" \
+              "Glance-${VERSION}.md|dist/sparkle/Glance-${VERSION}.md"; do
+              name="${pair%%|*}"
+              path="${pair#*|}"
+              if printf '%s' "$EXISTING" | grep -Fxq "$name"; then
+                gh release download "$TAG_NAME" \
+                  --repo "$GITHUB_REPOSITORY" \
+                  --pattern "$name" \
+                  --output "$path" \
+                  --clobber
+              fi
+            done
+          else
+            gh release create "$TAG_NAME" \
+              "${ASSETS[@]}" \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "Glance ${VERSION}" \
+              --draft \
+              --notes-file dist/release-notes.md
+          fi
+
+          # Checksums always describe the artifacts actually attached (which
+          # the appcast validator and users' shasum both consume).
+          shasum -a 256 "dist/Glance-${VERSION}.dmg" \
+            | tee "dist/Glance-${VERSION}.dmg.sha256"
+          (
+            cd "dist/sparkle"
+            shasum -a 256 "Glance-${VERSION}.zip" \
+              | tee "Glance-${VERSION}.zip.sha256"
+          )
+
+          if [ "$RELEASE_EXISTS" = "true" ]; then
+            index=0
+            for asset in "${ASSETS[@]}"; do
+              name="$(basename "$asset")"
+              if ! printf '%s' "$EXISTING" | grep -Fxq "$name"; then
+                gh release upload "$TAG_NAME" \
+                  --repo "$GITHUB_REPOSITORY" \
+                  --clobber \
+                  "$asset"
+              fi
+              index=$((index + 1))
+            done
+            # The two checksums are always re-uploaded over whatever is on the
+            # release: their bytes were just recomputed from the artifacts
+            # that actually ship.
+            gh release upload "$TAG_NAME" \
+              --repo "$GITHUB_REPOSITORY" \
+              --clobber \
+              "dist/Glance-${VERSION}.dmg.sha256" \
+              "dist/sparkle/Glance-${VERSION}.zip.sha256"
+          fi
 
       - name: Generate Sparkle appcast
         env:
@@ -181,13 +252,35 @@ jobs:
           SPARKLE_VERSION="2.10.0"
           SPARKLE_SHA256="c2bf58aa8387266ac179357b1415d6f2635f044da8be41042af32425dae6da0c"
 
-          # Runs after "Create GitHub release" so every enclosure the feed
-          # advertises points at assets that already exist; until this commit
-          # lands clients simply keep reading the previous feed.
+          # The feed is a release asset: clients read
+          # releases/latest/download/appcast.xml, which always serves the
+          # newest release's feed, so no branch is ever written during a
+          # release (main mirrors upstream; develop carries the app source).
 
           if [ -z "${SPARKLE_EDDSA_PRIVATE_KEY:-}" ]; then
-            echo "SPARKLE_EDDSA_PRIVATE_KEY unset; skipping Sparkle appcast generation."
+            echo "SPARKLE_EDDSA_PRIVATE_KEY unset; publishing without an appcast asset — the feed redirect stays 404 until one is attached."
+            gh release edit "$TAG_NAME" \
+              --repo "$GITHUB_REPOSITORY" \
+              --draft=false
             exit 0
+          fi
+
+          # On a rerun the attachment set is already public; the appcast must
+          # describe exactly those bytes, so sign the released archive, not a
+          # freshly rebuilt local one.
+          if gh release view "$TAG_NAME" --repo "$GITHUB_REPOSITORY" \
+            --json assets \
+            --jq '[.assets[].name] | join("\n")' | grep -Fxq "Glance-${VERSION}.zip"; then
+            gh release download "$TAG_NAME" \
+              --repo "$GITHUB_REPOSITORY" \
+              --pattern "Glance-${VERSION}.zip" \
+              --output "$SPARKLE_DIR/Glance-${VERSION}.zip" \
+              --clobber
+            gh release download "$TAG_NAME" \
+              --repo "$GITHUB_REPOSITORY" \
+              --pattern "Glance-${VERSION}.md" \
+              --output "$SPARKLE_DIR/Glance-${VERSION}.md" \
+              --clobber
           fi
 
           curl -fsSL -o /tmp/sparkle.tar.xz \
@@ -208,16 +301,34 @@ jobs:
           grep -q "releases/download/${TAG_NAME}/Glance-${VERSION}.zip" "$SPARKLE_DIR/appcast.xml"
           grep -q "edSignature" "$SPARKLE_DIR/appcast.xml"
 
-          cp -f "$SPARKLE_DIR/appcast.xml" appcast.xml
-
-          CURRENT_SHA="$(gh api "repos/${GITHUB_REPOSITORY}/contents/appcast.xml?ref=main" -q .sha 2>/dev/null || true)"
-          if [ -n "$CURRENT_SHA" ]; then
-            gh api --method PUT "repos/${GITHUB_REPOSITORY}/contents/appcast.xml" \
-              -f message="chore: update Sparkle appcast for ${TAG_NAME}" \
-              -f content="$(base64 < appcast.xml | tr -d '\n')" \
-              -f sha="$CURRENT_SHA" >/dev/null
+          # Replace a live appcast only when its content actually changed:
+          # deleting the asset and stale-uploading identical bytes otherwise
+          # risks a feed-404 window on every rerun.
+          if gh release view "$TAG_NAME" \
+            --repo "$GITHUB_REPOSITORY" \
+            --json assets \
+            --jq '[.assets[].name] | join("\n")' | grep -Fxq "appcast.xml"; then
+            gh release download "$TAG_NAME" \
+              --repo "$GITHUB_REPOSITORY" \
+              --pattern "appcast.xml" \
+              --output /tmp/existing-appcast.xml \
+              --clobber
+            if cmp -s /tmp/existing-appcast.xml "$SPARKLE_DIR/appcast.xml"; then
+              echo "Published appcast is already current; leaving the live asset in place."
+            else
+              gh release upload "$TAG_NAME" \
+                --repo "$GITHUB_REPOSITORY" \
+                --clobber \
+                "$SPARKLE_DIR/appcast.xml"
+            fi
           else
-            gh api --method PUT "repos/${GITHUB_REPOSITORY}/contents/appcast.xml" \
-              -f message="chore: add Sparkle appcast for ${TAG_NAME}" \
-              -f content="$(base64 < appcast.xml | tr -d '\n')" >/dev/null
+            gh release upload "$TAG_NAME" \
+              --repo "$GITHUB_REPOSITORY" \
+              "$SPARKLE_DIR/appcast.xml"
           fi
+
+          # Published only now, with the appcast asset attached: the redirect
+          # never serves a release whose feed is incomplete.
+          gh release edit "$TAG_NAME" \
+            --repo "$GITHUB_REPOSITORY" \
+            --draft=false

@@ -4,7 +4,7 @@
 
 **Goal:** Replace the check-only GitHub-Releases poller with Sparkle 2 so Glance checks, auto-downloads, and installs updates fully in-app (standard driver dialog + settings resume) — no browser redirect, no Apple Developer account (EdDSA only).
 
-**Architecture:** Sparkle 2.10.0 via SPM binary artifact in the sandboxed `Glance` app target only. New `@MainActor SparkleUpdateCenter` owns `SPUUpdater` + `SPUStandardUserDriver`, mirrors app-group `autoUpdateCheckEnabled` into Sparkle prefs, and broadcasts status text via `NotificationCenter` to `SettingsWC`. Homegrown `UpdateChecker`/`UpdateCheckService` and the notification flow are deleted; release CI additionally publishes an EdDSA-signed zip + `appcast.xml` (committed to `main`, served via raw.githubusercontent.com) alongside the DMG.
+**Architecture:** Sparkle 2.10.0 via SPM binary artifact in the sandboxed `Glance` app target only. New `@MainActor SparkleUpdateCenter` owns `SPUUpdater` + `SPUStandardUserDriver`, mirrors app-group `autoUpdateCheckEnabled` into Sparkle prefs, and broadcasts status text via `NotificationCenter` to `SettingsWC`. Homegrown `UpdateChecker`/`UpdateCheckService` and the notification flow are deleted; release CI additionally publishes an EdDSA-signed zip and attaches a signed `appcast.xml` release asset alongside the DMG; clients read the stable `releases/latest/download/appcast.xml` redirect.
 
 **Tech Stack:** Sparkle 2.10.0 (SPM, pinned exact), AppKit, Swift 6, GitHub Actions on macos-26.
 
@@ -25,7 +25,7 @@
 1. **EdDSA key rotation/loss vs the supersedence failure:** if a false key sneaks into `SUPublicEDKey`, every update fails validation instead of just being untrusted — the first live release must verify `sign_update` output matches the plist key. Test: release.yml step asserts `verifyAppcast.py`-style check? → pinned as manual gate in Task 4 (Sparkle's `generate_appcast` runs `sign_update` and fails loudly on mismatch; the CI "Generate appcast" step exit code is the pin).
 2. **Auto-check OFF must not silently re-enable downloads:** user unchecking "Automatically check" in settings must stop background checks AND background downloads in the same session. Test: unit test on the mirror logic? → covered by Task 2's `SparkleUpdateCenterTests` asserting both `automaticallyChecksForUpdates` and `automaticallyDownloadsUpdates` flip via injected defaults-domain updater.
 3. **Sandbox + XPC launch failure is invisible:** if `-spki`/`-spks` entitlements are mistyped, Sparkle fails with console-only errors and the button does nothing. Test: Task 1's `verify:app` codesign + arcname check can't see it — pinned as manual probe: run release build, trigger check, confirm Standard dialog appears (Task 4 gate).
-4. **Appcast URL host mismatch:** `SUFeedURL` points at `raw.githubusercontent.com/ranokay/glance/main/appcast.xml`; if the machine's release pipeline publishes from a re-parented repo, stale feed → no updates ever. Test: Task 3 step asserts the committed appcast parses and its download URLs are the `ranokay/glance` release-asset host.
+4. **Appcast URL host mismatch:** `SUFeedURL` points at `raw.githubusercontent.com/ranokay/glance/releases/latest/download/appcast.xml`; if the machine's release pipeline publishes from a re-parented repo, stale feed → no updates ever. Test: Task 3 step asserts the committed appcast parses and its download URLs are the `ranokay/glance` release-asset host.
 5. **Auto-download while app in background shouldn't nag:** standard driver defers UI to activation; if someone leaves auto-download on and close-only apps the app, install prompt arrives at next focus (Sparkle behavior), not via UN notification. Manual probe only (Task 4).
 
 ---
@@ -35,7 +35,7 @@
 **Files:**
 - Modify: `Glance.xcodeproj/project.pbxproj` (add XCRemoteSwiftPackageReference 2.10.0, product dep "Sparkle" on target `7ECC8CED240CB4CC000D6970` only; PBXBuildFile in `PBXFrameworksBuildPhase` `7ECC8CEB240CB4CC000D6970`; PBXBuildFile `CodeSignOnCopy` in Embed Frameworks phase `60CE09000000000000000030`; new `PBXShellScriptBuildPhase` re-sign helper after embed phase; `packageProductDependencies` for Glance target; `packageReferences` for project)
 - Modify: `Glance/Glance.entitlements` (add `com.apple.security.temporary-exception.mach-lookup.global-name` array: `$(PRODUCT_BUNDLE_IDENTIFIER)-spks`, `$(PRODUCT_BUNDLE_IDENTIFIER)-spki`)
-- Modify: `Glance/Info.plist` (add `SUFeedURL` = `https://raw.githubusercontent.com/ranokay/glance/main/appcast.xml`, `SUPublicEDKey` = generated key, `SUEnableInstallerLauncherService` = true, `SUEnableAutomaticChecks` = true)
+- Modify: `Glance/Info.plist` (add `SUFeedURL` = `https://github.com/ranokay/glance/releases/latest/download/appcast.xml`, `SUPublicEDKey` = generated key, `SUEnableInstallerLauncherService` = true, `SUEnableAutomaticChecks` = true)
 
 **Interfaces:**
 - Consumes: Sparkle 2.10.0 SPM binary (`https://github.com/sparkle-project/Sparkle`, requirement `exactVersion 2.10.0`)
@@ -109,7 +109,7 @@ exit 0
 - Modify: `.github/workflows/release.yml` (after "Extract current version release notes", before "Create GitHub release"): copy `release-notes.md` → `dist/Glance-${VERSION}.md`; `ditto -c -k --sequesterRsrc --keepParent` the app to `dist/Glance-${VERSION}.zip` + `.sha256`; conditional Sparkle step gated on non-empty secret `SPARKLE_EDDSA_PRIVATE_KEY` (download pinned tools `Sparkle-2.10.0.tar.xz` with SHA check; `SPARKLE_PRIVATE_KEY_FILE` from secret; `bin/generate_appcast --download-url-prefix "https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG_NAME}" -o dist/appcast.xml dist/sparkle-only-dir`); append zip/zip.sha256/`Glance-${VERSION}.md`/`appcast.xml` to `gh release create` assets; commit `dist/appcast.xml` into repo root `appcast.xml` via `gh api --method PUT .../contents/appcast.xml` (sha-aware upsert, first push omits sha).
 - Create: `appcast.xml` (root; empty RSS feed shell, `<sparkle:minimumSystemVersion>12.0</sparkle:minimumSystemVersion>` documented in a comment so CI-generated items keep it)
 - Modify: `README.md` (installation narrative: after first DMG install, later updates download and install in-app; EdDSA explanation in the signing paragraph)
-- Modify: `PRIVACY.md` (update checker now contacts `raw.githubusercontent.com` and release asset host; no identifiers; profiling off)
+- Modify: `PRIVACY.md` (update checker now contacts `github.com` only (feed redirect + assets); no identifiers; profiling off)
 - Modify: `CHANGELOG.md` (new first section `# Glance Unreleased` — updates now download and install inside the app via Sparkle; no browser redirect for updates; checks/downloads follow the automatic-check toggle)
 - Modify: `docs/agents/release-checklists.md` (release procedure gains: register EdDSA private key secret `SPARKLE_EDDSA_PRIVATE_KEY`, appcast commit appears on main automatically)
 
@@ -140,3 +140,11 @@ exit 0
 - Spec coverage: auto-download (pref mirror in Task 2), in-app install (standard driver + resume button Task 2), no browser redirect (openUpdate/openUpdateURL removed Task 2; AppLinks.releases only survives for manual "Open GitHub Repository" menu), no Apple account (EdDSA Task 1/3), pipeline + docs (Task 3).
 - Type consistency: `SparkleUpdateCenter` API is the single consumer-side surface; no cross-task interface drift.
 - Proportion: 4 tasks, each independently verifiable.
+
+---
+
+## Policy addendum (post-merge, 2026-10-15)
+
+- `main` mirrors upstream `chamburr/glance` and is never written to; all work happens on `develop`.
+- The wrong-scoped appcast commit that went to `main` during v1.8.0 recovery (`4c9d407`) was force-restored to upstream (`c6225d8`).
+- Feed design final form: **release asset, zero branch writes** — `SUFeedURL` = the stable `releases/latest/download/appcast.xml` redirect; each release CI signs its own published ZIP's appcast and uploads it as an asset; reruns re-sign exactly the published bytes. The 1.8.0 build's baked-in main-scoped URL is served by the next release (`v1.8.1`).
