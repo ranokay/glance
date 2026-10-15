@@ -8,6 +8,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 jobs:
   release:
     name: Build and publish DMG
@@ -157,23 +161,39 @@ jobs:
           set -euo pipefail
 
           VERSION="${TAG_NAME#v}"
-          if gh release view "$TAG_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release upload "$TAG_NAME" \
-              --repo "$GITHUB_REPOSITORY" \
-              --clobber \
-              "dist/Glance-${VERSION}.dmg" \
-              "dist/Glance-${VERSION}.dmg.sha256" \
-              "dist/sparkle/Glance-${VERSION}.zip" \
-              "dist/sparkle/Glance-${VERSION}.zip.sha256" \
-              "dist/sparkle/Glance-${VERSION}.md"
+          ASSETS=(
+            "dist/Glance-${VERSION}.dmg"
+            "dist/Glance-${VERSION}.dmg.sha256"
+            "dist/sparkle/Glance-${VERSION}.zip"
+            "dist/sparkle/Glance-${VERSION}.zip.sha256"
+            "dist/sparkle/Glance-${VERSION}.md"
+          )
+
+          if gh release view "$TAG_NAME" \
+            --repo "$GITHUB_REPOSITORY" \
+            --json assets \
+            >/dev/null 2>&1; then
+            # Rerun path: never delete live published assets; upload only the
+            # ones the release is missing.
+            MISSING=()
+            for asset in "${ASSETS[@]}"; do
+              name="$(basename "$asset")"
+              if ! gh release view "$TAG_NAME" \
+                --repo "$GITHUB_REPOSITORY" \
+                --json assets \
+                --jq '.assets[].name' | grep -Fxq "$name"; then
+                MISSING+=("$asset")
+              fi
+            done
+            if [ "${#MISSING[@]}" -gt 0 ]; then
+              gh release upload "$TAG_NAME" \
+                --repo "$GITHUB_REPOSITORY" \
+                "${MISSING[@]}"
+            fi
             gh release edit "$TAG_NAME" --repo "$GITHUB_REPOSITORY" --draft=false
           else
             gh release create "$TAG_NAME" \
-              "dist/Glance-${VERSION}.dmg" \
-              "dist/Glance-${VERSION}.dmg.sha256" \
-              "dist/sparkle/Glance-${VERSION}.zip" \
-              "dist/sparkle/Glance-${VERSION}.zip.sha256" \
-              "dist/sparkle/Glance-${VERSION}.md" \
+              "${ASSETS[@]}" \
               --repo "$GITHUB_REPOSITORY" \
               --title "Glance ${VERSION}" \
               --notes-file dist/release-notes.md
@@ -200,6 +220,14 @@ jobs:
 
           if [ -z "${SPARKLE_EDDSA_PRIVATE_KEY:-}" ]; then
             echo "SPARKLE_EDDSA_PRIVATE_KEY unset; skipping Sparkle appcast generation."
+            exit 0
+          fi
+
+          # Only the latest stable release publishes the feed: an older tag's
+          # rerun must never roll the appcast back to a stale entry.
+          LATEST_TAG="$(gh api "repos/${GITHUB_REPOSITORY}/releases/latest" --jq .tag_name 2>/dev/null || true)"
+          if [ "$LATEST_TAG" != "$TAG_NAME" ]; then
+            echo "Tag ${TAG_NAME} is not the latest release (latest: ${LATEST_TAG:-none}); skipping appcast update."
             exit 0
           fi
 
