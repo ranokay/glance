@@ -195,7 +195,8 @@ jobs:
 
           # Runs after "Create GitHub release" so every enclosure the feed
           # advertises points at assets that already exist; until this commit
-          # lands clients simply keep reading the previous feed.
+          # lands clients simply keep reading the previous feed. The appcast
+          # lives on develop only — main mirrors upstream and is never written.
 
           if [ -z "${SPARKLE_EDDSA_PRIVATE_KEY:-}" ]; then
             echo "SPARKLE_EDDSA_PRIVATE_KEY unset; skipping Sparkle appcast generation."
@@ -222,16 +223,16 @@ jobs:
 
           cp -f "$SPARKLE_DIR/appcast.xml" appcast.xml
 
-          CURRENT_SHA="$(gh api "repos/${GITHUB_REPOSITORY}/contents/appcast.xml?ref=main" -q .sha 2>/dev/null || true)"
+          CURRENT_SHA="$(gh api "repos/${GITHUB_REPOSITORY}/contents/appcast.xml?ref=develop" -q .sha 2>/dev/null || true)"
           if [ -n "$CURRENT_SHA" ]; then
             gh api --method PUT "repos/${GITHUB_REPOSITORY}/contents/appcast.xml" \
               -f message="chore: update Sparkle appcast for ${TAG_NAME}" \
               -f content="$(base64 < appcast.xml | tr -d '\n')" \
               -f sha="$CURRENT_SHA" \
-              -f branch=main >/dev/null
+              -f branch=develop >/dev/null
           else
             gh api --method PUT "repos/${GITHUB_REPOSITORY}/contents/appcast.xml" \
               -f message="chore: add Sparkle appcast for ${TAG_NAME}" \
               -f content="$(base64 < appcast.xml | tr -d '\n')" \
-              -f branch=main >/dev/null
+              -f branch=develop >/dev/null
           fi

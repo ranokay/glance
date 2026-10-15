@@ -13,10 +13,11 @@ same commit as any intentional bump, then run it.
 2. Export the private key with `bin/generate_keys -x <file>` and add its
    contents as the `SPARKLE_EDDSA_PRIVATE_KEY` repository secret. Leaving the
    secret unset skips appcast generation (release still publishes the DMG).
-3. CI pushes the regenerated `appcast.xml` to `main` on each tagged release;
+3. CI pushes the regenerated `appcast.xml` to `develop` on each tagged release;
    the app reads
-   `https://raw.githubusercontent.com/ranokay/glance/main/appcast.xml`.
-   Verify the pushed entry looks sane on the first run.
+   `https://raw.githubusercontent.com/ranokay/glance/develop/appcast.xml`.
+   `main` mirrors `chamburr/glance`'s upstream and is never written to by any
+   automation. Verify the pushed entry looks sane on the first run.
 
 ## Version bump (1.6.2 build 22 → next)
 

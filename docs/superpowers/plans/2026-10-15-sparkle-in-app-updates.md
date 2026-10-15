@@ -25,7 +25,7 @@
 1. **EdDSA key rotation/loss vs the supersedence failure:** if a false key sneaks into `SUPublicEDKey`, every update fails validation instead of just being untrusted — the first live release must verify `sign_update` output matches the plist key. Test: release.yml step asserts `verifyAppcast.py`-style check? → pinned as manual gate in Task 4 (Sparkle's `generate_appcast` runs `sign_update` and fails loudly on mismatch; the CI "Generate appcast" step exit code is the pin).
 2. **Auto-check OFF must not silently re-enable downloads:** user unchecking "Automatically check" in settings must stop background checks AND background downloads in the same session. Test: unit test on the mirror logic? → covered by Task 2's `SparkleUpdateCenterTests` asserting both `automaticallyChecksForUpdates` and `automaticallyDownloadsUpdates` flip via injected defaults-domain updater.
 3. **Sandbox + XPC launch failure is invisible:** if `-spki`/`-spks` entitlements are mistyped, Sparkle fails with console-only errors and the button does nothing. Test: Task 1's `verify:app` codesign + arcname check can't see it — pinned as manual probe: run release build, trigger check, confirm Standard dialog appears (Task 4 gate).
-4. **Appcast URL host mismatch:** `SUFeedURL` points at `raw.githubusercontent.com/ranokay/glance/main/appcast.xml`; if the machine's release pipeline publishes from a re-parented repo, stale feed → no updates ever. Test: Task 3 step asserts the committed appcast parses and its download URLs are the `ranokay/glance` release-asset host.
+4. **Appcast URL host mismatch:** `SUFeedURL` points at `raw.githubusercontent.com/ranokay/glance/develop/appcast.xml`; if the machine's release pipeline publishes from a re-parented repo, stale feed → no updates ever. Test: Task 3 step asserts the committed appcast parses and its download URLs are the `ranokay/glance` release-asset host.
 5. **Auto-download while app in background shouldn't nag:** standard driver defers UI to activation; if someone leaves auto-download on and close-only apps the app, install prompt arrives at next focus (Sparkle behavior), not via UN notification. Manual probe only (Task 4).
 
 ---
@@ -35,7 +35,7 @@
 **Files:**
 - Modify: `Glance.xcodeproj/project.pbxproj` (add XCRemoteSwiftPackageReference 2.10.0, product dep "Sparkle" on target `7ECC8CED240CB4CC000D6970` only; PBXBuildFile in `PBXFrameworksBuildPhase` `7ECC8CEB240CB4CC000D6970`; PBXBuildFile `CodeSignOnCopy` in Embed Frameworks phase `60CE09000000000000000030`; new `PBXShellScriptBuildPhase` re-sign helper after embed phase; `packageProductDependencies` for Glance target; `packageReferences` for project)
 - Modify: `Glance/Glance.entitlements` (add `com.apple.security.temporary-exception.mach-lookup.global-name` array: `$(PRODUCT_BUNDLE_IDENTIFIER)-spks`, `$(PRODUCT_BUNDLE_IDENTIFIER)-spki`)
-- Modify: `Glance/Info.plist` (add `SUFeedURL` = `https://raw.githubusercontent.com/ranokay/glance/main/appcast.xml`, `SUPublicEDKey` = generated key, `SUEnableInstallerLauncherService` = true, `SUEnableAutomaticChecks` = true)
+- Modify: `Glance/Info.plist` (add `SUFeedURL` = `https://raw.githubusercontent.com/ranokay/glance/develop/appcast.xml`, `SUPublicEDKey` = generated key, `SUEnableInstallerLauncherService` = true, `SUEnableAutomaticChecks` = true)
 
 **Interfaces:**
 - Consumes: Sparkle 2.10.0 SPM binary (`https://github.com/sparkle-project/Sparkle`, requirement `exactVersion 2.10.0`)
@@ -140,3 +140,11 @@ exit 0
 - Spec coverage: auto-download (pref mirror in Task 2), in-app install (standard driver + resume button Task 2), no browser redirect (openUpdate/openUpdateURL removed Task 2; AppLinks.releases only survives for manual "Open GitHub Repository" menu), no Apple account (EdDSA Task 1/3), pipeline + docs (Task 3).
 - Type consistency: `SparkleUpdateCenter` API is the single consumer-side surface; no cross-task interface drift.
 - Proportion: 4 tasks, each independently verifiable.
+
+---
+
+## Policy addendum (post-merge, 2026-10-15)
+
+- `main` mirrors upstream `chamburr/glance` and is never written to; all work happens on `develop` (including release-pipeline appcast commits).
+- The wrong-scoped appcast commit that went to `main` during v1.8.0 recovery (`4c9d407`) was force-restored to upstream (`c6225d8`).
+- `SUFeedURL`/`release.yml` target the `develop` raw URL. The v1.8.0 build shipped with the old main-scoped feed URL, so the next tagged release (`v1.8.1`) completes the end-to-end updater chain.
