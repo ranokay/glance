@@ -11,7 +11,7 @@ crate-type = ["staticlib", "rlib"]
 [dependencies]
 # These migration-critical renderer/parser versions are exact by design; Cargo.lock pins the
 # complete transitive graph used by all locked production builds.
-ammonia = "4.1.4"
+ammonia = "4.2.3"
 ansi-to-html = "0.2.3"
 base64 = "0.23.1"
 comrak = { version = "0.54.0", default-features = false }
