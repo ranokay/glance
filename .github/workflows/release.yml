@@ -149,6 +149,24 @@ jobs:
           )
           cp dist/release-notes.md "$SPARKLE_DIR/Glance-${VERSION}.md"
 
+      - name: Create GitHub release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          VERSION="${TAG_NAME#v}"
+          gh release create "$TAG_NAME" \
+            "dist/Glance-${VERSION}.dmg" \
+            "dist/Glance-${VERSION}.dmg.sha256" \
+            "dist/sparkle/Glance-${VERSION}.zip" \
+            "dist/sparkle/Glance-${VERSION}.zip.sha256" \
+            "dist/sparkle/Glance-${VERSION}.md" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "Glance ${VERSION}" \
+            --notes-file dist/release-notes.md
+
       - name: Generate Sparkle appcast
         env:
           TAG_NAME: ${{ github.ref_name }}
@@ -162,6 +180,10 @@ jobs:
           RELEASE_PREFIX="https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG_NAME}"
           SPARKLE_VERSION="2.10.0"
           SPARKLE_SHA256="c2bf58aa8387266ac179357b1415d6f2635f044da8be41042af32425dae6da0c"
+
+          # Runs after "Create GitHub release" so every enclosure the feed
+          # advertises points at assets that already exist; until this commit
+          # lands clients simply keep reading the previous feed.
 
           if [ -z "${SPARKLE_EDDSA_PRIVATE_KEY:-}" ]; then
             echo "SPARKLE_EDDSA_PRIVATE_KEY unset; skipping Sparkle appcast generation."
@@ -199,21 +221,3 @@ jobs:
               -f message="chore: add Sparkle appcast for ${TAG_NAME}" \
               -f content="$(base64 < appcast.xml | tr -d '\n')" >/dev/null
           fi
-
-      - name: Create GitHub release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG_NAME: ${{ github.ref_name }}
-        run: |
-          set -euo pipefail
-
-          VERSION="${TAG_NAME#v}"
-          gh release create "$TAG_NAME" \
-            "dist/Glance-${VERSION}.dmg" \
-            "dist/Glance-${VERSION}.dmg.sha256" \
-            "dist/sparkle/Glance-${VERSION}.zip" \
-            "dist/sparkle/Glance-${VERSION}.zip.sha256" \
-            "dist/sparkle/Glance-${VERSION}.md" \
-            --repo "$GITHUB_REPOSITORY" \
-            --title "Glance ${VERSION}" \
-            --notes-file dist/release-notes.md

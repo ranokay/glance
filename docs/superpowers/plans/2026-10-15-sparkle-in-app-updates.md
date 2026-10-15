@@ -92,7 +92,7 @@ exit 0
 	func installNow()                             // resumed install & relaunch path offered by Sparkle 2.10 API; falls back to re-showing the update window when not available
 }
 ```
-- Delegate mirroring rules (plain strings, no version literals): `willCheck` → `Checking…`; `didNotFindUpdate` → `You're up to date.`; `didFindValidUpdate` → `Glance <version> is available.` (version read from `SPUUpdate` state/appcast item, never literal); `willDownloadUpdate` → `Downloading update…`; `didDownloadUpdate` → `Ready to install.` + `installReady = true`; `didFailWithError` → `Couldn't check just now.` + `installReady = false`.
+- Delegate mirroring rules (plain strings, no version literals): `didFindValidUpdate` → `Glance <version> is available.` (version read from the appcast item, never literal); `willDownloadUpdate` → `Downloading update…`; `didDownloadUpdate` → neutral (download ≠ validated); `willExtractUpdate` → `Preparing to install…`; `didExtractUpdate` → `Ready to install.` + `installReady = true` (extraction/validation complete — resolved P2 from review: not merely downloaded); `failedToDownloadUpdate` / real aborts → failure text + `installReady = false`.
 
 - [x] **Step 1: Test-first deviation (recorded):** the planned `SparkleUpdateCenterTests` was dropped — the only first-party logic is two property assignments on a live `SPUUpdater`, and unit-testing them would require host-bundle defaults writes on the dev machine. The behavior is covered instead by the manual probe (Task 4). Old `UpdateCheckerTests` deleted with its subject.
 - [x] **Step 2: Ran suite before implementation** — FAIL (type not found ×6)

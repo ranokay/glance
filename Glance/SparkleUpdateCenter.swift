@@ -102,6 +102,17 @@ extension SparkleUpdateCenter: SPUUpdaterDelegate, SPUStandardUserDriverDelegate
 	}
 
 	func updater(_: SPUUpdater, didDownloadUpdate _: SUAppcastItem) {
+		// Download finished, but extraction/validation is still ahead; the
+		// install button waits for didExtractUpdate.
+	}
+
+	func updater(_: SPUUpdater, willExtractUpdate _: SUAppcastItem) {
+		setStatus("Preparing to install…", installReady: false)
+	}
+
+	func updater(_: SPUUpdater, didExtractUpdate _: SUAppcastItem) {
+		// Extracted and signature-validated; the staged update can now be
+		// resumed with an Install and Relaunch from Settings.
 		setStatus("Ready to install.", installReady: true)
 	}
 
