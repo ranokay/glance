@@ -157,15 +157,27 @@ jobs:
           set -euo pipefail
 
           VERSION="${TAG_NAME#v}"
-          gh release create "$TAG_NAME" \
-            "dist/Glance-${VERSION}.dmg" \
-            "dist/Glance-${VERSION}.dmg.sha256" \
-            "dist/sparkle/Glance-${VERSION}.zip" \
-            "dist/sparkle/Glance-${VERSION}.zip.sha256" \
-            "dist/sparkle/Glance-${VERSION}.md" \
-            --repo "$GITHUB_REPOSITORY" \
-            --title "Glance ${VERSION}" \
-            --notes-file dist/release-notes.md
+          if gh release view "$TAG_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$TAG_NAME" \
+              --repo "$GITHUB_REPOSITORY" \
+              --clobber \
+              "dist/Glance-${VERSION}.dmg" \
+              "dist/Glance-${VERSION}.dmg.sha256" \
+              "dist/sparkle/Glance-${VERSION}.zip" \
+              "dist/sparkle/Glance-${VERSION}.zip.sha256" \
+              "dist/sparkle/Glance-${VERSION}.md"
+            gh release edit "$TAG_NAME" --repo "$GITHUB_REPOSITORY" --draft=false
+          else
+            gh release create "$TAG_NAME" \
+              "dist/Glance-${VERSION}.dmg" \
+              "dist/Glance-${VERSION}.dmg.sha256" \
+              "dist/sparkle/Glance-${VERSION}.zip" \
+              "dist/sparkle/Glance-${VERSION}.zip.sha256" \
+              "dist/sparkle/Glance-${VERSION}.md" \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "Glance ${VERSION}" \
+              --notes-file dist/release-notes.md
+          fi
 
       - name: Generate Sparkle appcast
         env:
@@ -215,9 +227,11 @@ jobs:
             gh api --method PUT "repos/${GITHUB_REPOSITORY}/contents/appcast.xml" \
               -f message="chore: update Sparkle appcast for ${TAG_NAME}" \
               -f content="$(base64 < appcast.xml | tr -d '\n')" \
-              -f sha="$CURRENT_SHA" >/dev/null
+              -f sha="$CURRENT_SHA" \
+              -f branch=main >/dev/null
           else
             gh api --method PUT "repos/${GITHUB_REPOSITORY}/contents/appcast.xml" \
               -f message="chore: add Sparkle appcast for ${TAG_NAME}" \
-              -f content="$(base64 < appcast.xml | tr -d '\n')" >/dev/null
+              -f content="$(base64 < appcast.xml | tr -d '\n')" \
+              -f branch=main >/dev/null
           fi
