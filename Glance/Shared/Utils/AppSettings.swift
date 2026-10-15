@@ -89,9 +89,9 @@ public struct AppSettingsStore {
 	public static let previewFontSizeKey = "previewFontSize"
 	public static let previewLineWrappingKey = "previewLineWrapping"
 	public static let flacWaveformEnabledKey = "flacWaveformEnabled"
+	// Legacy seed for Sparkle's own persisted check preference; Settings
+	// writes go to Sparkle from now on and this key is only read once.
 	public static let autoUpdateCheckEnabledKey = "autoUpdateCheckEnabled"
-	private static let lastUpdateCheckDateKey = "lastUpdateCheckDate"
-	private static let lastNotifiedUpdateVersionKey = "lastNotifiedUpdateVersion"
 	private static let standardDefaultsMigrationKey = "didMigrateStandardDefaults"
 	private static let previewDefaultsMigrationKey = "didMigratePreviewDefaults"
 
@@ -167,28 +167,6 @@ public struct AppSettingsStore {
 	public var autoUpdateCheckEnabled: Bool {
 		get { defaults.object(forKey: Self.autoUpdateCheckEnabledKey) as? Bool ?? true }
 		nonmutating set { defaults.set(newValue, forKey: Self.autoUpdateCheckEnabledKey) }
-	}
-
-	public var lastUpdateCheckDate: Date? {
-		get { defaults.object(forKey: Self.lastUpdateCheckDateKey) as? Date }
-		nonmutating set {
-			guard let newValue else {
-				defaults.removeObject(forKey: Self.lastUpdateCheckDateKey)
-				return
-			}
-			defaults.set(newValue, forKey: Self.lastUpdateCheckDateKey)
-		}
-	}
-
-	public var lastNotifiedUpdateVersion: String? {
-		get { defaults.string(forKey: Self.lastNotifiedUpdateVersionKey) }
-		nonmutating set {
-			guard let newValue else {
-				defaults.removeObject(forKey: Self.lastNotifiedUpdateVersionKey)
-				return
-			}
-			defaults.set(newValue, forKey: Self.lastNotifiedUpdateVersionKey)
-		}
 	}
 
 	public var previewAppearance: PreviewAppearancePreferences {

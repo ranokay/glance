@@ -1,6 +1,5 @@
 import Cocoa
 import GlanceKit
-import UserNotifications
 
 @main
 @MainActor
@@ -34,8 +33,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, DockIconVisibilityUpdating {
 		)
 
 		updateDockIconVisibility()
-		UNUserNotificationCenter.current().delegate = self
-		checkForUpdatesIfDue()
+		SparkleUpdateCenter.shared.start(
+			autoChecksEnabled: AppSettingsStore.shared.autoUpdateCheckEnabled
+		)
 	}
 
 	func applicationShouldTerminateAfterLastWindowClosed(_: NSApplication) -> Bool {
@@ -153,39 +153,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, DockIconVisibilityUpdating {
 
 	@objc
 	private func checkForUpdates(_: Any?) {
-		SettingsWC.shared.showSettingsWindow()
-		SettingsWC.shared.checkForUpdatesButton.performClick(nil)
-	}
-
-	private func checkForUpdatesIfDue() {
-		Task { @MainActor in
-			let current =
-				Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
-			let service = UpdateCheckService(
-				settings: AppSettingsStore.shared,
-				currentVersion: current,
-				fetch: UpdateCheckService.liveFetcher(),
-				notified: { version, url in
-					let center = UNUserNotificationCenter.current()
-					_ = try? await center.requestAuthorization(options: [.alert])
-					let settings = await center.notificationSettings()
-					guard settings.authorizationStatus == .authorized else {
-						return
-					}
-					let content = UNMutableNotificationContent()
-					content.title = "Glance \(version) available"
-					content.body = "Update now opens the release page."
-					content.userInfo = ["url": url.absoluteString]
-					let request = UNNotificationRequest(
-						identifier: version,
-						content: content,
-						trigger: nil
-					)
-					try? await center.add(request)
-				}
-			)
-			_ = await service.checkIfDue()
-		}
+		SparkleUpdateCenter.shared.checkForUpdates()
 	}
 
 	@objc
@@ -242,26 +210,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, DockIconVisibilityUpdating {
 	}
 }
 
-extension AppDelegate: UNUserNotificationCenterDelegate {
-	nonisolated func userNotificationCenter(
-		_: UNUserNotificationCenter,
-		willPresent _: UNNotification,
-		withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions)
-			-> Void
-	) {
-		completionHandler([.banner, .list])
-	}
-
-	nonisolated func userNotificationCenter(
-		_: UNUserNotificationCenter,
-		didReceive response: UNNotificationResponse,
-		withCompletionHandler completionHandler: @escaping () -> Void
-	) {
-		let urlString = response.notification.request.content.userInfo["url"] as? String
-		let url = urlString.flatMap(URL.init(string:)) ?? AppLinks.releases
-		DispatchQueue.main.async {
-			url.open()
+extension AppDelegate: NSMenuItemValidation {
+	func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
+		guard menuItem.action == #selector(checkForUpdates(_:)) else {
+			return true
 		}
-		completionHandler()
+		return SparkleUpdateCenter.shared.canCheckForUpdates
 	}
 }

@@ -62,8 +62,8 @@ final class SettingsWC: NSWindowController {
 		target: nil,
 		action: nil
 	)
-	let updateNowButton = NSButton(
-		title: "Update Now…",
+	let installUpdateButton = NSButton(
+		title: "Install and Relaunch…",
 		target: nil,
 		action: nil
 	)
@@ -94,9 +94,6 @@ final class SettingsWC: NSWindowController {
 		action: nil
 	)
 
-	private var pendingUpdateURL: URL?
-	private var pendingUpdateVersion: String?
-
 	init(
 		settingsStore: AppSettingsStore,
 		fontFamilies: [String],
@@ -120,6 +117,13 @@ final class SettingsWC: NSWindowController {
 		WindowAppearance.apply(to: window)
 
 		super.init(window: window)
+
+		NotificationCenter.default.addObserver(
+			self,
+			selector: #selector(updateStatusDidChange),
+			name: SparkleUpdateCenter.statusDidChangeNotification,
+			object: nil
+		)
 
 		setUpContent()
 		syncState()
@@ -193,9 +197,9 @@ final class SettingsWC: NSWindowController {
 		flacWaveformCheckbox.action = #selector(flacWaveformChanged)
 		checkForUpdatesButton.target = self
 		checkForUpdatesButton.action = #selector(checkForUpdates)
-		updateNowButton.target = self
-		updateNowButton.action = #selector(openUpdate)
-		updateNowButton.isHidden = true
+		installUpdateButton.target = self
+		installUpdateButton.action = #selector(installUpdate)
+		installUpdateButton.isHidden = true
 		autoUpdateCheckbox.target = self
 		autoUpdateCheckbox.action = #selector(autoUpdateChanged)
 
@@ -243,7 +247,7 @@ final class SettingsWC: NSWindowController {
 			sectionLabel("Software Update"),
 			updateStatusLabel,
 			checkForUpdatesButton,
-			updateNowButton,
+			installUpdateButton,
 			autoUpdateCheckbox,
 		])
 		stackView.orientation = .vertical
@@ -289,8 +293,25 @@ final class SettingsWC: NSWindowController {
 		fontSizeStepper.doubleValue = settingsStore.previewFontSize
 		lineWrappingCheckbox.state = settingsStore.previewLineWrapping ? .on : .off
 		flacWaveformCheckbox.state = settingsStore.flacWaveformEnabled ? .on : .off
-		autoUpdateCheckbox.state = settingsStore.autoUpdateCheckEnabled ? .on : .off
-		updateNowButton.isHidden = pendingUpdateURL == nil
+		autoUpdateCheckbox.state = SparkleUpdateCenter.shared.automaticChecksEnabled ? .on : .off
+		checkForUpdatesButton.isEnabled = SparkleUpdateCenter.shared.canCheckForUpdates
+		updateStatusLabel.stringValue = SparkleUpdateCenter.shared.statusText
+		installUpdateButton.isHidden = !SparkleUpdateCenter.shared.installReady
+	}
+
+	@objc
+	private func updateStatusDidChange(_ notification: Notification) {
+		let userInfo = notification.userInfo ?? [:]
+		if
+			let statusText = userInfo["statusText"] as? String,
+			let installReady = userInfo["installReady"] as? Bool
+		{
+			updateStatusLabel.stringValue = statusText
+			installUpdateButton.isHidden = !installReady
+		}
+		if let canCheck = userInfo["canCheckForUpdates"] as? Bool {
+			checkForUpdatesButton.isEnabled = canCheck
+		}
 	}
 
 	@objc
@@ -376,47 +397,17 @@ final class SettingsWC: NSWindowController {
 
 	@objc
 	private func checkForUpdates(_: NSButton) {
-		updateStatusLabel.stringValue = "Checking…"
-		checkForUpdatesButton.isEnabled = false
-		let current = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
-		Task { [weak self] in
-			guard let self else {
-				return
-			}
-			let service = UpdateCheckService(
-				settings: settingsStore,
-				currentVersion: current,
-				fetch: UpdateCheckService.liveFetcher(),
-				notified: { _, _ in }
-			)
-			let result = await service.checkNow()
-			await MainActor.run {
-				switch result {
-					case let .available(version, url):
-						pendingUpdateVersion = version
-						pendingUpdateURL = url
-						updateStatusLabel.stringValue = "Glance \(version) is available."
-					case .upToDate:
-						pendingUpdateURL = nil
-						pendingUpdateVersion = nil
-						updateStatusLabel.stringValue = "You’re up to date."
-					case .checking, .unknown:
-						updateStatusLabel.stringValue = "Couldn’t check just now."
-				}
-				checkForUpdatesButton.isEnabled = true
-				syncState()
-			}
-		}
+		SparkleUpdateCenter.shared.checkForUpdates()
 	}
 
 	@objc
-	private func openUpdate(_: NSButton) {
-		(pendingUpdateURL ?? AppLinks.releases).open()
+	private func installUpdate(_: NSButton) {
+		SparkleUpdateCenter.shared.installNow()
 	}
 
 	@objc
 	private func autoUpdateChanged(_ sender: NSButton) {
-		settingsStore.autoUpdateCheckEnabled = sender.state == .on
+		SparkleUpdateCenter.shared.setAutomaticChecksEnabled(sender.state == .on)
 	}
 
 	// MARK: - View Helpers

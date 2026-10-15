@@ -1,12 +1,16 @@
 # Privacy Policy
 
-Last updated: August 2, 2026
+Last updated: October 15, 2026
 
 Glance processes previews locally on your Mac. It does not include network analytics, advertising,
 tracking, or an account system, and it does not upload file contents or preview data to a server.
 
 Glance stores app settings and aggregate preview counters (date, file extension, and total count) in
 local system preferences. These values stay on your Mac and are not transmitted by Glance.
+
+When checking for updates, Glance contacts `raw.githubusercontent.com` to read this fork's update
+feed, and GitHub's release host when downloading an update. Requests carry no identifiers beyond
+Sparkle's standard user-agent string, and system profiling is disabled.
 
 Remote assets referenced by Markdown or notebook content are blocked. Local referenced assets may
 also be unavailable because the Quick Look extension receives access only to the item being previewed.

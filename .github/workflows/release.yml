@@ -129,6 +129,26 @@ jobs:
           ' CHANGELOG.md > dist/release-notes.md
           test -s dist/release-notes.md
 
+      - name: Package Sparkle update
+        env:
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          VERSION="${TAG_NAME#v}"
+          APP_PATH="build/Build/Products/Release/Glance.app"
+          SPARKLE_DIR="dist/sparkle"
+
+          test -d "$APP_PATH"
+
+          mkdir -p "$SPARKLE_DIR"
+          ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "$SPARKLE_DIR/Glance-${VERSION}.zip"
+          (
+            cd "$SPARKLE_DIR"
+            shasum -a 256 "Glance-${VERSION}.zip" | tee "Glance-${VERSION}.zip.sha256"
+          )
+          cp dist/release-notes.md "$SPARKLE_DIR/Glance-${VERSION}.md"
+
       - name: Create GitHub release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -140,6 +160,64 @@ jobs:
           gh release create "$TAG_NAME" \
             "dist/Glance-${VERSION}.dmg" \
             "dist/Glance-${VERSION}.dmg.sha256" \
+            "dist/sparkle/Glance-${VERSION}.zip" \
+            "dist/sparkle/Glance-${VERSION}.zip.sha256" \
+            "dist/sparkle/Glance-${VERSION}.md" \
             --repo "$GITHUB_REPOSITORY" \
             --title "Glance ${VERSION}" \
             --notes-file dist/release-notes.md
+
+      - name: Generate Sparkle appcast
+        env:
+          TAG_NAME: ${{ github.ref_name }}
+          SPARKLE_EDDSA_PRIVATE_KEY: ${{ secrets.SPARKLE_EDDSA_PRIVATE_KEY }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          VERSION="${TAG_NAME#v}"
+          SPARKLE_DIR="dist/sparkle"
+          RELEASE_PREFIX="https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG_NAME}"
+          SPARKLE_VERSION="2.10.0"
+          SPARKLE_SHA256="c2bf58aa8387266ac179357b1415d6f2635f044da8be41042af32425dae6da0c"
+
+          # Runs after "Create GitHub release" so every enclosure the feed
+          # advertises points at assets that already exist; until this commit
+          # lands clients simply keep reading the previous feed.
+
+          if [ -z "${SPARKLE_EDDSA_PRIVATE_KEY:-}" ]; then
+            echo "SPARKLE_EDDSA_PRIVATE_KEY unset; skipping Sparkle appcast generation."
+            exit 0
+          fi
+
+          curl -fsSL -o /tmp/sparkle.tar.xz \
+            "https://github.com/sparkle-project/Sparkle/releases/download/${SPARKLE_VERSION}/Sparkle-${SPARKLE_VERSION}.tar.xz"
+          echo "${SPARKLE_SHA256}  /tmp/sparkle.tar.xz" | shasum -a 256 -c -
+          mkdir -p /tmp/sparkle-tools
+          tar -xf /tmp/sparkle.tar.xz -C /tmp/sparkle-tools
+
+          echo "$SPARKLE_EDDSA_PRIVATE_KEY" | /tmp/sparkle-tools/bin/generate_appcast \
+            --ed-key-file - \
+            --download-url-prefix "$RELEASE_PREFIX/" \
+            --release-notes-url-prefix "$RELEASE_PREFIX/" \
+            --link "https://github.com/${GITHUB_REPOSITORY}/releases/tag/${TAG_NAME}" \
+            -o "$SPARKLE_DIR/appcast.xml" \
+            "$SPARKLE_DIR"
+
+          test -s "$SPARKLE_DIR/appcast.xml"
+          grep -q "releases/download/${TAG_NAME}/Glance-${VERSION}.zip" "$SPARKLE_DIR/appcast.xml"
+          grep -q "edSignature" "$SPARKLE_DIR/appcast.xml"
+
+          cp -f "$SPARKLE_DIR/appcast.xml" appcast.xml
+
+          CURRENT_SHA="$(gh api "repos/${GITHUB_REPOSITORY}/contents/appcast.xml?ref=main" -q .sha 2>/dev/null || true)"
+          if [ -n "$CURRENT_SHA" ]; then
+            gh api --method PUT "repos/${GITHUB_REPOSITORY}/contents/appcast.xml" \
+              -f message="chore: update Sparkle appcast for ${TAG_NAME}" \
+              -f content="$(base64 < appcast.xml | tr -d '\n')" \
+              -f sha="$CURRENT_SHA" >/dev/null
+          else
+            gh api --method PUT "repos/${GITHUB_REPOSITORY}/contents/appcast.xml" \
+              -f message="chore: add Sparkle appcast for ${TAG_NAME}" \
+              -f content="$(base64 < appcast.xml | tr -d '\n')" >/dev/null
+          fi

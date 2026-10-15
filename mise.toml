@@ -188,7 +188,10 @@ while IFS= read -r candidate; do
 			echo "Bundle artifact contains x86_64: $candidate" >&2
 			exit 1
 		fi
-		xcrun vtool -show-build "$candidate" | grep -q "minos 26.0"
+		case "$candidate" in
+			*/Sparkle.framework/*) ;;
+			*) xcrun vtool -show-build "$candidate" | grep -q "minos 26.0" ;;
+		esac
 	fi
 done < "$candidate_list"
 test "$found_macho" -eq 1

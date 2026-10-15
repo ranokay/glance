@@ -4,6 +4,20 @@ Step-by-step bump procedures. `scripts/check-release-metadata.sh` is the
 machine-readable mirror of the version checklist — update its literals in the
 same commit as any intentional bump, then run it.
 
+## Sparkle prerequisites (one-time, before the first v1.8 release)
+
+1. EdDSA update-signing key: run `bin/generate_keys` from the Sparkle 2.10
+   release tools locally (private key lives in the login Keychain; public key
+   is already in `Glance/Info.plist` as `SUPublicEDKey` — never regenerate, or
+   existing installs can no longer validate any update).
+2. Export the private key with `bin/generate_keys -x <file>` and add its
+   contents as the `SPARKLE_EDDSA_PRIVATE_KEY` repository secret. Leaving the
+   secret unset skips appcast generation (release still publishes the DMG).
+3. CI pushes the regenerated `appcast.xml` to `main` on each tagged release;
+   the app reads
+   `https://raw.githubusercontent.com/ranokay/glance/main/appcast.xml`.
+   Verify the pushed entry looks sane on the first run.
+
 ## Version bump (1.6.2 build 22 → next)
 
 1. `Glance.xcodeproj/project.pbxproj`: `MARKETING_VERSION` (×4: app + plugin ×
