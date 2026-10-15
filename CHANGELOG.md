@@ -2,6 +2,19 @@
 
 Append-only. Newest entry first.
 
+# Glance 1.8.1
+
+Glance 1.8.1 fixes the in-app updater's feed URL so those installs can discover
+future releases automatically.
+
+- The 1.8.0 build carried an update-feed URL pointing at a mirror branch that
+  must stay untouched; 1.8.1 points the updater at the release-asset host that
+  always serves the current release's signed feed.
+- The update pipeline itself is unchanged from 1.8.0: Sparkle checks, verifies
+  EdDSA signatures, downloads, and installs inside the app.
+
+This release remains Apple-silicon-only for macOS 26 or later. The app is ad hoc signed; its DMG is not Developer ID-signed or notarized, so verify the published SHA-256 checksum before installation.
+
 # Glance 1.8.0
 
 Glance 1.8.0 installs its own updates from inside the app, without opening the
