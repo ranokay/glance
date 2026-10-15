@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: release
+  group: release-${{ github.ref_name }}
   cancel-in-progress: false
 
 jobs:
@@ -213,10 +213,10 @@ jobs:
           SPARKLE_VERSION="2.10.0"
           SPARKLE_SHA256="c2bf58aa8387266ac179357b1415d6f2635f044da8be41042af32425dae6da0c"
 
-          # Runs after "Create GitHub release" so every enclosure the feed
-          # advertises points at assets that already exist; until this commit
-          # lands clients simply keep reading the previous feed. The appcast
-          # lives on develop only — main mirrors upstream and is never written.
+          # The feed is a release asset: clients read
+          # releases/latest/download/appcast.xml, which always serves the
+          # newest release's feed, so no branch is ever written during a
+          # release (main mirrors upstream; develop carries the app source).
 
           if [ -z "${SPARKLE_EDDSA_PRIVATE_KEY:-}" ]; then
             echo "SPARKLE_EDDSA_PRIVATE_KEY unset; skipping Sparkle appcast generation."
@@ -224,11 +224,35 @@ jobs:
           fi
 
           # Only the latest stable release publishes the feed: an older tag's
-          # rerun must never roll the appcast back to a stale entry.
-          LATEST_TAG="$(gh api "repos/${GITHUB_REPOSITORY}/releases/latest" --jq .tag_name 2>/dev/null || true)"
+          # rerun must never present itself as current. A 404 (no releases
+          # yet) is the only acceptable "none"; other failures abort.
+          if gh api "repos/${GITHUB_REPOSITORY}/releases/latest" \
+            --jq .tag_name > /tmp/latest-tag.out 2>/tmp/latest-tag.err; then
+            LATEST_TAG="$(cat /tmp/latest-tag.out)"
+          else
+            if grep -q "Not Found" /tmp/latest-tag.err; then
+              LATEST_TAG=""
+            else
+              cat /tmp/latest-tag.err >&2
+              exit 1
+            fi
+          fi
           if [ "$LATEST_TAG" != "$TAG_NAME" ]; then
             echo "Tag ${TAG_NAME} is not the latest release (latest: ${LATEST_TAG:-none}); skipping appcast update."
             exit 0
+          fi
+
+          # On a rerun the published zip is already public; the appcast must
+          # describe exactly those bytes, so sign the released archive, not a
+          # freshly rebuilt local one.
+          if gh release view "$TAG_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            if gh release view "$TAG_NAME" --repo "$GITHUB_REPOSITORY" \
+              --json assets --jq '.assets[].name' | grep -Fxq "Glance-${VERSION}.zip"; then
+              curl -fsSL -o "$SPARKLE_DIR/Glance-${VERSION}.zip" \
+                "$RELEASE_PREFIX/Glance-${VERSION}.zip"
+              curl -fsSL -o "$SPARKLE_DIR/Glance-${VERSION}.md" \
+                "$RELEASE_PREFIX/Glance-${VERSION}.md"
+            fi
           fi
 
           curl -fsSL -o /tmp/sparkle.tar.xz \
@@ -249,18 +273,7 @@ jobs:
           grep -q "releases/download/${TAG_NAME}/Glance-${VERSION}.zip" "$SPARKLE_DIR/appcast.xml"
           grep -q "edSignature" "$SPARKLE_DIR/appcast.xml"
 
-          cp -f "$SPARKLE_DIR/appcast.xml" appcast.xml
-
-          CURRENT_SHA="$(gh api "repos/${GITHUB_REPOSITORY}/contents/appcast.xml?ref=develop" -q .sha 2>/dev/null || true)"
-          if [ -n "$CURRENT_SHA" ]; then
-            gh api --method PUT "repos/${GITHUB_REPOSITORY}/contents/appcast.xml" \
-              -f message="chore: update Sparkle appcast for ${TAG_NAME}" \
-              -f content="$(base64 < appcast.xml | tr -d '\n')" \
-              -f sha="$CURRENT_SHA" \
-              -f branch=develop >/dev/null
-          else
-            gh api --method PUT "repos/${GITHUB_REPOSITORY}/contents/appcast.xml" \
-              -f message="chore: add Sparkle appcast for ${TAG_NAME}" \
-              -f content="$(base64 < appcast.xml | tr -d '\n')" \
-              -f branch=develop >/dev/null
-          fi
+          gh release upload "$TAG_NAME" \
+            --repo "$GITHUB_REPOSITORY" \
+            --clobber \
+            "$SPARKLE_DIR/appcast.xml"
