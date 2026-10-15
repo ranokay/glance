@@ -4,7 +4,7 @@
 
 **Goal:** Replace the check-only GitHub-Releases poller with Sparkle 2 so Glance checks, auto-downloads, and installs updates fully in-app (standard driver dialog + settings resume) — no browser redirect, no Apple Developer account (EdDSA only).
 
-**Architecture:** Sparkle 2.10.0 via SPM binary artifact in the sandboxed `Glance` app target only. New `@MainActor SparkleUpdateCenter` owns `SPUUpdater` + `SPUStandardUserDriver`, mirrors app-group `autoUpdateCheckEnabled` into Sparkle prefs, and broadcasts status text via `NotificationCenter` to `SettingsWC`. Homegrown `UpdateChecker`/`UpdateCheckService` and the notification flow are deleted; release CI additionally publishes an EdDSA-signed zip + `appcast.xml` (committed to `main`, served via raw.githubusercontent.com) alongside the DMG.
+**Architecture:** Sparkle 2.10.0 via SPM binary artifact in the sandboxed `Glance` app target only. New `@MainActor SparkleUpdateCenter` owns `SPUUpdater` + `SPUStandardUserDriver`, mirrors app-group `autoUpdateCheckEnabled` into Sparkle prefs, and broadcasts status text via `NotificationCenter` to `SettingsWC`. Homegrown `UpdateChecker`/`UpdateCheckService` and the notification flow are deleted; release CI additionally publishes an EdDSA-signed zip and attaches a signed `appcast.xml` release asset alongside the DMG; clients read the stable `releases/latest/download/appcast.xml` redirect.
 
 **Tech Stack:** Sparkle 2.10.0 (SPM, pinned exact), AppKit, Swift 6, GitHub Actions on macos-26.
 
@@ -35,7 +35,7 @@
 **Files:**
 - Modify: `Glance.xcodeproj/project.pbxproj` (add XCRemoteSwiftPackageReference 2.10.0, product dep "Sparkle" on target `7ECC8CED240CB4CC000D6970` only; PBXBuildFile in `PBXFrameworksBuildPhase` `7ECC8CEB240CB4CC000D6970`; PBXBuildFile `CodeSignOnCopy` in Embed Frameworks phase `60CE09000000000000000030`; new `PBXShellScriptBuildPhase` re-sign helper after embed phase; `packageProductDependencies` for Glance target; `packageReferences` for project)
 - Modify: `Glance/Glance.entitlements` (add `com.apple.security.temporary-exception.mach-lookup.global-name` array: `$(PRODUCT_BUNDLE_IDENTIFIER)-spks`, `$(PRODUCT_BUNDLE_IDENTIFIER)-spki`)
-- Modify: `Glance/Info.plist` (add `SUFeedURL` = `https://raw.githubusercontent.com/ranokay/glance/releases/latest/download/appcast.xml`, `SUPublicEDKey` = generated key, `SUEnableInstallerLauncherService` = true, `SUEnableAutomaticChecks` = true)
+- Modify: `Glance/Info.plist` (add `SUFeedURL` = `https://github.com/ranokay/glance/releases/latest/download/appcast.xml`, `SUPublicEDKey` = generated key, `SUEnableInstallerLauncherService` = true, `SUEnableAutomaticChecks` = true)
 
 **Interfaces:**
 - Consumes: Sparkle 2.10.0 SPM binary (`https://github.com/sparkle-project/Sparkle`, requirement `exactVersion 2.10.0`)
@@ -109,7 +109,7 @@ exit 0
 - Modify: `.github/workflows/release.yml` (after "Extract current version release notes", before "Create GitHub release"): copy `release-notes.md` → `dist/Glance-${VERSION}.md`; `ditto -c -k --sequesterRsrc --keepParent` the app to `dist/Glance-${VERSION}.zip` + `.sha256`; conditional Sparkle step gated on non-empty secret `SPARKLE_EDDSA_PRIVATE_KEY` (download pinned tools `Sparkle-2.10.0.tar.xz` with SHA check; `SPARKLE_PRIVATE_KEY_FILE` from secret; `bin/generate_appcast --download-url-prefix "https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG_NAME}" -o dist/appcast.xml dist/sparkle-only-dir`); append zip/zip.sha256/`Glance-${VERSION}.md`/`appcast.xml` to `gh release create` assets; commit `dist/appcast.xml` into repo root `appcast.xml` via `gh api --method PUT .../contents/appcast.xml` (sha-aware upsert, first push omits sha).
 - Create: `appcast.xml` (root; empty RSS feed shell, `<sparkle:minimumSystemVersion>12.0</sparkle:minimumSystemVersion>` documented in a comment so CI-generated items keep it)
 - Modify: `README.md` (installation narrative: after first DMG install, later updates download and install in-app; EdDSA explanation in the signing paragraph)
-- Modify: `PRIVACY.md` (update checker now contacts `raw.githubusercontent.com` and release asset host; no identifiers; profiling off)
+- Modify: `PRIVACY.md` (update checker now contacts `github.com` only (feed redirect + assets); no identifiers; profiling off)
 - Modify: `CHANGELOG.md` (new first section `# Glance Unreleased` — updates now download and install inside the app via Sparkle; no browser redirect for updates; checks/downloads follow the automatic-check toggle)
 - Modify: `docs/agents/release-checklists.md` (release procedure gains: register EdDSA private key secret `SPARKLE_EDDSA_PRIVATE_KEY`, appcast commit appears on main automatically)
 
