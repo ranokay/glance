@@ -89,6 +89,8 @@ public struct AppSettingsStore {
 	public static let previewFontSizeKey = "previewFontSize"
 	public static let previewLineWrappingKey = "previewLineWrapping"
 	public static let flacWaveformEnabledKey = "flacWaveformEnabled"
+	// Legacy seed for Sparkle's own persisted check preference; Settings
+	// writes go to Sparkle from now on and this key is only read once.
 	public static let autoUpdateCheckEnabledKey = "autoUpdateCheckEnabled"
 	private static let standardDefaultsMigrationKey = "didMigrateStandardDefaults"
 	private static let previewDefaultsMigrationKey = "didMigratePreviewDefaults"

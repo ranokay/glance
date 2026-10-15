@@ -5,9 +5,11 @@ import Sparkle
 /// Owns the Sparkle updater for the main app.
 ///
 /// Sparkle handles checking, downloading, EdDSA verification, installing, and
-/// relaunching. This class mirrors the app-group "Automatically check for
-/// updates" preference into Sparkle's own preferences and republishes progress
-/// as notifications for the Settings window to display.
+/// relaunching, and persists its own "automatically check" / "automatically
+/// download" preferences (which it may also change from its own update UI).
+/// The app-group "Automatically check for updates" preference is only seeded
+/// once, the first time Sparkle has no explicit preference yet. Progress is
+/// republished as notifications for the Settings window to display.
 @MainActor
 final class SparkleUpdateCenter: NSObject {
 	static let shared = SparkleUpdateCenter()
@@ -18,11 +20,14 @@ final class SparkleUpdateCenter: NSObject {
 
 	private static let statusTextKey = "statusText"
 	private static let installReadyKey = "installReady"
+	private static let canCheckKey = "canCheckForUpdates"
 
 	private var updater: SPUUpdater?
+	private var canCheckObservation: NSKeyValueObservation?
 
 	private(set) var statusText = "Never checked."
 	private(set) var installReady = false
+	private(set) var canCheckForUpdates = true
 
 	func start(autoChecksEnabled: Bool) {
 		guard updater == nil else {
@@ -42,7 +47,26 @@ final class SparkleUpdateCenter: NSObject {
 		)
 		updater = newUpdater
 
-		setAutomaticChecksEnabled(autoChecksEnabled)
+		migrateLegacyAutomaticChecks(autoChecksEnabled)
+		canCheckObservation = newUpdater.observe(
+			\.canCheckForUpdates,
+			options: [.initial, .new]
+		) { [weak self] observedUpdater, _ in
+			// SPUUpdater mutates this property on the main thread only.
+			MainActor.assumeIsolated {
+				guard let self else {
+					return
+				}
+				self.canCheckForUpdates = observedUpdater.canCheckForUpdates
+				NotificationCenter.default.post(
+					name: Self.statusDidChangeNotification,
+					object: nil,
+					userInfo: [
+						Self.canCheckKey: self.canCheckForUpdates,
+					]
+				)
+			}
+		}
 		do {
 			try newUpdater.start()
 		} catch {
@@ -50,14 +74,25 @@ final class SparkleUpdateCenter: NSObject {
 		}
 	}
 
-	/// Applies the preference to both automatic behaviors: scheduled checks and
-	/// background downloads. Turning it off stops both immediately.
+	/// Seeds Sparkle's persisted preference from the pre-Sparkle app-group
+	/// preference exactly once: only when Sparkle has no explicit preference
+	/// of its own yet. Afterwards Sparkle owns the value.
+	private func migrateLegacyAutomaticChecks(_ legacyEnabled: Bool) {
+		guard let updater, UserDefaults.standard.object(
+			forKey: "SUEnableAutomaticChecks"
+		) == nil else {
+			return
+		}
+		updater.automaticallyChecksForUpdates = legacyEnabled
+	}
+
+	/// Writes the Settings checkbox to Sparkle's schedule preference only;
+	/// background downloading has its own Sparkle-persisted preference.
 	func setAutomaticChecksEnabled(_ enabled: Bool) {
 		guard let updater else {
 			return
 		}
 		updater.automaticallyChecksForUpdates = enabled
-		updater.automaticallyDownloadsUpdates = enabled
 	}
 
 	func checkForUpdates() {
@@ -66,6 +101,12 @@ final class SparkleUpdateCenter: NSObject {
 		}
 		setStatus("Checking…", installReady: installReady)
 		updater.checkForUpdates()
+	}
+
+	/// Sparkle's current scheduled-check preference; a plain read is fine
+	/// because Settings only refreshes this when its window is shown.
+	var automaticChecksEnabled: Bool {
+		updater?.automaticallyChecksForUpdates ?? true
 	}
 
 	/// Re-offers the pending update from Settings. Sparkle resuming a
@@ -118,6 +159,10 @@ extension SparkleUpdateCenter: SPUUpdaterDelegate, SPUStandardUserDriverDelegate
 
 	func updater(_: SPUUpdater, failedToDownloadUpdate _: SUAppcastItem, error _: Error) {
 		setStatus("Couldn’t download the update.", installReady: false)
+	}
+
+	func userDidCancelDownload(_: SPUUpdater) {
+		setStatus("Update canceled.", installReady: false)
 	}
 
 	func updater(_: SPUUpdater, didAbortWithError error: Error) {

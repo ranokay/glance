@@ -209,3 +209,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, DockIconVisibilityUpdating {
 		}
 	}
 }
+
+extension AppDelegate: NSMenuItemValidation {
+	func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
+		guard menuItem.action == #selector(checkForUpdates(_:)) else {
+			return true
+		}
+		return SparkleUpdateCenter.shared.canCheckForUpdates
+	}
+}

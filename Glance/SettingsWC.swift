@@ -293,21 +293,25 @@ final class SettingsWC: NSWindowController {
 		fontSizeStepper.doubleValue = settingsStore.previewFontSize
 		lineWrappingCheckbox.state = settingsStore.previewLineWrapping ? .on : .off
 		flacWaveformCheckbox.state = settingsStore.flacWaveformEnabled ? .on : .off
-		autoUpdateCheckbox.state = settingsStore.autoUpdateCheckEnabled ? .on : .off
+		autoUpdateCheckbox.state = SparkleUpdateCenter.shared.automaticChecksEnabled ? .on : .off
+		checkForUpdatesButton.isEnabled = SparkleUpdateCenter.shared.canCheckForUpdates
 		updateStatusLabel.stringValue = SparkleUpdateCenter.shared.statusText
 		installUpdateButton.isHidden = !SparkleUpdateCenter.shared.installReady
 	}
 
 	@objc
 	private func updateStatusDidChange(_ notification: Notification) {
-		guard
-			let statusText = notification.userInfo?["statusText"] as? String,
-			let installReady = notification.userInfo?["installReady"] as? Bool
-		else {
-			return
+		let userInfo = notification.userInfo ?? [:]
+		if
+			let statusText = userInfo["statusText"] as? String,
+			let installReady = userInfo["installReady"] as? Bool
+		{
+			updateStatusLabel.stringValue = statusText
+			installUpdateButton.isHidden = !installReady
 		}
-		updateStatusLabel.stringValue = statusText
-		installUpdateButton.isHidden = !installReady
+		if let canCheck = userInfo["canCheckForUpdates"] as? Bool {
+			checkForUpdatesButton.isEnabled = canCheck
+		}
 	}
 
 	@objc
@@ -403,9 +407,7 @@ final class SettingsWC: NSWindowController {
 
 	@objc
 	private func autoUpdateChanged(_ sender: NSButton) {
-		let enabled = sender.state == .on
-		settingsStore.autoUpdateCheckEnabled = enabled
-		SparkleUpdateCenter.shared.setAutomaticChecksEnabled(enabled)
+		SparkleUpdateCenter.shared.setAutomaticChecksEnabled(sender.state == .on)
 	}
 
 	// MARK: - View Helpers
