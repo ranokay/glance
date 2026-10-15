@@ -179,6 +179,7 @@
 		60CE09000000000000000052 /* GlanceKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 60CE09000000000000000001 /* GlanceKit.framework */; };
 		60CE09000000000000000053 /* GlanceKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 60CE09000000000000000001 /* GlanceKit.framework */; };
 		60CE09000000000000000031 /* GlanceKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 60CE09000000000000000001 /* GlanceKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		60CE09000000000000000082 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 60CE09000000000000000081 /* Sparkle */; };
 		62CE0C000000000000000012 /* LaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62CE0C000000000000000011 /* LaunchTests.swift */; };
 /* End PBXBuildFile section */
 
@@ -421,6 +422,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				60CE09000000000000000051 /* GlanceKit.framework in Frameworks */,
+				60CE09000000000000000082 /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -825,6 +827,7 @@
 				7ECC8CEB240CB4CC000D6970 /* Frameworks */,
 				7ECC8CEC240CB4CC000D6970 /* Resources */,
 				60CE09000000000000000030 /* Embed Frameworks */,
+				60CE09000000000000000084 /* Re-sign Sparkle helpers */,
 				7E6EF209240CC802009E4199 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
@@ -835,6 +838,7 @@
 			);
 			name = Glance;
 			packageProductDependencies = (
+				60CE09000000000000000081 /* Sparkle */,
 			);
 			productName = Glance;
 			productReference = 7ECC8CEE240CB4CC000D6970 /* Glance.app */;
@@ -919,6 +923,7 @@
 			);
 			mainGroup = 7ECC8CE5240CB4CC000D6970;
 			packageReferences = (
+				60CE09000000000000000080 /* XCRemoteSwiftPackageReference "Sparkle" */,
 			);
 			productRefGroup = 7ECC8CEF240CB4CC000D6970 /* Products */;
 			projectDirPath = "";
@@ -1047,6 +1052,25 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "\"$PROJECT_DIR/PreviewCore/build-xcode.sh\"\n";
+		};
+		60CE09000000000000000084 /* Re-sign Sparkle helpers */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Re-sign Sparkle helpers";
+			alwaysOutOfDate = 1;
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/bash;
+			shellScript = "SPARKLE_FRAMEWORK=\"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Sparkle.framework\"\nif [ -d \"$SPARKLE_FRAMEWORK\" ]; then\n\tcodesign -f -s \"${CODE_SIGN_IDENTITY:--}\" -o runtime \"$SPARKLE_FRAMEWORK/Versions/B/XPCServices/Installer.xpc\"\n\tcodesign -f -s \"${CODE_SIGN_IDENTITY:--}\" -o runtime \"$SPARKLE_FRAMEWORK/Versions/B/Autoupdate\"\n\tcodesign -f -s \"${CODE_SIGN_IDENTITY:--}\" -o runtime \"$SPARKLE_FRAMEWORK/Versions/B/Updater.app\"\n\tcodesign -f -s \"${CODE_SIGN_IDENTITY:--}\" -o runtime \"$SPARKLE_FRAMEWORK\"\nfi\nexit 0\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -1675,6 +1699,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		60CE09000000000000000080 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = exactVersion;
+				version = 2.10.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		60CE09000000000000000081 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 60CE09000000000000000080 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
+		};
+/* End XCSwiftPackageProductDependency section */
 
 	};
 	rootObject = 7ECC8CE6240CB4CC000D6970 /* Project object */;

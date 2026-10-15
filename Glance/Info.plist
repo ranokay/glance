@@ -47,5 +47,13 @@
 	<false/>
 	<key>NSSupportsSuddenTermination</key>
 	<false/>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
+	<key>SUEnableInstallerLauncherService</key>
+	<true/>
+	<key>SUFeedURL</key>
+	<string>https://raw.githubusercontent.com/ranokay/glance/main/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>MmsAc4O1AWyHC3H2PBwaRfC3A1o6+WNg2nwfRAgJeNk=</string>
 </dict>
 </plist>
