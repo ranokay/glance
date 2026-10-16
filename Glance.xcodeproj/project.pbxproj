@@ -1250,17 +1250,17 @@
 		};
 		60CE09000000000000000061 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 7ECC8CED240CB4CC000D6970 /* Glance */;
+			target = 60CE09000000000000000010 /* GlanceKit */;
 			targetProxy = 60CE09000000000000000071 /* PBXContainerItemProxy */;
 		};
 		60CE09000000000000000062 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 7E6EF1F9240CC802009E4199 /* QLPlugin */;
+			target = 60CE09000000000000000010 /* GlanceKit */;
 			targetProxy = 60CE09000000000000000072 /* PBXContainerItemProxy */;
 		};
 		60CE09000000000000000063 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 10779C0C26218B2B008A903C /* GlanceTests */;
+			target = 60CE09000000000000000010 /* GlanceKit */;
 			targetProxy = 60CE09000000000000000073 /* PBXContainerItemProxy */;
 		};
 		62CE0C000000000000000031 /* PBXTargetDependency */ = {
