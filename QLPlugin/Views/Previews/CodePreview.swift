@@ -30,7 +30,11 @@ class CodePreview: Preview {
 				let source = try String(contentsOf: fileURL, encoding: .utf8)
 				return try HTMLRenderer.renderCode(source, lexer: lexer)
 			}
-			return WebPreviewVC(html: html, stylesheets: getStylesheets())
+			return WebPreviewVC(
+				html: html,
+				stylesheets: getStylesheets(),
+				appearancePreferences: await PreviewSettingsClient.shared.appearancePreferences()
+			)
 		} catch let error as CancellationError {
 			throw error
 		} catch {
