@@ -345,49 +345,12 @@ public enum OpenWithBridgeCodec {
 	}
 }
 
-/// Packages the sandbox grant for a bridge Open With request.
-///
-/// Security-scoped creation embeds the sender's sandbox access in the
-/// bookmark so the receiving app can hold the file; it only succeeds when
-/// the sender's entitlements allow it (the Quick Look extension's
-/// user-selected read grant). Other senders (tests, unsandboxed contexts)
-/// fall back to a minimal bookmark with the pre-existing behavior.
-@MainActor
-public enum OpenWithSecurityScopePackaging {
-	public static func bookmarkData(for url: URL) throws -> Data {
-		if let scoped = try? url.bookmarkData(
-			options: .withSecurityScope,
-			includingResourceValuesForKeys: nil,
-			relativeTo: nil
-		) {
-			return scoped
-		}
-		return try url.bookmarkData(
-			options: .minimalBookmark,
-			includingResourceValuesForKeys: nil,
-			relativeTo: nil
-		)
-	}
-}
-
 @MainActor
 public final class SystemOpenWithSecurityScopeManager: OpenWithSecurityScopeManaging {
 	public init() {}
 
 	public func resolveBookmark(_ bookmarkData: Data) throws -> URL {
 		var bookmarkDataIsStale = false
-		// Cross-process grants only activate when the resolution opts in to
-		// the security scope; older minimal bookmarks still resolve without
-		// the flag, so it is tried second.
-		if let scopedURL = try? URL(
-			resolvingBookmarkData: bookmarkData,
-			options: [.withoutUI, .withSecurityScope],
-			relativeTo: nil,
-			bookmarkDataIsStale: &bookmarkDataIsStale
-		), scopedURL.isFileURL, !bookmarkDataIsStale {
-			return scopedURL.resolvingSymlinksInPath().standardizedFileURL
-		}
-		bookmarkDataIsStale = false
 		let fileURL = try URL(
 			resolvingBookmarkData: bookmarkData,
 			options: [.withoutUI],
@@ -785,8 +748,10 @@ public final class OpenWithBridgeClient: OpenWithBridgeSending {
 			let request = OpenWithBridgeRequest(
 				version: OpenWithBridgeConstants.currentVersion,
 				requestID: requestID,
-				fileBookmark: try OpenWithSecurityScopePackaging.bookmarkData(
-					for: fileURL
+				fileBookmark: try fileURL.bookmarkData(
+					options: .minimalBookmark,
+					includingResourceValuesForKeys: nil,
+					relativeTo: nil
 				),
 				applicationPath: applicationURL.resolvingSymlinksInPath()
 					.standardizedFileURL.path
