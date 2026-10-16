@@ -23,17 +23,17 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Shared toolchain and pinned tools
-        uses: ./.github/actions/setup
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-
       - name: Cache pinned tool downloads (keyed by tool-versions hash)
         uses: actions/cache@v4
         with:
           path: ~/.local/share/mise
           key: mise-${{ hashFiles('mise.toml') }}
           restore-keys: mise-
+
+      - name: Shared toolchain and pinned tools
+        uses: ./.github/actions/setup
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
 
       - name: Cache Rust build (keyed by lockfile plus toolchain version)
         uses: actions/cache@v4
