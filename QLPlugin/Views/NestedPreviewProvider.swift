@@ -140,7 +140,7 @@ final class AVPlayerPreviewVC: NSViewController, PreviewVC {
 		PreviewSupport.isStreamedAudio(fileURL: fileURL)
 	}
 
-	init(fileURL: URL, showsWaveform: Bool = AppSettingsStore.shared.flacWaveformEnabled) {
+	init(fileURL: URL, showsWaveform: Bool = true) {
 		self.fileURL = fileURL
 		self.showsWaveform = showsWaveform
 		super.init(nibName: nil, bundle: nil)

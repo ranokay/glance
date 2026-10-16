@@ -1,4 +1,5 @@
 import Foundation
+import GlanceKit
 
 final class EPUBPreview: Preview {
 	private let mainStylesheetURL = WebPreviewVC.resourceBundle.url(
@@ -14,6 +15,10 @@ final class EPUBPreview: Preview {
 			try PreviewCoreBridge.renderEPUB(at: fileURL)
 		}
 		let stylesheets = mainStylesheetURL.map { [Stylesheet(url: $0)] } ?? []
-		return WebPreviewVC(html: html, stylesheets: stylesheets)
+		return await WebPreviewVC(
+			html: html,
+			stylesheets: stylesheets,
+			appearancePreferences: PreviewSettingsClient.shared.appearancePreferences()
+		)
 	}
 }

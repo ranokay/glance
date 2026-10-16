@@ -34,8 +34,7 @@ class WebPreviewVC: NSViewController, PreviewVC, WKNavigationDelegate {
 		html: String,
 		stylesheets: [Stylesheet] = [],
 		scripts: [Script] = [],
-		appearancePreferences: PreviewAppearancePreferences = AppSettingsStore.shared
-			.previewAppearance,
+		appearancePreferences: PreviewAppearancePreferences = PreviewAppearancePreferences.default,
 		availableFontFamilies: [String] = NSFontManager.shared.availableFontFamilies
 	) {
 		self.init(
@@ -55,8 +54,7 @@ class WebPreviewVC: NSViewController, PreviewVC, WKNavigationDelegate {
 		html: String,
 		stylesheets: [Stylesheet] = [],
 		scripts: [Script] = [],
-		appearancePreferences: PreviewAppearancePreferences = AppSettingsStore.shared
-			.previewAppearance,
+		appearancePreferences: PreviewAppearancePreferences = PreviewAppearancePreferences.default,
 		availableFontFamilies: [String] = NSFontManager.shared.availableFontFamilies
 	) {
 		self.html = html

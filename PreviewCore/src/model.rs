@@ -5,6 +5,7 @@ use std::collections::BTreeMap;
 pub(crate) struct TsvPayload {
     pub headers: Vec<String>,
     pub rows: Vec<BTreeMap<String, String>>,
+    pub truncated: bool,
 }
 
 #[derive(Debug, PartialEq, Serialize)]

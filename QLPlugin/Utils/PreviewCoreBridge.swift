@@ -4,6 +4,7 @@ import GlancePreviewCore
 struct TSVPreviewPayload: Decodable {
 	let headers: [String]
 	let rows: [[String: String]]
+	let truncated: Bool
 }
 
 struct ArchivePreviewPayload: Decodable {
