@@ -4,18 +4,26 @@ Append-only. Newest entry first.
 
 # Glance 1.8.2
 
-Glance 1.8.2 keeps the app identical for users while making the project and
-release pipeline self-ordering.
+Glance 1.8.2 makes Quick Look previews follow the app's appearance settings and
+keeps overflow information honest.
 
-- Standalone and scripted builds now get an explicit GlanceKit ordering: the
-  three GlanceKit target dependencies pointed at their own consumers in the
-  project file, relying on implicit dependencies to mask it.
-- The release pipeline publishes GitHub releases draft-first and attaches per
-  release a signed Sparkle appcast, resolving only when fully assembled.
-- The Rust dependency graph is clean again on strict audit: zip is bumped to
-  9.0.3 after crates.io yanked the pinned 8.6.0.
-- CI restores the pinned-mise tool cache before installing tools, so warm runs
-  skip the downloads.
+- Code, Markdown, EPUB, Draw.io, and Jupyter previews now use the font family,
+  size, and line-wrapping chosen in Settings — the preferences previously
+  never reached preview windows (the Quick Look extension reads a preferences
+  store its sandbox cannot see; they now cross the local bridge).
+- TSV previews display an informational row when files exceed the 5,000-row
+  cap instead of stopping silently, and one malformed row past the cap no
+  longer fails the whole preview.
+- The Settings window resizes (and opens taller) so Start at Login error
+  states never clip the update controls.
+- Standalone and scripted builds get an explicit GlanceKit ordering: three
+  GlanceKit target dependencies pointed at their own consumers in the project
+  file, relying on implicit dependencies to mask it.
+- The release pipeline publishes GitHub releases draft-first and attaches a
+  signed Sparkle appcast per release, resolved only when fully assembled; the
+  Rust dependency graph is clean again on strict audit (zip bumped to 9.0.3
+  after crates.io yanked the pinned 8.6.0); CI restores the pinned-mise tool
+  cache before installing tools.
 
 This release remains Apple-silicon-only for macOS 26 or later. The app is ad hoc signed; its DMG is not Developer ID-signed or notarized, so verify the published SHA-256 checksum before installation.
 
