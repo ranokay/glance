@@ -67,9 +67,25 @@ public struct PreviewAppearancePreferences: Equatable, Sendable {
 	}
 }
 
+/// One bridge round trip serves every preference the Quick Look extension
+/// needs at once (waveform toggle + preview appearance).
+public struct PreviewPreferenceSnapshot: Sendable, Equatable {
+	public let waveformEnabled: Bool
+	public let appearance: PreviewAppearancePreferences
+
+	public init(waveformEnabled: Bool, appearance: PreviewAppearancePreferences) {
+		self.waveformEnabled = waveformEnabled
+		self.appearance = appearance
+	}
+
+	public static let `default` = PreviewPreferenceSnapshot(
+		waveformEnabled: true,
+		appearance: .default
+	)
+}
+
 public struct AppSettingsStore {
 	public static let sharedDefaultsSuiteName = "group.com.chamburr.glance"
-
 	nonisolated(unsafe) static let sharedDefaults: UserDefaults = {
 		guard let defaults = UserDefaults(suiteName: sharedDefaultsSuiteName) else {
 			fatalError(
@@ -223,27 +239,65 @@ public struct AppSettingsStore {
 	private static let maximumPreviewFontSize = PreviewAppearancePreferences.maximumFontSize
 }
 
-private enum PreviewSettingsBridge {
+/// Serializes preferences over the cross-process notification bridge
+/// (main app and Quick Look extension). Visible to tests for wire-format pins.
+public enum PreviewSettingsBridge {
 	static let request = Notification.Name("com.chamburr.Glance.PreviewSettings.request")
 	static let response = Notification.Name("com.chamburr.Glance.PreviewSettings.response")
+	public static let familySentinel = "-"
 
-	static func response(for requestID: UUID, enabled: Bool) -> String {
-		"\(requestID.uuidString)|\(enabled ? "1" : "0")"
+	public static func response(
+		for requestID: UUID,
+		snapshot: PreviewPreferenceSnapshot
+	) -> String {
+		let family = snapshot.appearance.fontFamily ?? Self.familySentinel
+		let encodedFamily = family == Self.familySentinel
+			? family
+			: family.addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? family
+		return [
+			requestID.uuidString,
+			snapshot.waveformEnabled ? "1" : "0",
+			encodedFamily,
+			"\(snapshot.appearance.fontSize)",
+			snapshot.appearance.wrapsLines ? "1" : "0",
+		].joined(separator: "|")
 	}
 
-	static func decodeResponse(_ value: String) -> (UUID, Bool)? {
+	public static func decode(_ value: String) -> (UUID, PreviewPreferenceSnapshot)? {
 		let parts = value.split(separator: "|", omittingEmptySubsequences: false)
-		guard parts.count == 2, let requestID = UUID(uuidString: String(parts[0])) else {
+		guard parts.count == 5, let requestID = UUID(uuidString: String(parts[0])) else {
 			return nil
 		}
-		switch parts[1] {
-			case "1":
-				return (requestID, true)
-			case "0":
-				return (requestID, false)
-			default:
-				return nil
+		guard parts[1] == "0" || parts[1] == "1" else {
+			return nil
 		}
+		var fontFamily: String?
+		let encodedFamily = String(parts[2])
+		if encodedFamily != Self.familySentinel {
+			guard let decoded = encodedFamily.removingPercentEncoding, !decoded.isEmpty else {
+				return nil
+			}
+			fontFamily = decoded
+		}
+		guard
+			let fontSize = Double(String(parts[3])),
+			fontSize.isFinite,
+			(PreviewAppearancePreferences.minimumFontSize ... PreviewAppearancePreferences
+				.maximumFontSize)
+			.contains(fontSize),
+			parts[4] == "0" || parts[4] == "1"
+		else {
+			return nil
+		}
+		let snapshot = PreviewPreferenceSnapshot(
+			waveformEnabled: parts[1] == "1",
+			appearance: PreviewAppearancePreferences(
+				fontFamily: fontFamily,
+				fontSize: fontSize,
+				wrapsLines: parts[4] == "1"
+			)
+		)
+		return (requestID, snapshot)
 	}
 }
 
@@ -281,14 +335,17 @@ public final class PreviewSettingsServer {
 					name: PreviewSettingsBridge.response,
 					object: PreviewSettingsBridge.response(
 						for: requestID,
-						enabled: settingsStore.flacWaveformEnabled
+						snapshot: PreviewPreferenceSnapshot(
+							waveformEnabled: settingsStore.flacWaveformEnabled,
+							appearance: settingsStore.previewAppearance
+						)
 					)
 				)
 			}
 	}
 }
 
-/// Only a non-sensitive display preference crosses this unauthenticated local notification channel.
+/// Only non-sensitive display preferences cross this unauthenticated local notification channel.
 @MainActor
 public final class PreviewSettingsClient {
 	public static let shared = PreviewSettingsClient()
@@ -296,7 +353,7 @@ public final class PreviewSettingsClient {
 	private struct PendingRequest {
 		let observer: NSObjectProtocol
 		let timeoutTask: Task<Void, Never>
-		let continuation: CheckedContinuation<Bool, Never>
+		let continuation: CheckedContinuation<PreviewPreferenceSnapshot, Never>
 	}
 
 	private let notificationCenter: OpenWithBridgeNotifying
@@ -312,22 +369,31 @@ public final class PreviewSettingsClient {
 	}
 
 	public func flacWaveformEnabled() async -> Bool {
+		await snapshot().waveformEnabled
+	}
+
+	public func appearancePreferences() async -> PreviewAppearancePreferences {
+		await snapshot().appearance
+	}
+
+	private func snapshot() async -> PreviewPreferenceSnapshot {
 		let requestID = UUID()
 		return await withTaskCancellationHandler {
 			await withCheckedContinuation { continuation in
 				guard !Task.isCancelled else {
-					continuation.resume(returning: true)
+					continuation.resume(returning: .default)
 					return
 				}
 				let observer = notificationCenter.addObserver(
 					forName: PreviewSettingsBridge.response
 				) { [weak self] value in
-					guard let (responseID, enabled) = PreviewSettingsBridge.decodeResponse(value),
-					      responseID == requestID
+					guard
+						let (responseID, snapshot) = PreviewSettingsBridge.decode(value),
+						responseID == requestID
 					else {
 						return
 					}
-					self?.finish(requestID: requestID, enabled: enabled)
+					self?.finish(requestID: requestID, snapshot: snapshot)
 				}
 				let timeout = timeout
 				let timeoutTask = Task { @MainActor [weak self] in
@@ -335,7 +401,7 @@ public final class PreviewSettingsClient {
 					guard !Task.isCancelled else {
 						return
 					}
-					self?.finish(requestID: requestID, enabled: true)
+					self?.finish(requestID: requestID, snapshot: .default)
 				}
 				pendingRequests[requestID] = PendingRequest(
 					observer: observer,
@@ -349,17 +415,17 @@ public final class PreviewSettingsClient {
 			}
 		} onCancel: {
 			Task { @MainActor [weak self] in
-				self?.finish(requestID: requestID, enabled: true)
+				self?.finish(requestID: requestID, snapshot: .default)
 			}
 		}
 	}
 
-	private func finish(requestID: UUID, enabled: Bool) {
+	private func finish(requestID: UUID, snapshot: PreviewPreferenceSnapshot) {
 		guard let request = pendingRequests.removeValue(forKey: requestID) else {
 			return
 		}
 		notificationCenter.removeObserver(request.observer)
 		request.timeoutTask.cancel()
-		request.continuation.resume(returning: enabled)
+		request.continuation.resume(returning: snapshot)
 	}
 }

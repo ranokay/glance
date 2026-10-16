@@ -59,10 +59,11 @@ final class DrawIOPreview: Preview {
 			throw DrawIOPreviewError.invalidDocument("bundled viewer is unavailable")
 		}
 
-		return WebPreviewVC(
+		return await WebPreviewVC(
 			html: "<div id=\"drawio-preview\" data-drawio-payload=\"\(encodedPayload)\"></div>",
 			stylesheets: getStylesheets(),
-			scripts: [bootstrapScript(), Script(url: viewerScriptURL)]
+			scripts: [bootstrapScript(), Script(url: viewerScriptURL)],
+			appearancePreferences: PreviewSettingsClient.shared.appearancePreferences()
 		)
 	}
 

@@ -302,3 +302,128 @@ final class PreviewSupportTests: XCTestCase {
 		)
 	}
 }
+
+@MainActor
+final class PreviewSettingsBridgeTests: XCTestCase {
+	private let center = StubPreviewSettingsBridgeCenter()
+
+	func testBridgeResponseRoundTripsEveryField() {
+		let snapshot = PreviewPreferenceSnapshot(
+			waveformEnabled: false,
+			appearance: PreviewAppearancePreferences(
+				fontFamily: "SF Mono",
+				fontSize: 21.5,
+				wrapsLines: true
+			)
+		)
+		let encoded = PreviewSettingsBridge.response(for: UUID(), snapshot: snapshot)
+
+		guard let (_, decoded) = PreviewSettingsBridge.decode(encoded) else {
+			XCTFail("Encoded snapshot \(encoded) failed to decode")
+			return
+		}
+		XCTAssertEqual(decoded, snapshot)
+	}
+
+	func testBridgeResponseRepresentsMissingFamilyWithSentinel() {
+		let snapshot = PreviewPreferenceSnapshot(
+			waveformEnabled: true,
+			appearance: .default
+		)
+		let encoded = PreviewSettingsBridge.response(for: UUID(), snapshot: snapshot)
+
+		XCTAssertTrue(encoded.contains(PreviewSettingsBridge.familySentinel))
+		guard let (_, decoded) = PreviewSettingsBridge.decode(encoded) else {
+			XCTFail("Encoded snapshot \(encoded) failed to decode")
+			return
+		}
+		XCTAssertNil(decoded.appearance.fontFamily)
+		XCTAssertEqual(decoded, snapshot)
+	}
+
+	func testBridgeDecodeRejectsMalformedPayloads() {
+		let id = UUID().uuidString
+		let outOfRangeSize = "\(id)|1|-|320|0"
+		let tooFewParts = "\(id)|1|-"
+		let badWaveform = "\(id)|2|-|14|0"
+		let badWrap = "\(id)|1|-|14|9"
+		let undecodableFamily = "\(id)|1|%zz|14|0"
+
+		XCTAssertNil(PreviewSettingsBridge.decode(outOfRangeSize))
+		XCTAssertNil(PreviewSettingsBridge.decode(tooFewParts))
+		XCTAssertNil(PreviewSettingsBridge.decode(badWaveform))
+		XCTAssertNil(PreviewSettingsBridge.decode(badWrap))
+		XCTAssertNil(PreviewSettingsBridge.decode(undecodableFamily))
+	}
+
+	func testClientFallsBackToDefaultsOnTimeout() async {
+		let neverRespondingCenter = StubPreviewSettingsBridgeCenter()
+		let client = PreviewSettingsClient(
+			notificationCenter: neverRespondingCenter,
+			timeout: .milliseconds(20)
+		)
+
+		let appearance = await client.appearancePreferences()
+
+		XCTAssertEqual(appearance, PreviewAppearancePreferences.default)
+	}
+
+	func testClientReceivesServerSnapshotRoundTrip() async throws {
+		let suiteName = UUID().uuidString
+		let defaults = UserDefaults(suiteName: suiteName)
+		try XCTUnwrap(defaults)
+		defer {
+			defaults?.removePersistentDomain(forName: suiteName)
+		}
+		defaults?.set(true, forKey: "flacWaveformEnabled")
+		defaults?.set("SF Mono", forKey: "previewFontFamily")
+		defaults?.set(21.5, forKey: "previewFontSize")
+		defaults?.set(true, forKey: "previewLineWrapping")
+
+		let store = AppSettingsStore(
+			defaults: try XCTUnwrap(defaults)
+		)
+		let server = PreviewSettingsServer(settingsStore: store, notificationCenter: center)
+		server.start()
+		let client = PreviewSettingsClient(notificationCenter: center)
+
+		let appearance = await client.appearancePreferences()
+		let waveform = await client.flacWaveformEnabled()
+
+		XCTAssertEqual(appearance.fontFamily, "SF Mono")
+		XCTAssertEqual(appearance.fontSize, 21.5)
+		XCTAssertTrue(appearance.wrapsLines)
+		XCTAssertTrue(waveform)
+	}
+}
+
+@MainActor
+private final class StubPreviewSettingsBridgeCenter: OpenWithBridgeNotifying {
+	private final class ObserverToken: NSObject {}
+
+	private struct Observer {
+		let name: Notification.Name
+		let handler: @MainActor @Sendable (String) -> Void
+	}
+
+	private var observers = [ObjectIdentifier: Observer]()
+
+	func addObserver(
+		forName name: Notification.Name,
+		handler: @escaping @MainActor @Sendable (String) -> Void
+	) -> NSObjectProtocol {
+		let token = ObserverToken()
+		observers[ObjectIdentifier(token)] = Observer(name: name, handler: handler)
+		return token
+	}
+
+	func removeObserver(_ observer: NSObjectProtocol) {
+		observers.removeValue(forKey: ObjectIdentifier(observer as AnyObject))
+	}
+
+	func post(name: Notification.Name, object: String) {
+		for observer in observers.values where observer.name == name {
+			observer.handler(object)
+		}
+	}
+}

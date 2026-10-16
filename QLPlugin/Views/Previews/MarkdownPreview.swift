@@ -102,10 +102,11 @@ class MarkdownPreview: Preview {
 				let source = try String(contentsOf: fileURL, encoding: .utf8)
 				return "<div class=\"markdown-body\">\(try HTMLRenderer.renderMarkdown(source))</div>"
 			}
-			return WebPreviewVC(
+			return await WebPreviewVC(
 				html: html,
 				stylesheets: getStylesheets(),
-				scripts: getScripts(html: html)
+				scripts: getScripts(html: html),
+				appearancePreferences: PreviewSettingsClient.shared.appearancePreferences()
 			)
 		} catch {
 			Log.render.error(
