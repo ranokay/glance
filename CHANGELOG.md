@@ -2,6 +2,23 @@
 
 Append-only. Newest entry first.
 
+# Glance 1.8.2
+
+Glance 1.8.2 keeps the app identical for users while making the project and
+release pipeline self-ordering.
+
+- Standalone and scripted builds now get an explicit GlanceKit ordering: the
+  three GlanceKit target dependencies pointed at their own consumers in the
+  project file, relying on implicit dependencies to mask it.
+- The release pipeline publishes GitHub releases draft-first and attaches per
+  release a signed Sparkle appcast, resolving only when fully assembled.
+- The Rust dependency graph is clean again on strict audit: zip is bumped to
+  9.0.3 after crates.io yanked the pinned 8.6.0.
+- CI restores the pinned-mise tool cache before installing tools, so warm runs
+  skip the downloads.
+
+This release remains Apple-silicon-only for macOS 26 or later. The app is ad hoc signed; its DMG is not Developer ID-signed or notarized, so verify the published SHA-256 checksum before installation.
+
 # Glance 1.8.1
 
 Glance 1.8.1 fixes the in-app updater's feed URL so those installs can discover
