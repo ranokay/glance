@@ -38,7 +38,10 @@ pub(crate) fn scan_zip(path: &Path) -> Result<ArchivePayload, CoreError> {
                 "Encrypted ZIP archives are not supported",
             ));
         }
-        let path = entry.name().to_owned();
+        let path: String = match entry.name() {
+            Ok(name) => name.into_owned(),
+            Err(error) => return Err(crate::zip::map_zip_error(error)),
+        };
         if path == "__MACOSX" || path.starts_with("__MACOSX/") {
             continue;
         }
