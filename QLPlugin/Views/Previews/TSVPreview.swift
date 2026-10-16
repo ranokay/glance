@@ -9,6 +9,10 @@ class TSVPreview: Preview {
 			let data = try Data(contentsOf: fileURL)
 			return try PreviewCoreBridge.parseTSV(data)
 		}
-		return TablePreviewVC(headers: payload.headers, cells: payload.rows)
+		return TablePreviewVC(
+			headers: payload.headers,
+			cells: payload.rows,
+			truncated: payload.truncated
+		)
 	}
 }

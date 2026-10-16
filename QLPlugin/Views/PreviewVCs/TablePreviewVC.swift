@@ -3,6 +3,7 @@ import Cocoa
 class TablePreviewVC: NSViewController, PreviewVC {
 	let headers: [String]
 	let cells: [[String: String]]
+	let truncated: Bool
 
 	@IBOutlet private var tableView: NSTableView!
 
@@ -10,14 +11,30 @@ class TablePreviewVC: NSViewController, PreviewVC {
 		self.init(nibName: nil, bundle: nil, headers: headers, cells: cells)
 	}
 
+	convenience init(
+		headers: [String],
+		cells: [[String: String]],
+		truncated: Bool
+	) {
+		self.init(
+			nibName: nil,
+			bundle: nil,
+			headers: headers,
+			cells: cells,
+			truncated: truncated
+		)
+	}
+
 	init(
 		nibName nibNameOrNil: NSNib.Name?,
 		bundle nibBundleOrNil: Bundle?,
 		headers: [String],
-		cells: [[String: String]]
+		cells: [[String: String]],
+		truncated: Bool = false
 	) {
 		self.headers = headers
 		self.cells = cells
+		self.truncated = truncated
 		super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
 	}
 
@@ -62,7 +79,7 @@ class TablePreviewVC: NSViewController, PreviewVC {
 
 extension TablePreviewVC: NSTableViewDataSource, NSTableViewDelegate {
 	func numberOfRows(in _: NSTableView) -> Int {
-		cells.count
+		cells.count + (truncated ? 1 : 0)
 	}
 
 	/// Fills the table with the `tableData`.
@@ -75,15 +92,25 @@ extension TablePreviewVC: NSTableViewDataSource, NSTableViewDelegate {
 			return nil
 		}
 
-		let row = cells[rowIndex]
-		let cellValue = row[tableColumn.identifier.rawValue] ?? ""
-
 		let textField = NSTextField()
-		textField.stringValue = cellValue
 		textField.isEditable = false
 		textField.isBordered = false
 		textField.drawsBackground = false
 		textField.lineBreakMode = .byTruncatingTail
+
+		if truncated, rowIndex == cells.count {
+			// Informational tail row (the DirectoryPreview loadMore-row
+			// convention): the first column carries the notice, the rest stay
+			// empty.
+			if tableColumn.identifier.rawValue == headers.first {
+				textField.stringValue = "Showing the first \(cells.count) rows."
+			}
+			textField.textColor = .secondaryLabelColor
+			return textField
+		}
+
+		let row = cells[rowIndex]
+		textField.stringValue = row[tableColumn.identifier.rawValue] ?? ""
 
 		return textField
 	}

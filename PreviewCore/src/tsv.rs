@@ -28,6 +28,7 @@ fn parse_tsv_with_limits(
         return Ok(TsvPayload {
             headers: Vec::new(),
             rows: Vec::new(),
+            truncated: false,
         });
     }
 
@@ -49,19 +50,29 @@ fn parse_tsv_with_limits(
     }
     let headers = unique_headers(raw_headers);
 
-    let mut rows = Vec::with_capacity(max_rows.min(256));
-    for record in reader.records().take(max_rows) {
-        let record = record
-            .map_err(|error| CoreError::parse(format!("Could not parse TSV row: {error}")))?;
-        let row = headers
-            .iter()
-            .zip(record.iter())
-            .map(|(header, value)| (header.clone(), value.to_owned()))
-            .collect::<BTreeMap<_, _>>();
-        rows.push(row);
-    }
+    let rows = reader
+        .records()
+        .take(max_rows)
+        .map(|record| {
+            let record = record
+                .map_err(|error| CoreError::parse(format!("Could not parse TSV row: {error}")))?;
+            Ok(headers
+                .iter()
+                .zip(record.iter())
+                .map(|(header, value)| (header.clone(), value.to_owned()))
+                .collect::<BTreeMap<_, _>>())
+        })
+        .collect::<Result<Vec<_>, CoreError>>()?;
+    // The reader consumed exactly the visible rows; one more record (valid or
+    // malformed — malformed overflow rows must not fail the whole preview)
+    // means the file continues past the cap.
+    let truncated = reader.records().next().is_some();
 
-    Ok(TsvPayload { headers, rows })
+    Ok(TsvPayload {
+        headers,
+        rows,
+        truncated,
+    })
 }
 
 fn unique_headers(headers: Vec<String>) -> Vec<String> {
@@ -105,12 +116,30 @@ mod tests {
             parse_tsv(b"").unwrap(),
             TsvPayload {
                 headers: Vec::new(),
-                rows: Vec::new()
+                rows: Vec::new(),
+                truncated: false,
             }
         );
         let payload = parse_tsv_with_limits(b"a\n1\n2\n", 32, 1, 1).unwrap();
         assert_eq!(payload.rows.len(), 1);
         assert_eq!(payload.rows[0]["a"], "1");
+        assert!(payload.truncated);
+    }
+
+    #[test]
+    fn truncation_stays_false_when_rows_fit_within_cap() {
+        let payload = parse_tsv_with_limits(b"a\n1\n2\n", 32, 2, 1).unwrap();
+        assert_eq!(payload.rows.len(), 2);
+        assert!(!payload.truncated);
+    }
+
+    #[test]
+    fn overflow_records_beyond_cap_set_truncated_without_parsing() {
+        // The record after the cap is malformed (no tab delimiter); the
+        // preview must stay alive and report truncation instead of failing.
+        let payload = parse_tsv_with_limits(b"a\n1\ncorrupt-row\n", 32, 1, 1).unwrap();
+        assert_eq!(payload.rows.len(), 1);
+        assert!(payload.truncated);
     }
 
     #[test]
