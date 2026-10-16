@@ -327,4 +327,13 @@ final class WindowAppearanceTests: XCTestCase {
 		defaults.removePersistentDomain(forName: suiteName)
 		return (AppSettingsStore(defaults: defaults), suiteName)
 	}
+
+	func testSettingsWindowIsResizableWithSaneMinimumSize() throws {
+		let store = try makeSettingsStore().0
+		let controller = SettingsWC(settingsStore: store, fontFamilies: [])
+		let window = try XCTUnwrap(controller.window)
+
+		XCTAssertTrue(window.styleMask.contains(.resizable))
+		XCTAssertEqual(window.minSize, NSSize(width: 440, height: 490))
+	}
 }

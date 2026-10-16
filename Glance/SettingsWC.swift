@@ -106,13 +106,14 @@ final class SettingsWC: NSWindowController {
 		}
 
 		let window = NSWindow(
-			contentRect: NSRect(x: 0, y: 0, width: 440, height: 490),
-			styleMask: [.titled, .closable],
+			contentRect: NSRect(x: 0, y: 0, width: 440, height: 560),
+			styleMask: [.titled, .closable, .resizable],
 			backing: .buffered,
 			defer: false
 		)
 		window.title = "Settings"
 		window.isReleasedWhenClosed = false
+		window.minSize = NSSize(width: 440, height: 490)
 		window.center()
 		WindowAppearance.apply(to: window)
 
