@@ -84,7 +84,11 @@ fn render_epub_with_output_limit(path: &Path, output_limit: usize) -> Result<Str
                 "EPUB contains an unsupported non-file entry",
             ));
         }
-        let name = canonical_path(entry.name())?;
+        let raw_name: String = match entry.name() {
+            Ok(name) => name.into_owned(),
+            Err(error) => return Err(crate::zip::map_zip_error(error)),
+        };
+        let name = canonical_path(&raw_name)?;
         if name.is_empty() || entry.is_dir() {
             continue;
         }

@@ -107,7 +107,11 @@ pub(crate) fn parse_three_mf(path: &Path) -> Result<ThreeMfPayload, CoreError> {
                 "Encrypted 3MF archives are not supported",
             ));
         }
-        let path = canonical_path(entry.name())?;
+        let raw_name: String = match entry.name() {
+            Ok(name) => name.into_owned(),
+            Err(error) => return Err(crate::zip::map_zip_error(error)),
+        };
+        let path = canonical_path(&raw_name)?;
         if entries
             .insert(
                 path,
