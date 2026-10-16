@@ -40,7 +40,7 @@ License texts are available from the linked standard licenses and each crate's s
 | sevenz-rust2 | 0.21.4 | Apache-2.0 |
 | syntect | 5.3.0 | MIT |
 | two-face | 0.5.2+bat-0.26.1 | MIT OR Apache-2.0 |
-| zip | 8.6.0 | MIT |
+| zip | 9.0.3 | MIT |
 
 The RAR fixtures under `GlanceTests/TestFiles/archives` are derived from the `rars` 0.9.4 test
 fixtures and are redistributed under the same MIT OR Apache-2.0 terms.
