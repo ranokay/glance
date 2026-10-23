@@ -370,7 +370,13 @@ final class PreviewSmokeTests: XCTestCase {
 	func testMarkdownPreviewLoadsBundledMermaidOnlyForTrustedFences() async throws {
 		let mermaidURL = try writeFile(
 			named: "diagram.md",
-			contents: "```mermaid\nflowchart LR\n    A --> B\n```\n"
+			contents: """
+			```mermaid
+			flowchart LR
+			    A --> B
+			    click A "https://example.com"
+			```
+			"""
 		)
 		let plainURL = try writeFile(
 			named: "plain.md",
@@ -408,6 +414,20 @@ final class PreviewSmokeTests: XCTestCase {
 			"""
 		) as? String
 		XCTAssertEqual(mermaidState, "object|true|true")
+		let diagramState = try await mermaidWebView.evaluateJavaScript(
+			"""
+			(function() {
+				const svg = document.querySelector('.mermaid-diagram svg');
+				const ids = Array.from(svg.querySelectorAll('[id]')).map((node) => node.id);
+				return [
+					svg.querySelectorAll('a').length,
+					svg.querySelectorAll('image').length,
+					new Set(ids).size === ids.length
+				].join('|');
+			})();
+			"""
+		) as? String
+		XCTAssertEqual(diagramState, "0|0|true")
 
 		let generatedPlainPreview = try await MarkdownPreview().createPreviewVC(
 			file: File(url: plainURL)

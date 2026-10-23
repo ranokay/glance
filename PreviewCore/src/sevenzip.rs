@@ -57,6 +57,8 @@ pub(crate) fn scan_seven_zip(path: &Path) -> Result<ArchivePayload, CoreError> {
             path: entry.name.clone(),
             entry_type: if entry.is_directory {
                 ArchiveEntryType::Directory
+            } else if is_seven_zip_symlink(entry) {
+                ArchiveEntryType::Other
             } else {
                 ArchiveEntryType::File
             },
@@ -151,6 +153,13 @@ fn map_seven_zip_error(error: SevenZipError) -> CoreError {
     }
 }
 
+fn is_seven_zip_symlink(entry: &sevenz_rust2::ArchiveEntry) -> bool {
+    const FILE_ATTRIBUTE_UNIX_EXTENSION: u32 = 0x8000;
+    entry.has_windows_attributes
+        && entry.windows_attributes & FILE_ATTRIBUTE_UNIX_EXTENSION != 0
+        && crate::extract::is_unix_symlink(entry.windows_attributes >> 16)
+}
+
 fn system_time_to_unix(time: SystemTime) -> f64 {
     match time.duration_since(UNIX_EPOCH) {
         Ok(duration) => duration.as_secs_f64(),
@@ -217,6 +226,10 @@ pub(crate) fn extract_entry(
                 selected = Some(Err(CoreError::invalid(
                     "7z directory entries cannot be previewed",
                 )));
+                return Ok(false);
+            }
+            if is_seven_zip_symlink(entry) {
+                selected = Some(Err(CoreError::invalid("7z links cannot be previewed")));
                 return Ok(false);
             }
             if entry.size > max_bytes as u64 {

@@ -186,6 +186,60 @@ final class NestedPreviewTests: XCTestCase {
 		XCTAssertFalse(FileManager.default.fileExists(atPath: temporaryURL.path))
 	}
 
+	func testNestedArchiveBackStackDeletesEveryTemporaryFile() async throws {
+		let zipURL = try archiveFixture("nested-archive.zip")
+		let generatedPreview = try await ZIPPreview().createPreviewVC(file: File(url: zipURL))
+		let outer = try XCTUnwrap(generatedPreview as? OutlinePreviewVC)
+		outer.loadViewIfNeeded()
+		let innerNode = try XCTUnwrap(findNode(named: "inner.zip", in: outer.rootNodes))
+		let mainVC = MainVC()
+		mainVC.loadViewIfNeeded()
+		mainVC.installTopLevelPreview(outer, file: try File(url: zipURL))
+
+		mainVC.outlinePreview(outer, requestPreviewOf: innerNode)
+		try await waitUntil { mainVC.previewNavigationStack.count == 2 }
+		let innerPreview = try XCTUnwrap(mainVC.currentPreviewController as? OutlinePreviewVC)
+		let innerTemp = try XCTUnwrap(mainVC.nestedTemporaryFileURL)
+		innerPreview.loadViewIfNeeded()
+		let fileNode = try XCTUnwrap(
+			findNode(named: "hello-world.txt", in: innerPreview.rootNodes)
+		)
+
+		mainVC.outlinePreview(innerPreview, requestPreviewOf: fileNode)
+		try await waitUntil { mainVC.previewNavigationStack.count == 3 }
+		let fileTemp = try XCTUnwrap(mainVC.nestedTemporaryFileURL)
+		XCTAssertNotEqual(innerTemp, fileTemp)
+		XCTAssertTrue(FileManager.default.fileExists(atPath: innerTemp.path))
+		XCTAssertTrue(FileManager.default.fileExists(atPath: fileTemp.path))
+
+		mainVC.showFolderPreview()
+		XCTAssertFalse(FileManager.default.fileExists(atPath: fileTemp.path))
+		XCTAssertTrue(FileManager.default.fileExists(atPath: innerTemp.path))
+
+		mainVC.showFolderPreview()
+		XCTAssertFalse(FileManager.default.fileExists(atPath: innerTemp.path))
+	}
+
+	func testQuickLookDismissalDeletesTemporaryFiles() async throws {
+		let zipURL = try archiveFixture("example-root-directory.zip")
+		let generatedPreview = try await ZIPPreview().createPreviewVC(file: File(url: zipURL))
+		let outline = try XCTUnwrap(generatedPreview as? OutlinePreviewVC)
+		outline.loadViewIfNeeded()
+		let node = try XCTUnwrap(
+			findNode(named: "hello-world.txt", in: outline.rootNodes)
+		)
+		let mainVC = MainVC()
+		mainVC.loadViewIfNeeded()
+		mainVC.installTopLevelPreview(outline, file: try File(url: zipURL))
+		mainVC.outlinePreview(outline, requestPreviewOf: node)
+		try await waitUntil { mainVC.previewNavigationStack.count == 2 }
+		let temporaryURL = try XCTUnwrap(mainVC.nestedTemporaryFileURL)
+
+		mainVC.viewWillDisappear()
+
+		XCTAssertFalse(FileManager.default.fileExists(atPath: temporaryURL.path))
+	}
+
 	func testArchiveEntryProviderRejectsDirectoriesLinksAndDeepNesting() async throws {
 		let zipURL = try archiveFixture("example-root-directory.zip")
 		let provider = DefaultNestedPreviewProvider()

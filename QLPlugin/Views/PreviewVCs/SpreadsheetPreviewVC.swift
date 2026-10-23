@@ -11,7 +11,9 @@ final class SpreadsheetPreviewVC: NSViewController, PreviewVC, PreviewStatusProv
 		guard let sheet = selectedSheet else {
 			return "Empty workbook"
 		}
-		return sheet.truncated ? "\(sheet.name) — truncated" : sheet.name
+		return sheet.rowsTruncated || sheet.columnsTruncated
+			? "\(sheet.name) — truncated"
+			: sheet.name
 	}
 
 	private var selectedSheet: SpreadsheetPreviewSheet? {
@@ -111,12 +113,20 @@ final class SpreadsheetPreviewVC: NSViewController, PreviewVC, PreviewStatusProv
 				identifier: NSUserInterfaceItemIdentifier("column-\(index)")
 			)
 			column.title = Self.columnName(for: index)
-			column.width = 120
+			column.width = contentWidth(for: index)
 			column.minWidth = 40
 			column.resizingMask = [.autoresizingMask, .userResizingMask]
 			tableView.addTableColumn(column)
 		}
 		tableView.reloadData()
+	}
+
+	private func contentWidth(for columnIndex: Int) -> CGFloat {
+		let rowLengths = selectedSheet?.rows.prefix(200).compactMap { row in
+			row.indices.contains(columnIndex) ? row[columnIndex].count : 0
+		} ?? []
+		let longest = rowLengths.max() ?? 0
+		return min(max(CGFloat(longest) * 7 + 24, 60), 400)
 	}
 
 	private static func columnName(for index: Int) -> String {
@@ -136,7 +146,7 @@ extension SpreadsheetPreviewVC: NSTableViewDataSource, NSTableViewDelegate {
 		guard let sheet = selectedSheet else {
 			return 0
 		}
-		return sheet.rows.count + (sheet.truncated ? 1 : 0)
+		return sheet.rows.count + (sheet.rowsTruncated || sheet.columnsTruncated ? 1 : 0)
 	}
 
 	func tableView(
@@ -147,13 +157,16 @@ extension SpreadsheetPreviewVC: NSTableViewDataSource, NSTableViewDelegate {
 		guard let tableColumn, let sheet = selectedSheet else {
 			return nil
 		}
-		if sheet.truncated, rowIndex == sheet.rows.count {
-			let notice = NSTextField(labelWithString: "Showing the first \(sheet.rows.count) rows.")
+		let columnIndex = Int(tableColumn.identifier.rawValue.dropFirst("column-".count)) ?? 0
+		if sheet.rowsTruncated || sheet.columnsTruncated, rowIndex == sheet.rows.count {
+			guard columnIndex == 0 else {
+				return NSTextField(labelWithString: "")
+			}
+			let notice = NSTextField(labelWithString: truncationNotice(for: sheet))
 			notice.textColor = .secondaryLabelColor
 			return notice
 		}
 
-		let columnIndex = Int(tableColumn.identifier.rawValue.dropFirst("column-".count)) ?? 0
 		let row = sheet.rows[rowIndex]
 		let value = row.indices.contains(columnIndex) ? row[columnIndex] : ""
 		let textField = NSTextField(labelWithString: value)
@@ -161,5 +174,16 @@ extension SpreadsheetPreviewVC: NSTableViewDataSource, NSTableViewDelegate {
 		textField.maximumNumberOfLines = 1
 		textField.toolTip = value.isEmpty ? nil : value
 		return textField
+	}
+
+	private func truncationNotice(for sheet: SpreadsheetPreviewSheet) -> String {
+		var parts = [String]()
+		if sheet.rowsTruncated {
+			parts.append("the first \(sheet.rows.count) rows")
+		}
+		if sheet.columnsTruncated {
+			parts.append("the first \(sheet.rows.map(\.count).max() ?? 0) columns")
+		}
+		return "Showing \(parts.joined(separator: " and "))."
 	}
 }

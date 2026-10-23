@@ -10,6 +10,10 @@ pub(crate) enum ArchiveFormat {
     Rar,
 }
 
+pub(crate) fn is_unix_symlink(mode: u32) -> bool {
+    mode & 0o170000 == 0o120000
+}
+
 impl ArchiveFormat {
     pub(crate) fn from_ffi(value: u8) -> Result<Self, CoreError> {
         match value {
@@ -119,6 +123,28 @@ mod tests {
             )
             .is_err()
         );
+    }
+
+    #[test]
+    fn normalizes_dot_prefixed_tar_entries() {
+        let bytes = extract_archive_entry(
+            &fixture("dot-prefix.tar"),
+            "hello.txt",
+            ArchiveFormat::Tar,
+            1_024,
+        )
+        .unwrap();
+        assert_eq!(String::from_utf8(bytes).unwrap(), "Hello world!\n");
+    }
+
+    #[test]
+    fn rejects_zip_symlink_entries() {
+        assert!(
+            extract_archive_entry(&fixture("symlink.zip"), "link", ArchiveFormat::Zip, 1_024,)
+                .is_err()
+        );
+        assert!(is_unix_symlink(0o120777));
+        assert!(!is_unix_symlink(0o100644));
     }
 
     #[test]

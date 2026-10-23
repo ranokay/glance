@@ -14,7 +14,15 @@ struct SpreadsheetPreviewPayload: Decodable {
 struct SpreadsheetPreviewSheet: Decodable {
 	let name: String
 	let rows: [[String]]
-	let truncated: Bool
+	let rowsTruncated: Bool
+	let columnsTruncated: Bool
+
+	private enum CodingKeys: String, CodingKey {
+		case name
+		case rows
+		case rowsTruncated = "rows_truncated"
+		case columnsTruncated = "columns_truncated"
+	}
 }
 
 struct ArchivePreviewPayload: Decodable {

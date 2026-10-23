@@ -224,6 +224,7 @@ impl TarScanner {
         if path.is_empty() {
             return Ok(());
         }
+        let path = normalize_entry_path(&path)?;
         let is_directory = header.entry_type == TarEntryType::Directory || path.ends_with('/');
         let size = if is_directory { 0 } else { payload_size };
         self.uncompressed_size = self
@@ -478,6 +479,19 @@ fn tar_integer(bytes: &[u8]) -> Result<u64, CoreError> {
         .map_err(|_| CoreError::parse("TAR archive contains invalid numeric metadata"))
 }
 
+fn normalize_entry_path(path: &str) -> Result<String, CoreError> {
+    let mut normalized = path.replace('\\', "/");
+    while let Some(stripped) = normalized.strip_prefix("./") {
+        normalized = stripped.to_string();
+    }
+    if normalized.starts_with('/') || normalized.split('/').any(|component| component == "..") {
+        return Err(CoreError::parse(
+            "TAR archive contains an unsafe entry path",
+        ));
+    }
+    Ok(normalized)
+}
+
 fn padded_tar_size(size: u64) -> Result<u64, CoreError> {
     size.checked_add(511)
         .map(|value| value / 512 * 512)
@@ -508,9 +522,9 @@ pub(crate) fn extract_entry(
         let path = entry
             .path()
             .map_err(|error| CoreError::parse(format!("Could not read TAR entry path: {error}")))?;
-        let entry_path = path.to_string_lossy();
-        let normalized = entry_path.strip_prefix("./").unwrap_or(&entry_path);
-        if normalized != entry_name {
+        let entry_path = normalize_entry_path(&path.to_string_lossy())?;
+        let wanted_path = normalize_entry_path(entry_name)?;
+        if entry_path != wanted_path {
             continue;
         }
         if !entry.header().entry_type().is_file() {

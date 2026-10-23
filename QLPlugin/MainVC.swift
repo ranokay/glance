@@ -62,7 +62,11 @@ class MainVC: NSViewController, QLPreviewingController {
 	var baseStatusText = ""
 	private var utilityBarHeightConstraint: NSLayoutConstraint?
 	var nestedOpenWithTargetURL: URL?
-	var nestedTemporaryFileURL: URL?
+	var temporaryFiles = [ObjectIdentifier: URL]()
+	var nestedTemporaryFileURL: URL? {
+		currentPreviewController.flatMap { temporaryFiles[ObjectIdentifier($0)] }
+	}
+
 	var statusResetTask: Task<Void, Never>?
 	var previewPreparationTask: Task<Void, Error>?
 	var previewPreparationID: UUID?
@@ -76,6 +80,11 @@ class MainVC: NSViewController, QLPreviewingController {
 	override func viewDidLoad() {
 		super.viewDidLoad()
 		setUpView()
+	}
+
+	override func viewWillDisappear() {
+		super.viewWillDisappear()
+		removeAllTemporaryFiles()
 	}
 
 	private func setUpView() {

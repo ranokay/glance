@@ -53,6 +53,11 @@ pub(crate) fn scan_zip(path: &Path) -> Result<ArchivePayload, CoreError> {
             .ok_or_else(|| CoreError::limit("ZIP archive metadata size overflow"))?;
         let entry_type = if entry.is_dir() {
             ArchiveEntryType::Directory
+        } else if entry
+            .unix_mode()
+            .is_some_and(crate::extract::is_unix_symlink)
+        {
+            ArchiveEntryType::Other
         } else if entry.is_file() {
             ArchiveEntryType::File
         } else {
@@ -258,6 +263,12 @@ pub(crate) fn extract_entry(
         return Err(CoreError::invalid(
             "ZIP directory entries cannot be previewed",
         ));
+    }
+    if entry
+        .unix_mode()
+        .is_some_and(crate::extract::is_unix_symlink)
+    {
+        return Err(CoreError::invalid("ZIP links cannot be previewed"));
     }
     if entry.size() > max_bytes as u64 {
         return Err(CoreError::limit(

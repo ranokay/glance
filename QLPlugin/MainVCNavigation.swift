@@ -12,7 +12,7 @@ extension MainVC {
 			outlinePreview.interactionDelegate = self
 		}
 		nestedOpenWithTargetURL = nil
-		nestedTemporaryFileURL = nil
+		removeAllTemporaryFiles()
 		bindStatus(to: previewVC)
 		show(previewVC)
 		updateOpenWithTarget()
@@ -36,7 +36,9 @@ extension MainVC {
 		}
 		previewNavigationStack.append(previewVC)
 		nestedOpenWithTargetURL = openWithTargetURL
-		nestedTemporaryFileURL = temporaryFileURL
+		if let temporaryFileURL {
+			temporaryFiles[ObjectIdentifier(previewVC)] = temporaryFileURL
+		}
 		bindStatus(to: previewVC)
 		show(previewVC)
 		updateOpenWithTarget()
@@ -55,7 +57,7 @@ extension MainVC {
 		removedController.tearDown()
 		removedController.view.removeFromSuperview()
 		removedController.removeFromParent()
-		removeNestedTemporaryFile()
+		removeTemporaryFile(for: removedController)
 		if let outlinePreview = previousController as? OutlinePreviewVC,
 		   outlinePreview.isNestedPreviewBrowser
 		{
@@ -90,18 +92,36 @@ extension MainVC {
 		topLevelFile = nil
 		selectedFolderNode = nil
 		nestedOpenWithTargetURL = nil
-		removeNestedTemporaryFile()
+		removeAllTemporaryFiles()
 		openWithTargetURL = nil
 		refreshOpenWithMenu()
 		setBaseStatus("")
 		updateChrome()
 	}
 
-	func removeNestedTemporaryFile() {
-		guard let nestedTemporaryFileURL else {
+	func removeTemporaryFile(for controller: PreviewVC) {
+		guard let url = temporaryFiles.removeValue(forKey: ObjectIdentifier(controller)) else {
 			return
 		}
-		try? FileManager.default.removeItem(at: nestedTemporaryFileURL.deletingLastPathComponent())
-		self.nestedTemporaryFileURL = nil
+		removeArchiveTemporaryDirectory(containing: url)
+	}
+
+	func removeAllTemporaryFiles() {
+		for url in temporaryFiles.values {
+			removeArchiveTemporaryDirectory(containing: url)
+		}
+		temporaryFiles.removeAll()
+	}
+
+	private func removeArchiveTemporaryDirectory(containing url: URL) {
+		let directory = url.deletingLastPathComponent()
+		guard
+			directory.deletingLastPathComponent().standardizedFileURL
+			== FileManager.default.temporaryDirectory.standardizedFileURL,
+			directory.lastPathComponent.hasPrefix("GlanceArchive-")
+		else {
+			return
+		}
+		try? FileManager.default.removeItem(at: directory)
 	}
 }

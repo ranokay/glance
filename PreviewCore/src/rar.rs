@@ -59,7 +59,7 @@ pub(crate) fn scan_rar(path: &Path) -> Result<ArchivePayload, CoreError> {
                 scanner.push(
                     entry.name_lossy(),
                     entry.is_directory(),
-                    false,
+                    is_rar4_symlink(entry.host_os, entry.attr),
                     entry.is_encrypted(),
                     entry.is_split_before() || entry.is_split_after(),
                     entry.pack_size,
@@ -196,6 +196,10 @@ impl ArchiveScanner {
         });
         Ok(())
     }
+}
+
+fn is_rar4_symlink(host_os: u8, attributes: u32) -> bool {
+    host_os == 3 && crate::extract::is_unix_symlink(attributes)
 }
 
 fn normalize_path(path: &str) -> Result<String, CoreError> {
@@ -536,10 +540,14 @@ pub(crate) fn extract_entry(
         .len();
     preflight_archive(&mut file, file_size)?;
     let archive = read_preflighted_archive(&mut file)?;
+    let wanted_name = normalize_path(entry_name)?;
     let member = archive
         .members()
-        .find(|member| member.meta.name_lossy() == entry_name)
+        .find(|member| {
+            normalize_path(&member.meta.name_lossy()).is_ok_and(|name| name == wanted_name)
+        })
         .ok_or_else(|| CoreError::invalid(format!("RAR entry \"{entry_name}\" was not found")))?;
+    let member_name = member.meta.name_bytes().to_vec();
     if member.meta.is_directory {
         return Err(CoreError::invalid(
             "RAR directory entries cannot be previewed",
@@ -557,7 +565,7 @@ pub(crate) fn extract_entry(
     }
 
     let data = archive
-        .read_member(entry_name.as_bytes(), None)
+        .read_member(&member_name, None)
         .map_err(map_rar_error)?
         .ok_or_else(|| CoreError::invalid(format!("RAR entry \"{entry_name}\" was not found")))?;
     if data.len() > max_bytes {

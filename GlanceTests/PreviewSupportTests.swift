@@ -124,6 +124,31 @@ final class PreviewSupportTests: XCTestCase {
 		)
 	}
 
+	func testSpreadsheetFilesUseThePreviewCoreSizeLimit() throws {
+		let directory = FileManager.default.temporaryDirectory
+			.appendingPathComponent("GlanceSpreadsheetPolicy-\(UUID().uuidString)")
+		try FileManager.default.createDirectory(
+			at: directory,
+			withIntermediateDirectories: true
+		)
+		defer { try? FileManager.default.removeItem(at: directory) }
+		let spreadsheet = directory.appendingPathComponent("large.xlsx")
+		let text = directory.appendingPathComponent("large.md")
+		for url in [spreadsheet, text] {
+			XCTAssertTrue(FileManager.default.createFile(atPath: url.path, contents: nil))
+			let handle = try FileHandle(forWritingTo: url)
+			try handle.truncate(atOffset: 20_000_000)
+			try handle.close()
+		}
+
+		XCTAssertNoThrow(
+			try PreviewPolicy.validateFileSize(try File(url: spreadsheet))
+		)
+		XCTAssertThrowsError(
+			try PreviewPolicy.validateFileSize(try File(url: text))
+		)
+	}
+
 	func testCodeLexerUsesDotfileMappings() {
 		let cases = [
 			(".bashrc", ".bashrc"),

@@ -180,24 +180,28 @@ struct DefaultNestedPreviewProvider: NestedPreviewProviding {
 			at: directory,
 			withIntermediateDirectories: true
 		)
-		let fileName = Self.safeFileName(name)
+		let fileExtension = Self.safeExtension(of: name)
+		let fileName = fileExtension.isEmpty
+			? "entry-\(UUID().uuidString)"
+			: "entry-\(UUID().uuidString).\(fileExtension)"
 		let url = directory.appendingPathComponent(fileName)
-		try data.write(to: url, options: .atomic)
-		return url
+		do {
+			try data.write(to: url, options: .atomic)
+			return url
+		} catch {
+			try? FileManager.default.removeItem(at: directory)
+			throw error
+		}
 	}
 
 	private func removeTemporaryEntry(_ url: URL) {
 		try? FileManager.default.removeItem(at: url.deletingLastPathComponent())
 	}
 
-	private static func safeFileName(_ name: String) -> String {
-		let lastComponent = (name as NSString).lastPathComponent
-			.replacingOccurrences(of: "/", with: "_")
-			.trimmingCharacters(in: .whitespacesAndNewlines)
-		guard !lastComponent.isEmpty, lastComponent != ".", lastComponent != ".." else {
-			return "entry"
-		}
-		return String(lastComponent.prefix(240))
+	private static func safeExtension(of name: String) -> String {
+		let fileExtension = (name as NSString).pathExtension
+		let sanitized = fileExtension.filter { $0.isLetter || $0.isNumber }
+		return String(sanitized.prefix(16))
 	}
 
 	func route(for node: FileTreeNode) -> NestedPreviewRoute {
