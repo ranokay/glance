@@ -1,0 +1,19 @@
+amends "package://github.com/jdx/hk/releases/download/v2.8.0/hk@2.8.0#/Config.pkl"
+import "package://github.com/jdx/hk/releases/download/v2.8.0/hk@2.8.0#/Builtins.pkl"
+
+steps {
+	["swiftformat"] {
+		glob = List("**/*.swift")
+		check = "swiftformat --lint {{files}}"
+		fix = "swiftformat {{files}}"
+	}
+	["swiftlint"] = (Builtins.swiftlint) {
+		check = "swiftlint lint --strict {{files}}"
+	}
+	["cargo-fmt"] = Builtins.cargo_fmt
+	["jactionlint"] = Builtins.jactionlint
+	["shellcheck"] = Builtins.shellcheck
+	["release-metadata"] {
+		check = "sh scripts/check-release-metadata.sh"
+	}
+}

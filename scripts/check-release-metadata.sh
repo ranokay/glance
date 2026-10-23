@@ -30,6 +30,9 @@ check "release runs on macos-26" grep -q -F "runs-on: macos-26" .github/workflow
 check "release uses shared setup" grep -q -F "./.github/actions/setup" .github/workflows/release.yml
 check "setup asserts Xcode 26" grep -q -F "Release builds require Xcode 26" .github/actions/setup/action.yml
 check "pinned rust" grep -q -F 'rust = "1.97.1"' mise.toml
+check "pinned hk" grep -q -F 'hk = "2.8.0"' mise.toml
+check "pinned jactionlint" grep -q -F 'jactionlint = "2.2.0"' mise.toml
+check "pinned shellcheck" grep -q -F 'shellcheck = "0.11.0"' mise.toml
 check "pinned swiftformat" grep -q -F 'swiftformat = "0.61.1"' mise.toml
 check "pinned swiftlint" grep -q -F 'swiftlint = "0.63.3"' mise.toml
 check "no latest pins" sh -c "! grep -q -F '= \"latest\"' mise.toml"

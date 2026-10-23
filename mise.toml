@@ -1,6 +1,9 @@
 [tools]
 "cargo:cargo-audit" = "0.22.2"
+hk = "2.8.0"
+jactionlint = "2.2.0"
 rust = "1.97.1"
+shellcheck = "0.11.0"
 swiftformat = "0.61.1"
 swiftlint = "0.63.3"
 
@@ -139,11 +142,17 @@ mise run test:xcode
 '''
 
 [tasks.lint]
-description = "Run pinned Swift lint and format checks (merge gate)"
+description = "Run hk checks for Swift, Rust, workflows, and shell (merge gate)"
 run = '''
 set -e
-swiftlint lint --strict
-swiftformat --lint .
+hk check --all
+'''
+
+[tasks.hooks]
+description = "Install the hk git hooks for this checkout"
+run = '''
+set -e
+hk install
 '''
 
 [tasks.verify]

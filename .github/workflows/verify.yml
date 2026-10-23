@@ -35,7 +35,7 @@ jobs:
           persist-credentials: false
 
       - name: Cache pinned tool downloads (keyed by tool-versions hash)
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: ~/.local/share/mise
           key: mise-${{ hashFiles('mise.toml') }}
@@ -47,7 +47,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
 
       - name: Cache Rust build (keyed by lockfile plus toolchain version)
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: |
             ~/.cargo/registry
@@ -79,7 +79,7 @@ jobs:
 
       - name: Retain evidence bundle keyed by commit
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: verify-evidence-${{ github.sha }}
           path: |
