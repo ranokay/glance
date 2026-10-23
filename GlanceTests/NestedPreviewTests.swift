@@ -240,7 +240,51 @@ final class NestedPreviewTests: XCTestCase {
 		XCTAssertFalse(FileManager.default.fileExists(atPath: temporaryURL.path))
 	}
 
-	func testArchiveEntryProviderRejectsDirectoriesLinksAndDeepNesting() async throws {
+	func testDepthLimitAppliesToArchivesButNotLeafFiles() async throws {
+		let zipURL = try archiveFixture("example-root-directory.zip")
+		let leaf = FileTreeNode(
+			name: "hello-world.txt",
+			size: 13,
+			isDirectory: false,
+			dateModified: nil,
+			archiveEntryPath: "example/hello-world.txt"
+		)
+		let deepContext = ArchivePreviewContext(fileURL: zipURL, format: .zip, depth: 3)
+		let result = try await DefaultNestedPreviewProvider().makeArchiveEntryPreview(
+			for: leaf,
+			context: deepContext
+		)
+		let temporaryURL = try XCTUnwrap(result.temporaryFileURL)
+		XCTAssertTrue(result.previewVC is WebPreviewVC)
+		try? FileManager.default.removeItem(at: temporaryURL.deletingLastPathComponent())
+
+		let nestedURL = try archiveFixture("nested-archive.zip")
+		let inner = FileTreeNode(
+			name: "inner.zip",
+			size: 193,
+			isDirectory: false,
+			dateModified: nil,
+			archiveEntryPath: "inner.zip"
+		)
+		let nestedContext = ArchivePreviewContext(fileURL: nestedURL, format: .zip, depth: 3)
+		do {
+			_ = try await DefaultNestedPreviewProvider().makeArchiveEntryPreview(
+				for: inner,
+				context: nestedContext
+			)
+			XCTFail("Expected a fourth archive level to be rejected")
+		} catch {}
+	}
+
+	func testPreservesCompoundArchiveExtensionsForExtractedEntries() {
+		XCTAssertEqual(
+			DefaultNestedPreviewProvider.safeExtension(of: "example.tar.gz"),
+			"tar.gz"
+		)
+		XCTAssertEqual(DefaultNestedPreviewProvider.safeExtension(of: "example.zip"), "zip")
+	}
+
+	func testArchiveEntryProviderRejectsDirectoriesAndLinks() async throws {
 		let zipURL = try archiveFixture("example-root-directory.zip")
 		let provider = DefaultNestedPreviewProvider()
 		let context = ArchivePreviewContext(fileURL: zipURL, format: .zip, depth: 0)
@@ -259,14 +303,6 @@ final class NestedPreviewTests: XCTestCase {
 			archiveEntryPath: "link.txt"
 		)
 		link.isSymbolicLink = true
-		let file = FileTreeNode(
-			name: "hello.txt",
-			size: 13,
-			isDirectory: false,
-			dateModified: nil,
-			archiveEntryPath: "hello.txt"
-		)
-		let deepContext = ArchivePreviewContext(fileURL: zipURL, format: .zip, depth: 3)
 
 		for node in [directory, link] {
 			do {
@@ -274,10 +310,6 @@ final class NestedPreviewTests: XCTestCase {
 				XCTFail("Expected \(node.name) to be rejected")
 			} catch {}
 		}
-		do {
-			_ = try await provider.makeArchiveEntryPreview(for: file, context: deepContext)
-			XCTFail("Expected depth 3 to be rejected")
-		} catch {}
 	}
 
 	func testOutlineSelectionTogglesDirectoriesPreviewsPackagesAndIgnoresSymlinks() throws {

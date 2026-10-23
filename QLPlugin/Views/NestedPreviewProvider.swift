@@ -96,9 +96,6 @@ struct DefaultNestedPreviewProvider: NestedPreviewProviding {
 		else {
 			throw NestedPreviewError.archiveEntryUnavailable(name: node.name)
 		}
-		guard context.depth < 3 else {
-			throw NestedPreviewError.archiveNestingTooDeep
-		}
 
 		let data = try await PreviewExecutor.run {
 			try PreviewCoreBridge.extractArchiveEntry(
@@ -130,6 +127,9 @@ struct DefaultNestedPreviewProvider: NestedPreviewProviding {
 					   	fileURL: temporaryURL
 					   )
 					{
+						guard context.depth < 3 else {
+							throw NestedPreviewError.archiveNestingTooDeep
+						}
 						let preview = try await ArchivePreviewFactory.makePreview(
 							file: file,
 							format: format,
@@ -198,7 +198,11 @@ struct DefaultNestedPreviewProvider: NestedPreviewProviding {
 		try? FileManager.default.removeItem(at: url.deletingLastPathComponent())
 	}
 
-	private static func safeExtension(of name: String) -> String {
+	static func safeExtension(of name: String) -> String {
+		let lowercased = name.lowercased()
+		if lowercased.hasSuffix(".tar.gz") {
+			return "tar.gz"
+		}
 		let fileExtension = (name as NSString).pathExtension
 		let sanitized = fileExtension.filter { $0.isLetter || $0.isNumber }
 		return String(sanitized.prefix(16))

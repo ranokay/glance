@@ -84,6 +84,8 @@ class MainVC: NSViewController, QLPreviewingController {
 
 	override func viewWillDisappear() {
 		super.viewWillDisappear()
+		nestedPreviewTask?.cancel()
+		nestedPreviewTask = nil
 		removeAllTemporaryFiles()
 	}
 
