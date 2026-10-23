@@ -29,10 +29,10 @@ runs:
       shell: bash
       run: |
         set -euo pipefail
-        MISE_VERSION="2026.6.0"
+        MISE_VERSION="2026.10.17"
         MISE_TARBALL="mise-v${MISE_VERSION}-macos-arm64.tar.gz"
         curl -fsSLO "https://github.com/jdx/mise/releases/download/v${MISE_VERSION}/${MISE_TARBALL}"
-        echo "8830cf720025583bfbc5ca77bcf15958bf6efb4743fb84be6b572fd85d3a6cd0  ${MISE_TARBALL}" | shasum -a 256 -c -
+        echo "d7c50c1683524a764260986ccc9c41c0de5e1fcd491714b5640b657b76781af6  ${MISE_TARBALL}" | shasum -a 256 -c -
         tar -xzf "$MISE_TARBALL"
         mkdir -p "$HOME/.local/bin"
         cp mise/bin/mise "$HOME/.local/bin/mise"
