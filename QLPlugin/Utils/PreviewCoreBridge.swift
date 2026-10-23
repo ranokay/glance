@@ -7,6 +7,16 @@ struct TSVPreviewPayload: Decodable {
 	let truncated: Bool
 }
 
+struct SpreadsheetPreviewPayload: Decodable {
+	let sheets: [SpreadsheetPreviewSheet]
+}
+
+struct SpreadsheetPreviewSheet: Decodable {
+	let name: String
+	let rows: [[String]]
+	let truncated: Bool
+}
+
 struct ArchivePreviewPayload: Decodable {
 	let entries: [ArchivePreviewEntry]
 	let compressedSize: UInt64
@@ -116,6 +126,13 @@ enum PreviewCoreBridge {
 			)
 		}
 		return try decode(TSVPreviewPayload.self, result: result)
+	}
+
+	static func parseXLSX(at url: URL) throws -> SpreadsheetPreviewPayload {
+		try decode(
+			SpreadsheetPreviewPayload.self,
+			result: pathResult(for: url, call: glance_parse_xlsx)
+		)
 	}
 
 	static func parseThreeMF(at url: URL) throws -> ThreeMFPreviewPayload {

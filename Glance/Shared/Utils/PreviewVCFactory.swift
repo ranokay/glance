@@ -32,6 +32,8 @@ class PreviewVCFactory {
 				return ThreeMFPreview.self
 			case .tsv:
 				return TSVPreview.self
+			case .spreadsheet:
+				return SpreadsheetPreview.self
 			case .sevenZip:
 				return SevenZipPreview.self
 			case .zip:

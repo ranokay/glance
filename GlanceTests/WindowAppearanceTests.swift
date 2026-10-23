@@ -290,12 +290,17 @@ final class WindowAppearanceTests: XCTestCase {
 				"E-books",
 				"Jupyter Notebook",
 				"Tab-separated Values",
+				"Spreadsheet",
 				"Folders",
 			]
 		)
 		XCTAssertEqual(
 			SupportedFilesWC.sections.first { $0.title == "Tab-separated Values" }?.details,
 			".tab, .tsv"
+		)
+		XCTAssertEqual(
+			SupportedFilesWC.sections.first { $0.title == "Spreadsheet" }?.details,
+			".xlsx • Values, dates, and every worksheet"
 		)
 		XCTAssertEqual(
 			SupportedFilesWC.sections.first { $0.title == "Folders" }?.details,

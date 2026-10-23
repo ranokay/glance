@@ -8,6 +8,7 @@ public enum SupportedPreviewGroup: CaseIterable, Sendable {
 	case markdown
 	case jupyter
 	case tsv
+	case spreadsheet
 	case code
 
 	public var title: String {
@@ -26,6 +27,8 @@ public enum SupportedPreviewGroup: CaseIterable, Sendable {
 				"Jupyter Notebook"
 			case .tsv:
 				"Tab-separated values"
+			case .spreadsheet:
+				"Spreadsheet"
 			case .code:
 				"Source code and text"
 		}
@@ -47,6 +50,8 @@ public enum SupportedPreviewGroup: CaseIterable, Sendable {
 				"jupyter"
 			case .tsv:
 				"tsv"
+			case .spreadsheet:
+				"spreadsheet"
 			case .code:
 				"code"
 		}
@@ -214,6 +219,13 @@ public enum SupportedPreviewRegistry {
 
 		extensionEntry("tab", group: .tsv, previewFileType: .tsv),
 		extensionEntry("tsv", group: .tsv, previewFileType: .tsv),
+
+		extensionEntry(
+			"xlsx",
+			group: .spreadsheet,
+			previewFileType: .spreadsheet,
+			searchTokens: ["Excel", "workbook", "sheet"]
+		),
 
 		fileNameEntry(
 			".bashrc",

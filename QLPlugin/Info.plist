@@ -87,6 +87,9 @@
 				<string>dyn.ah62d4rv4ge81k2pc</string> <!-- .tab -->
 				<string>public.tab-separated-values-text</string> <!-- .tsv -->
 
+				<!-- Spreadsheet -->
+				<string>org.openxmlformats.spreadsheetml.sheet</string> <!-- .xlsx -->
+
 				<!-- Code / plain text -->
 				<string>com.adobe.jsx</string> <!-- .jsx (used for React instead of ExtendScript) -->
 				<string>com.apple.applescript.script-bundle</string> <!-- .scptd (AppleScript bundle) -->

@@ -132,6 +132,24 @@ pub unsafe extern "C" fn glance_parse_three_mf(
     })
 }
 
+/// Parses an XLSX workbook at a raw filesystem path into a typed JSON payload.
+///
+/// # Safety
+///
+/// The pointer must be valid for reads of `path_length` bytes for the duration of this call.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn glance_parse_xlsx(
+    path_data: *const u8,
+    path_length: usize,
+) -> GlanceRenderResult {
+    ffi_call(|| unsafe {
+        json_bytes(&crate::xlsx::parse_xlsx(path_input(
+            path_data,
+            path_length,
+        )?)?)
+    })
+}
+
 /// Scans a ZIP/JAR/EAR/WAR archive at a raw filesystem path into a typed JSON payload.
 ///
 /// # Safety

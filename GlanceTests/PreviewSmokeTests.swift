@@ -892,6 +892,28 @@ final class PreviewSmokeTests: XCTestCase {
 		XCTAssertEqual(previewVC.cells.last?["name"], "row-4999")
 	}
 
+	func testSpreadsheetPreviewShowsEveryWorksheetAndSwitchesSheets() async throws {
+		let fileURL = URL(fileURLWithPath: #filePath)
+			.deletingLastPathComponent()
+			.appendingPathComponent("TestFiles/spreadsheet/example.xlsx")
+		let generatedPreview = try await SpreadsheetPreview().createPreviewVC(
+			file: File(url: fileURL)
+		)
+		let preview = try XCTUnwrap(generatedPreview as? SpreadsheetPreviewVC)
+		preview.loadViewIfNeeded()
+
+		XCTAssertEqual(preview.sheetPopUpButton.itemTitles, ["Summary", "Data"])
+		XCTAssertEqual(preview.tableView.numberOfRows, 4)
+
+		preview.sheetPopUpButton.selectItem(at: 1)
+		preview.sheetPopUpButton.sendAction(
+			preview.sheetPopUpButton.action,
+			to: preview.sheetPopUpButton.target
+		)
+		XCTAssertEqual(preview.tableView.numberOfRows, 2)
+		XCTAssertEqual(preview.previewStatusText, "Data")
+	}
+
 	func testTSVPreviewRejectsFilesOverProductionSizeLimit() async throws {
 		let fileURL = temporaryDirectory.appendingPathComponent("oversized.tsv")
 		XCTAssertTrue(FileManager.default.createFile(atPath: fileURL.path, contents: nil))
