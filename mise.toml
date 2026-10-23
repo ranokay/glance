@@ -217,7 +217,7 @@ fi
 codesign --verify --deep --strict --verbose=2 "$APP_PATH"
 
 echo "--- pin cadence ---"
-grep -E '^(rust|swiftformat|swiftlint|"cargo:cargo-audit")' mise.toml || true
+grep -E '^(rust|hk|jactionlint|shellcheck|swiftformat|swiftlint|"cargo:cargo-audit")' mise.toml || true
 echo "--- entitlement review (least-privilege: sandbox + network.client, plugin adds user-selected.read-only) ---"
 codesign -d --entitlements :- "$APP_PATH" 2>/dev/null | grep -E "com.apple.security" || true
 codesign -d --entitlements :- "$QL_EXECUTABLE" 2>/dev/null | grep -E "com.apple.security" || true
