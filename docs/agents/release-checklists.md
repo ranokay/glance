@@ -49,7 +49,7 @@ same commit as any intentional bump, then run it.
 5. Docs: extend the supported-types list in `AppStore/Listing/Description.txt`
    when the type is user-facing.
 
-## Web-runtime bump (drawio, mermaid, or similar bundled viewer)
+## Web-runtime bump (drawio, Pele/Mermaid diagrams, or similar bundled viewer)
 
 1. `docs/<name>-runtime.md`: new version, source URL, SHA-256 digest of the
    runtime and of its license file, measured Release size impact

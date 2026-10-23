@@ -131,7 +131,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 	private func quitGlance(_: Any?) {
 		NSApp.terminate(nil)
 	}
-
 }
 
 extension AppDelegate: NSMenuItemValidation {
