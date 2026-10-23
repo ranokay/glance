@@ -484,6 +484,64 @@ fn padded_tar_size(size: u64) -> Result<u64, CoreError> {
         .ok_or_else(|| CoreError::limit("TAR payload size overflow"))
 }
 
+pub(crate) fn extract_entry(
+    path: &Path,
+    entry_name: &str,
+    is_gzipped: bool,
+    max_bytes: usize,
+) -> Result<Vec<u8>, CoreError> {
+    let file = File::open(path)
+        .map_err(|error| CoreError::io(format!("Could not open TAR archive: {error}")))?;
+    let reader: Box<dyn Read> = if is_gzipped {
+        Box::new(MultiGzDecoder::new(file))
+    } else {
+        Box::new(file)
+    };
+    let mut archive = tar::Archive::new(reader);
+    let entries = archive
+        .entries()
+        .map_err(|error| CoreError::parse(format!("Could not read TAR archive: {error}")))?;
+
+    for entry in entries {
+        let entry = entry
+            .map_err(|error| CoreError::parse(format!("Could not read TAR entry: {error}")))?;
+        let path = entry
+            .path()
+            .map_err(|error| CoreError::parse(format!("Could not read TAR entry path: {error}")))?;
+        let entry_path = path.to_string_lossy();
+        let normalized = entry_path.strip_prefix("./").unwrap_or(&entry_path);
+        if normalized != entry_name {
+            continue;
+        }
+        if !entry.header().entry_type().is_file() {
+            return Err(CoreError::invalid(
+                "TAR entries other than files cannot be previewed",
+            ));
+        }
+        let size = entry.size();
+        if size > max_bytes as u64 {
+            return Err(CoreError::limit(
+                "TAR entry exceeds the extracted preview size limit",
+            ));
+        }
+        let mut data = Vec::with_capacity(size as usize);
+        entry
+            .take(max_bytes as u64 + 1)
+            .read_to_end(&mut data)
+            .map_err(|error| CoreError::io(format!("Could not read TAR entry: {error}")))?;
+        if data.len() > max_bytes {
+            return Err(CoreError::limit(
+                "TAR entry exceeds the extracted preview size limit",
+            ));
+        }
+        return Ok(data);
+    }
+
+    Err(CoreError::invalid(format!(
+        "TAR entry \"{entry_name}\" was not found"
+    )))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

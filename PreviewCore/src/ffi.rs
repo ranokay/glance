@@ -150,6 +150,34 @@ pub unsafe extern "C" fn glance_parse_xlsx(
     })
 }
 
+/// Extracts one file entry from a supported archive into raw bytes.
+///
+/// # Safety
+///
+/// Each non-null pointer must be valid for reads of its paired length for the duration of this
+/// call. A null pointer is accepted only when its paired length is zero.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn glance_extract_archive_entry(
+    path_data: *const u8,
+    path_length: usize,
+    entry_data: *const u8,
+    entry_length: usize,
+    format: u8,
+    max_bytes: usize,
+) -> GlanceRenderResult {
+    ffi_call(|| unsafe {
+        let path = path_input(path_data, path_length)?;
+        let entry = utf8_input(entry_data, entry_length)?;
+        let format = crate::extract::ArchiveFormat::from_ffi(format)?;
+        if max_bytes == 0 {
+            return Err(CoreError::invalid(
+                "Archive entry extraction requires a positive size limit",
+            ));
+        }
+        crate::extract::extract_archive_entry(path, entry, format, max_bytes)
+    })
+}
+
 /// Scans a ZIP/JAR/EAR/WAR archive at a raw filesystem path into a typed JSON payload.
 ///
 /// # Safety

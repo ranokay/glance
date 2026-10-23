@@ -198,6 +198,60 @@ fn read_u64(bytes: &[u8], offset: usize) -> Option<u64> {
         .map(u64::from_le_bytes)
 }
 
+pub(crate) fn extract_entry(
+    path: &Path,
+    entry_name: &str,
+    max_bytes: usize,
+) -> Result<Vec<u8>, CoreError> {
+    let file = File::open(path)
+        .map_err(|error| CoreError::io(format!("Could not open 7z archive: {error}")))?;
+    let mut reader = ArchiveReader::new(file, Password::empty()).map_err(map_seven_zip_error)?;
+    let mut selected: Option<Result<Vec<u8>, CoreError>> = None;
+
+    reader
+        .for_each_entries(|entry, reader| {
+            if entry.name != entry_name {
+                return Ok(true);
+            }
+            if entry.is_directory {
+                selected = Some(Err(CoreError::invalid(
+                    "7z directory entries cannot be previewed",
+                )));
+                return Ok(false);
+            }
+            if entry.size > max_bytes as u64 {
+                selected = Some(Err(CoreError::limit(
+                    "7z entry exceeds the extracted preview size limit",
+                )));
+                return Ok(false);
+            }
+            let mut data = Vec::with_capacity(entry.size as usize);
+            selected = Some(
+                reader
+                    .take(max_bytes as u64 + 1)
+                    .read_to_end(&mut data)
+                    .map_err(|error| CoreError::io(format!("Could not read 7z entry: {error}")))
+                    .and_then(|_| {
+                        if data.len() > max_bytes {
+                            Err(CoreError::limit(
+                                "7z entry exceeds the extracted preview size limit",
+                            ))
+                        } else {
+                            Ok(data)
+                        }
+                    }),
+            );
+            Ok(false)
+        })
+        .map_err(map_seven_zip_error)?;
+
+    selected.unwrap_or_else(|| {
+        Err(CoreError::invalid(format!(
+            "7z entry \"{entry_name}\" was not found"
+        )))
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -157,12 +157,42 @@ extension MainVC {
 				guard let self else {
 					return
 				}
-				let previewVC = try await nestedPreviewProvider.makePreviewController(for: node)
-				try Task.checkCancellation()
-				guard currentPreviewController === source else {
-					return
+				if let archiveContext = source.archiveContext {
+					let result = try await nestedPreviewProvider.makeArchiveEntryPreview(
+						for: node,
+						context: archiveContext
+					)
+					do {
+						try Task.checkCancellation()
+					} catch {
+						if let temporaryFileURL = result.temporaryFileURL {
+							try? FileManager.default.removeItem(
+								at: temporaryFileURL.deletingLastPathComponent()
+							)
+						}
+						throw error
+					}
+					guard currentPreviewController === source else {
+						if let temporaryFileURL = result.temporaryFileURL {
+							try? FileManager.default.removeItem(
+								at: temporaryFileURL.deletingLastPathComponent()
+							)
+						}
+						return
+					}
+					pushPreview(
+						result.previewVC,
+						openWithTargetURL: nil,
+						temporaryFileURL: result.temporaryFileURL
+					)
+				} else {
+					let previewVC = try await nestedPreviewProvider.makePreviewController(for: node)
+					try Task.checkCancellation()
+					guard currentPreviewController === source else {
+						return
+					}
+					pushPreview(previewVC, openWithTargetURL: node.fileURL)
 				}
-				pushPreview(previewVC, openWithTargetURL: node.fileURL)
 			} catch is CancellationError {
 				return
 			} catch {

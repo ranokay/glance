@@ -62,6 +62,7 @@ class MainVC: NSViewController, QLPreviewingController {
 	var baseStatusText = ""
 	private var utilityBarHeightConstraint: NSLayoutConstraint?
 	var nestedOpenWithTargetURL: URL?
+	var nestedTemporaryFileURL: URL?
 	var statusResetTask: Task<Void, Never>?
 	var previewPreparationTask: Task<Void, Error>?
 	var previewPreparationID: UUID?

@@ -523,6 +523,51 @@ fn root_rar_error(mut error: &RarError) -> &RarError {
     }
 }
 
+pub(crate) fn extract_entry(
+    path: &Path,
+    entry_name: &str,
+    max_bytes: usize,
+) -> Result<Vec<u8>, CoreError> {
+    let mut file = File::open(path)
+        .map_err(|error| CoreError::io(format!("Could not open RAR archive: {error}")))?;
+    let file_size = file
+        .metadata()
+        .map_err(|error| CoreError::io(format!("Could not inspect RAR archive: {error}")))?
+        .len();
+    preflight_archive(&mut file, file_size)?;
+    let archive = read_preflighted_archive(&mut file)?;
+    let member = archive
+        .members()
+        .find(|member| member.meta.name_lossy() == entry_name)
+        .ok_or_else(|| CoreError::invalid(format!("RAR entry \"{entry_name}\" was not found")))?;
+    if member.meta.is_directory {
+        return Err(CoreError::invalid(
+            "RAR directory entries cannot be previewed",
+        ));
+    }
+    if member.meta.is_encrypted {
+        return Err(CoreError::unsupported(
+            "Encrypted RAR entries are not supported",
+        ));
+    }
+    if member.meta.unpacked_size > max_bytes as u64 {
+        return Err(CoreError::limit(
+            "RAR entry exceeds the extracted preview size limit",
+        ));
+    }
+
+    let data = archive
+        .read_member(entry_name.as_bytes(), None)
+        .map_err(map_rar_error)?
+        .ok_or_else(|| CoreError::invalid(format!("RAR entry \"{entry_name}\" was not found")))?;
+    if data.len() > max_bytes {
+        return Err(CoreError::limit(
+            "RAR entry exceeds the extracted preview size limit",
+        ));
+    }
+    Ok(data)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

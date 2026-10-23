@@ -34,6 +34,7 @@ class FileTree {
 		size: Int,
 		dateModified: Date?,
 		fileURL: URL? = nil,
+		archiveEntryPath: String? = nil,
 		isPackage: Bool = false,
 		isSymbolicLink: Bool = false,
 		contentTypeIdentifier: String? = nil
@@ -59,6 +60,7 @@ class FileTree {
 					// info
 					currentNode.dateModified = dateModified
 					currentNode.fileURL = fileURL
+					currentNode.archiveEntryPath = archiveEntryPath
 					currentNode.isPackage = isPackage
 					currentNode.isSymbolicLink = isSymbolicLink
 					currentNode.contentTypeIdentifier = contentTypeIdentifier
@@ -70,6 +72,7 @@ class FileTree {
 						isDirectory: isDirectory,
 						dateModified: dateModified,
 						fileURL: fileURL,
+						archiveEntryPath: archiveEntryPath,
 						isPackage: isPackage,
 						isSymbolicLink: isSymbolicLink,
 						contentTypeIdentifier: contentTypeIdentifier
@@ -92,6 +95,7 @@ class FileTree {
 						isDirectory: true,
 						dateModified: nil,
 						fileURL: nil,
+						archiveEntryPath: nil,
 						isPackage: false,
 						isSymbolicLink: false,
 						contentTypeIdentifier: nil
@@ -108,6 +112,7 @@ class FileTree {
 		isDirectory: Bool,
 		dateModified: Date?,
 		fileURL: URL?,
+		archiveEntryPath: String?,
 		isPackage: Bool,
 		isSymbolicLink: Bool,
 		contentTypeIdentifier: String?
@@ -121,6 +126,7 @@ class FileTree {
 			isDirectory: isDirectory,
 			dateModified: dateModified,
 			fileURL: fileURL,
+			archiveEntryPath: archiveEntryPath,
 			isPackage: isPackage,
 			isSymbolicLink: isSymbolicLink,
 			contentTypeIdentifier: contentTypeIdentifier

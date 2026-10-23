@@ -78,6 +78,25 @@ class FileTreeTests: XCTestCase {
 		XCTAssertNotNil(fileTree?.root.children["A.txt"])
 	}
 
+	func testRecordsArchiveEntryPathsOnFileNodes() throws {
+		try fileTree?.addNode(
+			path: "example/hello.txt",
+			isDirectory: false,
+			size: 13,
+			dateModified: now,
+			archiveEntryPath: "example/hello.txt"
+		)
+
+		let node = assertNode(
+			parent: try XCTUnwrap(fileTree?.root.children.first?.value),
+			name: "hello.txt",
+			size: 13,
+			isDirectory: false,
+			dateModified: now
+		)
+		XCTAssertEqual(node.archiveEntryPath, "example/hello.txt")
+	}
+
 	// Tree:
 	//
 	// └── file

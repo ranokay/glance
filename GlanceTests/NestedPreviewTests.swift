@@ -113,6 +113,119 @@ final class NestedPreviewTests: XCTestCase {
 		}
 	}
 
+	func testArchivePreviewRecordsEntryPathsAndExtractsNestedFile() async throws {
+		let zipURL = try archiveFixture("example-root-directory.zip")
+		let generatedPreview = try await ZIPPreview().createPreviewVC(file: File(url: zipURL))
+		let outline = try XCTUnwrap(generatedPreview as? OutlinePreviewVC)
+		outline.loadViewIfNeeded()
+		let context = try XCTUnwrap(outline.archiveContext)
+		let node = try XCTUnwrap(
+			findNode(named: "hello-world.txt", in: outline.rootNodes)
+		)
+
+		XCTAssertEqual(node.archiveEntryPath, "example/hello-world.txt")
+
+		let result = try await DefaultNestedPreviewProvider().makeArchiveEntryPreview(
+			for: node,
+			context: context
+		)
+		let temporaryURL = try XCTUnwrap(result.temporaryFileURL)
+		XCTAssertEqual(
+			try String(contentsOf: temporaryURL, encoding: .utf8),
+			"Hello world!\n"
+		)
+		XCTAssertTrue(FileManager.default.fileExists(atPath: temporaryURL.path))
+		XCTAssertTrue(result.previewVC is WebPreviewVC)
+
+		try? FileManager.default.removeItem(at: temporaryURL.deletingLastPathComponent())
+	}
+
+	func testBackFromArchiveEntryDeletesItsTemporaryFile() async throws {
+		let zipURL = try archiveFixture("example-root-directory.zip")
+		let generatedPreview = try await ZIPPreview().createPreviewVC(file: File(url: zipURL))
+		let outline = try XCTUnwrap(generatedPreview as? OutlinePreviewVC)
+		outline.loadViewIfNeeded()
+		let node = try XCTUnwrap(
+			findNode(named: "hello-world.txt", in: outline.rootNodes)
+		)
+		let mainVC = MainVC()
+		mainVC.loadViewIfNeeded()
+		mainVC.installTopLevelPreview(outline, file: try File(url: zipURL))
+
+		mainVC.outlinePreview(outline, requestPreviewOf: node)
+		try await waitUntil { mainVC.previewNavigationStack.count == 2 }
+		let temporaryURL = try XCTUnwrap(mainVC.nestedTemporaryFileURL)
+		XCTAssertTrue(FileManager.default.fileExists(atPath: temporaryURL.path))
+
+		mainVC.showFolderPreview()
+
+		XCTAssertNil(mainVC.nestedTemporaryFileURL)
+		XCTAssertFalse(FileManager.default.fileExists(atPath: temporaryURL.path))
+	}
+
+	func testClearingArchivePreviewDeletesItsTemporaryFile() async throws {
+		let zipURL = try archiveFixture("example-root-directory.zip")
+		let generatedPreview = try await ZIPPreview().createPreviewVC(file: File(url: zipURL))
+		let outline = try XCTUnwrap(generatedPreview as? OutlinePreviewVC)
+		outline.loadViewIfNeeded()
+		let node = try XCTUnwrap(
+			findNode(named: "hello-world.txt", in: outline.rootNodes)
+		)
+		let mainVC = MainVC()
+		mainVC.loadViewIfNeeded()
+		mainVC.installTopLevelPreview(outline, file: try File(url: zipURL))
+
+		mainVC.outlinePreview(outline, requestPreviewOf: node)
+		try await waitUntil { mainVC.previewNavigationStack.count == 2 }
+		let temporaryURL = try XCTUnwrap(mainVC.nestedTemporaryFileURL)
+		XCTAssertTrue(FileManager.default.fileExists(atPath: temporaryURL.path))
+
+		mainVC.clearPreviewControllers()
+
+		XCTAssertNil(mainVC.nestedTemporaryFileURL)
+		XCTAssertFalse(FileManager.default.fileExists(atPath: temporaryURL.path))
+	}
+
+	func testArchiveEntryProviderRejectsDirectoriesLinksAndDeepNesting() async throws {
+		let zipURL = try archiveFixture("example-root-directory.zip")
+		let provider = DefaultNestedPreviewProvider()
+		let context = ArchivePreviewContext(fileURL: zipURL, format: .zip, depth: 0)
+		let directory = FileTreeNode(
+			name: "example",
+			size: 0,
+			isDirectory: true,
+			dateModified: nil,
+			archiveEntryPath: "example/"
+		)
+		let link = FileTreeNode(
+			name: "link.txt",
+			size: 0,
+			isDirectory: false,
+			dateModified: nil,
+			archiveEntryPath: "link.txt"
+		)
+		link.isSymbolicLink = true
+		let file = FileTreeNode(
+			name: "hello.txt",
+			size: 13,
+			isDirectory: false,
+			dateModified: nil,
+			archiveEntryPath: "hello.txt"
+		)
+		let deepContext = ArchivePreviewContext(fileURL: zipURL, format: .zip, depth: 3)
+
+		for node in [directory, link] {
+			do {
+				_ = try await provider.makeArchiveEntryPreview(for: node, context: context)
+				XCTFail("Expected \(node.name) to be rejected")
+			} catch {}
+		}
+		do {
+			_ = try await provider.makeArchiveEntryPreview(for: file, context: deepContext)
+			XCTFail("Expected depth 3 to be rejected")
+		} catch {}
+	}
+
 	func testOutlineSelectionTogglesDirectoriesPreviewsPackagesAndIgnoresSymlinks() throws {
 		let child = node(named: "child.txt", type: .plainText)
 		let directory = node(named: "Folder", type: .folder, isDirectory: true)
@@ -371,6 +484,29 @@ final class NestedPreviewTests: XCTestCase {
 		)
 		try contents.write(to: fileURL, atomically: true, encoding: .utf8)
 		return fileURL
+	}
+
+	private func archiveFixture(_ name: String) throws -> URL {
+		let url = URL(fileURLWithPath: #filePath)
+			.deletingLastPathComponent()
+			.appendingPathComponent("TestFiles/archives")
+			.appendingPathComponent(name)
+		guard FileManager.default.fileExists(atPath: url.path) else {
+			throw TestNestedPreviewError.timedOut
+		}
+		return url
+	}
+
+	private func findNode(named name: String, in nodes: [FileTreeNode]) -> FileTreeNode? {
+		for node in nodes {
+			if node.name == name {
+				return node
+			}
+			if let found = findNode(named: name, in: node.childrenList) {
+				return found
+			}
+		}
+		return nil
 	}
 
 	private func waitUntil(

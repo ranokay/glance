@@ -52,6 +52,8 @@ class FileTreeNode: NSObject {
 	@objc let isDirectory: Bool
 	@objc var dateModified: Date?
 	@objc var fileURL: URL?
+	/// Path of this node inside its containing archive, when the node is an archive entry.
+	@objc var archiveEntryPath: String?
 	@objc var isPackage: Bool
 	@objc var isSymbolicLink: Bool
 	@objc var contentTypeIdentifier: String?
@@ -114,6 +116,7 @@ class FileTreeNode: NSObject {
 		isDirectory: Bool,
 		dateModified: Date?,
 		fileURL: URL? = nil,
+		archiveEntryPath: String? = nil,
 		isPackage: Bool = false,
 		isSymbolicLink: Bool = false,
 		contentTypeIdentifier: String? = nil,
@@ -126,6 +129,7 @@ class FileTreeNode: NSObject {
 		self.isDirectory = isDirectory
 		self.dateModified = dateModified
 		self.fileURL = fileURL
+		self.archiveEntryPath = archiveEntryPath
 		self.isPackage = isPackage
 		self.isSymbolicLink = isSymbolicLink
 		self.contentTypeIdentifier = contentTypeIdentifier

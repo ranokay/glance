@@ -4,13 +4,20 @@ import GlanceKit
 class SevenZipPreview: Preview {
 	required init() {}
 
-	func createPreviewVC(file: File) async throws -> PreviewVC {
+	@MainActor
+	static func makePreview(file: File, depth: Int) async throws -> PreviewVC {
 		let fileURL = file.url
 		return try await ArchivePreview.makePreview(
 			file: file,
+			format: .sevenZip,
+			depth: depth,
 			scan: { try PreviewCoreBridge.scanSevenZip(at: fileURL) },
 			policy: .sevenZip
 		)
+	}
+
+	func createPreviewVC(file: File) async throws -> PreviewVC {
+		try await Self.makePreview(file: file, depth: 0)
 	}
 }
 

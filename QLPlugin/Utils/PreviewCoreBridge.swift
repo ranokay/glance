@@ -167,6 +167,30 @@ enum PreviewCoreBridge {
 		)
 	}
 
+	static func extractArchiveEntry(
+		at url: URL,
+		format: ArchiveEntryFormat,
+		entryPath: String,
+		maxBytes: Int
+	) throws -> Data {
+		let result = try url.withUnsafeFileSystemRepresentation { path in
+			guard let path else {
+				throw PreviewCoreBridgeError.invalidFileSystemPath
+			}
+			return entryPath.withCString { entry in
+				glance_extract_archive_entry(
+					UnsafeRawPointer(path).assumingMemoryBound(to: UInt8.self),
+					Int(strlen(path)),
+					UnsafeRawPointer(entry).assumingMemoryBound(to: UInt8.self),
+					entryPath.utf8.count,
+					format.rawValue,
+					maxBytes
+				)
+			}
+		}
+		return try consume(result)
+	}
+
 	static func scanRAR(at url: URL) throws -> ArchivePreviewPayload {
 		try decode(
 			ArchivePreviewPayload.self,

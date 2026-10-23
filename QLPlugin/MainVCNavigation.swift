@@ -5,19 +5,26 @@ extension MainVC {
 		clearPreviewControllers()
 		topLevelFile = file
 		previewNavigationStack = [previewVC]
-		if file.isDirectory, let outlinePreview = previewVC as? OutlinePreviewVC {
+		if let outlinePreview = previewVC as? OutlinePreviewVC,
+		   outlinePreview.isNestedPreviewBrowser
+		{
 			folderPreviewController = outlinePreview
 			outlinePreview.interactionDelegate = self
 		}
 		nestedOpenWithTargetURL = nil
+		nestedTemporaryFileURL = nil
 		bindStatus(to: previewVC)
 		show(previewVC)
 		updateOpenWithTarget()
 	}
 
-	func pushPreview(_ previewVC: PreviewVC, openWithTargetURL: URL?) {
+	func pushPreview(
+		_ previewVC: PreviewVC,
+		openWithTargetURL: URL?,
+		temporaryFileURL: URL? = nil
+	) {
 		if let outlinePreview = previewVC as? OutlinePreviewVC,
-		   outlinePreview.isDirectoryBrowser
+		   outlinePreview.isNestedPreviewBrowser
 		{
 			outlinePreview.interactionDelegate = self
 			folderPreviewController = outlinePreview
@@ -29,6 +36,7 @@ extension MainVC {
 		}
 		previewNavigationStack.append(previewVC)
 		nestedOpenWithTargetURL = openWithTargetURL
+		nestedTemporaryFileURL = temporaryFileURL
 		bindStatus(to: previewVC)
 		show(previewVC)
 		updateOpenWithTarget()
@@ -47,8 +55,9 @@ extension MainVC {
 		removedController.tearDown()
 		removedController.view.removeFromSuperview()
 		removedController.removeFromParent()
+		removeNestedTemporaryFile()
 		if let outlinePreview = previousController as? OutlinePreviewVC,
-		   outlinePreview.isDirectoryBrowser
+		   outlinePreview.isNestedPreviewBrowser
 		{
 			folderPreviewController = outlinePreview
 			nestedPreviewController = nil
@@ -81,9 +90,18 @@ extension MainVC {
 		topLevelFile = nil
 		selectedFolderNode = nil
 		nestedOpenWithTargetURL = nil
+		removeNestedTemporaryFile()
 		openWithTargetURL = nil
 		refreshOpenWithMenu()
 		setBaseStatus("")
 		updateChrome()
+	}
+
+	func removeNestedTemporaryFile() {
+		guard let nestedTemporaryFileURL else {
+			return
+		}
+		try? FileManager.default.removeItem(at: nestedTemporaryFileURL.deletingLastPathComponent())
+		self.nestedTemporaryFileURL = nil
 	}
 }

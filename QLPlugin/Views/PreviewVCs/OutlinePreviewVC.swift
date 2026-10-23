@@ -23,8 +23,13 @@ class OutlinePreviewVC: NSViewController, PreviewVC {
 	private let expandAll: Bool
 	private let showsFileThumbnails: Bool
 	private(set) var directoryURL: URL?
+	var archiveContext: ArchivePreviewContext?
 	var isDirectoryBrowser: Bool {
 		directoryURL != nil
+	}
+
+	var isNestedPreviewBrowser: Bool {
+		isDirectoryBrowser || archiveContext != nil
 	}
 
 	let directoryPageLoader: (any DirectoryPageLoading)?
@@ -256,7 +261,7 @@ class OutlinePreviewVC: NSViewController, PreviewVC {
 			return
 		}
 		switch node.role {
-			case .item where node.isDirectory && !node.isPackage:
+			case .item where node.isDirectory && !node.isPackage && node.fileURL != nil:
 				interactionDelegate?.outlinePreview(self, requestNavigationInto: node)
 			default:
 				_ = activateOutlineSelection()
