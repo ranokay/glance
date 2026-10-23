@@ -59,6 +59,22 @@ final class PlistCoverageTests: XCTestCase {
 		XCTAssertEqual(Set(supportedTypes).count, supportedTypes.count)
 	}
 
+	func testAppInfoPlistMarksTheAppAsMenuBarOnly() throws {
+		let plistURL = repositoryRoot()
+			.appendingPathComponent("Glance", isDirectory: true)
+			.appendingPathComponent("Info.plist")
+		let data = try Data(contentsOf: plistURL)
+		let plist = try XCTUnwrap(
+			try PropertyListSerialization.propertyList(
+				from: data,
+				options: [],
+				format: nil
+			) as? [String: Any]
+		)
+
+		XCTAssertEqual(plist["LSUIElement"] as? Bool, true)
+	}
+
 	func testAppInfoPlistRegistersOpenWithBridgeURLScheme() throws {
 		let plistURL = repositoryRoot()
 			.appendingPathComponent("Glance", isDirectory: true)

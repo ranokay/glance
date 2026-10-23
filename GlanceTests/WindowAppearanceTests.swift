@@ -321,11 +321,28 @@ final class WindowAppearanceTests: XCTestCase {
 		return directTextFields + view.subviews.flatMap(allTextFields(in:))
 	}
 
+	private func allButtons(in view: NSView) -> [NSButton] {
+		let directButtons = view.subviews.compactMap { $0 as? NSButton }
+		return directButtons + view.subviews.flatMap(allButtons(in:))
+	}
+
 	private func makeSettingsStore() throws -> (AppSettingsStore, String) {
 		let suiteName = "GlanceTests.Settings.\(UUID().uuidString)"
 		let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
 		defaults.removePersistentDomain(forName: suiteName)
 		return (AppSettingsStore(defaults: defaults), suiteName)
+	}
+
+	func testSettingsDoesNotOfferDockIconToggle() throws {
+		let store = try makeSettingsStore().0
+		let controller = SettingsWC(settingsStore: store, fontFamilies: [])
+		controller.loadWindow()
+		let contentView = try XCTUnwrap(controller.window?.contentView)
+		let labels = allTextFields(in: contentView).map(\.stringValue)
+		let buttons = allButtons(in: contentView).map(\.title)
+
+		XCTAssertFalse(labels.contains { $0.localizedCaseInsensitiveContains("Dock icon") })
+		XCTAssertFalse(buttons.contains { $0.localizedCaseInsensitiveContains("Dock icon") })
 	}
 
 	func testSettingsWindowIsResizableWithSaneMinimumSize() throws {

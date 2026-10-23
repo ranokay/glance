@@ -100,7 +100,6 @@ public struct AppSettingsStore {
 		standardDefaults: .standard
 	)
 
-	private static let hideDockIconKey = "hideDockIcon"
 	public static let previewFontFamilyKey = "previewFontFamily"
 	public static let previewFontSizeKey = "previewFontSize"
 	public static let previewLineWrappingKey = "previewLineWrapping"
@@ -108,7 +107,6 @@ public struct AppSettingsStore {
 	// Legacy seed for Sparkle's own persisted check preference; Settings
 	// writes go to Sparkle from now on and this key is only read once.
 	public static let autoUpdateCheckEnabledKey = "autoUpdateCheckEnabled"
-	private static let standardDefaultsMigrationKey = "didMigrateStandardDefaults"
 	private static let previewDefaultsMigrationKey = "didMigratePreviewDefaults"
 
 	private let defaults: UserDefaults
@@ -117,13 +115,6 @@ public struct AppSettingsStore {
 	public init(defaults: UserDefaults, standardDefaults: UserDefaults? = nil) {
 		self.defaults = defaults
 		self.standardDefaults = standardDefaults
-	}
-
-	public var hideDockIcon: Bool {
-		get { defaults.bool(forKey: Self.hideDockIconKey) }
-		nonmutating set {
-			defaults.set(newValue, forKey: Self.hideDockIconKey)
-		}
 	}
 
 	public var previewFontFamily: String? {
@@ -202,20 +193,6 @@ public struct AppSettingsStore {
 	public func migrateStandardDefaultsIfNeeded() {
 		guard let standardDefaults else {
 			return
-		}
-
-		if !defaults.bool(forKey: Self.standardDefaultsMigrationKey) {
-			if
-				defaults.object(forKey: Self.hideDockIconKey) == nil,
-				standardDefaults.object(forKey: Self.hideDockIconKey) != nil
-			{
-				defaults.set(
-					standardDefaults.bool(forKey: Self.hideDockIconKey),
-					forKey: Self.hideDockIconKey
-				)
-			}
-
-			defaults.set(true, forKey: Self.standardDefaultsMigrationKey)
 		}
 
 		guard !defaults.bool(forKey: Self.previewDefaultsMigrationKey) else {

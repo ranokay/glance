@@ -3,8 +3,7 @@ import GlanceKit
 
 @main
 @MainActor
-class AppDelegate: NSObject, NSApplicationDelegate, DockIconVisibilityUpdating {
-	private var mainWindowController: NSWindowController?
+class AppDelegate: NSObject, NSApplicationDelegate {
 	private var statusItem: NSStatusItem?
 	private let openWithBridgeServer = OpenWithBridgeServer()
 	private let previewSettingsServer = PreviewSettingsServer()
@@ -16,23 +15,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, DockIconVisibilityUpdating {
 
 	func applicationDidFinishLaunching(_: Notification) {
 		setUpStatusItem()
-		cacheMainWindowController()
 		AppSettingsStore.shared.migrateStandardDefaultsIfNeeded()
-
-		NotificationCenter.default.addObserver(
-			self,
-			selector: #selector(windowDidBecomeMain),
-			name: NSWindow.didBecomeMainNotification,
-			object: nil
-		)
-		NotificationCenter.default.addObserver(
-			self,
-			selector: #selector(windowWillClose),
-			name: NSWindow.willCloseNotification,
-			object: nil
-		)
-
-		updateDockIconVisibility()
 		SparkleUpdateCenter.shared.start(
 			autoChecksEnabled: AppSettingsStore.shared.autoUpdateCheckEnabled
 		)
@@ -64,8 +47,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, DockIconVisibilityUpdating {
 	private func makeStatusMenu() -> NSMenu {
 		let menu = NSMenu()
 		menu.addItem(NSMenuItem(
-			title: "Open Glance",
-			action: #selector(openMainWindow(_:)),
+			title: "About Glance",
+			action: #selector(openAbout(_:)),
 			keyEquivalent: ""
 		))
 		menu.addItem(NSMenuItem(
@@ -103,21 +86,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, DockIconVisibilityUpdating {
 	}
 
 	@objc
-	private func openMainWindow(_: Any?) {
+	private func openAbout(_: Any?) {
 		NSApp.activate()
-
-		if let window = existingMainWindow() {
-			window.deminiaturize(nil)
-			window.makeKeyAndOrderFront(nil)
-			return
-		}
-
-		let storyboard = NSStoryboard(name: "Main", bundle: nil)
-		if let windowController = storyboard.instantiateInitialController() as? NSWindowController {
-			mainWindowController = windowController
-			windowController.showWindow(nil)
-			windowController.window?.makeKeyAndOrderFront(nil)
-		}
+		NSApp.orderFrontStandardAboutPanel(nil)
 	}
 
 	@objc
@@ -161,53 +132,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, DockIconVisibilityUpdating {
 		NSApp.terminate(nil)
 	}
 
-	private func existingMainWindow() -> NSWindow? {
-		if let window = mainWindowController?.window {
-			return window
-		}
-
-		cacheMainWindowController()
-		return mainWindowController?.window
-	}
-
-	private func cacheMainWindowController() {
-		guard mainWindowController?.window == nil else {
-			return
-		}
-
-		mainWindowController = NSApp.windows.first {
-			$0.contentViewController is ViewController
-		}?.windowController
-	}
-
-	// MARK: - Dock Icon Visibility
-
-	/// Shows the dock icon when any window is visible, hides it when all windows
-	/// are closed (only when the "Hide Dock icon" setting is enabled).
-	func updateDockIconVisibility() {
-		guard AppSettingsStore.shared.hideDockIcon else {
-			NSApp.setActivationPolicy(.regular)
-			return
-		}
-
-		let hasVisibleWindows = NSApp.windows.contains {
-			$0.isVisible && !($0.className.contains("NSStatusBar"))
-		}
-		NSApp.setActivationPolicy(hasVisibleWindows ? .regular : .accessory)
-	}
-
-	@objc
-	private func windowDidBecomeMain(_: Notification) {
-		updateDockIconVisibility()
-	}
-
-	@objc
-	private func windowWillClose(_: Notification) {
-		// Defer so the closing window is no longer visible when we check
-		Task { @MainActor [weak self] in
-			self?.updateDockIconVisibility()
-		}
-	}
 }
 
 extension AppDelegate: NSMenuItemValidation {
