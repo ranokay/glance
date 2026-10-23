@@ -26,7 +26,7 @@ source block remains visible.
 ## Release-size impact
 
 Measured locally at this branch's release build (macOS 27.2, Xcode 27.0,
-arm64): `Glance.app` is 16,231,707 bytes and `QLPlugin.appex` is 12,604,742
+arm64): `Glance.app` is 16,042,603 bytes and `QLPlugin.appex` is 12,415,638
 bytes. The runtime swap's direct contribution is the 2,866,508-byte resource
 reduction above; the rest of the bundle includes the XLSX and archive-entry
 preview code on this branch.
