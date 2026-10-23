@@ -601,6 +601,18 @@ mod tests {
     }
 
     #[test]
+    fn normalizes_rar_paths_and_detects_rar4_links() {
+        assert_eq!(
+            normalize_path(".\\nested\\file.txt").unwrap(),
+            "nested/file.txt"
+        );
+        assert_eq!(normalize_path("./file.txt").unwrap(), "file.txt");
+        assert!(is_rar4_symlink(3, 0o120777));
+        assert!(!is_rar4_symlink(3, 0o100644));
+        assert!(!is_rar4_symlink(2, 0o120777));
+    }
+
+    #[test]
     fn converts_available_rar4_dos_timestamps() {
         let timestamp = (44 << 25) | (9 << 21) | (22 << 16) | (14 << 11) | (37 << 5) | 15;
         assert!(dos_datetime_to_unix(timestamp).is_some());

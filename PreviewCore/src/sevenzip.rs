@@ -301,6 +301,17 @@ mod tests {
     }
 
     #[test]
+    fn recognizes_unix_symlink_attributes() {
+        let mut entry = sevenz_rust2::ArchiveEntry::new_file("link");
+        entry.has_windows_attributes = true;
+        entry.windows_attributes = 0x8000 | (0o120777 << 16);
+        assert!(is_seven_zip_symlink(&entry));
+
+        entry.windows_attributes = 0x8000 | (0o100644 << 16);
+        assert!(!is_seven_zip_symlink(&entry));
+    }
+
+    #[test]
     fn rejects_encrypted_archives() {
         assert!(matches!(
             scan_seven_zip(&fixture("encrypted.7z")),

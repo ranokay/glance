@@ -139,6 +139,10 @@ mod tests {
 
     #[test]
     fn rejects_zip_symlink_entries() {
+        let payload = crate::zip::scan_zip(&fixture("symlink.zip")).unwrap();
+        assert!(payload.entries.iter().any(|entry| {
+            entry.path == "link" && entry.entry_type == crate::model::ArchiveEntryType::Other
+        }));
         assert!(
             extract_archive_entry(&fixture("symlink.zip"), "link", ArchiveFormat::Zip, 1_024,)
                 .is_err()
