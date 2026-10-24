@@ -41,6 +41,7 @@ struct SQLitePreviewTable: Decodable {
 	let name: String
 	let columns: [SQLitePreviewColumn]
 	let columnsTruncated: Bool
+	let virtualColumnsOmitted: Bool
 	let rows: [[SQLitePreviewCell]]
 	let offset: UInt64
 	let hasMore: Bool
@@ -51,6 +52,7 @@ struct SQLitePreviewTable: Decodable {
 		case name
 		case columns
 		case columnsTruncated = "columns_truncated"
+		case virtualColumnsOmitted = "virtual_columns_omitted"
 		case rows
 		case offset
 		case hasMore = "has_more"

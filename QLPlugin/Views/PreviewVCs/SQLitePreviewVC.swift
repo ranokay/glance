@@ -20,6 +20,12 @@ final class SQLitePreviewVC: NSViewController, PreviewVC, PreviewStatusProviding
 	private var isLoading = false
 	private var loadFailed = false
 
+	private enum PageIntent {
+		case selectTable
+		case next(from: UInt64)
+		case previous
+	}
+
 	var previewStatusText: String {
 		guard let table = currentTable else {
 			return "No tables"
@@ -157,16 +163,19 @@ final class SQLitePreviewVC: NSViewController, PreviewVC, PreviewStatusProviding
 		guard tables.indices.contains(sender.indexOfSelectedItem) else {
 			return
 		}
-		offsetHistory.removeAll()
-		requestPage(table: tables[sender.indexOfSelectedItem], offset: 0)
+		requestPage(
+			table: tables[sender.indexOfSelectedItem],
+			offset: 0,
+			intent: .selectTable,
+		)
 	}
 
 	@objc
 	private func previousPage(_: NSButton) {
-		guard let offset = offsetHistory.popLast() else {
+		guard let offset = offsetHistory.last else {
 			return
 		}
-		requestPage(table: currentTable?.name, offset: offset)
+		requestPage(table: currentTable?.name, offset: offset, intent: .previous)
 	}
 
 	@objc
@@ -174,20 +183,31 @@ final class SQLitePreviewVC: NSViewController, PreviewVC, PreviewStatusProviding
 		guard let table = currentTable, table.hasMore, !table.rows.isEmpty else {
 			return
 		}
-		offsetHistory.append(table.offset)
 		requestPage(
 			table: table.name,
 			offset: table.offset + UInt64(table.rows.count),
+			intent: .next(from: table.offset),
 		)
 	}
 
-	private func requestPage(table: String?, offset: UInt64) {
+	private func requestPage(table: String?, offset: UInt64, intent: PageIntent) {
 		Task { @MainActor in
-			await loadPage(table: table, offset: offset)
+			guard await loadPage(table: table, offset: offset) else {
+				return
+			}
+			switch intent {
+				case .selectTable:
+					offsetHistory.removeAll()
+				case let .next(from):
+					offsetHistory.append(from)
+				case .previous:
+					_ = offsetHistory.popLast()
+			}
+			updateControls()
 		}
 	}
 
-	private func loadPage(table: String?, offset: UInt64) async {
+	private func loadPage(table: String?, offset: UInt64) async -> Bool {
 		loadGeneration += 1
 		let generation = loadGeneration
 		isLoading = true
@@ -207,19 +227,24 @@ final class SQLitePreviewVC: NSViewController, PreviewVC, PreviewStatusProviding
 			}
 			try Task.checkCancellation()
 			guard generation == loadGeneration else {
-				return
+				return false
 			}
 			apply(payload)
+			return true
 		} catch is CancellationError {
-			return
+			return false
 		} catch {
 			guard generation == loadGeneration else {
-				return
+				return false
 			}
 			Log.general.error(
 				"Could not read SQLite preview for \(fileURL.path, privacy: .private): \(error.localizedDescription, privacy: .private)",
 			)
 			loadFailed = true
+			if let name = currentTable?.name {
+				selectTable(named: name)
+			}
+			return false
 		}
 	}
 
@@ -325,26 +350,27 @@ final class SQLitePreviewVC: NSViewController, PreviewVC, PreviewStatusProviding
 		} else {
 			pageLabel.stringValue = ""
 		}
-		updateTruncationNotice()
+		updateFooterNotice()
 	}
 
 	private func rowRangeText(for table: SQLitePreviewTable) -> String {
 		"\(table.offset + 1)–\(table.offset + UInt64(table.rows.count))"
 	}
 
-	private func updateTruncationNotice() {
+	private func updateFooterNotice() {
 		guard let table = currentTable,
 		      table.pageTruncated || table.columnsTruncated || table.valuesTruncated
+		      || table.virtualColumnsOmitted
 		else {
 			noticeLabel.stringValue = ""
 			noticeLabel.isHidden = true
 			return
 		}
-		noticeLabel.stringValue = truncationNotice(for: table)
+		noticeLabel.stringValue = footerNotice(for: table)
 		noticeLabel.isHidden = false
 	}
 
-	private func truncationNotice(for table: SQLitePreviewTable) -> String {
+	private func footerNotice(for table: SQLitePreviewTable) -> String {
 		var sentences = [String]()
 		if table.pageTruncated {
 			sentences.append("Showing \(table.rows.count) rows on this page.")
@@ -354,6 +380,9 @@ final class SQLitePreviewVC: NSViewController, PreviewVC, PreviewStatusProviding
 		}
 		if table.valuesTruncated {
 			sentences.append("Long values are clipped.")
+		}
+		if table.virtualColumnsOmitted {
+			sentences.append("Virtual generated columns are omitted.")
 		}
 		return sentences.joined(separator: " ")
 	}

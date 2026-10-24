@@ -3,9 +3,9 @@ use serde::Serialize;
 use std::ffi::{CStr, CString, c_char, c_int, c_uchar};
 use std::fmt::Write as _;
 use std::fs;
-use std::io::Read;
+use std::io::{Read, Write};
 use std::os::unix::ffi::OsStrExt;
-use std::os::unix::fs::PermissionsExt;
+use std::os::unix::fs::{MetadataExt, PermissionsExt};
 use std::path::{Path, PathBuf};
 use std::ptr;
 use std::slice;
@@ -17,6 +17,7 @@ const SQLITE_DONE: c_int = 101;
 const SQLITE_OPEN_READONLY: c_int = 0x0000_0001;
 const SQLITE_OPEN_READWRITE: c_int = 0x0000_0002;
 const SQLITE_OPEN_URI: c_int = 0x0000_0040;
+const SQLITE_LIMIT_LENGTH: c_int = 0;
 
 const SQLITE_HEADER: &[u8; 16] = b"SQLite format 3\0";
 
@@ -28,6 +29,12 @@ const PAGE_BYTES: usize = 1_000_000;
 const TABLE_NAME_BYTES: usize = 64 * 1_024;
 const LABEL_BYTES: usize = 256;
 const COPY_BYTES: u64 = 512 * 1_024 * 1_024;
+const COPY_ATTEMPTS: usize = 3;
+
+/// Per-value memory bound for SQLite itself. `substr()` still materializes the
+/// whole value before slicing it, so this stops a single crafted cell or
+/// generated-column expression from allocating unbounded memory.
+const SQL_LENGTH_LIMIT: c_int = 4 * 1_024 * 1_024;
 
 #[derive(Debug, PartialEq, Serialize)]
 pub(crate) struct SqlitePayload {
@@ -41,6 +48,7 @@ pub(crate) struct SqliteTable {
     pub name: String,
     pub columns: Vec<SqliteColumn>,
     pub columns_truncated: bool,
+    pub virtual_columns_omitted: bool,
     pub rows: Vec<Vec<SqliteCell>>,
     pub offset: u64,
     pub has_more: bool,
@@ -195,19 +203,30 @@ impl Database {
     fn open(path: &Path, limits: &Limits) -> Result<Self, CoreError> {
         // A WAL sidecar holds committed data, so an immutable read of the main
         // file alone would be stale. Copy the database and its WAL into the
-        // temporary directory and let SQLite recover the copy there.
-        if has_wal_sidecar(path) {
-            let temporary = copy_with_wal(path, limits.max_copy_bytes)?;
-            let connection = open_connection(&temporary.database_path, false)?;
-            return Ok(Self {
-                connection,
-                _temporary: Some(temporary),
-            });
+        // temporary directory and let SQLite recover the copy there. A live
+        // checkpoint can change both files between the copies, so retry the
+        // whole decision instead of pairing mismatched versions.
+        for _ in 0..COPY_ATTEMPTS {
+            if !has_wal_sidecar(path) {
+                return Ok(Self {
+                    connection: open_connection(path, true)?,
+                    _temporary: None,
+                });
+            }
+            match copy_with_wal(path, limits.max_copy_bytes)? {
+                Some(temporary) => {
+                    let connection = open_connection(&temporary.database_path, false)?;
+                    return Ok(Self {
+                        connection,
+                        _temporary: Some(temporary),
+                    });
+                }
+                None => continue,
+            }
         }
-        Ok(Self {
-            connection: open_connection(path, true)?,
-            _temporary: None,
-        })
+        Err(CoreError::parse(
+            "SQLite database changed while preparing the preview; try again",
+        ))
     }
 }
 
@@ -232,48 +251,161 @@ impl Drop for TemporaryCopy {
     }
 }
 
-fn copy_with_wal(path: &Path, max_copy_bytes: u64) -> Result<TemporaryCopy, CoreError> {
+fn copy_with_wal(path: &Path, max_copy_bytes: u64) -> Result<Option<TemporaryCopy>, CoreError> {
     let wal_path = sidecar_path(path, "-wal");
-    let total_bytes = [path, wal_path.as_path()]
-        .into_iter()
-        .filter_map(|candidate| fs::metadata(candidate).ok())
-        .try_fold(0_u64, |total, metadata| total.checked_add(metadata.len()))
-        .ok_or_else(|| CoreError::limit("SQLite temporary copy size overflow"))?;
-    if total_bytes > max_copy_bytes {
-        return Err(CoreError::limit(format!(
-            "SQLite database with a WAL sidecar exceeds the {} MB preview limit",
-            max_copy_bytes / (1_024 * 1_024)
-        )));
+    let Some(before) = SnapshotSignature::read(path)? else {
+        return Ok(None);
+    };
+    if before.total_bytes() > max_copy_bytes {
+        return Err(copy_limit_error(max_copy_bytes));
     }
 
     let directory = create_temporary_directory()?;
-    let file_name = path
-        .file_name()
-        .ok_or_else(|| CoreError::invalid("SQLite database path has no file name"))?;
-    let database_path = directory.join(file_name);
-    let copied = (|| -> std::io::Result<()> {
-        fs::copy(path, &database_path)?;
-        let wal_copy = sidecar_path(&database_path, "-wal");
-        fs::copy(&wal_path, &wal_copy)?;
-        // `fs::copy` preserves a read-only source mode, but SQLite needs to
-        // recover the WAL in the copy. Only the copies change permissions.
-        for candidate in [&database_path, &wal_copy] {
-            let mut permissions = fs::metadata(candidate)?.permissions();
-            permissions.set_mode(0o600);
-            fs::set_permissions(candidate, permissions)?;
+    let database_path = match copy_snapshot(path, &wal_path, &directory, max_copy_bytes) {
+        Ok(database_path) => database_path,
+        Err(CopyFailure::Changed) => {
+            let _ = fs::remove_dir_all(&directory);
+            return Ok(None);
         }
-        Ok(())
-    })();
-    if let Err(error) = copied {
+        Err(CopyFailure::Budget) => {
+            let _ = fs::remove_dir_all(&directory);
+            return Err(copy_limit_error(max_copy_bytes));
+        }
+        Err(CopyFailure::Io(error)) => {
+            let _ = fs::remove_dir_all(&directory);
+            return Err(CoreError::io(format!(
+                "Could not copy SQLite database for preview: {error}"
+            )));
+        }
+    };
+
+    // A checkpoint can rewrite the main file or reset the WAL while the copy
+    // is in flight. Only keep the copy when both files are unchanged.
+    if SnapshotSignature::read(path)?.as_ref() != Some(&before) {
         let _ = fs::remove_dir_all(&directory);
-        return Err(CoreError::io(format!(
-            "Could not copy SQLite database for preview: {error}"
-        )));
+        return Ok(None);
     }
-    Ok(TemporaryCopy {
+    Ok(Some(TemporaryCopy {
         directory,
         database_path,
-    })
+    }))
+}
+
+fn copy_limit_error(max_copy_bytes: u64) -> CoreError {
+    CoreError::limit(format!(
+        "SQLite database with a WAL sidecar exceeds the {} MB preview limit",
+        max_copy_bytes / (1_024 * 1_024)
+    ))
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct FileSignature {
+    length: u64,
+    modified: Option<SystemTime>,
+    inode: u64,
+}
+
+impl FileSignature {
+    fn read(path: &Path) -> std::io::Result<Self> {
+        let metadata = fs::metadata(path)?;
+        Ok(Self {
+            length: metadata.len(),
+            modified: metadata.modified().ok(),
+            inode: metadata.ino(),
+        })
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct SnapshotSignature {
+    database: FileSignature,
+    wal: FileSignature,
+}
+
+impl SnapshotSignature {
+    fn read(path: &Path) -> Result<Option<Self>, CoreError> {
+        let database = FileSignature::read(path).map_err(|error| {
+            CoreError::io(format!("Could not inspect SQLite database: {error}"))
+        })?;
+        let wal = match FileSignature::read(&sidecar_path(path, "-wal")) {
+            Ok(wal) => wal,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+            Err(error) => {
+                return Err(CoreError::io(format!(
+                    "Could not inspect SQLite WAL: {error}"
+                )));
+            }
+        };
+        Ok(Some(Self { database, wal }))
+    }
+
+    fn total_bytes(&self) -> u64 {
+        self.database.length.saturating_add(self.wal.length)
+    }
+}
+
+enum CopyFailure {
+    Changed,
+    Budget,
+    Io(std::io::Error),
+}
+
+fn copy_snapshot(
+    path: &Path,
+    wal_path: &Path,
+    directory: &Path,
+    max_bytes: u64,
+) -> Result<PathBuf, CopyFailure> {
+    let file_name = path.file_name().ok_or_else(|| {
+        CopyFailure::Io(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "SQLite database path has no file name",
+        ))
+    })?;
+    let database_path = directory.join(file_name);
+    let mut remaining = max_bytes;
+    copy_bounded(path, &database_path, &mut remaining)?;
+    let wal_copy = sidecar_path(&database_path, "-wal");
+    copy_bounded(wal_path, &wal_copy, &mut remaining)?;
+
+    // A source may be read-only, but SQLite needs to recover the WAL in the
+    // copy. Only the copies change permissions.
+    for candidate in [&database_path, &wal_copy] {
+        let mut permissions = fs::metadata(candidate)
+            .map_err(CopyFailure::Io)?
+            .permissions();
+        permissions.set_mode(0o600);
+        fs::set_permissions(candidate, permissions).map_err(CopyFailure::Io)?;
+    }
+    Ok(database_path)
+}
+
+/// Copies with a shared byte budget so a file that grows after the initial
+/// size check cannot consume more temporary space than advertised.
+fn copy_bounded(source: &Path, target: &Path, remaining: &mut u64) -> Result<(), CopyFailure> {
+    let mut input = fs::File::open(source).map_err(|error| {
+        if error.kind() == std::io::ErrorKind::NotFound {
+            CopyFailure::Changed
+        } else {
+            CopyFailure::Io(error)
+        }
+    })?;
+    let mut output = fs::File::create(target).map_err(CopyFailure::Io)?;
+    let mut buffer = vec![0_u8; 64 * 1_024];
+    loop {
+        let read = input.read(&mut buffer).map_err(CopyFailure::Io)?;
+        if read == 0 {
+            return Ok(());
+        }
+        let read = read as u64;
+        if read > *remaining {
+            return Err(CopyFailure::Budget);
+        }
+        output
+            .write_all(&buffer[..read as usize])
+            .map_err(CopyFailure::Io)?;
+        *remaining -= read;
+    }
 }
 
 fn create_temporary_directory() -> Result<PathBuf, CoreError> {
@@ -325,6 +457,9 @@ fn open_connection(path: &Path, immutable: bool) -> Result<Connection, CoreError
         return Err(CoreError::parse(format!(
             "Could not open SQLite database: {message}"
         )));
+    }
+    unsafe {
+        sqlite3_limit(handle, SQLITE_LIMIT_LENGTH, SQL_LENGTH_LIMIT);
     }
     Ok(Connection(handle))
 }
@@ -383,6 +518,56 @@ fn read_tables(database: &Connection, limits: &Limits) -> Result<(Vec<String>, b
     Ok((tables, truncated))
 }
 
+fn read_columns(
+    database: &Connection,
+    table: &str,
+    limits: &Limits,
+) -> Result<(Vec<SqliteColumn>, Vec<String>, bool, bool), CoreError> {
+    let statement = prepare(
+        database,
+        &format!("PRAGMA table_xinfo({})", quote_identifier(table)),
+    )?;
+    let mut columns = Vec::new();
+    let mut column_names = Vec::new();
+    let mut truncated = false;
+    let mut virtual_columns_omitted = false;
+    while let SQLITE_ROW = step(database, &statement)? {
+        let position = unsafe { sqlite3_column_int64(statement.0, 0) };
+        let raw_name = column_text(&statement, 1);
+        let hidden = unsafe { sqlite3_column_int64(statement.0, 6) };
+        // Virtual generated columns evaluate database-defined expressions on
+        // every read, so they are omitted before they can run. Stored
+        // generated columns are ordinary record values and remain available.
+        if hidden == 1 || hidden == 2 {
+            virtual_columns_omitted |= hidden == 2;
+            continue;
+        }
+        if columns.len() >= limits.max_columns {
+            truncated = true;
+            continue;
+        }
+        let display_name = if raw_name.is_empty() {
+            format!("unnamed column {}", position + 1)
+        } else {
+            raw_name.clone()
+        };
+        let declared_type = {
+            let value = column_text(&statement, 2);
+            if value.is_empty() {
+                None
+            } else {
+                Some(clip_label(&value))
+            }
+        };
+        columns.push(SqliteColumn {
+            name: clip_label(&display_name),
+            declared_type,
+        });
+        column_names.push(raw_name);
+    }
+    Ok((columns, column_names, truncated, virtual_columns_omitted))
+}
+
 fn read_table(
     database: &Connection,
     table: &str,
@@ -390,24 +575,9 @@ fn read_table(
     limits: &Limits,
 ) -> Result<SqliteTable, CoreError> {
     let quoted_table = quote_identifier(table);
-    let meta = prepare(database, &format!("SELECT * FROM {quoted_table} LIMIT 0"))?;
-    let total_columns = unsafe { sqlite3_column_count(meta.0) }.max(0) as usize;
-    let retained_columns = total_columns.min(limits.max_columns);
-    let mut columns = Vec::with_capacity(retained_columns);
-    let mut column_names = Vec::with_capacity(retained_columns);
-    for index in 0..retained_columns {
-        let index = c_int::try_from(index).unwrap_or(c_int::MAX);
-        let mut name = column_name(&meta, index);
-        if name.is_empty() {
-            name = format!("column {}", index + 1);
-        }
-        let declared_type = column_decltype(&meta, index);
-        columns.push(SqliteColumn {
-            name: clip_label(&name),
-            declared_type: declared_type.as_deref().map(clip_label),
-        });
-        column_names.push(name);
-    }
+    let (columns, column_names, columns_truncated, virtual_columns_omitted) =
+        read_columns(database, table, limits)?;
+    let retained_columns = columns.len();
 
     let mut values_truncated = false;
     let mut rows = Vec::new();
@@ -497,7 +667,8 @@ fn read_table(
     Ok(SqliteTable {
         name: table.to_owned(),
         columns,
-        columns_truncated: total_columns > retained_columns,
+        columns_truncated,
+        virtual_columns_omitted,
         rows,
         offset,
         has_more,
@@ -617,16 +788,6 @@ fn step(database: &Connection, statement: &Statement) -> Result<c_int, CoreError
     Err(database.read_error())
 }
 
-fn column_name(statement: &Statement, index: c_int) -> String {
-    let pointer = unsafe { sqlite3_column_name(statement.0, index) };
-    if pointer.is_null() {
-        return String::new();
-    }
-    unsafe { CStr::from_ptr(pointer) }
-        .to_string_lossy()
-        .into_owned()
-}
-
 fn column_text(statement: &Statement, index: c_int) -> String {
     let pointer = unsafe { sqlite3_column_text(statement.0, index) };
     if pointer.is_null() {
@@ -635,17 +796,6 @@ fn column_text(statement: &Statement, index: c_int) -> String {
     let length = unsafe { sqlite3_column_bytes(statement.0, index) }.max(0) as usize;
     let bytes = unsafe { slice::from_raw_parts(pointer, length) };
     String::from_utf8_lossy(bytes).into_owned()
-}
-
-fn column_decltype(statement: &Statement, index: c_int) -> Option<String> {
-    let pointer = unsafe { sqlite3_column_decltype(statement.0, index) };
-    if pointer.is_null() {
-        return None;
-    }
-    let value = unsafe { CStr::from_ptr(pointer) }
-        .to_string_lossy()
-        .into_owned();
-    if value.is_empty() { None } else { Some(value) }
 }
 
 fn error_message(database: *mut Sqlite3) -> String {
@@ -707,6 +857,7 @@ unsafe extern "C" {
     ) -> c_int;
     fn sqlite3_close_v2(database: *mut Sqlite3) -> c_int;
     fn sqlite3_errmsg(database: *mut Sqlite3) -> *const c_char;
+    fn sqlite3_limit(database: *mut Sqlite3, id: c_int, new_value: c_int) -> c_int;
     fn sqlite3_prepare_v2(
         database: *mut Sqlite3,
         sql: *const c_char,
@@ -717,9 +868,6 @@ unsafe extern "C" {
     fn sqlite3_step(statement: *mut Sqlite3Stmt) -> c_int;
     fn sqlite3_finalize(statement: *mut Sqlite3Stmt) -> c_int;
     fn sqlite3_bind_int64(statement: *mut Sqlite3Stmt, index: c_int, value: i64) -> c_int;
-    fn sqlite3_column_count(statement: *mut Sqlite3Stmt) -> c_int;
-    fn sqlite3_column_name(statement: *mut Sqlite3Stmt, index: c_int) -> *const c_char;
-    fn sqlite3_column_decltype(statement: *mut Sqlite3Stmt, index: c_int) -> *const c_char;
     fn sqlite3_column_text(statement: *mut Sqlite3Stmt, index: c_int) -> *const c_uchar;
     fn sqlite3_column_bytes(statement: *mut Sqlite3Stmt, index: c_int) -> c_int;
     fn sqlite3_column_int64(statement: *mut Sqlite3Stmt, index: c_int) -> i64;
@@ -775,7 +923,9 @@ mod tests {
             payload.tables,
             [
                 "big",
+                "empty_names",
                 "empty_table",
+                "generated_columns",
                 "long_values",
                 "people",
                 "quoted",
@@ -826,6 +976,37 @@ mod tests {
         let lin = &table.rows[2];
         assert_eq!(lin[2].kind, SqliteCellKind::Null);
         assert_eq!(lin[3].text, "line one\nline two");
+    }
+
+    #[test]
+    fn keeps_raw_names_for_empty_columns() {
+        let table = parse_sqlite(&fixture(), Some("empty_names"), 0)
+            .unwrap()
+            .table
+            .unwrap();
+        assert_eq!(table.columns[0].name, "unnamed column 1");
+        assert_eq!(table.columns[1].name, "column 1");
+        assert_eq!(table.rows[0][0].text, "empty-name-value");
+        assert_eq!(table.rows[0][1].text, "real-column-1");
+    }
+
+    #[test]
+    fn omits_virtual_generated_columns_and_keeps_stored_ones() {
+        let table = parse_sqlite(&fixture(), Some("generated_columns"), 0)
+            .unwrap()
+            .table
+            .unwrap();
+        assert_eq!(
+            table
+                .columns
+                .iter()
+                .map(|column| column.name.as_str())
+                .collect::<Vec<_>>(),
+            ["id", "base", "stored_text"]
+        );
+        assert!(table.virtual_columns_omitted);
+        assert!(!table.columns_truncated);
+        assert_eq!(table.rows[0][2].text, "ALPHA");
     }
 
     #[test]
@@ -1025,6 +1206,58 @@ mod tests {
         assert_eq!(table.rows[0][1].text, "read-only");
 
         drop(connection);
+        fs::remove_dir_all(directory).unwrap();
+    }
+
+    #[test]
+    fn rejects_cells_over_the_sqlite_length_limit() {
+        let directory = temporary_directory("length-limit");
+        let path = directory.join("large.sqlite");
+        let connection = open_write(&path);
+        execute(&connection, "CREATE TABLE large (value TEXT)");
+        execute(
+            &connection,
+            "INSERT INTO large VALUES (printf('%.*c', 5000000, 'x'))",
+        );
+        drop(connection);
+
+        let error = parse_sqlite(&path, None, 0).unwrap_err();
+        assert!(matches!(error, CoreError::Parse(_)));
+        assert!(error.to_string().contains("too big"));
+
+        fs::remove_dir_all(directory).unwrap();
+    }
+
+    #[test]
+    fn bounded_copy_stops_at_the_shared_budget() {
+        let directory = temporary_directory("copy-budget");
+        let source = directory.join("source.bin");
+        fs::write(&source, vec![0_u8; 128 * 1_024]).unwrap();
+        let target = directory.join("target.bin");
+        let mut budget = 100 * 1_024;
+
+        assert!(matches!(
+            copy_bounded(&source, &target, &mut budget),
+            Err(CopyFailure::Budget)
+        ));
+        assert_eq!(budget, 36 * 1_024);
+        assert_eq!(fs::metadata(&target).unwrap().len(), 64 * 1_024);
+
+        fs::remove_dir_all(directory).unwrap();
+    }
+
+    #[test]
+    fn snapshot_signatures_change_when_a_file_changes() {
+        let directory = temporary_directory("signature");
+        let path = directory.join("snapshot.sqlite");
+        fs::write(&path, b"one").unwrap();
+        let wal = sidecar_path(&path, "-wal");
+        fs::write(&wal, b"wal-one").unwrap();
+        let before = SnapshotSignature::read(&path).unwrap().unwrap();
+        fs::write(&wal, b"wal-two-longer").unwrap();
+        let after = SnapshotSignature::read(&path).unwrap().unwrap();
+
+        assert_ne!(before, after);
         fs::remove_dir_all(directory).unwrap();
     }
 
