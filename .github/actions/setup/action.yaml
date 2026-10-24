@@ -45,5 +45,6 @@ runs:
       run: |
         set -euo pipefail
         mise trust mise.toml
+        mise install mr-boxington
         mise install
         mise exec -- rustup component add rustfmt clippy

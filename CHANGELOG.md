@@ -26,6 +26,10 @@ Append-only. Newest entry first.
 - Removed the obsolete macOS UI-test target (and its Automation permission
   prompt), main storyboard, main window controller, and unused icon/XIB code.
   The app menu is built in code.
+- Cargo builds now share compiler outputs through Mr Boxington (`mbx`) locally
+  and in CI. A clean release build of the Rust core dropped from 60 s to 4.6 s
+  with a warm cache, and a fresh worktree reuses the same cache instead of
+  recompiling every dependency.
 
 # Glance 1.8.2
 

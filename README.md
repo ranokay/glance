@@ -183,7 +183,8 @@ Suggestions and contributions are always welcome! Please discuss larger changes 
 
 Building requires Xcode 26 on an Apple silicon Mac running macOS 26, plus
 [mise-en-place](https://mise.jdx.dev/). From the repository root, run `mise install` once to install
-the pinned Rust, SwiftFormat, and SwiftLint versions.
+the pinned Rust, SwiftFormat, and SwiftLint versions. Cargo builds share compiler
+outputs through [Mr Boxington](https://mr-boxington.jdx.dev/) automatically.
 Common local commands are:
 
 - `mise run hooks` to install the hk pre-commit checks for this checkout

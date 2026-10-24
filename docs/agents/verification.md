@@ -21,6 +21,16 @@ confirm only what automation cannot.
   (Open-With round-trips 10 s, WebView loads 15 s); XCTest returns early on
   fulfillment, so generous ceilings only slow down genuine failures.
 
+## Rust build cache
+
+Cargo runs through Mr Boxington (`mbx`) via the `mr_boxington` option in
+`mise.toml`. The local store lives in `~/Library/Caches/mbx`; `mbx cache stats`
+and `mbx gc --dry-run` inspect it. CI restores the store with
+`jdx/mr-boxington-action` and saves each pull request's own scope. Seed or
+refresh the shared `develop` cache with `gh workflow run verify.yaml --ref
+develop` after dependency changes. Release builds use the local store only,
+never a remote cache.
+
 ## Manual capture (per UI ticket, alongside automated evidence)
 
 Each UI-affecting ticket adds one manual Quick Look capture: Spacebar-preview

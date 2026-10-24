@@ -29,7 +29,8 @@ check "rust build script defaults to macOS 26" grep -q -F "MACOSX_DEPLOYMENT_TAR
 check "release runs on macos-26" grep -q -F "runs-on: macos-26" .github/workflows/release.yaml
 check "release uses shared setup" grep -q -F "./.github/actions/setup" .github/workflows/release.yaml
 check "setup asserts Xcode 26" grep -q -F "Release builds require Xcode 26" .github/actions/setup/action.yaml
-check "pinned rust" grep -q -F 'rust = "1.99.1"' mise.toml
+check "pinned rust" grep -q -F 'rust = { version = "1.99.1", mr_boxington = true }' mise.toml
+check "pinned mr-boxington" grep -q -F 'mr-boxington = "1.27.0"' mise.toml
 check "pinned hk" grep -q -F 'hk = "2.8.0"' mise.toml
 check "pinned jactionlint" grep -q -F 'jactionlint = "2.3.0"' mise.toml
 check "pinned shellcheck" grep -q -F 'shellcheck = "0.11.0"' mise.toml
