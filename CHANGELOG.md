@@ -4,6 +4,9 @@ Append-only. Newest entry first.
 
 # Unreleased
 
+- Markdown previews now render inline and display TeX math with the bundled
+  KaTeX, fully offline. Dollars inside code spans and fences stay literal, and
+  invalid TeX shows its escaped source instead of failing the preview.
 - Glance is now a true menu-bar-only app: no Dock icon, no main window, and no
   “Hide Dock icon” preference. Settings and Supported Files remain available
   from the status menu.

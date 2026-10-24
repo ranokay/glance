@@ -507,6 +507,40 @@ final class PreviewSmokeTests: XCTestCase {
 		}
 	}
 
+	func testMarkdownPreviewRendersTexMathButNotInsideCode() async throws {
+		let fileURL = URL(fileURLWithPath: #filePath)
+			.deletingLastPathComponent()
+			.appendingPathComponent("TestFiles/markdown/math.md")
+		let generatedPreview = try await MarkdownPreview().createPreviewVC(
+			file: File(url: fileURL)
+		)
+		let previewVC = try XCTUnwrap(generatedPreview as? WebPreviewVC)
+		previewVC.loadViewIfNeeded()
+		let webView = try XCTUnwrap(previewVC.view.subviews.compactMap { $0 as? WKWebView }.first)
+
+		try await waitForWebViewToFinishLoadingAsync(webView)
+		try await waitForJavaScript(
+			"document.querySelectorAll('[data-glance-math-state=\"rendered\"]').length === 3",
+			in: webView
+		)
+		let state = try await webView.evaluateJavaScript(
+			"""
+			[
+				typeof katex,
+				document.querySelectorAll('[data-math-style="inline"]').length,
+				document.querySelectorAll('[data-math-style="display"] .katex-display').length,
+				document.querySelectorAll('code').length,
+				document.querySelector('code').textContent,
+				document.querySelector('.katex-error')?.textContent.includes('frac') ?? false,
+				document.body.textContent.includes('renders as escaped literal text'),
+				document.querySelectorAll('script').length
+			].join('|')
+			"""
+		) as? String
+
+		XCTAssertEqual(state, "object|2|1|2|$E = mc^2$|true|true|2")
+	}
+
 	func testPeleRuntimeAndLicenseAreBundled() throws {
 		let bundle = WebPreviewVC.resourceBundle
 		let runtimeURL = try XCTUnwrap(
