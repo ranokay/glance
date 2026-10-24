@@ -43,7 +43,7 @@ protocol DirectoryPageLoading: Sendable {
 	func page(
 		at directoryURL: URL,
 		offset: Int,
-		session: DirectoryPaginationSession
+		session: DirectoryPaginationSession,
 	) async throws -> DirectoryPage
 }
 
@@ -63,7 +63,7 @@ actor DirectoryPageLoader: DirectoryPageLoading {
 	func page(
 		at directoryURL: URL,
 		offset: Int,
-		session: DirectoryPaginationSession
+		session: DirectoryPaginationSession,
 	) async throws -> DirectoryPage {
 		let pageURL = directoryURL.standardizedFileURL
 		let safeOffset = max(0, offset)
@@ -76,7 +76,7 @@ actor DirectoryPageLoader: DirectoryPageLoading {
 			guard let cursor = pageCursors[session]?[pageURL]?[safeOffset] else {
 				throw DirectoryPreviewError.directoryReadError(
 					path: pageURL.path,
-					message: "The directory page cursor is no longer available"
+					message: "The directory page cursor is no longer available",
 				)
 			}
 			afterName = cursor
@@ -105,14 +105,14 @@ actor DirectoryPageLoader: DirectoryPageLoading {
 				return try scanner.page(
 					from: snapshot,
 					offset: safeOffset,
-					afterName: afterName
+					afterName: afterName,
 				)
 			} catch is CancellationError {
 				throw CancellationError()
 			} catch {
 				throw DirectoryPreviewError.directoryReadError(
 					path: pageURL.path,
-					message: error.localizedDescription
+					message: error.localizedDescription,
 				)
 			}
 		}
@@ -120,7 +120,7 @@ actor DirectoryPageLoader: DirectoryPageLoading {
 		if let nextOffset = scanResult.page.nextOffset {
 			if let continuationName = scanResult.continuationName {
 				pageCursors[session, default: [:]][pageURL, default: [:]][
-					nextOffset
+					nextOffset,
 				] = continuationName
 			}
 		} else {

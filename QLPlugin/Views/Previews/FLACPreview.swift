@@ -3,8 +3,6 @@ import Cocoa
 import GlanceKit
 
 struct FLACPreview: Preview {
-	init() {}
-
 	func createPreviewVC(file: File) async throws -> PreviewVC {
 		let showsWaveform = await PreviewSettingsClient.shared.flacWaveformEnabled()
 		return AVPlayerPreviewVC(fileURL: file.url, showsWaveform: showsWaveform)
@@ -29,7 +27,7 @@ enum FLACWaveformAnalyzer {
 
 	static func envelope(
 		for fileURL: URL,
-		onWindowRead: (@Sendable (Int) throws -> Void)? = nil
+		onWindowRead: (@Sendable (Int) throws -> Void)? = nil,
 	) async throws -> [Float] {
 		try Task.checkCancellation()
 		let initialState = try fileState(at: fileURL)
@@ -86,12 +84,12 @@ enum FLACWaveformAnalyzer {
 		in asset: AVURLAsset,
 		track: AVAssetTrack,
 		start: Double,
-		length: Double
+		length: Double,
 	) throws -> Float {
 		let reader = try AVAssetReader(asset: asset)
 		reader.timeRange = CMTimeRange(
 			start: CMTime(seconds: start, preferredTimescale: 1_000_000),
-			duration: CMTime(seconds: length, preferredTimescale: 1_000_000)
+			duration: CMTime(seconds: length, preferredTimescale: 1_000_000),
 		)
 		let output = AVAssetReaderTrackOutput(track: track, outputSettings: [
 			AVFormatIDKey: kAudioFormatLinearPCM,
@@ -128,7 +126,7 @@ enum FLACWaveformAnalyzer {
 					block,
 					atOffset: 0,
 					dataLength: length,
-					destination: bytes.baseAddress!
+					destination: bytes.baseAddress!,
 				)
 			}
 			guard status == noErr else {
@@ -154,7 +152,7 @@ enum FLACWaveformAnalyzer {
 		return FileState(
 			size: size,
 			modified: attributes[.modificationDate] as? Date,
-			fileNumber: attributes[.systemFileNumber] as? UInt64
+			fileNumber: attributes[.systemFileNumber] as? UInt64,
 		)
 	}
 
@@ -204,7 +202,7 @@ final class FLACWaveformView: NSView {
 				withAttributes: [
 					.font: NSFont.systemFont(ofSize: 12),
 					.foregroundColor: NSColor.secondaryLabelColor,
-				]
+				],
 			)
 			return
 		}
@@ -220,7 +218,7 @@ final class FLACWaveformView: NSView {
 				x: bounds.minX + CGFloat(index) * step + (step - barWidth) / 2,
 				y: bounds.midY - height / 2,
 				width: barWidth,
-				height: height
+				height: height,
 			)
 			NSBezierPath(roundedRect: bar, xRadius: barWidth / 2, yRadius: barWidth / 2).fill()
 		}
@@ -230,7 +228,7 @@ final class FLACWaveformView: NSView {
 				x: bounds.minX + bounds.width * CGFloat(progress),
 				y: bounds.minY,
 				width: 2,
-				height: bounds.height
+				height: bounds.height,
 			).fill()
 		}
 	}

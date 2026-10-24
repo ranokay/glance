@@ -106,11 +106,11 @@ final class SpreadsheetPreviewVC: NSViewController, PreviewVC, PreviewStatusProv
 
 		let columnCount = max(
 			1,
-			selectedSheet?.rows.map(\.count).max() ?? 0
+			selectedSheet?.rows.map(\.count).max() ?? 0,
 		)
 		for index in 0 ..< columnCount {
 			let column = NSTableColumn(
-				identifier: NSUserInterfaceItemIdentifier("column-\(index)")
+				identifier: NSUserInterfaceItemIdentifier("column-\(index)"),
 			)
 			column.title = Self.columnName(for: index)
 			column.width = contentWidth(for: index)
@@ -152,7 +152,7 @@ extension SpreadsheetPreviewVC: NSTableViewDataSource, NSTableViewDelegate {
 	func tableView(
 		_: NSTableView,
 		viewFor tableColumn: NSTableColumn?,
-		row rowIndex: Int
+		row rowIndex: Int,
 	) -> NSView? {
 		guard let tableColumn, let sheet = selectedSheet else {
 			return nil

@@ -18,7 +18,7 @@ protocol WorkspaceApplicationProviding {
 	func open(
 		fileURL: URL,
 		with applicationURL: URL,
-		completion: @escaping @MainActor (Error?) -> Void
+		completion: @escaping @MainActor (Error?) -> Void,
 	)
 }
 
@@ -29,7 +29,7 @@ final class WorkspaceApplicationProvider: WorkspaceApplicationProviding {
 
 	init(
 		workspace: NSWorkspace = .shared,
-		bridge: OpenWithBridgeSending = OpenWithBridgeClient()
+		bridge: OpenWithBridgeSending = OpenWithBridgeClient(),
 	) {
 		self.workspace = workspace
 		self.bridge = bridge
@@ -60,7 +60,7 @@ final class WorkspaceApplicationProvider: WorkspaceApplicationProviding {
 	func open(
 		fileURL: URL,
 		with applicationURL: URL,
-		completion: @escaping @MainActor (Error?) -> Void
+		completion: @escaping @MainActor (Error?) -> Void,
 	) {
 		bridge.open(fileURL: fileURL, with: applicationURL, completion: completion)
 	}
@@ -94,7 +94,7 @@ final class OpenWithService {
 			}
 			let metadata = cachedMetadata(for: applicationURL, key: applicationKey)
 			guard !OpenWithApplicationIdentity.excludedBundleIdentifiers.contains(
-				metadata.bundleIdentifier ?? ""
+				metadata.bundleIdentifier ?? "",
 			) else {
 				return nil
 			}
@@ -102,7 +102,7 @@ final class OpenWithService {
 				applicationURL: metadata.applicationURL,
 				displayName: metadata.displayName,
 				icon: metadata.icon,
-				isDefault: applicationKey == defaultApplicationKey
+				isDefault: applicationKey == defaultApplicationKey,
 			)
 		}
 	}
@@ -110,14 +110,14 @@ final class OpenWithService {
 	func open(
 		fileURL: URL,
 		with applicationURL: URL,
-		completion: @escaping @MainActor (Error?) -> Void
+		completion: @escaping @MainActor (Error?) -> Void,
 	) {
 		workspace.open(fileURL: fileURL, with: applicationURL, completion: completion)
 	}
 
 	private func cachedMetadata(
 		for applicationURL: URL,
-		key: String
+		key: String,
 	) -> CachedApplicationMetadata {
 		if let cachedMetadata = applicationMetadataCache[key] {
 			return cachedMetadata
@@ -126,7 +126,7 @@ final class OpenWithService {
 			applicationURL: applicationURL,
 			bundleIdentifier: workspace.bundleIdentifier(for: applicationURL),
 			displayName: workspace.displayName(for: applicationURL),
-			icon: workspace.icon(for: applicationURL)
+			icon: workspace.icon(for: applicationURL),
 		)
 		applicationMetadataCache[key] = metadata
 		return metadata

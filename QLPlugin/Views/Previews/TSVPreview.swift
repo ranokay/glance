@@ -12,7 +12,7 @@ class TSVPreview: Preview {
 		return TablePreviewVC(
 			headers: payload.headers,
 			cells: payload.rows,
-			truncated: payload.truncated
+			truncated: payload.truncated,
 		)
 	}
 }

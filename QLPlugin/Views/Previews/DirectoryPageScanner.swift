@@ -41,7 +41,7 @@ struct DirectoryPageScanner: @unchecked Sendable {
 			errorHandler: { _, error in
 				enumerationError = error
 				return false
-			}
+			},
 		) else {
 			throw CocoaError(.fileReadUnknown)
 		}
@@ -51,7 +51,7 @@ struct DirectoryPageScanner: @unchecked Sendable {
 			try Task.checkCancellation()
 			candidates.append(DirectoryPageCandidate(
 				name: itemURL.lastPathComponent,
-				fileURL: itemURL
+				fileURL: itemURL,
 			))
 		}
 		if let enumerationError {
@@ -60,14 +60,14 @@ struct DirectoryPageScanner: @unchecked Sendable {
 		candidates.sort(by: Self.isOrderedBefore)
 		return DirectorySnapshot(
 			candidates: candidates,
-			modificationDate: try modificationDate(for: directoryURL)
+			modificationDate: try modificationDate(for: directoryURL),
 		)
 	}
 
 	func page(
 		from snapshot: DirectorySnapshot,
 		offset: Int,
-		afterName: String?
+		afterName: String?,
 	) throws -> (page: DirectoryPage, continuationName: String?) {
 		try Task.checkCancellation()
 		let retainedLimit = pageSize.addingReportingOverflow(1)
@@ -79,7 +79,7 @@ struct DirectoryPageScanner: @unchecked Sendable {
 		} ?? snapshot.candidates.startIndex
 		let endIndex = min(
 			startIndex + retainedLimit.partialValue,
-			snapshot.candidates.endIndex
+			snapshot.candidates.endIndex,
 		)
 		var retainedCandidates = Array(snapshot.candidates[startIndex ..< endIndex])
 
@@ -96,7 +96,7 @@ struct DirectoryPageScanner: @unchecked Sendable {
 				values = try candidate.fileURL.resourceValues(forKeys: Self.resourceKeys)
 			} catch {
 				Log.general.error(
-					"Could not read item metadata \(candidate.fileURL.path, privacy: .private): \(error.localizedDescription, privacy: .private)"
+					"Could not read item metadata \(candidate.fileURL.path, privacy: .private): \(error.localizedDescription, privacy: .private)",
 				)
 				continue
 			}
@@ -110,7 +110,7 @@ struct DirectoryPageScanner: @unchecked Sendable {
 				fileURL: candidate.fileURL,
 				isPackage: values.isPackage ?? false,
 				isSymbolicLink: values.isSymbolicLink ?? false,
-				contentTypeIdentifier: values.contentType?.identifier
+				contentTypeIdentifier: values.contentType?.identifier,
 			))
 		}
 
@@ -123,15 +123,15 @@ struct DirectoryPageScanner: @unchecked Sendable {
 			DirectoryPage(
 				entries: retainedEntries,
 				nextOffset: nextOffset,
-				totalItemCount: snapshot.candidates.count
+				totalItemCount: snapshot.candidates.count,
 			),
-			nextOffset == nil ? nil : retainedCandidates.last?.name
+			nextOffset == nil ? nil : retainedCandidates.last?.name,
 		)
 	}
 
 	private static func firstCandidate(
 		after name: String,
-		in candidates: [DirectoryPageCandidate]
+		in candidates: [DirectoryPageCandidate],
 	) -> Int {
 		var lowerBound = 0
 		var upperBound = candidates.count
@@ -148,7 +148,7 @@ struct DirectoryPageScanner: @unchecked Sendable {
 
 	private static func isOrderedBefore(
 		_ lhs: DirectoryPageCandidate,
-		_ rhs: DirectoryPageCandidate
+		_ rhs: DirectoryPageCandidate,
 	) -> Bool {
 		compareNames(lhs.name, rhs.name) == .orderedAscending
 	}
@@ -163,7 +163,7 @@ struct DirectoryPageScanner: @unchecked Sendable {
 			rhs,
 			options: [.caseInsensitive, .numeric],
 			range: nil,
-			locale: sortLocale
+			locale: sortLocale,
 		)
 		if comparison != .orderedSame {
 			return comparison

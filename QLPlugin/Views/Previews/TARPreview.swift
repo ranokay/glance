@@ -15,7 +15,7 @@ class TARPreview: Preview {
 			format: isGzipped ? .tarGz : .tar,
 			depth: depth,
 			scan: { try PreviewCoreBridge.scanTAR(at: fileURL, isGzipped: isGzipped) },
-			policy: .tar(isGzipped: isGzipped, maxEntryCount: 50000)
+			policy: .tar(isGzipped: isGzipped, maxEntryCount: 50000),
 		)
 	}
 

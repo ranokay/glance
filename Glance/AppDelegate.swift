@@ -18,7 +18,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		setUpStatusItem()
 		AppSettingsStore.shared.migrateStandardDefaultsIfNeeded()
 		SparkleUpdateCenter.shared.start(
-			autoChecksEnabled: AppSettingsStore.shared.autoUpdateCheckEnabled
+			autoChecksEnabled: AppSettingsStore.shared.autoUpdateCheckEnabled,
 		)
 	}
 
@@ -36,7 +36,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
 		statusItem.button?.image = NSImage(
 			systemSymbolName: "eye",
-			accessibilityDescription: "Glance"
+			accessibilityDescription: "Glance",
 		)
 		statusItem.button?.image?.isTemplate = true
 		statusItem.button?.toolTip = "Glance"
@@ -53,19 +53,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		appMenu.addItem(NSMenuItem(
 			title: "About Glance",
 			action: #selector(openAbout(_:)),
-			keyEquivalent: ""
+			keyEquivalent: "",
 		))
 		appMenu.addItem(.separator())
 		appMenu.addItem(NSMenuItem(
 			title: "Settings\u{2026}",
 			action: #selector(openSettingsWindow(_:)),
-			keyEquivalent: ","
+			keyEquivalent: ",",
 		))
 		appMenu.addItem(.separator())
 		appMenu.addItem(NSMenuItem(
 			title: "Quit Glance",
 			action: #selector(quitGlance(_:)),
-			keyEquivalent: "q"
+			keyEquivalent: "q",
 		))
 		for item in appMenu.items where item.action != nil {
 			item.target = self
@@ -86,7 +86,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 			editMenu.addItem(NSMenuItem(
 				title: title,
 				action: Selector(selector),
-				keyEquivalent: key
+				keyEquivalent: key,
 			))
 		}
 		editMenuItem.submenu = editMenu
@@ -97,7 +97,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		fileMenu.addItem(NSMenuItem(
 			title: "Close",
 			action: #selector(NSWindow.performClose(_:)),
-			keyEquivalent: "w"
+			keyEquivalent: "w",
 		))
 		fileMenuItem.submenu = fileMenu
 		mainMenu.addItem(fileMenuItem)
@@ -110,33 +110,33 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		menu.addItem(NSMenuItem(
 			title: "About Glance",
 			action: #selector(openAbout(_:)),
-			keyEquivalent: ""
+			keyEquivalent: "",
 		))
 		menu.addItem(NSMenuItem(
 			title: "Supported Files",
 			action: #selector(openSupportedFilesWindow(_:)),
-			keyEquivalent: ""
+			keyEquivalent: "",
 		))
 		menu.addItem(NSMenuItem(
 			title: "Open GitHub Repository",
 			action: #selector(openWebsite(_:)),
-			keyEquivalent: ""
+			keyEquivalent: "",
 		))
 		menu.addItem(NSMenuItem(
 			title: "Settings\u{2026}",
 			action: #selector(openSettingsWindow(_:)),
-			keyEquivalent: ""
+			keyEquivalent: "",
 		))
 		menu.addItem(NSMenuItem(
 			title: "Check for Updates…",
 			action: #selector(checkForUpdates(_:)),
-			keyEquivalent: ""
+			keyEquivalent: "",
 		))
 		menu.addItem(.separator())
 		menu.addItem(NSMenuItem(
 			title: "Quit Glance",
 			action: #selector(quitGlance(_:)),
-			keyEquivalent: "q"
+			keyEquivalent: "q",
 		))
 
 		for item in menu.items where item.action != nil {

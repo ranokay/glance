@@ -16,7 +16,7 @@ final class PreviewSmokeTests: XCTestCase {
 			.appendingPathComponent("GlancePreviewTests-\(UUID().uuidString)", isDirectory: true)
 		try FileManager.default.createDirectory(
 			at: temporaryDirectory,
-			withIntermediateDirectories: true
+			withIntermediateDirectories: true,
 		)
 	}
 
@@ -40,10 +40,10 @@ final class PreviewSmokeTests: XCTestCase {
 			contentsOf: URL(fileURLWithPath: #filePath)
 				.deletingLastPathComponent()
 				.appendingPathComponent("TestFiles/epub/example.epub.b64"),
-			encoding: .utf8
+			encoding: .utf8,
 		)
 		let fixtureData = try XCTUnwrap(
-			Data(base64Encoded: fixtureText.trimmingCharacters(in: .whitespacesAndNewlines))
+			Data(base64Encoded: fixtureText.trimmingCharacters(in: .whitespacesAndNewlines)),
 		)
 		let fixtureURL = try writeDataFile(named: "example.epub", data: fixtureData)
 
@@ -61,7 +61,7 @@ final class PreviewSmokeTests: XCTestCase {
 		let previewVC = try XCTUnwrap(generated as? WebPreviewVC)
 		previewVC.loadViewIfNeeded()
 		let webView = try XCTUnwrap(
-			previewVC.view.subviews.compactMap { $0 as? WKWebView }.first
+			previewVC.view.subviews.compactMap { $0 as? WKWebView }.first,
 		)
 		try await waitForWebViewToFinishLoadingAsync(webView)
 		let state = try await webView.evaluateJavaScript(
@@ -75,7 +75,7 @@ final class PreviewSmokeTests: XCTestCase {
 				document.querySelector('script') === null,
 				document.querySelector('[onclick]') === null
 			].join('|')
-			"""
+			""",
 		) as? String
 		XCTAssertEqual(state, "Glance EPUB Fixture|2|true|true|true|true|true")
 
@@ -120,7 +120,7 @@ final class PreviewSmokeTests: XCTestCase {
 		let camera = ModelCamera(
 			target: SCNVector3Zero,
 			corners: [SCNVector3(-1, -1, -1), SCNVector3(1, 1, 1)],
-			radius: 2
+			radius: 2,
 		)
 		let previewVC = ModelPreviewVC(scene: SCNScene(), camera: camera, labelText: "Model")
 		previewVC.loadViewIfNeeded()
@@ -140,7 +140,7 @@ final class PreviewSmokeTests: XCTestCase {
 	func testDrawIOPreviewRendersUncompressedDiagramOffline() async throws {
 		let fileURL = try writeFile(
 			named: "diagram.drawio",
-			contents: Self.drawIODocument(label: "Offline diagram")
+			contents: Self.drawIODocument(label: "Offline diagram"),
 		)
 		let generated = try await DrawIOPreview().createPreviewVC(file: File(url: fileURL))
 		let previewVC = try XCTUnwrap(generated as? WebPreviewVC)
@@ -150,7 +150,7 @@ final class PreviewSmokeTests: XCTestCase {
 		try await waitForWebViewToFinishLoadingAsync(webView)
 		try await waitForJavaScript(
 			"document.querySelector('.mxgraph > svg') !== null",
-			in: webView
+			in: webView,
 		)
 		let state = try await webView.evaluateJavaScript(
 			"""
@@ -161,7 +161,7 @@ final class PreviewSmokeTests: XCTestCase {
 				document.querySelector('[data-drawio-payload]') === null,
 				document.querySelector('svg rect').style.fill.includes('light-dark')
 			].join('|')
-			"""
+			""",
 		) as? String
 		XCTAssertEqual(state, "true|true|true|true")
 	}
@@ -170,7 +170,7 @@ final class PreviewSmokeTests: XCTestCase {
 		let payload = "</div><script>window.drawIOInjected = true</script><div>"
 		let fileURL = try writeFile(
 			named: "untrusted.drawio",
-			contents: Self.drawIODocument(label: payload)
+			contents: Self.drawIODocument(label: payload),
 		)
 		let generated = try await DrawIOPreview().createPreviewVC(file: File(url: fileURL))
 		let previewVC = try XCTUnwrap(generated as? WebPreviewVC)
@@ -180,7 +180,7 @@ final class PreviewSmokeTests: XCTestCase {
 		try await waitForWebViewToFinishLoadingAsync(webView)
 		try await waitForJavaScript(
 			"document.querySelector('.mxgraph > svg') !== null",
-			in: webView
+			in: webView,
 		)
 		let state = try await webView.evaluateJavaScript(
 			"""
@@ -191,7 +191,7 @@ final class PreviewSmokeTests: XCTestCase {
 					script.textContent.includes('drawIOInjected')
 				)
 			].join('|')
-			"""
+			""",
 		) as? String
 		XCTAssertEqual(state, "true|true|true")
 	}
@@ -200,11 +200,11 @@ final class PreviewSmokeTests: XCTestCase {
 		let malformedURL = try writeFile(named: "malformed.drawio", contents: "not xml")
 		let invalidUTF8URL = try writeDataFile(
 			named: "invalid-utf8.drawio",
-			data: Data([0xFF])
+			data: Data([0xFF]),
 		)
 		let compressedURL = try writeFile(
 			named: "compressed.drawio",
-			contents: #"<mxfile><diagram>jZLBbsIwDIafJtfuACRE2HbsuO0Bq7Q1iZM4Re3t5yYtG0JC7Pz//2UnkJmKV/dG6vAGIxQupzvp2PFiKUPkuc6ZnBHiGCU5wkTOCOlV9vTKSdoKKS9if2iNN9C08Kk1p2EHElBBP8NQWH7ZrsCTMTnnlHnYys+eowfXJzIJN2RbSIYwmjuBcdSPCnwaZHNldH03nVZLYGl6bmzvpPKGAVed16J4LLr9Xm9Vz0+Gh1C05kuvB/X1HzKnssv5z2v9w0lwDLuzH7S19Ac="</diagram></mxfile>"#
+			contents: #"<mxfile><diagram>jZLBbsIwDIafJtfuACRE2HbsuO0Bq7Q1iZM4Re3t5yYtG0JC7Pz//2UnkJmKV/dG6vAGIxQupzvp2PFiKUPkuc6ZnBHiGCU5wkTOCOlV9vTKSdoKKS9if2iNN9C08Kk1p2EHElBBP8NQWH7ZrsCTMTnnlHnYys+eowfXJzIJN2RbSIYwmjuBcdSPCnwaZHNldH03nVZLYGl6bmzvpPKGAVed16J4LLr9Xm9Vz0+Gh1C05kuvB/X1HzKnssv5z2v9w0lwDLuzH7S19Ac="</diagram></mxfile>"#,
 		)
 		let oversizedURL = temporaryDirectory.appendingPathComponent("oversized.drawio")
 		FileManager.default.createFile(atPath: oversizedURL.path, contents: nil)
@@ -216,7 +216,7 @@ final class PreviewSmokeTests: XCTestCase {
 			contents: """
 			<!DOCTYPE mxGraphModel [<!ENTITY file SYSTEM "file:///etc/passwd">]>
 			<mxGraphModel><root><mxCell id="0" value="&file;"/></root></mxGraphModel>
-			"""
+			""",
 		)
 
 		let failures = [
@@ -240,7 +240,7 @@ final class PreviewSmokeTests: XCTestCase {
 	func testDrawIOPreviewAcceptsBareUncompressedGraphModel() async throws {
 		let fileURL = try writeFile(
 			named: "bare.drawio",
-			contents: "<mxGraphModel><root><mxCell id=\"0\"/></root></mxGraphModel>"
+			contents: "<mxGraphModel><root><mxCell id=\"0\"/></root></mxGraphModel>",
 		)
 
 		let previewVC = try await DrawIOPreview().createPreviewVC(file: File(url: fileURL))
@@ -251,13 +251,13 @@ final class PreviewSmokeTests: XCTestCase {
 	func testDrawIOPreviewAdaptsWebViewToSidebarAndWindowSizes() async throws {
 		let fileURL = try writeFile(
 			named: "responsive.drawio",
-			contents: Self.drawIODocument(label: "Responsive diagram")
+			contents: Self.drawIODocument(label: "Responsive diagram"),
 		)
 		let generated = try await DrawIOPreview().createPreviewVC(file: File(url: fileURL))
 		let previewVC = try XCTUnwrap(generated as? WebPreviewVC)
 		previewVC.loadViewIfNeeded()
 		let webView = try XCTUnwrap(
-			previewVC.view.subviews.compactMap { $0 as? WKWebView }.first
+			previewVC.view.subviews.compactMap { $0 as? WKWebView }.first,
 		)
 
 		for width in [CGFloat(320), CGFloat(1000)] {
@@ -270,18 +270,18 @@ final class PreviewSmokeTests: XCTestCase {
 	func testDrawIORuntimeAndLicenseAreBundled() throws {
 		let bundle = WebPreviewVC.resourceBundle
 		let runtimeURL = try XCTUnwrap(
-			bundle.url(forResource: "drawio-viewer-31.4.6.min", withExtension: "js")
+			bundle.url(forResource: "drawio-viewer-31.4.6.min", withExtension: "js"),
 		)
 		let licenseURL = try XCTUnwrap(
-			bundle.url(forResource: "DRAWIO_LICENSE", withExtension: "txt")
+			bundle.url(forResource: "DRAWIO_LICENSE", withExtension: "txt"),
 		)
 		let stylesheetURL = try XCTUnwrap(
-			bundle.url(forResource: "drawio-main", withExtension: "css")
+			bundle.url(forResource: "drawio-main", withExtension: "css"),
 		)
 
 		XCTAssertGreaterThan(try Data(contentsOf: runtimeURL).count, 2_000_000)
 		XCTAssertTrue(
-			try String(contentsOf: licenseURL, encoding: .utf8).contains("Apache License")
+			try String(contentsOf: licenseURL, encoding: .utf8).contains("Apache License"),
 		)
 		let stylesheet = try String(contentsOf: stylesheetURL, encoding: .utf8)
 		XCTAssertTrue(stylesheet.contains("color-scheme: light dark"))
@@ -343,7 +343,7 @@ final class PreviewSmokeTests: XCTestCase {
 				document.querySelector('pre code span') !== null,
 				getComputedStyle(document.querySelector('pre code span')).color
 			].join('|')
-			"""
+			""",
 		)
 		let state = result as? String
 		XCTAssertEqual(state?.hasPrefix("true|true|"), true)
@@ -376,7 +376,7 @@ final class PreviewSmokeTests: XCTestCase {
 			    A --> B
 			    click A "https://example.com"
 			```
-			"""
+			""",
 		)
 		let plainURL = try writeFile(
 			named: "plain.md",
@@ -387,21 +387,21 @@ final class PreviewSmokeTests: XCTestCase {
 			```swift
 			let value = 42
 			```
-			"""
+			""",
 		)
 
 		let generatedMermaidPreview = try await MarkdownPreview().createPreviewVC(
-			file: File(url: mermaidURL)
+			file: File(url: mermaidURL),
 		)
 		let mermaidPreview = try XCTUnwrap(generatedMermaidPreview as? WebPreviewVC)
 		mermaidPreview.loadViewIfNeeded()
 		let mermaidWebView = try XCTUnwrap(
-			mermaidPreview.view.subviews.compactMap { $0 as? WKWebView }.first
+			mermaidPreview.view.subviews.compactMap { $0 as? WKWebView }.first,
 		)
 		try await waitForWebViewToFinishLoadingAsync(mermaidWebView)
 		try await waitForJavaScript(
 			"document.querySelector('.mermaid-diagram svg') !== null",
-			in: mermaidWebView
+			in: mermaidWebView,
 		)
 		let mermaidState = try await mermaidWebView.evaluateJavaScript(
 			"""
@@ -411,7 +411,7 @@ final class PreviewSmokeTests: XCTestCase {
 				document.querySelector('meta[http-equiv="Content-Security-Policy"]')
 					.content.includes("connect-src 'none'")
 			].join('|')
-			"""
+			""",
 		) as? String
 		XCTAssertEqual(mermaidState, "object|true|true")
 		let diagramState = try await mermaidWebView.evaluateJavaScript(
@@ -425,17 +425,17 @@ final class PreviewSmokeTests: XCTestCase {
 					new Set(ids).size === ids.length
 				].join('|');
 			})();
-			"""
+			""",
 		) as? String
 		XCTAssertEqual(diagramState, "0|0|true")
 
 		let generatedPlainPreview = try await MarkdownPreview().createPreviewVC(
-			file: File(url: plainURL)
+			file: File(url: plainURL),
 		)
 		let plainPreview = try XCTUnwrap(generatedPlainPreview as? WebPreviewVC)
 		plainPreview.loadViewIfNeeded()
 		let plainWebView = try XCTUnwrap(
-			plainPreview.view.subviews.compactMap { $0 as? WKWebView }.first
+			plainPreview.view.subviews.compactMap { $0 as? WKWebView }.first,
 		)
 		try await waitForWebViewToFinishLoadingAsync(plainWebView)
 		let plainState = try await plainWebView.evaluateJavaScript(
@@ -445,7 +445,7 @@ final class PreviewSmokeTests: XCTestCase {
 				document.querySelectorAll('script').length,
 				document.querySelector('pre code') !== null
 			].join('|')
-			"""
+			""",
 		) as? String
 		XCTAssertEqual(plainState, "undefined|0|true")
 	}
@@ -454,7 +454,7 @@ final class PreviewSmokeTests: XCTestCase {
 		let source = "this is not a diagram"
 		let fileURL = try writeFile(
 			named: "malformed-mermaid.md",
-			contents: "```mermaid\n\(source)\n```\n"
+			contents: "```mermaid\n\(source)\n```\n",
 		)
 		let generatedPreview = try await MarkdownPreview().createPreviewVC(file: File(url: fileURL))
 		let previewVC = try XCTUnwrap(generatedPreview as? WebPreviewVC)
@@ -465,13 +465,13 @@ final class PreviewSmokeTests: XCTestCase {
 		try await waitForJavaScript(
 			"document.querySelector('[data-glance-mermaid-state=" +
 				"\"failed\"]') !== null",
-			in: webView
+			in: webView,
 		)
 		let state = try await webView.evaluateJavaScript(
 			"""
 			const source = document.querySelector('pre[data-glance-mermaid="1"]');
 			[source !== null, source.textContent.trim(), source.dataset.glanceMermaidState].join('|')
-			"""
+			""",
 		) as? String
 		XCTAssertEqual(state, "true|\(source)|failed")
 	}
@@ -483,25 +483,25 @@ final class PreviewSmokeTests: XCTestCase {
 		] {
 			let fileURL = try writeFile(
 				named: "diagram-\(expectedBackground).md",
-				contents: "```mermaid\nsequenceDiagram\n    Alice->>Bob: Hello\n```\n"
+				contents: "```mermaid\nsequenceDiagram\n    Alice->>Bob: Hello\n```\n",
 			)
 			let generatedPreview = try await MarkdownPreview().createPreviewVC(
-				file: File(url: fileURL)
+				file: File(url: fileURL),
 			)
 			let previewVC = try XCTUnwrap(generatedPreview as? WebPreviewVC)
 			previewVC.loadViewIfNeeded()
 			previewVC.view.appearance = NSAppearance(named: appearanceName)
 			let webView = try XCTUnwrap(
-				previewVC.view.subviews.compactMap { $0 as? WKWebView }.first
+				previewVC.view.subviews.compactMap { $0 as? WKWebView }.first,
 			)
 
 			try await waitForWebViewToFinishLoadingAsync(webView)
 			try await waitForJavaScript(
 				"document.querySelector('.mermaid-diagram svg') !== null",
-				in: webView
+				in: webView,
 			)
 			let background = try await webView.evaluateJavaScript(
-				"getComputedStyle(document.body).getPropertyValue('--pele-bg').trim()"
+				"getComputedStyle(document.body).getPropertyValue('--pele-bg').trim()",
 			) as? String
 			XCTAssertEqual(background, expectedBackground)
 		}
@@ -512,7 +512,7 @@ final class PreviewSmokeTests: XCTestCase {
 			.deletingLastPathComponent()
 			.appendingPathComponent("TestFiles/markdown/math.md")
 		let generatedPreview = try await MarkdownPreview().createPreviewVC(
-			file: File(url: fileURL)
+			file: File(url: fileURL),
 		)
 		let previewVC = try XCTUnwrap(generatedPreview as? WebPreviewVC)
 		previewVC.loadViewIfNeeded()
@@ -521,7 +521,7 @@ final class PreviewSmokeTests: XCTestCase {
 		try await waitForWebViewToFinishLoadingAsync(webView)
 		try await waitForJavaScript(
 			"document.querySelectorAll('[data-glance-math-state=\"rendered\"]').length === 3",
-			in: webView
+			in: webView,
 		)
 		let state = try await webView.evaluateJavaScript(
 			"""
@@ -535,7 +535,7 @@ final class PreviewSmokeTests: XCTestCase {
 				document.body.textContent.includes('renders as escaped literal text'),
 				document.querySelectorAll('script').length
 			].join('|')
-			"""
+			""",
 		) as? String
 
 		XCTAssertEqual(state, "object|2|1|2|$E = mc^2$|true|true|2")
@@ -544,15 +544,15 @@ final class PreviewSmokeTests: XCTestCase {
 	func testPeleRuntimeAndLicenseAreBundled() throws {
 		let bundle = WebPreviewVC.resourceBundle
 		let runtimeURL = try XCTUnwrap(
-			bundle.url(forResource: "markdown-pele-1.9.0.global", withExtension: "js")
+			bundle.url(forResource: "markdown-pele-1.9.0.global", withExtension: "js"),
 		)
 		let licenseURL = try XCTUnwrap(
-			bundle.url(forResource: "PELE_LICENSE", withExtension: "txt")
+			bundle.url(forResource: "PELE_LICENSE", withExtension: "txt"),
 		)
 
 		XCTAssertGreaterThan(try Data(contentsOf: runtimeURL).count, 500_000)
 		XCTAssertTrue(
-			try String(contentsOf: licenseURL, encoding: .utf8).contains("MIT License")
+			try String(contentsOf: licenseURL, encoding: .utf8).contains("MIT License"),
 		)
 	}
 
@@ -589,7 +589,7 @@ final class PreviewSmokeTests: XCTestCase {
 				document.querySelector('.latex-output .katex') !== null,
 				!document.body.textContent.includes('LaTeX output')
 			].join('|')
-			"""
+			""",
 		)
 
 		XCTAssertEqual(result as? String, "true|true|true")
@@ -598,7 +598,7 @@ final class PreviewSmokeTests: XCTestCase {
 	func testJupyterKaTeXStylesheetReferencesOnlyBundledWOFF2Fonts() throws {
 		let bundle = WebPreviewVC.resourceBundle
 		let stylesheetURL = try XCTUnwrap(
-			bundle.url(forResource: "jupyter-katex.min", withExtension: "css")
+			bundle.url(forResource: "jupyter-katex.min", withExtension: "css"),
 		)
 		let stylesheet = try String(contentsOf: stylesheetURL, encoding: .utf8)
 		let fontReferences = try katexFontReferences(in: stylesheet)
@@ -609,9 +609,9 @@ final class PreviewSmokeTests: XCTestCase {
 			XCTAssertNotNil(
 				bundle.url(
 					forResource: fontReference.deletingPathExtension().lastPathComponent,
-					withExtension: fontReference.pathExtension
+					withExtension: fontReference.pathExtension,
 				),
-				"Missing bundled KaTeX font: \(fontReference.lastPathComponent)"
+				"Missing bundled KaTeX font: \(fontReference.lastPathComponent)",
 			)
 		}
 
@@ -624,7 +624,7 @@ final class PreviewSmokeTests: XCTestCase {
 			}
 		XCTAssertTrue(
 			bundledFallbackFonts.isEmpty,
-			"Unexpected KaTeX fallback fonts: \(bundledFallbackFonts.map(\.lastPathComponent))"
+			"Unexpected KaTeX fallback fonts: \(bundledFallbackFonts.map(\.lastPathComponent))",
 		)
 	}
 
@@ -649,7 +649,7 @@ final class PreviewSmokeTests: XCTestCase {
 			contentRect: NSRect(x: 0, y: 0, width: 320, height: 240),
 			styleMask: [.borderless],
 			backing: .buffered,
-			defer: false
+			defer: false,
 		)
 		window.contentViewController = previewVC
 
@@ -670,7 +670,7 @@ final class PreviewSmokeTests: XCTestCase {
 			backgroundView.displayIfNeeded()
 			let color = try XCTUnwrap(
 				NSColor(cgColor: try XCTUnwrap(backgroundView.layer?.backgroundColor))?
-					.usingColorSpace(.sRGB)
+					.usingColorSpace(.sRGB),
 			)
 
 			XCTAssertEqual(color.redComponent, expectedComponent, accuracy: 0.01)
@@ -694,7 +694,7 @@ final class PreviewSmokeTests: XCTestCase {
 
 	func testWebPreviewRendersInlineContentAndStyles() throws {
 		let previewVC = WebPreviewVC(
-			html: #"<script>document.body.dataset.bad = "script"</script><p onclick="document.body.dataset.bad = 'event'">Visible content</p>"#
+			html: #"<script>document.body.dataset.bad = "script"</script><p onclick="document.body.dataset.bad = 'event'">Visible content</p>"#,
 		)
 		previewVC.loadViewIfNeeded()
 
@@ -711,13 +711,13 @@ final class PreviewSmokeTests: XCTestCase {
 				document.querySelector('p').getAttribute('onclick') === null,
 				document.body.dataset.bad || ''
 			].join('|')
-			"""
+			""",
 		) { result, error in
 			XCTAssertNil(error)
 			let renderedState = result as? String
 			let renderedStateParts = renderedState?.split(
 				separator: "|",
-				omittingEmptySubsequences: false
+				omittingEmptySubsequences: false,
 			) ?? []
 			XCTAssertEqual(renderedStateParts.count, 5)
 			XCTAssertEqual(renderedStateParts.first.map(String.init), "Visible content")
@@ -736,7 +736,7 @@ final class PreviewSmokeTests: XCTestCase {
 		let preferences = PreviewAppearancePreferences(
 			fontFamily: "Menlo",
 			fontSize: 18,
-			wrapsLines: true
+			wrapsLines: true,
 		)
 		let formatHTML = [
 			#"<pre class="chroma"><code>code</code></pre>"#,
@@ -749,12 +749,12 @@ final class PreviewSmokeTests: XCTestCase {
 				let previewVC = WebPreviewVC(
 					html: html,
 					appearancePreferences: preferences,
-					availableFontFamilies: ["Menlo"]
+					availableFontFamilies: ["Menlo"],
 				)
 				previewVC.loadViewIfNeeded()
 				previewVC.view.appearance = NSAppearance(named: appearanceName)
 				let webView = try XCTUnwrap(
-					previewVC.view.subviews.compactMap { $0 as? WKWebView }.first
+					previewVC.view.subviews.compactMap { $0 as? WKWebView }.first,
 				)
 
 				try await waitForWebViewToFinishLoadingAsync(webView)
@@ -767,7 +767,7 @@ final class PreviewSmokeTests: XCTestCase {
 						getComputedStyle(code).whiteSpace,
 						getComputedStyle(code).overflowWrap
 					].join('|')
-					"""
+					""",
 				) as? String
 
 				XCTAssertEqual(state, #"18px|Menlo, sans-serif|pre-wrap|anywhere"#)
@@ -780,7 +780,7 @@ final class PreviewSmokeTests: XCTestCase {
 		let fallbackStylesheet = PreviewAppearancePreferences(
 			fontFamily: "Not Installed",
 			fontSize: 14,
-			wrapsLines: false
+			wrapsLines: false,
 		).stylesheet(availableFontFamilies: ["Menlo"])
 		XCTAssertFalse(fallbackStylesheet.contains("Not Installed"))
 
@@ -789,13 +789,13 @@ final class PreviewSmokeTests: XCTestCase {
 			appearancePreferences: PreviewAppearancePreferences(
 				fontFamily: unsafeFamily,
 				fontSize: 14,
-				wrapsLines: false
+				wrapsLines: false,
 			),
-			availableFontFamilies: [unsafeFamily]
+			availableFontFamilies: [unsafeFamily],
 		)
 		previewVC.loadViewIfNeeded()
 		let webView = try XCTUnwrap(
-			previewVC.view.subviews.compactMap { $0 as? WKWebView }.first
+			previewVC.view.subviews.compactMap { $0 as? WKWebView }.first,
 		)
 
 		try await waitForWebViewToFinishLoadingAsync(webView)
@@ -808,7 +808,7 @@ final class PreviewSmokeTests: XCTestCase {
 				Array.from(document.querySelectorAll('style'))
 					.some(style => style.textContent.includes('</style>'))
 			].join('|')
-			"""
+			""",
 		) as? String
 
 		XCTAssertEqual(state, "true||pre|false")
@@ -915,7 +915,7 @@ final class PreviewSmokeTests: XCTestCase {
 	func testTSVPreviewRejectsMalformedRows() async throws {
 		let fileURL = try writeFile(
 			named: "malformed.tsv",
-			contents: "name\tvalue\n\"unterminated\tvalue\n"
+			contents: "name\tvalue\n\"unterminated\tvalue\n",
 		)
 
 		await XCTAssertThrowsErrorAsync {
@@ -951,7 +951,7 @@ final class PreviewSmokeTests: XCTestCase {
 			.deletingLastPathComponent()
 			.appendingPathComponent("TestFiles/spreadsheet/example.xlsx")
 		let generatedPreview = try await SpreadsheetPreview().createPreviewVC(
-			file: File(url: fileURL)
+			file: File(url: fileURL),
 		)
 		let preview = try XCTUnwrap(generatedPreview as? SpreadsheetPreviewVC)
 		preview.loadViewIfNeeded()
@@ -962,7 +962,7 @@ final class PreviewSmokeTests: XCTestCase {
 		preview.sheetPopUpButton.selectItem(at: 1)
 		preview.sheetPopUpButton.sendAction(
 			preview.sheetPopUpButton.action,
-			to: preview.sheetPopUpButton.target
+			to: preview.sheetPopUpButton.target,
 		)
 		XCTAssertEqual(preview.tableView.numberOfRows, 2)
 		XCTAssertEqual(preview.previewStatusText, "Data")
@@ -989,7 +989,7 @@ final class PreviewSmokeTests: XCTestCase {
 		try runProcess(
 			"/usr/bin/zip",
 			arguments: ["-qry", zipURL.path, "folder", "__MACOSX"],
-			in: zipRoot
+			in: zipRoot,
 		)
 
 		let generatedPreview = try await ZIPPreview().createPreviewVC(file: File(url: zipURL))
@@ -1019,11 +1019,11 @@ final class PreviewSmokeTests: XCTestCase {
 		let tgzURL = temporaryDirectory.appendingPathComponent("archive.tgz")
 		try runProcess(
 			"/usr/bin/tar",
-			arguments: ["-cf", tarURL.path, "-C", tarRoot.path, "folder"]
+			arguments: ["-cf", tarURL.path, "-C", tarRoot.path, "folder"],
 		)
 		try runProcess(
 			"/usr/bin/tar",
-			arguments: ["-czf", tgzURL.path, "-C", tarRoot.path, "folder"]
+			arguments: ["-czf", tgzURL.path, "-C", tarRoot.path, "folder"],
 		)
 
 		let generatedTARPreview = try await TARPreview().createPreviewVC(file: File(url: tarURL))
@@ -1050,7 +1050,7 @@ final class PreviewSmokeTests: XCTestCase {
 		let tarURL = temporaryDirectory.appendingPathComponent("large.tar")
 		try runProcess(
 			"/usr/bin/tar",
-			arguments: ["-cf", tarURL.path, "-C", tarRoot.path, "large.bin"]
+			arguments: ["-cf", tarURL.path, "-C", tarRoot.path, "large.bin"],
 		)
 
 		let generatedPreview = try await TARPreview().createPreviewVC(file: File(url: tarURL))
@@ -1063,7 +1063,7 @@ final class PreviewSmokeTests: XCTestCase {
 	func testTARPreviewRejectsOverflowingPayloadOffsetWithoutTrapping() async throws {
 		let tarData = tarHeader(
 			name: "huge.bin",
-			sizeField: tarBase256Size(Int64.max - 511)
+			sizeField: tarBase256Size(Int64.max - 511),
 		)
 		let tarURL = try writeDataFile(named: "overflow.tar", data: tarData)
 
@@ -1112,10 +1112,10 @@ final class PreviewSmokeTests: XCTestCase {
 			.deletingLastPathComponent()
 			.appendingPathComponent("TestFiles/archives", isDirectory: true)
 		let rar4Preview = try await RARPreview().createPreviewVC(
-			file: File(url: fixtures.appendingPathComponent("example-rar4.rar"))
+			file: File(url: fixtures.appendingPathComponent("example-rar4.rar")),
 		)
 		let rar5Preview = try await RARPreview().createPreviewVC(
-			file: File(url: fixtures.appendingPathComponent("example-rar5.rar"))
+			file: File(url: fixtures.appendingPathComponent("example-rar5.rar")),
 		)
 		let rar4VC = try XCTUnwrap(rar4Preview as? OutlinePreviewVC)
 		let rar5VC = try XCTUnwrap(rar5Preview as? OutlinePreviewVC)
@@ -1148,7 +1148,7 @@ final class PreviewSmokeTests: XCTestCase {
 		let fileURL = temporaryDirectory.appendingPathComponent(name)
 		try FileManager.default.createDirectory(
 			at: fileURL.deletingLastPathComponent(),
-			withIntermediateDirectories: true
+			withIntermediateDirectories: true,
 		)
 		try contents.write(to: fileURL, atomically: true, encoding: .utf8)
 		return fileURL
@@ -1187,7 +1187,7 @@ final class PreviewSmokeTests: XCTestCase {
 		let fileURL = temporaryDirectory.appendingPathComponent(name)
 		try FileManager.default.createDirectory(
 			at: fileURL.deletingLastPathComponent(),
-			withIntermediateDirectories: true
+			withIntermediateDirectories: true,
 		)
 		try data.write(to: fileURL, options: .atomic)
 		return fileURL
@@ -1212,13 +1212,13 @@ final class PreviewSmokeTests: XCTestCase {
 		}
 		XCTAssertFalse(
 			webView.isLoading,
-			"Web view did not finish loading within \(timeout) seconds"
+			"Web view did not finish loading within \(timeout) seconds",
 		)
 	}
 
 	private func waitForWebViewToFinishLoadingAsync(
 		_ webView: WKWebView,
-		timeout: Duration = .seconds(5)
+		timeout: Duration = .seconds(5),
 	) async throws {
 		let clock = ContinuousClock()
 		let deadline = clock.now.advanced(by: timeout)
@@ -1231,7 +1231,7 @@ final class PreviewSmokeTests: XCTestCase {
 	private func waitForJavaScript(
 		_ expression: String,
 		in webView: WKWebView,
-		timeout: Duration = .seconds(5)
+		timeout: Duration = .seconds(5),
 	) async throws {
 		let clock = ContinuousClock()
 		let deadline = clock.now.advanced(by: timeout)
@@ -1255,7 +1255,7 @@ final class PreviewSmokeTests: XCTestCase {
 	private func runProcess(
 		_ executable: String,
 		arguments: [String],
-		in directory: URL? = nil
+		in directory: URL? = nil,
 	) throws {
 		let process = Process()
 		process.executableURL = URL(fileURLWithPath: executable)
@@ -1272,11 +1272,11 @@ final class PreviewSmokeTests: XCTestCase {
 		guard process.terminationStatus == 0 else {
 			let output = String(
 				data: outputPipe.fileHandleForReading.readDataToEndOfFile(),
-				encoding: .utf8
+				encoding: .utf8,
 			) ?? ""
 			throw ProcessError(
 				command: ([executable] + arguments).joined(separator: " "),
-				output: output
+				output: output,
 			)
 		}
 	}
@@ -1285,7 +1285,7 @@ final class PreviewSmokeTests: XCTestCase {
 		_ operation: () async throws -> Void,
 		errorHandler: (Error) -> Void = { _ in },
 		file: StaticString = #filePath,
-		line: UInt = #line
+		line: UInt = #line,
 	) async {
 		do {
 			try await operation()
@@ -1299,7 +1299,7 @@ final class PreviewSmokeTests: XCTestCase {
 		let expression = try NSRegularExpression(pattern: #"url\(([^)]+)\)"#)
 		let matches = expression.matches(
 			in: stylesheet,
-			range: NSRange(stylesheet.startIndex ..< stylesheet.endIndex, in: stylesheet)
+			range: NSRange(stylesheet.startIndex ..< stylesheet.endIndex, in: stylesheet),
 		)
 
 		return matches.compactMap { match -> URL? in
@@ -1318,7 +1318,7 @@ final class PreviewSmokeTests: XCTestCase {
 	private func tarHeader(
 		name: String,
 		sizeField: [UInt8],
-		typeFlag: UInt8 = UInt8(ascii: "0")
+		typeFlag: UInt8 = UInt8(ascii: "0"),
 	) -> Data {
 		var header = Data(repeating: 0, count: 512)
 		write(Array(name.utf8), to: &header, at: 0, maxLength: 100)

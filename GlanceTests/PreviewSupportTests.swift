@@ -43,12 +43,12 @@ final class PreviewSupportTests: XCTestCase {
 			XCTAssertEqual(
 				SupportedPreviewRegistry.entry(matching: fileURL)?.id,
 				testCase.expectedID,
-				testCase.path
+				testCase.path,
 			)
 			XCTAssertEqual(
 				PreviewSupport.getPreviewFileType(fileURL: fileURL),
 				testCase.expectedType,
-				testCase.path
+				testCase.path,
 			)
 		}
 	}
@@ -92,7 +92,7 @@ final class PreviewSupportTests: XCTestCase {
 			XCTAssertEqual(
 				PreviewSupport.getPreviewFileType(fileURL: fileURL),
 				testCase.expected,
-				testCase.path
+				testCase.path,
 			)
 		}
 	}
@@ -100,27 +100,27 @@ final class PreviewSupportTests: XCTestCase {
 	func testPreviewTypeIsCaseInsensitive() {
 		XCTAssertEqual(
 			PreviewSupport.getPreviewFileType(fileURL: URL(fileURLWithPath: "/tmp/README.MD")),
-			.markdown
+			.markdown,
 		)
 		XCTAssertEqual(
 			PreviewSupport.getPreviewFileType(fileURL: URL(fileURLWithPath: "/tmp/ARCHIVE.TAR.GZ")),
-			.tar
+			.tar,
 		)
 		XCTAssertEqual(
 			PreviewSupport.getPreviewFileType(fileURL: URL(fileURLWithPath: "/tmp/ARCHIVE.ZIP")),
-			.zip
+			.zip,
 		)
 		XCTAssertEqual(
 			PreviewSupport.getPreviewFileType(fileURL: URL(fileURLWithPath: "/tmp/ARCHIVE.RAR")),
-			.rar
+			.rar,
 		)
 		XCTAssertEqual(
 			PreviewSupport.getPreviewFileType(fileURL: URL(fileURLWithPath: "/tmp/BOOK.EPUB")),
-			.epub
+			.epub,
 		)
 		XCTAssertEqual(
 			PreviewSupport.getPreviewFileType(fileURL: URL(fileURLWithPath: "/tmp/TRACK.FLAC")),
-			.flac
+			.flac,
 		)
 	}
 
@@ -129,7 +129,7 @@ final class PreviewSupportTests: XCTestCase {
 			.appendingPathComponent("GlanceSpreadsheetPolicy-\(UUID().uuidString)")
 		try FileManager.default.createDirectory(
 			at: directory,
-			withIntermediateDirectories: true
+			withIntermediateDirectories: true,
 		)
 		defer { try? FileManager.default.removeItem(at: directory) }
 		let spreadsheet = directory.appendingPathComponent("large.xlsx")
@@ -142,10 +142,10 @@ final class PreviewSupportTests: XCTestCase {
 		}
 
 		XCTAssertNoThrow(
-			try PreviewPolicy.validateFileSize(try File(url: spreadsheet))
+			try PreviewPolicy.validateFileSize(try File(url: spreadsheet)),
 		)
 		XCTAssertThrowsError(
-			try PreviewPolicy.validateFileSize(try File(url: text))
+			try PreviewPolicy.validateFileSize(try File(url: text)),
 		)
 	}
 
@@ -241,7 +241,7 @@ final class PreviewSupportTests: XCTestCase {
 			XCTAssertEqual(
 				PreviewSupport.getCodeLexer(fileURL: fileURL),
 				lexer,
-				fileExtension
+				fileExtension,
 			)
 		}
 	}
@@ -259,7 +259,7 @@ final class PreviewSupportTests: XCTestCase {
 			XCTAssertEqual(
 				SupportedPreviewRegistry.entry(matching: fileURL)?.id,
 				"code.filename.env",
-				fileName
+				fileName,
 			)
 			XCTAssertEqual(PreviewSupport.getCodeLexer(fileURL: fileURL), "dotenv", fileName)
 		}
@@ -276,56 +276,56 @@ final class PreviewSupportTests: XCTestCase {
 			XCTAssertEqual(
 				PreviewSupport.getPreviewFileType(fileURL: fileURL),
 				.code,
-				fileExtension
+				fileExtension,
 			)
 			XCTAssertEqual(
 				SupportedPreviewRegistry.entry(matching: fileURL)?.id,
 				"code.extension.\(fileExtension)",
-				fileExtension
+				fileExtension,
 			)
 		}
 
 		XCTAssertEqual(
 			PreviewSupport.getPreviewFileType(fileURL: URL(fileURLWithPath: "/tmp/.env.local")),
-			.code
+			.code,
 		)
 		XCTAssertEqual(
 			PreviewSupport.getPreviewFileType(fileURL: URL(fileURLWithPath: "/tmp/.env.ipynb")),
-			.jupyter
+			.jupyter,
 		)
 		XCTAssertEqual(
 			PreviewSupport.getPreviewFileType(fileURL: URL(fileURLWithPath: "/tmp/.env.tsv")),
-			.tsv
+			.tsv,
 		)
 		XCTAssertEqual(
 			PreviewSupport.getPreviewFileType(fileURL: URL(fileURLWithPath: "/tmp/.env.zip")),
-			.zip
+			.zip,
 		)
 		XCTAssertEqual(
 			PreviewSupport.getPreviewFileType(fileURL: URL(fileURLWithPath: "/tmp/.env.md")),
-			.markdown
+			.markdown,
 		)
 	}
 
 	func testCodeLexerRecursesThroughDistExtension() {
 		XCTAssertEqual(
 			PreviewSupport.getCodeLexer(fileURL: URL(fileURLWithPath: "/tmp/example.swift.dist")),
-			"swift"
+			"swift",
 		)
 		XCTAssertEqual(
 			PreviewSupport.getCodeLexer(fileURL: URL(fileURLWithPath: "/tmp/example.spTheme.dist")),
-			"xml"
+			"xml",
 		)
 	}
 
 	func testCodeLexerFallsBackToExtensionOrAutodetect() {
 		XCTAssertEqual(
 			PreviewSupport.getCodeLexer(fileURL: URL(fileURLWithPath: "/tmp/example.unknownext")),
-			"unknownext"
+			"unknownext",
 		)
 		XCTAssertEqual(
 			PreviewSupport.getCodeLexer(fileURL: URL(fileURLWithPath: "/tmp/unknown-dotless-file")),
-			"autodetect"
+			"autodetect",
 		)
 	}
 }
@@ -340,8 +340,8 @@ final class PreviewSettingsBridgeTests: XCTestCase {
 			appearance: PreviewAppearancePreferences(
 				fontFamily: "SF Mono",
 				fontSize: 21.5,
-				wrapsLines: true
-			)
+				wrapsLines: true,
+			),
 		)
 		let encoded = PreviewSettingsBridge.response(for: UUID(), snapshot: snapshot)
 
@@ -355,7 +355,7 @@ final class PreviewSettingsBridgeTests: XCTestCase {
 	func testBridgeResponseRepresentsMissingFamilyWithSentinel() {
 		let snapshot = PreviewPreferenceSnapshot(
 			waveformEnabled: true,
-			appearance: .default
+			appearance: .default,
 		)
 		let encoded = PreviewSettingsBridge.response(for: UUID(), snapshot: snapshot)
 
@@ -387,7 +387,7 @@ final class PreviewSettingsBridgeTests: XCTestCase {
 		let neverRespondingCenter = StubPreviewSettingsBridgeCenter()
 		let client = PreviewSettingsClient(
 			notificationCenter: neverRespondingCenter,
-			timeout: .milliseconds(20)
+			timeout: .milliseconds(20),
 		)
 
 		let appearance = await client.appearancePreferences()
@@ -434,7 +434,7 @@ private final class StubPreviewSettingsBridgeCenter: OpenWithBridgeNotifying {
 
 	func addObserver(
 		forName name: Notification.Name,
-		handler: @escaping @MainActor @Sendable (String) -> Void
+		handler: @escaping @MainActor @Sendable (String) -> Void,
 	) -> NSObjectProtocol {
 		let token = ObserverToken()
 		observers[ObjectIdentifier(token)] = Observer(name: name, handler: handler)

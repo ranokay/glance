@@ -48,7 +48,7 @@ enum ThreeMFSceneBuilder {
 		let center = SCNVector3(
 			(minimum.x + maximum.x) / 2,
 			(minimum.y + maximum.y) / 2,
-			(minimum.z + maximum.z) / 2
+			(minimum.z + maximum.z) / 2,
 		)
 		let corners = [minimum.x, maximum.x].flatMap { x in
 			[minimum.y, maximum.y].flatMap { y in
@@ -59,7 +59,7 @@ enum ThreeMFSceneBuilder {
 		let camera = ModelCamera(
 			target: SCNVector3(center.x, center.z, -center.y),
 			corners: corners,
-			radius: radius
+			radius: radius,
 		)
 		scene.rootNode.addChildNode(camera.node)
 
@@ -76,9 +76,9 @@ enum ThreeMFSceneBuilder {
 			dimensions: SCNVector3(
 				size.x * CGFloat(payload.unitMillimeters),
 				size.y * CGFloat(payload.unitMillimeters),
-				size.z * CGFloat(payload.unitMillimeters)
+				size.z * CGFloat(payload.unitMillimeters),
 			),
-			triangleCount: payload.triangleCount
+			triangleCount: payload.triangleCount,
 		)
 	}
 
@@ -102,12 +102,12 @@ enum ThreeMFSceneBuilder {
 			let firstEdge = SCNVector3(
 				vertices[1].x - vertices[0].x,
 				vertices[1].y - vertices[0].y,
-				vertices[1].z - vertices[0].z
+				vertices[1].z - vertices[0].z,
 			)
 			let secondEdge = SCNVector3(
 				vertices[2].x - vertices[0].x,
 				vertices[2].y - vertices[0].y,
-				vertices[2].z - vertices[0].z
+				vertices[2].z - vertices[0].z,
 			)
 			let normal = firstEdge.cross(secondEdge).normalized()
 			for vertex in vertices {
@@ -125,9 +125,9 @@ enum ThreeMFSceneBuilder {
 			elements: [
 				SCNGeometryElement(
 					indices: [Int32](0 ..< Int32(vertexCount)),
-					primitiveType: .triangles
+					primitiveType: .triangles,
 				),
-			]
+			],
 		)
 		let material = SCNMaterial()
 		material.lightingModel = .physicallyBased
@@ -135,7 +135,7 @@ enum ThreeMFSceneBuilder {
 			calibratedRed: CGFloat(mesh.color[0]),
 			green: CGFloat(mesh.color[1]),
 			blue: CGFloat(mesh.color[2]),
-			alpha: CGFloat(mesh.color[3])
+			alpha: CGFloat(mesh.color[3]),
 		)
 		material.metalness.contents = 0.0
 		material.roughness.contents = 0.55
@@ -147,7 +147,7 @@ enum ThreeMFSceneBuilder {
 	private static func source(
 		_ components: [Float],
 		count: Int,
-		semantic: SCNGeometrySource.Semantic
+		semantic: SCNGeometrySource.Semantic,
 	) -> SCNGeometrySource {
 		let data = components.withUnsafeBufferPointer { Data(buffer: $0) }
 		return SCNGeometrySource(
@@ -158,7 +158,7 @@ enum ThreeMFSceneBuilder {
 			componentsPerVector: 3,
 			bytesPerComponent: MemoryLayout<Float>.size,
 			dataOffset: 0,
-			dataStride: MemoryLayout<Float>.size * 3
+			dataStride: MemoryLayout<Float>.size * 3,
 		)
 	}
 
@@ -183,7 +183,7 @@ enum ThreeMFSceneBuilder {
 			m41: CGFloat(values[12]),
 			m42: CGFloat(values[13]),
 			m43: CGFloat(values[14]),
-			m44: CGFloat(values[15])
+			m44: CGFloat(values[15]),
 		)
 	}
 }

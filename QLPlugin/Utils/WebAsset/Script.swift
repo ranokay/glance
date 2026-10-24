@@ -17,7 +17,7 @@ final class Script: WebAsset {
 					return try String(contentsOf: url, encoding: .utf8)
 				} catch {
 					Log.render.error(
-						"Could not read script asset \(url.path, privacy: .private): \(error.localizedDescription, privacy: .private)"
+						"Could not read script asset \(url.path, privacy: .private): \(error.localizedDescription, privacy: .private)",
 					)
 					return ""
 				}

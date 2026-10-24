@@ -11,7 +11,7 @@ extension Date {
 	}()
 
 	private static let dateStringFormatterQueue = DispatchQueue(
-		label: "com.chamburr.Glance.dateStringFormatter"
+		label: "com.chamburr.Glance.dateStringFormatter",
 	)
 
 	/// Converts the `Date` to a `yyyy-MM-dd` string

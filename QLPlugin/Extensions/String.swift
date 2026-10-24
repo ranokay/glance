@@ -24,7 +24,7 @@ extension String {
 		let results = regex.matches(
 			in: self,
 			options: [],
-			range: NSRange(location: 0, length: nsString.length)
+			range: NSRange(location: 0, length: nsString.length),
 		)
 		return results.map { result in
 			(0 ..< result.numberOfRanges).map {

@@ -35,7 +35,7 @@ final class CorpusSweepTests: XCTestCase {
 			let name = fileURL.lastPathComponent
 			guard let initializer = PreviewVCFactory.getPreviewInitializer(
 				fileURL: fileURL,
-				isDirectory: false
+				isDirectory: false,
 			) else {
 				missing.append(name)
 				continue
@@ -69,15 +69,15 @@ final class CorpusSweepTests: XCTestCase {
 
 		XCTAssertTrue(
 			missing.isEmpty,
-			"fixtures with no registered preview: \(missing.sorted())"
+			"fixtures with no registered preview: \(missing.sorted())",
 		)
 		XCTAssertTrue(
 			failed.isEmpty,
-			"fixtures that failed to render: \(failed.sorted())"
+			"fixtures that failed to render: \(failed.sorted())",
 		)
 		XCTAssertTrue(
 			unexpectedlyRendered.isEmpty,
-			"encryption-gated fixtures now render — drop them from the allowlist: \(unexpectedlyRendered.sorted())"
+			"encryption-gated fixtures now render — drop them from the allowlist: \(unexpectedlyRendered.sorted())",
 		)
 		XCTAssertGreaterThan(swept, 20, "corpus sweep covered \(swept) fixtures")
 	}

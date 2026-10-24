@@ -12,7 +12,7 @@ class ZIPPreview: Preview {
 			format: .zip,
 			depth: depth,
 			scan: { try PreviewCoreBridge.scanZIP(at: fileURL) },
-			policy: .zip
+			policy: .zip,
 		)
 	}
 

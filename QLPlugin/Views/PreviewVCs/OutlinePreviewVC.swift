@@ -47,7 +47,7 @@ class OutlinePreviewVC: NSViewController, PreviewVC {
 		NSSortDescriptor(
 			key: "name",
 			ascending: true,
-			selector: #selector(NSString.localizedStandardCompare(_:))
+			selector: #selector(NSString.localizedStandardCompare(_:)),
 		),
 	] {
 		willSet {
@@ -107,7 +107,7 @@ class OutlinePreviewVC: NSViewController, PreviewVC {
 		showsFileThumbnails: Bool = false,
 		directoryURL: URL? = nil,
 		directoryPageLoader: (any DirectoryPageLoading)? = nil,
-		directoryPaginationSession: DirectoryPaginationSession = DirectoryPaginationSession()
+		directoryPaginationSession: DirectoryPaginationSession = DirectoryPaginationSession(),
 	) {
 		self.init(
 			nibName: NSNib.Name("OutlinePreviewVC"),
@@ -118,7 +118,7 @@ class OutlinePreviewVC: NSViewController, PreviewVC {
 			showsFileThumbnails: showsFileThumbnails,
 			directoryURL: directoryURL,
 			directoryPageLoader: directoryPageLoader,
-			directoryPaginationSession: directoryPaginationSession
+			directoryPaginationSession: directoryPaginationSession,
 		)
 	}
 
@@ -132,7 +132,7 @@ class OutlinePreviewVC: NSViewController, PreviewVC {
 		thumbnailLoader: DirectoryThumbnailLoader? = nil,
 		directoryURL: URL? = nil,
 		directoryPageLoader: (any DirectoryPageLoading)? = nil,
-		directoryPaginationSession: DirectoryPaginationSession = DirectoryPaginationSession()
+		directoryPaginationSession: DirectoryPaginationSession = DirectoryPaginationSession(),
 	) {
 		self.rootNodes = rootNodes
 		previewStatusText = labelText ?? ""
@@ -297,19 +297,19 @@ class OutlinePreviewVC: NSViewController, PreviewVC {
 			self,
 			selector: #selector(outlineViewportDidChange),
 			name: NSView.boundsDidChangeNotification,
-			object: clipView
+			object: clipView,
 		)
 		NotificationCenter.default.addObserver(
 			self,
 			selector: #selector(outlineViewportDidChange),
 			name: NSOutlineView.itemDidExpandNotification,
-			object: outlineView
+			object: outlineView,
 		)
 		NotificationCenter.default.addObserver(
 			self,
 			selector: #selector(outlineViewportDidChange),
 			name: NSOutlineView.itemDidCollapseNotification,
-			object: outlineView
+			object: outlineView,
 		)
 		requestVisibleThumbnails()
 	}
@@ -328,7 +328,7 @@ class OutlinePreviewVC: NSViewController, PreviewVC {
 			guard let cellView = outlineView.view(
 				atColumn: 0,
 				row: row,
-				makeIfNecessary: false
+				makeIfNecessary: false,
 			) as? NSTableCellView else {
 				continue
 			}
@@ -390,7 +390,7 @@ class OutlinePreviewVC: NSViewController, PreviewVC {
 		for row in visibleRowIndexes() where treeNode(at: row) === node {
 			outlineView.reloadData(
 				forRowIndexes: IndexSet(integer: row),
-				columnIndexes: IndexSet(integer: 0)
+				columnIndexes: IndexSet(integer: 0),
 			)
 			return
 		}
@@ -407,7 +407,7 @@ class OutlinePreviewVC: NSViewController, PreviewVC {
 		}
 		return try await DirectoryPreview.makeOutlinePreview(
 			for: fileURL,
-			pageLoader: directoryPageLoader
+			pageLoader: directoryPageLoader,
 		)
 	}
 
@@ -425,13 +425,13 @@ class OutlinePreviewVC: NSViewController, PreviewVC {
 		return OutlineStateSnapshot(
 			expandedNodes: expandedNodes,
 			selectedNode: selectedNode,
-			scrollOrigin: outlineView.enclosingScrollView?.contentView.bounds.origin
+			scrollOrigin: outlineView.enclosingScrollView?.contentView.bounds.origin,
 		)
 	}
 
 	func reloadTree(
 		expanding node: FileTreeNode? = nil,
-		restoring state: OutlineStateSnapshot? = nil
+		restoring state: OutlineStateSnapshot? = nil,
 	) {
 		var expandedNodes = state?.expandedNodes ?? captureOutlineState().expandedNodes
 		if let node {
@@ -465,7 +465,7 @@ class OutlinePreviewVC: NSViewController, PreviewVC {
 		if let selectedRow {
 			outlineView.selectRowIndexes(
 				IndexSet(integer: selectedRow),
-				byExtendingSelection: false
+				byExtendingSelection: false,
 			)
 		} else {
 			outlineView.deselectAll(nil)
@@ -513,7 +513,7 @@ extension OutlinePreviewVC: NSOutlineViewDelegate {
 			let cellView = outlineView.view(
 				atColumn: 0,
 				row: row,
-				makeIfNecessary: false
+				makeIfNecessary: false,
 			) as? NSTableCellView
 		else {
 			return

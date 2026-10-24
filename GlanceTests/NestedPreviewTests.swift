@@ -15,7 +15,7 @@ final class NestedPreviewTests: XCTestCase {
 			.appendingPathComponent("GlanceNestedTests-\(UUID().uuidString)", isDirectory: true)
 		try FileManager.default.createDirectory(
 			at: temporaryDirectory,
-			withIntermediateDirectories: true
+			withIntermediateDirectories: true,
 		)
 	}
 
@@ -31,23 +31,23 @@ final class NestedPreviewTests: XCTestCase {
 
 		assertGlanceRoute(
 			provider.route(for: node(named: "README.md", type: .plainText)),
-			expected: MarkdownPreview.self
+			expected: MarkdownPreview.self,
 		)
 		assertGlanceRoute(
 			provider.route(for: node(named: "source.swift", type: .sourceCode)),
-			expected: CodePreview.self
+			expected: CodePreview.self,
 		)
 		assertGlanceRoute(
 			provider.route(for: node(named: "archive.zip", type: .zip)),
-			expected: ZIPPreview.self
+			expected: ZIPPreview.self,
 		)
 		assertGlanceRoute(
 			provider.route(for: node(named: "archive.rar", type: .archive)),
-			expected: RARPreview.self
+			expected: RARPreview.self,
 		)
 		assertGlanceRoute(
 			provider.route(for: node(named: "book.epub", type: .data)),
-			expected: EPUBPreview.self
+			expected: EPUBPreview.self,
 		)
 		assertNativeRoute(provider.route(for: node(named: "image.png", type: .png)))
 		assertMediaRoute(provider.route(for: node(named: "movie.mp4", type: .mpeg4Movie)))
@@ -58,7 +58,7 @@ final class NestedPreviewTests: XCTestCase {
 			named: "Project.screenstudio",
 			type: .package,
 			isDirectory: true,
-			isPackage: true
+			isPackage: true,
 		)))
 	}
 
@@ -78,7 +78,7 @@ final class NestedPreviewTests: XCTestCase {
 		XCTAssertTrue(generatedMarkdownPreview is WebPreviewVC)
 		let generatedNativePreview = try await provider.makePreviewController(for: imageNode)
 		let nativePreview = try XCTUnwrap(
-			generatedNativePreview as? NativePreviewVC
+			generatedNativePreview as? NativePreviewVC,
 		)
 		XCTAssertEqual(nativePreview.fileURL, imageURL)
 		XCTAssertNotNil(nativePreview.previewView)
@@ -121,19 +121,19 @@ final class NestedPreviewTests: XCTestCase {
 		outline.loadViewIfNeeded()
 		let context = try XCTUnwrap(outline.archiveContext)
 		let node = try XCTUnwrap(
-			findNode(named: "hello-world.txt", in: outline.rootNodes)
+			findNode(named: "hello-world.txt", in: outline.rootNodes),
 		)
 
 		XCTAssertEqual(node.archiveEntryPath, "example/hello-world.txt")
 
 		let result = try await DefaultNestedPreviewProvider().makeArchiveEntryPreview(
 			for: node,
-			context: context
+			context: context,
 		)
 		let temporaryURL = try XCTUnwrap(result.temporaryFileURL)
 		XCTAssertEqual(
 			try String(contentsOf: temporaryURL, encoding: .utf8),
-			"Hello world!\n"
+			"Hello world!\n",
 		)
 		XCTAssertTrue(FileManager.default.fileExists(atPath: temporaryURL.path))
 		XCTAssertTrue(result.previewVC is WebPreviewVC)
@@ -147,7 +147,7 @@ final class NestedPreviewTests: XCTestCase {
 		let outline = try XCTUnwrap(generatedPreview as? OutlinePreviewVC)
 		outline.loadViewIfNeeded()
 		let node = try XCTUnwrap(
-			findNode(named: "hello-world.txt", in: outline.rootNodes)
+			findNode(named: "hello-world.txt", in: outline.rootNodes),
 		)
 		let mainVC = MainVC()
 		mainVC.loadViewIfNeeded()
@@ -170,7 +170,7 @@ final class NestedPreviewTests: XCTestCase {
 		let outline = try XCTUnwrap(generatedPreview as? OutlinePreviewVC)
 		outline.loadViewIfNeeded()
 		let node = try XCTUnwrap(
-			findNode(named: "hello-world.txt", in: outline.rootNodes)
+			findNode(named: "hello-world.txt", in: outline.rootNodes),
 		)
 		let mainVC = MainVC()
 		mainVC.loadViewIfNeeded()
@@ -203,7 +203,7 @@ final class NestedPreviewTests: XCTestCase {
 		let innerTemp = try XCTUnwrap(mainVC.nestedTemporaryFileURL)
 		innerPreview.loadViewIfNeeded()
 		let fileNode = try XCTUnwrap(
-			findNode(named: "hello-world.txt", in: innerPreview.rootNodes)
+			findNode(named: "hello-world.txt", in: innerPreview.rootNodes),
 		)
 
 		mainVC.outlinePreview(innerPreview, requestPreviewOf: fileNode)
@@ -227,7 +227,7 @@ final class NestedPreviewTests: XCTestCase {
 		let outline = try XCTUnwrap(generatedPreview as? OutlinePreviewVC)
 		outline.loadViewIfNeeded()
 		let node = try XCTUnwrap(
-			findNode(named: "hello-world.txt", in: outline.rootNodes)
+			findNode(named: "hello-world.txt", in: outline.rootNodes),
 		)
 		let mainVC = MainVC()
 		mainVC.loadViewIfNeeded()
@@ -248,12 +248,12 @@ final class NestedPreviewTests: XCTestCase {
 			size: 13,
 			isDirectory: false,
 			dateModified: nil,
-			archiveEntryPath: "example/hello-world.txt"
+			archiveEntryPath: "example/hello-world.txt",
 		)
 		let deepContext = ArchivePreviewContext(fileURL: zipURL, format: .zip, depth: 3)
 		let result = try await DefaultNestedPreviewProvider().makeArchiveEntryPreview(
 			for: leaf,
-			context: deepContext
+			context: deepContext,
 		)
 		let temporaryURL = try XCTUnwrap(result.temporaryFileURL)
 		XCTAssertTrue(result.previewVC is WebPreviewVC)
@@ -265,13 +265,13 @@ final class NestedPreviewTests: XCTestCase {
 			size: 193,
 			isDirectory: false,
 			dateModified: nil,
-			archiveEntryPath: "inner.zip"
+			archiveEntryPath: "inner.zip",
 		)
 		let nestedContext = ArchivePreviewContext(fileURL: nestedURL, format: .zip, depth: 3)
 		do {
 			_ = try await DefaultNestedPreviewProvider().makeArchiveEntryPreview(
 				for: inner,
-				context: nestedContext
+				context: nestedContext,
 			)
 			XCTFail("Expected a fourth archive level to be rejected")
 		} catch {
@@ -284,7 +284,7 @@ final class NestedPreviewTests: XCTestCase {
 	func testPreservesCompoundArchiveExtensionsForExtractedEntries() {
 		XCTAssertEqual(
 			DefaultNestedPreviewProvider.safeExtension(of: "example.tar.gz"),
-			"tar.gz"
+			"tar.gz",
 		)
 		XCTAssertEqual(DefaultNestedPreviewProvider.safeExtension(of: "example.zip"), "zip")
 	}
@@ -300,14 +300,14 @@ final class NestedPreviewTests: XCTestCase {
 			let node = try XCTUnwrap(findNode(named: name, in: outline.rootNodes))
 			let result = try await DefaultNestedPreviewProvider().makeArchiveEntryPreview(
 				for: node,
-				context: context
+				context: context,
 			)
 			XCTAssertTrue(result.previewVC is WebPreviewVC, name)
 			let temporaryURL = try XCTUnwrap(result.temporaryFileURL)
 			XCTAssertEqual(
 				PreviewSupport.getPreviewFileType(fileURL: temporaryURL),
 				.code,
-				name
+				name,
 			)
 			try? FileManager.default.removeItem(at: temporaryURL.deletingLastPathComponent())
 		}
@@ -316,16 +316,16 @@ final class NestedPreviewTests: XCTestCase {
 	func testTemporaryEntryNamesStayInsideTheGeneratedDirectory() {
 		XCTAssertEqual(
 			DefaultNestedPreviewProvider.temporaryFileName(for: "Makefile"),
-			"Makefile"
+			"Makefile",
 		)
 		XCTAssertEqual(
 			DefaultNestedPreviewProvider.temporaryFileName(for: "example.tar.gz"),
-			"example.tar.gz"
+			"example.tar.gz",
 		)
 		let longName = String(repeating: "a", count: 201)
 		XCTAssertTrue(
 			DefaultNestedPreviewProvider.temporaryFileName(for: longName)
-				.hasPrefix("entry-")
+				.hasPrefix("entry-"),
 		)
 	}
 
@@ -338,14 +338,14 @@ final class NestedPreviewTests: XCTestCase {
 			size: 0,
 			isDirectory: true,
 			dateModified: nil,
-			archiveEntryPath: "example/"
+			archiveEntryPath: "example/",
 		)
 		let link = FileTreeNode(
 			name: "link.txt",
 			size: 0,
 			isDirectory: false,
 			dateModified: nil,
-			archiveEntryPath: "link.txt"
+			archiveEntryPath: "link.txt",
 		)
 		link.isSymbolicLink = true
 
@@ -369,7 +369,7 @@ final class NestedPreviewTests: XCTestCase {
 			named: "Project.screenstudio",
 			type: .package,
 			isDirectory: true,
-			isPackage: true
+			isPackage: true,
 		)
 		let symlink = node(named: "link.txt", type: .symbolicLink, isSymbolicLink: true)
 		let interactionDelegate = RecordingOutlineInteractionDelegate()
@@ -461,7 +461,7 @@ final class NestedPreviewTests: XCTestCase {
 		let generatedRootPreview = try await DirectoryPreview(
 			fileManager: .default,
 			maxItemCount: 500,
-			excludedRootURLs: []
+			excludedRootURLs: [],
 		).createPreviewVC(file: File(url: rootURL))
 		let rootPreview = try XCTUnwrap(generatedRootPreview as? OutlinePreviewVC)
 		let levelOneNode = try XCTUnwrap(rootPreview.rootNodes.first { $0.name == "level-one" })
@@ -505,7 +505,7 @@ final class NestedPreviewTests: XCTestCase {
 		let previewVC = makeOutline(rootNodes: [fileNode])
 		let mainVC = MainVC()
 		mainVC.nestedPreviewProvider = StubNestedPreviewProvider(
-			result: .failure(TestNestedPreviewError.failed)
+			result: .failure(TestNestedPreviewError.failed),
 		)
 		mainVC.loadViewIfNeeded()
 		mainVC.installTopLevelPreview(previewVC, file: try File(url: folderURL))
@@ -525,7 +525,7 @@ final class NestedPreviewTests: XCTestCase {
 		type: UTType,
 		isDirectory: Bool = false,
 		isPackage: Bool = false,
-		isSymbolicLink: Bool = false
+		isSymbolicLink: Bool = false,
 	) -> FileTreeNode {
 		FileTreeNode(
 			name: name,
@@ -535,7 +535,7 @@ final class NestedPreviewTests: XCTestCase {
 			fileURL: temporaryDirectory.appendingPathComponent(name),
 			isPackage: isPackage,
 			isSymbolicLink: isSymbolicLink,
-			contentTypeIdentifier: type.identifier
+			contentTypeIdentifier: type.identifier,
 		)
 	}
 
@@ -547,7 +547,7 @@ final class NestedPreviewTests: XCTestCase {
 			labelText: "\(rootNodes.count) items",
 			expandAll: true,
 			showsFileThumbnails: true,
-			directoryURL: temporaryDirectory
+			directoryURL: temporaryDirectory,
 		)
 	}
 
@@ -555,7 +555,7 @@ final class NestedPreviewTests: XCTestCase {
 		_ route: NestedPreviewRoute,
 		expected: Preview.Type,
 		file: StaticString = #filePath,
-		line: UInt = #line
+		line: UInt = #line,
 	) {
 		guard case let .glance(actual) = route else {
 			return XCTFail("Expected Glance route", file: file, line: line)
@@ -564,14 +564,14 @@ final class NestedPreviewTests: XCTestCase {
 			ObjectIdentifier(actual),
 			ObjectIdentifier(expected),
 			file: file,
-			line: line
+			line: line,
 		)
 	}
 
 	private func assertNativeRoute(
 		_ route: NestedPreviewRoute,
 		file: StaticString = #filePath,
-		line: UInt = #line
+		line: UInt = #line,
 	) {
 		guard case .native = route else {
 			return XCTFail("Expected native route", file: file, line: line)
@@ -581,7 +581,7 @@ final class NestedPreviewTests: XCTestCase {
 	private func assertMediaRoute(
 		_ route: NestedPreviewRoute,
 		file: StaticString = #filePath,
-		line: UInt = #line
+		line: UInt = #line,
 	) {
 		guard case .media = route else {
 			return XCTFail("Expected AVKit media route", file: file, line: line)
@@ -606,7 +606,7 @@ final class NestedPreviewTests: XCTestCase {
 		let directoryURL = temporaryDirectory.appendingPathComponent(name, isDirectory: true)
 		try FileManager.default.createDirectory(
 			at: directoryURL,
-			withIntermediateDirectories: true
+			withIntermediateDirectories: true,
 		)
 		return directoryURL
 	}
@@ -615,7 +615,7 @@ final class NestedPreviewTests: XCTestCase {
 		let fileURL = temporaryDirectory.appendingPathComponent(name)
 		try FileManager.default.createDirectory(
 			at: fileURL.deletingLastPathComponent(),
-			withIntermediateDirectories: true
+			withIntermediateDirectories: true,
 		)
 		try contents.write(to: fileURL, atomically: true, encoding: .utf8)
 		return fileURL
@@ -646,7 +646,7 @@ final class NestedPreviewTests: XCTestCase {
 
 	private func waitUntil(
 		timeout: Duration = .seconds(2),
-		condition: @escaping @MainActor () -> Bool
+		condition: @escaping @MainActor () -> Bool,
 	) async throws {
 		let clock = ContinuousClock()
 		let deadline = clock.now.advanced(by: timeout)

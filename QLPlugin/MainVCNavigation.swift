@@ -21,7 +21,7 @@ extension MainVC {
 	func pushPreview(
 		_ previewVC: PreviewVC,
 		openWithTargetURL: URL?,
-		temporaryFileURL: URL? = nil
+		temporaryFileURL: URL? = nil,
 	) {
 		if let outlinePreview = previewVC as? OutlinePreviewVC,
 		   outlinePreview.isNestedPreviewBrowser

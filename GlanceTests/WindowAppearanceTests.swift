@@ -47,7 +47,7 @@ final class WindowAppearanceTests: XCTestCase {
 
 		XCTAssertEqual(
 			store.previewAppearance,
-			PreviewAppearancePreferences(fontFamily: "Menlo", fontSize: 18, wrapsLines: true)
+			PreviewAppearancePreferences(fontFamily: "Menlo", fontSize: 18, wrapsLines: true),
 		)
 	}
 
@@ -109,7 +109,7 @@ final class WindowAppearanceTests: XCTestCase {
 		sharedDefaults.set(15.0, forKey: AppSettingsStore.previewFontSizeKey)
 		let store = AppSettingsStore(
 			defaults: sharedDefaults,
-			standardDefaults: standardDefaults
+			standardDefaults: standardDefaults,
 		)
 
 		store.migrateStandardDefaultsIfNeeded()
@@ -127,7 +127,7 @@ final class WindowAppearanceTests: XCTestCase {
 		store.previewLineWrapping = true
 		let controller = SettingsWC(
 			settingsStore: store,
-			fontFamilies: ["Helvetica", "Menlo"]
+			fontFamilies: ["Helvetica", "Menlo"],
 		)
 
 		controller.syncState()
@@ -139,12 +139,12 @@ final class WindowAppearanceTests: XCTestCase {
 		controller.fontFamilyPopUpButton.selectItem(withTitle: "Helvetica")
 		controller.fontFamilyPopUpButton.sendAction(
 			controller.fontFamilyPopUpButton.action,
-			to: controller.fontFamilyPopUpButton.target
+			to: controller.fontFamilyPopUpButton.target,
 		)
 		controller.fontSizeField.doubleValue = 19
 		controller.fontSizeField.sendAction(
 			controller.fontSizeField.action,
-			to: controller.fontSizeField.target
+			to: controller.fontSizeField.target,
 		)
 		controller.lineWrappingCheckbox.performClick(nil)
 
@@ -158,7 +158,7 @@ final class WindowAppearanceTests: XCTestCase {
 		XCTAssertEqual(controller.fontFamilyPopUpButton.indexOfSelectedItem, 0)
 		XCTAssertEqual(
 			controller.fontSizeField.doubleValue,
-			PreviewAppearancePreferences.defaultFontSize
+			PreviewAppearancePreferences.defaultFontSize,
 		)
 		XCTAssertEqual(controller.lineWrappingCheckbox.state, .off)
 	}
@@ -181,7 +181,7 @@ final class WindowAppearanceTests: XCTestCase {
 		let controller = SettingsWC(
 			settingsStore: store,
 			fontFamilies: [],
-			loginItem: loginItem
+			loginItem: loginItem,
 		)
 
 		XCTAssertEqual(controller.startAtLoginCheckbox.state, .off)
@@ -201,7 +201,7 @@ final class WindowAppearanceTests: XCTestCase {
 		let controller = SettingsWC(
 			settingsStore: store,
 			fontFamilies: [],
-			loginItem: loginItem
+			loginItem: loginItem,
 		)
 
 		loginItem.status = .requiresApproval
@@ -226,7 +226,7 @@ final class WindowAppearanceTests: XCTestCase {
 		let controller = SettingsWC(
 			settingsStore: store,
 			fontFamilies: [],
-			loginItem: loginItem
+			loginItem: loginItem,
 		)
 		loginItem.registrationError = NSError(domain: "GlanceTests", code: 1)
 		controller.startAtLoginCheckbox.performClick(nil)
@@ -248,7 +248,7 @@ final class WindowAppearanceTests: XCTestCase {
 			contentRect: NSRect(x: 0, y: 0, width: 400, height: 300),
 			styleMask: [.titled],
 			backing: .buffered,
-			defer: false
+			defer: false,
 		)
 
 		let firstMaterialView = try XCTUnwrap(WindowAppearance.apply(to: window))
@@ -261,7 +261,7 @@ final class WindowAppearanceTests: XCTestCase {
 		XCTAssertIdentical(firstMaterialView, secondMaterialView)
 		XCTAssertEqual(
 			window.contentView?.subviews.compactMap { $0 as? NSVisualEffectView }.count,
-			1
+			1,
 		)
 		XCTAssertEqual(firstMaterialView.material, .underWindowBackground)
 		XCTAssertEqual(firstMaterialView.blendingMode, .behindWindow)
@@ -277,7 +277,7 @@ final class WindowAppearanceTests: XCTestCase {
 		XCTAssertGreaterThanOrEqual(window.minSize.height, 300)
 		XCTAssertEqual(
 			controller.sectionsStackView.arrangedSubviews.count,
-			SupportedFilesWC.sections.count
+			SupportedFilesWC.sections.count,
 		)
 		XCTAssertEqual(
 			SupportedFilesWC.sections.map(\.title),
@@ -292,19 +292,19 @@ final class WindowAppearanceTests: XCTestCase {
 				"Tab-separated Values",
 				"Spreadsheet",
 				"Folders",
-			]
+			],
 		)
 		XCTAssertEqual(
 			SupportedFilesWC.sections.first { $0.title == "Tab-separated Values" }?.details,
-			".tab, .tsv"
+			".tab, .tsv",
 		)
 		XCTAssertEqual(
 			SupportedFilesWC.sections.first { $0.title == "Spreadsheet" }?.details,
-			".xlsx • Values, dates, and every worksheet"
+			".xlsx • Values, dates, and every worksheet",
 		)
 		XCTAssertEqual(
 			SupportedFilesWC.sections.first { $0.title == "Folders" }?.details,
-			"Lazy trees with icons, thumbnails, 500-item pages, and Back navigation"
+			"Lazy trees with icons, thumbnails, 500-item pages, and Back navigation",
 		)
 	}
 

@@ -15,7 +15,7 @@ final class DirectoryThumbnailTests: XCTestCase {
 			fileURL: fileURL,
 			isPackage: false,
 			isSymbolicLink: false,
-			contentTypeIdentifier: UTType.png.identifier
+			contentTypeIdentifier: UTType.png.identifier,
 		)
 
 		let node = try XCTUnwrap(fileTree.root.children["folder"]?.children["example.png"])
@@ -36,7 +36,7 @@ final class DirectoryThumbnailTests: XCTestCase {
 			size: 1,
 			isDirectory: false,
 			dateModified: nil,
-			fileURL: fileURL
+			fileURL: fileURL,
 		)
 
 		XCTAssertIdentical(transformer.transformedValue(fileNode) as? NSImage, fileIcon)
@@ -53,7 +53,7 @@ final class DirectoryThumbnailTests: XCTestCase {
 			isDirectory: true,
 			dateModified: nil,
 			fileURL: packageURL,
-			isPackage: true
+			isPackage: true,
 		)
 		XCTAssertIdentical(transformer.transformedValue(packageNode) as? NSImage, fileIcon)
 		XCTAssertEqual(provider.requestedURLs, [fileURL, packageURL])
@@ -66,31 +66,31 @@ final class DirectoryThumbnailTests: XCTestCase {
 	func testThumbnailEligibilityAllowsOnlyNativeImageMovieAndPDFNodes() {
 		XCTAssertTrue(DirectoryThumbnailLoader.isEligible(node(type: .png, path: "image.png")))
 		XCTAssertTrue(
-			DirectoryThumbnailLoader.isEligible(node(type: .mpeg4Movie, path: "movie.mp4"))
+			DirectoryThumbnailLoader.isEligible(node(type: .mpeg4Movie, path: "movie.mp4")),
 		)
 		XCTAssertTrue(DirectoryThumbnailLoader.isEligible(node(type: .pdf, path: "document.pdf")))
 		XCTAssertFalse(
-			DirectoryThumbnailLoader.isEligible(node(type: .plainText, path: "notes.txt"))
+			DirectoryThumbnailLoader.isEligible(node(type: .plainText, path: "notes.txt")),
 		)
 		XCTAssertFalse(
 			DirectoryThumbnailLoader.isEligible(
-				node(type: .png, path: "image.png", isDirectory: true)
-			)
+				node(type: .png, path: "image.png", isDirectory: true),
+			),
 		)
 		XCTAssertFalse(
 			DirectoryThumbnailLoader.isEligible(node(
 				type: .png,
 				path: "Bundle.app",
-				isPackage: true
-			))
+				isPackage: true,
+			)),
 		)
 		XCTAssertFalse(
 			DirectoryThumbnailLoader.isEligible(
-				node(type: .png, path: "image.png", isSymbolicLink: true)
-			)
+				node(type: .png, path: "image.png", isSymbolicLink: true),
+			),
 		)
 		XCTAssertFalse(
-			DirectoryThumbnailLoader.isEligible(node(type: .png, path: "README.md"))
+			DirectoryThumbnailLoader.isEligible(node(type: .png, path: "README.md")),
 		)
 	}
 
@@ -106,7 +106,7 @@ final class DirectoryThumbnailTests: XCTestCase {
 		XCTAssertEqual(generator.outstandingRequests.count, 2)
 		XCTAssertEqual(
 			generator.requestedSizes,
-			[.init(width: 32, height: 32), .init(width: 32, height: 32)]
+			[.init(width: 32, height: 32), .init(width: 32, height: 32)],
 		)
 
 		let firstImage = NSImage(size: NSSize(width: 32, height: 32))
@@ -179,7 +179,7 @@ final class DirectoryThumbnailTests: XCTestCase {
 			labelText: nil,
 			expandAll: true,
 			showsFileThumbnails: true,
-			thumbnailLoader: loader
+			thumbnailLoader: loader,
 		)
 
 		previewVC.loadViewIfNeeded()
@@ -208,7 +208,7 @@ final class DirectoryThumbnailTests: XCTestCase {
 			],
 			labelText: "4 items",
 			expandAll: true,
-			showsFileThumbnails: true
+			showsFileThumbnails: true,
 		)
 		previewVC.loadViewIfNeeded()
 		previewVC.view.frame = NSRect(x: 0, y: 0, width: 800, height: 500)
@@ -234,7 +234,7 @@ final class DirectoryThumbnailTests: XCTestCase {
 			try assertFolderCellGeometry(in: outlineView)
 			XCTAssertTrue(outlineView.isItemExpanded(try outlineItem(for: folder, in: outlineView)))
 			XCTAssertFalse(
-				outlineView.isItemExpanded(try outlineItem(for: collapsedFolder, in: outlineView))
+				outlineView.isItemExpanded(try outlineItem(for: collapsedFolder, in: outlineView)),
 			)
 		}
 
@@ -247,7 +247,7 @@ final class DirectoryThumbnailTests: XCTestCase {
 
 	private func outlineItem(
 		for node: FileTreeNode,
-		in outlineView: NSOutlineView
+		in outlineView: NSOutlineView,
 	) throws -> Any {
 		let row = try XCTUnwrap((0 ..< outlineView.numberOfRows).first { row in
 			let treeNode = outlineView.item(atRow: row) as? NSTreeNode
@@ -259,7 +259,7 @@ final class DirectoryThumbnailTests: XCTestCase {
 	private func assertFolderCellGeometry(in outlineView: NSOutlineView) throws {
 		for row in 0 ..< outlineView.numberOfRows {
 			let cellView = try XCTUnwrap(
-				outlineView.view(atColumn: 0, row: row, makeIfNecessary: true) as? NSTableCellView
+				outlineView.view(atColumn: 0, row: row, makeIfNecessary: true) as? NSTableCellView,
 			)
 			let imageView = try XCTUnwrap(cellView.imageView)
 			let textField = try XCTUnwrap(cellView.textField)
@@ -281,7 +281,7 @@ final class DirectoryThumbnailTests: XCTestCase {
 		path: String,
 		isDirectory: Bool = false,
 		isPackage: Bool = false,
-		isSymbolicLink: Bool = false
+		isSymbolicLink: Bool = false,
 	) -> FileTreeNode {
 		FileTreeNode(
 			name: URL(fileURLWithPath: path).lastPathComponent,
@@ -291,7 +291,7 @@ final class DirectoryThumbnailTests: XCTestCase {
 			fileURL: URL(fileURLWithPath: "/tmp").appendingPathComponent(path),
 			isPackage: isPackage,
 			isSymbolicLink: isSymbolicLink,
-			contentTypeIdentifier: type.identifier
+			contentTypeIdentifier: type.identifier,
 		)
 	}
 }
@@ -327,13 +327,13 @@ private final class ControllableThumbnailGenerator: DirectoryThumbnailGenerating
 		for fileURL: URL,
 		size: CGSize,
 		scale _: CGFloat,
-		completion: @escaping @MainActor @Sendable (NSImage?) -> Void
+		completion: @escaping @MainActor @Sendable (NSImage?) -> Void,
 	) -> DirectoryThumbnailToken {
 		let token = DirectoryThumbnailToken()
 		generatedURLs.append(fileURL)
 		requestedSizes.append(size)
 		outstandingRequests.append(
-			Request(token: token, fileURL: fileURL, completion: completion)
+			Request(token: token, fileURL: fileURL, completion: completion),
 		)
 		return token
 	}

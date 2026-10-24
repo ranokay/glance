@@ -26,11 +26,11 @@ final class DrawIOPreview: Preview {
 
 	private let mainStylesheetURL = WebPreviewVC.resourceBundle.url(
 		forResource: "drawio-main",
-		withExtension: "css"
+		withExtension: "css",
 	)
 	private let viewerScriptURL = WebPreviewVC.resourceBundle.url(
 		forResource: "drawio-viewer-31.4.6.min",
-		withExtension: "js"
+		withExtension: "js",
 	)
 
 	required init() {}
@@ -63,7 +63,7 @@ final class DrawIOPreview: Preview {
 			html: "<div id=\"drawio-preview\" data-drawio-payload=\"\(encodedPayload)\"></div>",
 			stylesheets: getStylesheets(),
 			scripts: [bootstrapScript(), Script(url: viewerScriptURL)],
-			appearancePreferences: PreviewSettingsClient.shared.appearancePreferences()
+			appearancePreferences: PreviewSettingsClient.shared.appearancePreferences(),
 		)
 	}
 
@@ -156,14 +156,14 @@ private final class DrawIOXMLValidator: NSObject, XMLParserDelegate {
 		didStartElement elementName: String,
 		namespaceURI _: String?,
 		qualifiedName _: String?,
-		attributes _: [String: String] = [:]
+		attributes _: [String: String] = [:],
 	) {
 		if elementStack.isEmpty {
 			rootElement = elementName
 			guard elementName == "mxfile" || elementName == "mxGraphModel" else {
 				fail(
 					.invalidDocument("expected mxfile or mxGraphModel root element"),
-					parser: parser
+					parser: parser,
 				)
 				return
 			}
@@ -203,7 +203,7 @@ private final class DrawIOXMLValidator: NSObject, XMLParserDelegate {
 		_: XMLParser,
 		didEndElement _: String,
 		namespaceURI _: String?,
-		qualifiedName _: String?
+		qualifiedName _: String?,
 	) {
 		if !elementStack.isEmpty {
 			elementStack.removeLast()

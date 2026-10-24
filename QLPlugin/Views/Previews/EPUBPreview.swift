@@ -4,7 +4,7 @@ import GlanceKit
 final class EPUBPreview: Preview {
 	private let mainStylesheetURL = WebPreviewVC.resourceBundle.url(
 		forResource: "epub-main",
-		withExtension: "css"
+		withExtension: "css",
 	)
 
 	required init() {}
@@ -18,7 +18,7 @@ final class EPUBPreview: Preview {
 		return await WebPreviewVC(
 			html: html,
 			stylesheets: stylesheets,
-			appearancePreferences: PreviewSettingsClient.shared.appearancePreferences()
+			appearancePreferences: PreviewSettingsClient.shared.appearancePreferences(),
 		)
 	}
 }

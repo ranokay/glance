@@ -31,7 +31,7 @@ extension OutlinePreviewVC {
 				let page = try await directoryPageLoader.page(
 					at: fileURL,
 					offset: 0,
-					session: directoryPaginationSession
+					session: directoryPaginationSession,
 				)
 				try Task.checkCancellation()
 				apply(page: page, to: node, replacingChildren: true)
@@ -39,7 +39,7 @@ extension OutlinePreviewVC {
 				return
 			} catch {
 				Log.general.error(
-					"Could not load folder \(fileURL.path, privacy: .private): \(error.localizedDescription, privacy: .private)"
+					"Could not load folder \(fileURL.path, privacy: .private): \(error.localizedDescription, privacy: .private)",
 				)
 				node.directoryChildrenState = .failed
 				node.children = [AuxiliaryChildKey.retry: .retryNode(offset: 0, parent: node)]
@@ -63,7 +63,7 @@ extension OutlinePreviewVC {
 	func loadNextChildPage(
 		for parent: FileTreeNode,
 		offset: Int,
-		loader: any DirectoryPageLoading
+		loader: any DirectoryPageLoading,
 	) {
 		guard let fileURL = parent.fileURL else {
 			return
@@ -85,7 +85,7 @@ extension OutlinePreviewVC {
 				let page = try await loader.page(
 					at: fileURL,
 					offset: offset,
-					session: directoryPaginationSession
+					session: directoryPaginationSession,
 				)
 				try Task.checkCancellation()
 				apply(page: page, to: parent, replacingChildren: false)
@@ -93,12 +93,12 @@ extension OutlinePreviewVC {
 				return
 			} catch {
 				Log.general.error(
-					"Could not load more items from \(fileURL.path, privacy: .private): \(error.localizedDescription, privacy: .private)"
+					"Could not load more items from \(fileURL.path, privacy: .private): \(error.localizedDescription, privacy: .private)",
 				)
 				removeAuxiliaryChildren(from: parent)
 				parent.children[AuxiliaryChildKey.retry] = .retryNode(
 					offset: offset,
-					parent: parent
+					parent: parent,
 				)
 				parent.directoryChildrenState = .failed
 				reloadTree(expanding: parent)
@@ -123,7 +123,7 @@ extension OutlinePreviewVC {
 				let page = try await loader.page(
 					at: directoryURL,
 					offset: offset,
-					session: directoryPaginationSession
+					session: directoryPaginationSession,
 				)
 				try Task.checkCancellation()
 				rootNodes.removeAll { $0.isAuxiliary }
@@ -137,7 +137,7 @@ extension OutlinePreviewVC {
 				return
 			} catch {
 				Log.general.error(
-					"Could not load more items from \(directoryURL.path, privacy: .private): \(error.localizedDescription, privacy: .private)"
+					"Could not load more items from \(directoryURL.path, privacy: .private): \(error.localizedDescription, privacy: .private)",
 				)
 				rootNodes.removeAll { $0.isAuxiliary }
 				rootNodes.append(.retryNode(offset: offset))
@@ -159,7 +159,7 @@ extension OutlinePreviewVC {
 		if let nextOffset = page.nextOffset {
 			parent.children[AuxiliaryChildKey.loadMore] = .loadMoreNode(
 				offset: nextOffset,
-				parent: parent
+				parent: parent,
 			)
 		}
 		parent.directoryChildrenState = .loaded(nextOffset: page.nextOffset)
@@ -183,7 +183,7 @@ extension OutlinePreviewVC {
 		}
 		previewStatusText = DirectoryPreview.itemCountText(
 			loadedCount: loadedCount,
-			hasMore: hasMore
+			hasMore: hasMore,
 		)
 		previewStatusDidChange?(previewStatusText)
 	}

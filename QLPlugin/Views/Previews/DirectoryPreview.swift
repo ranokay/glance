@@ -18,18 +18,18 @@ class DirectoryPreview: Preview {
 		self.init(
 			fileManager: .default,
 			maxItemCount: Self.defaultPageSize,
-			excludedRootURLs: Self.defaultExcludedRootURLs
+			excludedRootURLs: Self.defaultExcludedRootURLs,
 		)
 	}
 
 	init(
 		fileManager: sending FileManager,
 		maxItemCount: Int,
-		excludedRootURLs: [URL]
+		excludedRootURLs: [URL],
 	) {
 		pageLoader = DirectoryPageLoader(
 			fileManager: fileManager,
-			pageSize: max(1, maxItemCount)
+			pageSize: max(1, maxItemCount),
 		)
 		self.excludedRootURLs = excludedRootURLs.map(\.standardizedFileURL)
 	}
@@ -49,20 +49,20 @@ class DirectoryPreview: Preview {
 
 		return try await Self.makeOutlinePreview(
 			for: file.url,
-			pageLoader: pageLoader
+			pageLoader: pageLoader,
 		)
 	}
 
 	@MainActor
 	static func makeOutlinePreview(
 		for directoryURL: URL,
-		pageLoader: any DirectoryPageLoading
+		pageLoader: any DirectoryPageLoading,
 	) async throws -> OutlinePreviewVC {
 		let paginationSession = DirectoryPaginationSession()
 		let page = try await pageLoader.page(
 			at: directoryURL,
 			offset: 0,
-			session: paginationSession
+			session: paginationSession,
 		)
 		try Task.checkCancellation()
 		var rootNodes = makeNodes(from: page.entries)
@@ -73,13 +73,13 @@ class DirectoryPreview: Preview {
 			rootNodes: rootNodes,
 			labelText: itemCountText(
 				loadedCount: page.entries.count,
-				hasMore: page.nextOffset != nil
+				hasMore: page.nextOffset != nil,
 			),
 			expandAll: false,
 			showsFileThumbnails: true,
 			directoryURL: directoryURL,
 			directoryPageLoader: pageLoader,
-			directoryPaginationSession: paginationSession
+			directoryPaginationSession: paginationSession,
 		)
 	}
 
@@ -99,7 +99,7 @@ class DirectoryPreview: Preview {
 					&& !entry.isPackage
 					&& !entry.isSymbolicLink
 					? .notLoaded
-					: .loaded(nextOffset: nil)
+					: .loaded(nextOffset: nil),
 			)
 		}
 	}

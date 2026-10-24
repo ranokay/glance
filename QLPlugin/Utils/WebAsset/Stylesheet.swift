@@ -17,7 +17,7 @@ final class Stylesheet: WebAsset {
 					return try String(contentsOf: url, encoding: .utf8)
 				} catch {
 					Log.render.error(
-						"Could not read stylesheet asset \(url.path, privacy: .private): \(error.localizedDescription, privacy: .private)"
+						"Could not read stylesheet asset \(url.path, privacy: .private): \(error.localizedDescription, privacy: .private)",
 					)
 					return ""
 				}

@@ -12,37 +12,37 @@ final class SupportedFilesWC: NSWindowController {
 	static let sections = [
 		SupportedFileSection(
 			title: "Audio",
-			details: ".flac • Native playback with waveform overview"
+			details: ".flac • Native playback with waveform overview",
 		),
 		SupportedFileSection(
 			title: "Source Code",
-			details: ".cpp, .elrc, .ini, .js, .json, .jsonl, .py, .swift, .tmpl, .toml, .ts, .ttml, .yml and many more"
+			details: ".cpp, .elrc, .ini, .js, .json, .jsonl, .py, .swift, .tmpl, .toml, .ts, .ttml, .yml and many more",
 		),
 		SupportedFileSection(
 			title: "Markdown",
-			details: ".md, .markdown, .mdown, .mkdn, .mkd, .Rmd, .qmd • Mermaid diagrams"
+			details: ".md, .markdown, .mdown, .mkdn, .mkd, .Rmd, .qmd • Mermaid diagrams",
 		),
 		SupportedFileSection(
 			title: "Diagrams",
-			details: ".drawio • Uncompressed diagrams.net files"
+			details: ".drawio • Uncompressed diagrams.net files",
 		),
 		SupportedFileSection(
 			title: "Archive",
-			details: ".7z, .ear, .jar, .rar, .tar, .tar.gz, .tgz, .war, .zip"
+			details: ".7z, .ear, .jar, .rar, .tar, .tar.gz, .tgz, .war, .zip",
 		),
 		SupportedFileSection(
 			title: "E-books",
-			details: ".epub • DRM-free EPUB 2 and EPUB 3 books"
+			details: ".epub • DRM-free EPUB 2 and EPUB 3 books",
 		),
 		SupportedFileSection(title: "Jupyter Notebook", details: ".ipynb"),
 		SupportedFileSection(title: "Tab-separated Values", details: ".tab, .tsv"),
 		SupportedFileSection(
 			title: "Spreadsheet",
-			details: ".xlsx • Values, dates, and every worksheet"
+			details: ".xlsx • Values, dates, and every worksheet",
 		),
 		SupportedFileSection(
 			title: "Folders",
-			details: "Lazy trees with icons, thumbnails, 500-item pages, and Back navigation"
+			details: "Lazy trees with icons, thumbnails, 500-item pages, and Back navigation",
 		),
 	]
 
@@ -53,7 +53,7 @@ final class SupportedFilesWC: NSWindowController {
 			contentRect: NSRect(x: 0, y: 0, width: 560, height: 460),
 			styleMask: [.titled, .closable, .resizable],
 			backing: .buffered,
-			defer: false
+			defer: false,
 		)
 		window.title = "Supported Files"
 		window.isReleasedWhenClosed = false
@@ -92,7 +92,7 @@ final class SupportedFilesWC: NSWindowController {
 			sectionsStackView.addArrangedSubview(sectionView)
 			sectionView.widthAnchor.constraint(
 				equalTo: sectionsStackView.widthAnchor,
-				constant: -56
+				constant: -56,
 			).isActive = true
 		}
 
@@ -123,7 +123,7 @@ final class SupportedFilesWC: NSWindowController {
 	private func makeSectionView(_ section: SupportedFileSection) -> NSStackView {
 		let titleLabel = NSTextField(labelWithString: section.title)
 		titleLabel.identifier = NSUserInterfaceItemIdentifier(
-			"SupportedFiles.\(section.title).Title"
+			"SupportedFiles.\(section.title).Title",
 		)
 		titleLabel.font = .boldSystemFont(ofSize: NSFont.systemFontSize)
 		titleLabel.alignment = .center
@@ -131,7 +131,7 @@ final class SupportedFilesWC: NSWindowController {
 
 		let detailsLabel = NSTextField(wrappingLabelWithString: section.details)
 		detailsLabel.identifier = NSUserInterfaceItemIdentifier(
-			"SupportedFiles.\(section.title).Details"
+			"SupportedFiles.\(section.title).Details",
 		)
 		detailsLabel.alignment = .center
 		detailsLabel.maximumNumberOfLines = 0
