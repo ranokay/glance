@@ -34,11 +34,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
 	private func setUpStatusItem() {
 		let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-		statusItem.button?.image = NSImage(
-			systemSymbolName: "eye",
-			accessibilityDescription: "Glance",
-		)
-		statusItem.button?.image?.isTemplate = true
+		statusItem.button?.image = StatusItemMark.make()
 		statusItem.button?.toolTip = "Glance"
 		statusItem.menu = makeStatusMenu()
 
