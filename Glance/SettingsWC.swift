@@ -31,7 +31,7 @@ private struct MainAppLoginItem: LoginItemManaging {
 final class SettingsWC: NSWindowController {
 	static let shared = SettingsWC(
 		settingsStore: .shared,
-		fontFamilies: NSFontManager.shared.availableFontFamilies
+		fontFamilies: NSFontManager.shared.availableFontFamilies,
 	)
 
 	let fontFamilyPopUpButton = NSPopUpButton()
@@ -39,44 +39,44 @@ final class SettingsWC: NSWindowController {
 	let lineWrappingCheckbox = NSButton(
 		checkboxWithTitle: "Wrap long lines",
 		target: nil,
-		action: nil
+		action: nil,
 	)
 	let flacWaveformCheckbox = NSButton(
 		checkboxWithTitle: "Show FLAC waveform",
 		target: nil,
-		action: nil
+		action: nil,
 	)
 	let resetAppearanceButton = NSButton(
 		title: "Reset Preview Appearance",
 		target: nil,
-		action: nil
+		action: nil,
 	)
 	let updateStatusLabel = NSTextField(labelWithString: "Never checked.")
 	let checkForUpdatesButton = NSButton(
 		title: "Check for Updates…",
 		target: nil,
-		action: nil
+		action: nil,
 	)
 	let installUpdateButton = NSButton(
 		title: "Install and Relaunch…",
 		target: nil,
-		action: nil
+		action: nil,
 	)
 	let autoUpdateCheckbox = NSButton(
 		checkboxWithTitle: "Automatically check for updates",
 		target: nil,
-		action: nil
+		action: nil,
 	)
 	let startAtLoginCheckbox = NSButton(
 		checkboxWithTitle: "Start at Login",
 		target: nil,
-		action: nil
+		action: nil,
 	)
 	let loginItemStatusLabel = NSTextField(labelWithString: "")
 	let openLoginItemsButton = NSButton(
 		title: "Open Login Items Settings…",
 		target: nil,
-		action: nil
+		action: nil,
 	)
 
 	private let settingsStore: AppSettingsStore
@@ -87,7 +87,7 @@ final class SettingsWC: NSWindowController {
 	init(
 		settingsStore: AppSettingsStore,
 		fontFamilies: [String],
-		loginItem: any LoginItemManaging = MainAppLoginItem()
+		loginItem: any LoginItemManaging = MainAppLoginItem(),
 	) {
 		self.settingsStore = settingsStore
 		self.loginItem = loginItem
@@ -99,7 +99,7 @@ final class SettingsWC: NSWindowController {
 			contentRect: NSRect(x: 0, y: 0, width: 440, height: 560),
 			styleMask: [.titled, .closable, .resizable],
 			backing: .buffered,
-			defer: false
+			defer: false,
 		)
 		window.title = "Settings"
 		window.isReleasedWhenClosed = false
@@ -113,7 +113,7 @@ final class SettingsWC: NSWindowController {
 			self,
 			selector: #selector(updateStatusDidChange),
 			name: SparkleUpdateCenter.statusDidChangeNotification,
-			object: nil
+			object: nil,
 		)
 
 		setUpContent()
@@ -205,10 +205,10 @@ final class SettingsWC: NSWindowController {
 			.isActive = true
 
 		let appearanceDescriptionLabel = descriptionLabel(
-			"Changes apply to new code, Markdown, and Jupyter previews."
+			"Changes apply to new code, Markdown, and Jupyter previews.",
 		)
 		let waveformDescriptionLabel = descriptionLabel(
-			"The waveform appears in new FLAC previews. Playback works either way."
+			"The waveform appears in new FLAC previews. Playback works either way.",
 		)
 
 		let stackView = NSStackView(views: [
@@ -247,11 +247,11 @@ final class SettingsWC: NSWindowController {
 			stackView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -24),
 			stackView.topAnchor.constraint(
 				equalTo: contentView.safeAreaLayoutGuide.topAnchor,
-				constant: 20
+				constant: 20,
 			),
 			stackView.bottomAnchor.constraint(
 				lessThanOrEqualTo: contentView.bottomAnchor,
-				constant: -20
+				constant: -20,
 			),
 			appearanceGrid.widthAnchor.constraint(equalTo: stackView.widthAnchor),
 		])

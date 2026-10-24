@@ -40,20 +40,20 @@ final class ModelCamera {
 			let offset = SCNVector3(
 				corner.x - target.x,
 				corner.y - target.y,
-				corner.z - target.z
+				corner.z - target.z,
 			)
 			let depth = offset.dot(forward)
 			distance = max(
 				distance,
 				abs(offset.dot(right)) / horizontalTangent - depth,
-				abs(offset.dot(up)) / verticalTangent - depth
+				abs(offset.dot(up)) / verticalTangent - depth,
 			)
 		}
 		distance *= Self.margin
 		node.position = SCNVector3(
 			target.x + direction.x * distance,
 			target.y + direction.y * distance,
-			target.z + direction.z * distance
+			target.z + direction.z * distance,
 		)
 		node.look(at: target)
 	}

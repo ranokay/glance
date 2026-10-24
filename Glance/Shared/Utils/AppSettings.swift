@@ -7,7 +7,7 @@ public struct PreviewAppearancePreferences: Equatable, Sendable {
 	public static let `default` = PreviewAppearancePreferences(
 		fontFamily: nil,
 		fontSize: defaultFontSize,
-		wrapsLines: false
+		wrapsLines: false,
 	)
 
 	public let fontFamily: String?
@@ -80,7 +80,7 @@ public struct PreviewPreferenceSnapshot: Sendable, Equatable {
 
 	public static let `default` = PreviewPreferenceSnapshot(
 		waveformEnabled: true,
-		appearance: .default
+		appearance: .default,
 	)
 }
 
@@ -89,7 +89,7 @@ public struct AppSettingsStore {
 	nonisolated(unsafe) static let sharedDefaults: UserDefaults = {
 		guard let defaults = UserDefaults(suiteName: sharedDefaultsSuiteName) else {
 			fatalError(
-				"Failed to create UserDefaults with app group suite '\(sharedDefaultsSuiteName)'. Check that the app group is correctly configured."
+				"Failed to create UserDefaults with app group suite '\(sharedDefaultsSuiteName)'. Check that the app group is correctly configured.",
 			)
 		}
 		return defaults
@@ -97,7 +97,7 @@ public struct AppSettingsStore {
 
 	public nonisolated(unsafe) static let shared = AppSettingsStore(
 		defaults: sharedDefaults,
-		standardDefaults: .standard
+		standardDefaults: .standard,
 	)
 
 	public static let previewFontFamilyKey = "previewFontFamily"
@@ -156,7 +156,7 @@ public struct AppSettingsStore {
 			}
 			defaults.set(
 				min(max(newValue, Self.minimumPreviewFontSize), Self.maximumPreviewFontSize),
-				forKey: Self.previewFontSizeKey
+				forKey: Self.previewFontSizeKey,
 			)
 		}
 	}
@@ -180,7 +180,7 @@ public struct AppSettingsStore {
 		PreviewAppearancePreferences(
 			fontFamily: previewFontFamily,
 			fontSize: previewFontSize,
-			wrapsLines: previewLineWrapping
+			wrapsLines: previewLineWrapping,
 		)
 	}
 
@@ -221,7 +221,7 @@ public enum PreviewSettingsBridge {
 
 	public static func response(
 		for requestID: UUID,
-		snapshot: PreviewPreferenceSnapshot
+		snapshot: PreviewPreferenceSnapshot,
 	) -> String {
 		let family = snapshot.appearance.fontFamily ?? Self.familySentinel
 		let encodedFamily = family == Self.familySentinel
@@ -266,8 +266,8 @@ public enum PreviewSettingsBridge {
 			appearance: PreviewAppearancePreferences(
 				fontFamily: fontFamily,
 				fontSize: fontSize,
-				wrapsLines: parts[4] == "1"
-			)
+				wrapsLines: parts[4] == "1",
+			),
 		)
 		return (requestID, snapshot)
 	}
@@ -282,7 +282,7 @@ public final class PreviewSettingsServer {
 
 	public init(
 		settingsStore: AppSettingsStore = .shared,
-		notificationCenter: OpenWithBridgeNotifying = SystemOpenWithBridgeNotificationCenter()
+		notificationCenter: OpenWithBridgeNotifying = SystemOpenWithBridgeNotificationCenter(),
 	) {
 		self.settingsStore = settingsStore
 		self.notificationCenter = notificationCenter
@@ -309,9 +309,9 @@ public final class PreviewSettingsServer {
 						for: requestID,
 						snapshot: PreviewPreferenceSnapshot(
 							waveformEnabled: settingsStore.flacWaveformEnabled,
-							appearance: settingsStore.previewAppearance
-						)
-					)
+							appearance: settingsStore.previewAppearance,
+						),
+					),
 				)
 			}
 	}
@@ -334,7 +334,7 @@ public final class PreviewSettingsClient {
 
 	public init(
 		notificationCenter: OpenWithBridgeNotifying = SystemOpenWithBridgeNotificationCenter(),
-		timeout: Duration = .milliseconds(300)
+		timeout: Duration = .milliseconds(300),
 	) {
 		self.notificationCenter = notificationCenter
 		self.timeout = timeout
@@ -357,7 +357,7 @@ public final class PreviewSettingsClient {
 					return
 				}
 				let observer = notificationCenter.addObserver(
-					forName: PreviewSettingsBridge.response
+					forName: PreviewSettingsBridge.response,
 				) { [weak self] value in
 					guard
 						let (responseID, snapshot) = PreviewSettingsBridge.decode(value),
@@ -378,11 +378,11 @@ public final class PreviewSettingsClient {
 				pendingRequests[requestID] = PendingRequest(
 					observer: observer,
 					timeoutTask: timeoutTask,
-					continuation: continuation
+					continuation: continuation,
 				)
 				notificationCenter.post(
 					name: PreviewSettingsBridge.request,
-					object: requestID.uuidString
+					object: requestID.uuidString,
 				)
 			}
 		} onCancel: {

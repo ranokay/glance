@@ -13,14 +13,14 @@ extension FileError: LocalizedError {
 			case let .fileAttributeError(path, message):
 				NSLocalizedString(
 					"Could not get attributes for file at path \(path): \(message)",
-					comment: ""
+					comment: "",
 				)
 			case let .fileNotFoundError(path):
 				NSLocalizedString("Could not find file at path \(path)", comment: "")
 			case let .fileReadError(path, message):
 				NSLocalizedString(
 					"Could not read file at path \(path): \(message)",
-					comment: ""
+					comment: "",
 				)
 		}
 	}

@@ -13,7 +13,7 @@ final class OpenWithTests: XCTestCase {
 			.appendingPathComponent("GlanceOpenWithTests-\(UUID().uuidString)", isDirectory: true)
 		try FileManager.default.createDirectory(
 			at: temporaryDirectory,
-			withIntermediateDirectories: true
+			withIntermediateDirectories: true,
 		)
 	}
 
@@ -32,12 +32,12 @@ final class OpenWithTests: XCTestCase {
 			compatibleApplicationURLs: [textEditURL, codeURL, textEditURL, glanceURL],
 			defaultApplicationURL: codeURL,
 			bundleIdentifiers: [glanceURL: "com.chamburr.Glance"],
-			displayNames: [textEditURL: "TextEdit", codeURL: "Visual Studio Code"]
+			displayNames: [textEditURL: "TextEdit", codeURL: "Visual Studio Code"],
 		)
 		let service = OpenWithService(workspace: workspace)
 
 		let applications = service.applications(
-			for: URL(fileURLWithPath: "/tmp/document.txt")
+			for: URL(fileURLWithPath: "/tmp/document.txt"),
 		)
 
 		XCTAssertEqual(applications.map(\.applicationURL), [textEditURL, codeURL])
@@ -52,7 +52,7 @@ final class OpenWithTests: XCTestCase {
 		let workspace = StubWorkspaceApplicationProvider(
 			compatibleApplicationURLs: [firstAppURL, defaultAppURL],
 			defaultApplicationURL: defaultAppURL,
-			displayNames: [firstAppURL: "First", defaultAppURL: "Default"]
+			displayNames: [firstAppURL: "First", defaultAppURL: "Default"],
 		)
 		let mainVC = makeMainVC(workspace: workspace)
 
@@ -70,7 +70,7 @@ final class OpenWithTests: XCTestCase {
 		let workspace = StubWorkspaceApplicationProvider(
 			compatibleApplicationURLs: [applicationURL],
 			defaultApplicationURL: applicationURL,
-			displayNames: [applicationURL: "Editor"]
+			displayNames: [applicationURL: "Editor"],
 		)
 		let service = OpenWithService(workspace: workspace)
 		let firstFileURL = URL(fileURLWithPath: "/tmp/first.txt")
@@ -91,7 +91,7 @@ final class OpenWithTests: XCTestCase {
 		let applicationURL = URL(fileURLWithPath: "/Applications/Editor.app")
 		let workspace = StubWorkspaceApplicationProvider(
 			compatibleApplicationURLs: [applicationURL],
-			displayNames: [applicationURL: "Editor"]
+			displayNames: [applicationURL: "Editor"],
 		)
 		let mainVC = makeMainVC(workspace: workspace)
 		let outlineVC = OutlinePreviewVC(rootNodes: [], labelText: "0 items")
@@ -102,7 +102,7 @@ final class OpenWithTests: XCTestCase {
 		let packageNode = fileNode(
 			named: "Project.screenstudio",
 			isDirectory: true,
-			isPackage: true
+			isPackage: true,
 		)
 
 		mainVC.outlinePreview(outlineVC, didSelect: directoryNode)
@@ -151,7 +151,7 @@ final class OpenWithTests: XCTestCase {
 		let applicationURL = URL(fileURLWithPath: "/Applications/Editor.app")
 		let workspace = StubWorkspaceApplicationProvider(
 			compatibleApplicationURLs: [applicationURL],
-			displayNames: [applicationURL: "Editor"]
+			displayNames: [applicationURL: "Editor"],
 		)
 		let mainVC = makeMainVC(workspace: workspace)
 		let outlineVC = OutlinePreviewVC(rootNodes: [], labelText: "0 items")
@@ -161,7 +161,7 @@ final class OpenWithTests: XCTestCase {
 		mainVC.outlinePreview(outlineVC, didSelect: childNode)
 
 		let applicationItem = try XCTUnwrap(
-			mainVC.openWithButton.menu?.items.first { $0.representedObject is URL }
+			mainVC.openWithButton.menu?.items.first { $0.representedObject is URL },
 		)
 		mainVC.openWithButton.select(applicationItem)
 		let action = try XCTUnwrap(mainVC.openWithButton.action)
@@ -169,8 +169,8 @@ final class OpenWithTests: XCTestCase {
 			NSApplication.shared.sendAction(
 				action,
 				to: mainVC.openWithButton.target,
-				from: mainVC.openWithButton
-			)
+				from: mainVC.openWithButton,
+			),
 		)
 
 		XCTAssertEqual(workspace.openCalls.count, 1)
@@ -225,13 +225,13 @@ final class OpenWithTests: XCTestCase {
 			notificationCenter: notificationCenter,
 			launcher: launcher,
 			securityScopeManager: securityScopeManager,
-			requestStore: requestStore
+			requestStore: requestStore,
 		)
 		let dispatcher = StubOpenWithBridgeDispatcher { server.handle($0) }
 		let client = makeBridgeClient(
 			notificationCenter: notificationCenter,
 			dispatcher: dispatcher,
-			requestStore: requestStore
+			requestStore: requestStore,
 		)
 		let completion = expectation(description: "bridge response")
 		var receivedError: Error?
@@ -247,7 +247,7 @@ final class OpenWithTests: XCTestCase {
 		XCTAssertEqual(launcher.openCalls.count, 1)
 		XCTAssertEqual(
 			launcher.openCalls.first?.fileURL.resolvingSymlinksInPath(),
-			fileURL.resolvingSymlinksInPath()
+			fileURL.resolvingSymlinksInPath(),
 		)
 		XCTAssertEqual(launcher.openCalls.first?.applicationURL, applicationURL)
 		XCTAssertEqual(securityScopeManager.resolveCount, 1)
@@ -261,7 +261,7 @@ final class OpenWithTests: XCTestCase {
 			version: OpenWithBridgeConstants.currentVersion,
 			requestID: UUID(),
 			fileBookmark: Data([1, 2, 3]),
-			applicationPath: "/Applications/Editor.app"
+			applicationPath: "/Applications/Editor.app",
 		)
 
 		let requestURL = try OpenWithBridgeCodec.requestURL(for: request)
@@ -274,8 +274,8 @@ final class OpenWithTests: XCTestCase {
 		XCTAssertEqual(decodedRequest.applicationPath, request.applicationPath)
 		XCTAssertThrowsError(
 			try OpenWithBridgeCodec.request(
-				from: try XCTUnwrap(URL(string: "glance-open-with://request?payload=invalid"))
-			)
+				from: try XCTUnwrap(URL(string: "glance-open-with://request?payload=invalid")),
+			),
 		)
 	}
 
@@ -283,7 +283,7 @@ final class OpenWithTests: XCTestCase {
 		let handoff = OpenWithBridgeHandoff(
 			version: OpenWithBridgeConstants.currentVersion,
 			requestID: UUID(),
-			requestStoreName: "com.chamburr.Glance.OpenWithBridge.\(UUID().uuidString)"
+			requestStoreName: "com.chamburr.Glance.OpenWithBridge.\(UUID().uuidString)",
 		)
 
 		let handoffURL = try OpenWithBridgeCodec.handoffURL(for: handoff)
@@ -308,19 +308,19 @@ final class OpenWithTests: XCTestCase {
 			notificationCenter: notificationCenter,
 			launcher: launcher,
 			securityScopeManager: securityScopeManager,
-			requestStore: requestStore
+			requestStore: requestStore,
 		)
 		server.start()
 		let dispatcher = StubOpenWithBridgeDispatcher { requestURL in
 			notificationCenter.post(
 				name: OpenWithBridgeConstants.requestNotification,
-				object: requestURL.absoluteString
+				object: requestURL.absoluteString,
 			)
 		}
 		let client = makeBridgeClient(
 			notificationCenter: notificationCenter,
 			dispatcher: dispatcher,
-			requestStore: requestStore
+			requestStore: requestStore,
 		)
 		let completion = expectation(description: "distributed handoff response")
 		var receivedError: Error?
@@ -342,25 +342,25 @@ final class OpenWithTests: XCTestCase {
 		let requestStore = StubOpenWithBridgeRequestStore()
 		let launcher = StubOpenWithLauncher()
 		let securityScopeManager = StubOpenWithSecurityScopeManager(
-			fileURL: try writeFile(named: "ignored-full-request.txt")
+			fileURL: try writeFile(named: "ignored-full-request.txt"),
 		)
 		let server = makeBridgeServer(
 			notificationCenter: notificationCenter,
 			launcher: launcher,
 			securityScopeManager: securityScopeManager,
-			requestStore: requestStore
+			requestStore: requestStore,
 		)
 		server.start()
 		let request = OpenWithBridgeRequest(
 			version: OpenWithBridgeConstants.currentVersion,
 			requestID: UUID(),
 			fileBookmark: Data([1, 2, 3]),
-			applicationPath: "/Applications/Editor.app"
+			applicationPath: "/Applications/Editor.app",
 		)
 
 		notificationCenter.post(
 			name: OpenWithBridgeConstants.requestNotification,
-			object: try OpenWithBridgeCodec.requestURL(for: request).absoluteString
+			object: try OpenWithBridgeCodec.requestURL(for: request).absoluteString,
 		)
 
 		XCTAssertEqual(securityScopeManager.resolveCount, 0)
@@ -379,7 +379,7 @@ final class OpenWithTests: XCTestCase {
 			notificationCenter: notificationCenter,
 			launcher: launcher,
 			securityScopeManager: securityScopeManager,
-			requestStore: requestStore
+			requestStore: requestStore,
 		)
 		let dispatcher = StubOpenWithBridgeDispatcher { requestURL in
 			server.handle(requestURL)
@@ -387,7 +387,7 @@ final class OpenWithTests: XCTestCase {
 		let client = makeBridgeClient(
 			notificationCenter: notificationCenter,
 			dispatcher: dispatcher,
-			requestStore: requestStore
+			requestStore: requestStore,
 		)
 		let completion = expectation(description: "incompatible response")
 		var receivedError: Error?
@@ -400,7 +400,7 @@ final class OpenWithTests: XCTestCase {
 
 		XCTAssertEqual(
 			(receivedError as? OpenWithBridgeRemoteError)?.message,
-			OpenWithBridgeError.incompatibleApplication.localizedDescription
+			OpenWithBridgeError.incompatibleApplication.localizedDescription,
 		)
 		XCTAssertEqual(launcher.compatibilityChecks.count, 1)
 		XCTAssertTrue(launcher.openCalls.isEmpty)
@@ -416,19 +416,19 @@ final class OpenWithTests: XCTestCase {
 		let launcher = StubOpenWithLauncher()
 		let securityScopeManager = StubOpenWithSecurityScopeManager(
 			fileURL: fileURL,
-			startSucceeds: false
+			startSucceeds: false,
 		)
 		let server = makeBridgeServer(
 			notificationCenter: notificationCenter,
 			launcher: launcher,
 			securityScopeManager: securityScopeManager,
-			requestStore: requestStore
+			requestStore: requestStore,
 		)
 		let dispatcher = StubOpenWithBridgeDispatcher { server.handle($0) }
 		let client = makeBridgeClient(
 			notificationCenter: notificationCenter,
 			dispatcher: dispatcher,
-			requestStore: requestStore
+			requestStore: requestStore,
 		)
 		let completion = expectation(description: "scope denied response")
 		var receivedError: Error?
@@ -441,7 +441,7 @@ final class OpenWithTests: XCTestCase {
 
 		XCTAssertEqual(
 			(receivedError as? OpenWithBridgeRemoteError)?.message,
-			OpenWithBridgeError.securityScopeUnavailable.localizedDescription
+			OpenWithBridgeError.securityScopeUnavailable.localizedDescription,
 		)
 		XCTAssertEqual(securityScopeManager.resolveCount, 1)
 		XCTAssertEqual(securityScopeManager.startCount, 1)
@@ -458,19 +458,19 @@ final class OpenWithTests: XCTestCase {
 		let launcher = StubOpenWithLauncher()
 		let securityScopeManager = StubOpenWithSecurityScopeManager(
 			fileURL: fileURL,
-			resolveError: OpenWithBridgeError.invalidRequest
+			resolveError: OpenWithBridgeError.invalidRequest,
 		)
 		let server = makeBridgeServer(
 			notificationCenter: notificationCenter,
 			launcher: launcher,
 			securityScopeManager: securityScopeManager,
-			requestStore: requestStore
+			requestStore: requestStore,
 		)
 		let dispatcher = StubOpenWithBridgeDispatcher { server.handle($0) }
 		let client = makeBridgeClient(
 			notificationCenter: notificationCenter,
 			dispatcher: dispatcher,
-			requestStore: requestStore
+			requestStore: requestStore,
 		)
 		let completion = expectation(description: "stale bookmark response")
 		var receivedError: Error?
@@ -483,7 +483,7 @@ final class OpenWithTests: XCTestCase {
 
 		XCTAssertEqual(
 			(receivedError as? OpenWithBridgeRemoteError)?.message,
-			OpenWithBridgeError.invalidRequest.localizedDescription
+			OpenWithBridgeError.invalidRequest.localizedDescription,
 		)
 		XCTAssertEqual(securityScopeManager.resolveCount, 1)
 		XCTAssertEqual(securityScopeManager.startCount, 0)
@@ -502,13 +502,13 @@ final class OpenWithTests: XCTestCase {
 			notificationCenter: notificationCenter,
 			launcher: launcher,
 			securityScopeManager: securityScopeManager,
-			requestStore: requestStore
+			requestStore: requestStore,
 		)
 		let dispatcher = StubOpenWithBridgeDispatcher { server.handle($0) }
 		let client = makeBridgeClient(
 			notificationCenter: notificationCenter,
 			dispatcher: dispatcher,
-			requestStore: requestStore
+			requestStore: requestStore,
 		)
 		let completion = expectation(description: "launcher failure response")
 		var receivedError: Error?
@@ -521,7 +521,7 @@ final class OpenWithTests: XCTestCase {
 
 		XCTAssertEqual(
 			(receivedError as? OpenWithBridgeRemoteError)?.message,
-			"The selected application could not open this file."
+			"The selected application could not open this file.",
 		)
 		XCTAssertEqual(securityScopeManager.startCount, 1)
 		XCTAssertEqual(securityScopeManager.stopCount, 1)
@@ -533,9 +533,9 @@ final class OpenWithTests: XCTestCase {
 			requestID: UUID(),
 			fileBookmark: Data(
 				repeating: 0,
-				count: OpenWithBridgeConstants.maximumPayloadSize
+				count: OpenWithBridgeConstants.maximumPayloadSize,
 			),
-			applicationPath: "/Applications/Editor.app"
+			applicationPath: "/Applications/Editor.app",
 		)
 		XCTAssertThrowsError(try OpenWithBridgeCodec.requestURL(for: oversizedRequest))
 
@@ -543,14 +543,14 @@ final class OpenWithTests: XCTestCase {
 			version: OpenWithBridgeConstants.currentVersion,
 			requestID: UUID(),
 			fileBookmark: Data([1]),
-			applicationPath: "/Applications/Editor.app"
+			applicationPath: "/Applications/Editor.app",
 		)
 		let validURL = try OpenWithBridgeCodec.requestURL(for: validRequest)
 		let payload = try XCTUnwrap(
-			URLComponents(url: validURL, resolvingAgainstBaseURL: false)?.queryItems?.first?.value
+			URLComponents(url: validURL, resolvingAgainstBaseURL: false)?.queryItems?.first?.value,
 		)
 		let ambiguousURL = try XCTUnwrap(
-			URL(string: "glance-open-with://request?payload=\(payload)&payload=\(payload)")
+			URL(string: "glance-open-with://request?payload=\(payload)&payload=\(payload)"),
 		)
 		XCTAssertThrowsError(try OpenWithBridgeCodec.request(from: ambiguousURL))
 	}
@@ -561,7 +561,7 @@ final class OpenWithTests: XCTestCase {
 			requestID: UUID(),
 			errorDomain: "Test",
 			errorCode: nil,
-			errorMessage: "Failure"
+			errorMessage: "Failure",
 		)
 
 		XCTAssertThrowsError(try response.validatedError())
@@ -584,32 +584,32 @@ final class OpenWithTests: XCTestCase {
 			}
 			let unrelatedResponse = OpenWithBridgeResponse.success(requestID: UUID())
 			if let unrelatedResponseString = try? OpenWithBridgeCodec.responseString(
-				for: unrelatedResponse
+				for: unrelatedResponse,
 			) {
 				notificationCenter.post(
 					name: OpenWithBridgeConstants.responseNotification,
-					object: unrelatedResponseString
+					object: unrelatedResponseString,
 				)
 			}
 			notificationCenter.post(
 				name: OpenWithBridgeConstants.responseNotification,
-				object: responseString
+				object: responseString,
 			)
 			notificationCenter.post(
 				name: OpenWithBridgeConstants.responseNotification,
-				object: responseString
+				object: responseString,
 			)
 		}
 		let client = makeBridgeClient(
 			notificationCenter: notificationCenter,
 			dispatcher: dispatcher,
-			requestStore: requestStore
+			requestStore: requestStore,
 		)
 		var completionCount = 0
 
 		client.open(
 			fileURL: try writeFile(named: "duplicate-response.txt"),
-			with: URL(fileURLWithPath: "/Applications/Editor.app")
+			with: URL(fileURLWithPath: "/Applications/Editor.app"),
 		) { _ in
 			completionCount += 1
 		}
@@ -627,14 +627,14 @@ final class OpenWithTests: XCTestCase {
 			notificationCenter: notificationCenter,
 			dispatcher: dispatcher,
 			requestStore: requestStore,
-			timeout: .milliseconds(100)
+			timeout: .milliseconds(100),
 		)
 		let completion = expectation(description: "bridge timeout")
 		var receivedError: Error?
 
 		client.open(
 			fileURL: try writeFile(named: "timeout.txt"),
-			with: URL(fileURLWithPath: "/Applications/Editor.app")
+			with: URL(fileURLWithPath: "/Applications/Editor.app"),
 		) { error in
 			receivedError = error
 			completion.fulfill()
@@ -659,14 +659,14 @@ final class OpenWithTests: XCTestCase {
 			notificationCenter: notificationCenter,
 			dispatcher: dispatcher,
 			requestStore: requestStore,
-			timeout: .seconds(10)
+			timeout: .seconds(10),
 		)
 		var completionCount = 0
 		var receivedError: Error?
 
 		client?.open(
 			fileURL: try writeFile(named: "deinit.txt"),
-			with: URL(fileURLWithPath: "/Applications/Editor.app")
+			with: URL(fileURLWithPath: "/Applications/Editor.app"),
 		) { error in
 			completionCount += 1
 			receivedError = error
@@ -693,7 +693,7 @@ final class OpenWithTests: XCTestCase {
 		let workspace = StubWorkspaceApplicationProvider(
 			compatibleApplicationURLs: [applicationURL],
 			displayNames: [applicationURL: "Editor"],
-			openError: TestOpenWithError.failed
+			openError: TestOpenWithError.failed,
 		)
 		let mainVC = makeMainVC(workspace: workspace)
 		let outlineVC = OutlinePreviewVC(rootNodes: [], labelText: "0 items")
@@ -719,13 +719,13 @@ final class OpenWithTests: XCTestCase {
 		notificationCenter: OpenWithBridgeNotifying,
 		launcher: OpenWithLaunching,
 		securityScopeManager: OpenWithSecurityScopeManaging,
-		requestStore: OpenWithBridgeRequestStoring
+		requestStore: OpenWithBridgeRequestStoring,
 	) -> OpenWithBridgeServer {
 		OpenWithBridgeServer(
 			notificationCenter: notificationCenter,
 			launcher: launcher,
 			securityScopeManager: securityScopeManager,
-			requestStore: requestStore
+			requestStore: requestStore,
 		)
 	}
 
@@ -733,13 +733,13 @@ final class OpenWithTests: XCTestCase {
 		notificationCenter: OpenWithBridgeNotifying,
 		dispatcher: OpenWithBridgeDispatching,
 		requestStore: OpenWithBridgeRequestStoring,
-		timeout: Duration = .seconds(1)
+		timeout: Duration = .seconds(1),
 	) -> OpenWithBridgeClient {
 		OpenWithBridgeClient(
 			notificationCenter: notificationCenter,
 			dispatcher: dispatcher,
 			requestStore: requestStore,
-			timeout: timeout
+			timeout: timeout,
 		)
 	}
 
@@ -747,7 +747,7 @@ final class OpenWithTests: XCTestCase {
 		named name: String,
 		isDirectory: Bool = false,
 		isPackage: Bool = false,
-		isSymbolicLink: Bool = false
+		isSymbolicLink: Bool = false,
 	) -> FileTreeNode {
 		FileTreeNode(
 			name: name,
@@ -756,7 +756,7 @@ final class OpenWithTests: XCTestCase {
 			dateModified: nil,
 			fileURL: temporaryDirectory.appendingPathComponent(name),
 			isPackage: isPackage,
-			isSymbolicLink: isSymbolicLink
+			isSymbolicLink: isSymbolicLink,
 		)
 	}
 
@@ -764,7 +764,7 @@ final class OpenWithTests: XCTestCase {
 		let directoryURL = temporaryDirectory.appendingPathComponent(name, isDirectory: true)
 		try FileManager.default.createDirectory(
 			at: directoryURL,
-			withIntermediateDirectories: true
+			withIntermediateDirectories: true,
 		)
 		return directoryURL
 	}
@@ -800,7 +800,7 @@ private final class StubWorkspaceApplicationProvider: WorkspaceApplicationProvid
 		defaultApplicationURL: URL? = nil,
 		bundleIdentifiers: [URL: String] = [:],
 		displayNames: [URL: String] = [:],
-		openError: Error? = nil
+		openError: Error? = nil,
 	) {
 		self.compatibleApplicationURLs = compatibleApplicationURLs
 		configuredDefaultApplicationURL = defaultApplicationURL
@@ -838,7 +838,7 @@ private final class StubWorkspaceApplicationProvider: WorkspaceApplicationProvid
 	func open(
 		fileURL: URL,
 		with applicationURL: URL,
-		completion: @escaping @MainActor (Error?) -> Void
+		completion: @escaping @MainActor (Error?) -> Void,
 	) {
 		openCalls.append(OpenCall(fileURL: fileURL, applicationURL: applicationURL))
 		completion(openError)
@@ -857,7 +857,7 @@ private final class StubOpenWithBridge: OpenWithBridgeSending {
 	func open(
 		fileURL: URL,
 		with applicationURL: URL,
-		completion: @escaping @MainActor (Error?) -> Void
+		completion: @escaping @MainActor (Error?) -> Void,
 	) {
 		openCalls.append(OpenCall(fileURL: fileURL, applicationURL: applicationURL))
 		completion(nil)
@@ -889,7 +889,7 @@ private final class StubOpenWithLauncher: OpenWithLaunching {
 	func open(
 		fileURL: URL,
 		with applicationURL: URL,
-		completion: @escaping @MainActor (Error?) -> Void
+		completion: @escaping @MainActor (Error?) -> Void,
 	) {
 		openCalls.append(OpenCall(fileURL: fileURL, applicationURL: applicationURL))
 		completion(openError)
@@ -908,7 +908,7 @@ private final class StubOpenWithSecurityScopeManager: OpenWithSecurityScopeManag
 	init(
 		fileURL: URL,
 		startSucceeds: Bool = true,
-		resolveError: Error? = nil
+		resolveError: Error? = nil,
 	) {
 		self.fileURL = fileURL
 		self.startSucceeds = startSucceeds
@@ -969,7 +969,7 @@ private final class StubOpenWithBridgeDispatcher: OpenWithBridgeDispatching {
 
 	func dispatch(
 		requestURL: URL,
-		completion: @escaping @MainActor (Error?) -> Void
+		completion: @escaping @MainActor (Error?) -> Void,
 	) {
 		requestURLs.append(requestURL)
 		handler?(requestURL)
@@ -993,7 +993,7 @@ private final class StubOpenWithBridgeNotificationCenter: OpenWithBridgeNotifyin
 
 	func addObserver(
 		forName name: Notification.Name,
-		handler: @escaping @MainActor @Sendable (String) -> Void
+		handler: @escaping @MainActor @Sendable (String) -> Void,
 	) -> NSObjectProtocol {
 		let token = ObserverToken()
 		observers[ObjectIdentifier(token)] = Observer(name: name, handler: handler)

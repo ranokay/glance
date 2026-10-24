@@ -11,7 +11,7 @@ extension HTMLRendererError: LocalizedError {
 			case let .rendererError(fileType, errorMessage):
 				NSLocalizedString(
 					"Could not convert \(fileType) to HTML: \(errorMessage)",
-					comment: ""
+					comment: "",
 				)
 		}
 	}
@@ -26,7 +26,7 @@ enum HTMLRenderer {
 					sourcePointer,
 					sourceLength,
 					lexerPointer,
-					lexerLength
+					lexerLength,
 				)
 			}
 		}
@@ -51,14 +51,14 @@ enum HTMLRenderer {
 
 	private static func makeHTMLString(
 		fileType: String,
-		result: GlanceRenderResult
+		result: GlanceRenderResult,
 	) throws -> String {
 		defer { glance_render_buffer_free(result.data, result.length) }
 
 		guard result.length == 0 || result.data != nil else {
 			throw HTMLRendererError.rendererError(
 				fileType: fileType,
-				errorMessage: "renderer returned an invalid buffer"
+				errorMessage: "renderer returned an invalid buffer",
 			)
 		}
 
@@ -66,14 +66,14 @@ enum HTMLRenderer {
 		guard let output = String(data: data, encoding: .utf8) else {
 			throw HTMLRendererError.rendererError(
 				fileType: fileType,
-				errorMessage: "renderer returned invalid UTF-8"
+				errorMessage: "renderer returned invalid UTF-8",
 			)
 		}
 
 		guard result.status == GLANCE_STATUS_OK else {
 			throw HTMLRendererError.rendererError(
 				fileType: fileType,
-				errorMessage: output.isEmpty ? "renderer failed without details" : output
+				errorMessage: output.isEmpty ? "renderer failed without details" : output,
 			)
 		}
 		return output
@@ -81,7 +81,7 @@ enum HTMLRenderer {
 
 	private static func withUTF8Buffer<Result>(
 		_ string: String,
-		body: (UnsafePointer<UInt8>?, Int) -> Result
+		body: (UnsafePointer<UInt8>?, Int) -> Result,
 	) -> Result {
 		let bytes = Array(string.utf8)
 		return bytes.withUnsafeBufferPointer { buffer in

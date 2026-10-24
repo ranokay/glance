@@ -40,7 +40,7 @@ class MainVC: NSViewController, QLPreviewingController {
 	var openWithService = OpenWithService()
 	var containingAppIsRunning = {
 		!NSRunningApplication.runningApplications(
-			withBundleIdentifier: MainVC.containingAppBundleID
+			withBundleIdentifier: MainVC.containingAppBundleID,
 		).isEmpty
 	}
 
@@ -119,7 +119,7 @@ class MainVC: NSViewController, QLPreviewingController {
 		backButton.bezelStyle = .inline
 		backButton.image = NSImage(
 			systemSymbolName: "chevron.backward",
-			accessibilityDescription: nil
+			accessibilityDescription: nil,
 		)
 		backButton.imagePosition = .imageLeading
 		backButton.isHidden = true
@@ -150,15 +150,15 @@ class MainVC: NSViewController, QLPreviewingController {
 			statusLabel.centerYAnchor.constraint(equalTo: utilityBarView.centerYAnchor),
 			statusLabel.leadingAnchor.constraint(
 				greaterThanOrEqualTo: backButton.trailingAnchor,
-				constant: 8
+				constant: 8,
 			),
 			statusLabel.trailingAnchor.constraint(
 				lessThanOrEqualTo: openWithButton.leadingAnchor,
-				constant: -8
+				constant: -8,
 			),
 			openWithButton.trailingAnchor.constraint(
 				equalTo: utilityBarView.trailingAnchor,
-				constant: -8
+				constant: -8,
 			),
 			openWithButton.centerYAnchor.constraint(equalTo: utilityBarView.centerYAnchor),
 		])
@@ -170,7 +170,7 @@ class MainVC: NSViewController, QLPreviewingController {
 	/// Spotlight, Quick Look and any other UI elements which implement the API.
 	nonisolated func preparePreviewOfFile(
 		at fileUrl: URL,
-		completionHandler handler: @escaping @Sendable (Error?) -> Void
+		completionHandler handler: @escaping @Sendable (Error?) -> Void,
 	) {
 		Task { @MainActor [weak self] in
 			guard let self else {
@@ -262,7 +262,7 @@ class MainVC: NSViewController, QLPreviewingController {
 			let menuItem = NSMenuItem(
 				title: application.displayName,
 				action: nil,
-				keyEquivalent: ""
+				keyEquivalent: "",
 			)
 			menuItem.isEnabled = true
 			menuItem.representedObject = application.applicationURL as NSURL

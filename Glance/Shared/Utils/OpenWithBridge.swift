@@ -39,7 +39,7 @@ public protocol OpenWithBridgeSending {
 	func open(
 		fileURL: URL,
 		with applicationURL: URL,
-		completion: @escaping @MainActor (Error?) -> Void
+		completion: @escaping @MainActor (Error?) -> Void,
 	)
 }
 
@@ -49,7 +49,7 @@ public protocol OpenWithLaunching {
 	func open(
 		fileURL: URL,
 		with applicationURL: URL,
-		completion: @escaping @MainActor (Error?) -> Void
+		completion: @escaping @MainActor (Error?) -> Void,
 	)
 }
 
@@ -64,7 +64,7 @@ public protocol OpenWithSecurityScopeManaging {
 public protocol OpenWithBridgeDispatching {
 	func dispatch(
 		requestURL: URL,
-		completion: @escaping @MainActor (Error?) -> Void
+		completion: @escaping @MainActor (Error?) -> Void,
 	)
 }
 
@@ -79,7 +79,7 @@ public protocol OpenWithBridgeRequestStoring {
 public protocol OpenWithBridgeNotifying: AnyObject {
 	func addObserver(
 		forName name: Notification.Name,
-		handler: @escaping @MainActor @Sendable (String) -> Void
+		handler: @escaping @MainActor @Sendable (String) -> Void,
 	) -> NSObjectProtocol
 	func removeObserver(_ observer: NSObjectProtocol)
 	func post(name: Notification.Name, object: String)
@@ -95,7 +95,7 @@ public final class SystemOpenWithBridgeNotificationCenter: OpenWithBridgeNotifyi
 
 	public func addObserver(
 		forName name: Notification.Name,
-		handler: @escaping @MainActor @Sendable (String) -> Void
+		handler: @escaping @MainActor @Sendable (String) -> Void,
 	) -> NSObjectProtocol {
 		center.addObserver(forName: name, object: nil, queue: .main) { notification in
 			guard let object = notification.object as? String else {
@@ -116,7 +116,7 @@ public final class SystemOpenWithBridgeNotificationCenter: OpenWithBridgeNotifyi
 			name,
 			object: object,
 			userInfo: nil,
-			deliverImmediately: true
+			deliverImmediately: true,
 		)
 	}
 }
@@ -126,10 +126,10 @@ public enum OpenWithBridgeConstants {
 	public static let requestHost = "request"
 	public static let handoffHost = "handoff"
 	public static let requestNotification = Notification.Name(
-		"com.chamburr.Glance.OpenWithBridge.request"
+		"com.chamburr.Glance.OpenWithBridge.request",
 	)
 	public static let responseNotification = Notification.Name(
-		"com.chamburr.Glance.OpenWithBridge.response"
+		"com.chamburr.Glance.OpenWithBridge.response",
 	)
 	public static let currentVersion = 1
 	public static let maximumPayloadSize = 128 * 1024
@@ -184,7 +184,7 @@ public struct OpenWithBridgeResponse: Codable {
 		requestID: UUID,
 		errorDomain: String?,
 		errorCode: Int?,
-		errorMessage: String?
+		errorMessage: String?,
 	) {
 		self.version = version
 		self.requestID = requestID
@@ -199,7 +199,7 @@ public struct OpenWithBridgeResponse: Codable {
 			requestID: requestID,
 			errorDomain: nil,
 			errorCode: nil,
-			errorMessage: nil
+			errorMessage: nil,
 		)
 	}
 
@@ -210,7 +210,7 @@ public struct OpenWithBridgeResponse: Codable {
 			requestID: requestID,
 			errorDomain: nsError.domain,
 			errorCode: nsError.code,
-			errorMessage: sanitizedMessage(for: error)
+			errorMessage: sanitizedMessage(for: error),
 		)
 	}
 
@@ -222,7 +222,7 @@ public struct OpenWithBridgeResponse: Codable {
 				return OpenWithBridgeRemoteError(
 					domain: errorDomain,
 					code: errorCode,
-					message: errorMessage
+					message: errorMessage,
 				)
 			default:
 				throw OpenWithBridgeError.invalidRequest
@@ -247,7 +247,7 @@ public enum OpenWithBridgeCodec {
 		components.queryItems = [
 			URLQueryItem(
 				name: payloadQueryName,
-				value: try encodedString(for: request)
+				value: try encodedString(for: request),
 			),
 		]
 		guard let url = components.url,
@@ -284,7 +284,7 @@ public enum OpenWithBridgeCodec {
 		components.queryItems = [
 			URLQueryItem(
 				name: payloadQueryName,
-				value: try encodedString(for: handoff)
+				value: try encodedString(for: handoff),
 			),
 		]
 		guard let url = components.url,
@@ -355,7 +355,7 @@ public final class SystemOpenWithSecurityScopeManager: OpenWithSecurityScopeMana
 			resolvingBookmarkData: bookmarkData,
 			options: [.withoutUI],
 			relativeTo: nil,
-			bookmarkDataIsStale: &bookmarkDataIsStale
+			bookmarkDataIsStale: &bookmarkDataIsStale,
 		)
 		guard fileURL.isFileURL, !bookmarkDataIsStale else {
 			throw OpenWithBridgeError.invalidRequest
@@ -378,7 +378,7 @@ public final class SystemOpenWithBridgeRequestStore: OpenWithBridgeRequestStorin
 
 	private static let namePrefix = "com.chamburr.Glance.OpenWithBridge."
 	private static let pasteboardType = NSPasteboard.PasteboardType(
-		"com.chamburr.Glance.open-with-request"
+		"com.chamburr.Glance.open-with-request",
 	)
 
 	public func store(_ requestString: String) throws -> String {
@@ -459,12 +459,12 @@ public final class WorkspaceOpenWithLauncher: OpenWithLaunching {
 	public func open(
 		fileURL: URL,
 		with applicationURL: URL,
-		completion: @escaping @MainActor (Error?) -> Void
+		completion: @escaping @MainActor (Error?) -> Void,
 	) {
 		workspace.open(
 			[fileURL],
 			withApplicationAt: applicationURL,
-			configuration: Self.makeOpenConfiguration()
+			configuration: Self.makeOpenConfiguration(),
 		) { _, error in
 			let sendableError = UncheckedOpenWithBridgeValue(value: error)
 			Task { @MainActor in
@@ -492,7 +492,7 @@ public final class WorkspaceOpenWithRequestDispatcher: OpenWithBridgeDispatching
 		workspace: NSWorkspace = .shared,
 		notificationCenter: OpenWithBridgeNotifying = SystemOpenWithBridgeNotificationCenter(),
 		containingApplicationURL: URL = WorkspaceOpenWithRequestDispatcher
-			.defaultContainingApplicationURL
+			.defaultContainingApplicationURL,
 	) {
 		self.workspace = workspace
 		self.notificationCenter = notificationCenter
@@ -501,7 +501,7 @@ public final class WorkspaceOpenWithRequestDispatcher: OpenWithBridgeDispatching
 
 	public func dispatch(
 		requestURL: URL,
-		completion: @escaping @MainActor (Error?) -> Void
+		completion: @escaping @MainActor (Error?) -> Void,
 	) {
 		do {
 			let handoff = try OpenWithBridgeCodec.handoff(from: requestURL)
@@ -521,7 +521,7 @@ public final class WorkspaceOpenWithRequestDispatcher: OpenWithBridgeDispatching
 
 		workspace.openApplication(
 			at: containingApplicationURL,
-			configuration: Self.makeOpenConfiguration()
+			configuration: Self.makeOpenConfiguration(),
 		) { [weak self] _, error in
 			let sendableError = UncheckedOpenWithBridgeValue(value: error)
 			Task { @MainActor in
@@ -544,14 +544,14 @@ public final class WorkspaceOpenWithRequestDispatcher: OpenWithBridgeDispatching
 			return false
 		}
 		return !NSRunningApplication.runningApplications(
-			withBundleIdentifier: bundleIdentifier
+			withBundleIdentifier: bundleIdentifier,
 		).isEmpty
 	}
 
 	private func post(_ requestURL: URL) {
 		notificationCenter.post(
 			name: OpenWithBridgeConstants.requestNotification,
-			object: requestURL.absoluteString
+			object: requestURL.absoluteString,
 		)
 	}
 
@@ -588,7 +588,7 @@ public final class OpenWithBridgeServer {
 		notificationCenter: OpenWithBridgeNotifying = SystemOpenWithBridgeNotificationCenter(),
 		launcher: OpenWithLaunching = WorkspaceOpenWithLauncher(),
 		securityScopeManager: OpenWithSecurityScopeManaging = SystemOpenWithSecurityScopeManager(),
-		requestStore: OpenWithBridgeRequestStoring = SystemOpenWithBridgeRequestStore()
+		requestStore: OpenWithBridgeRequestStoring = SystemOpenWithBridgeRequestStore(),
 	) {
 		self.notificationCenter = notificationCenter
 		self.launcher = launcher
@@ -607,7 +607,7 @@ public final class OpenWithBridgeServer {
 			return
 		}
 		requestObserver = notificationCenter.addObserver(
-			forName: OpenWithBridgeConstants.requestNotification
+			forName: OpenWithBridgeConstants.requestNotification,
 		) { [weak self] requestString in
 			guard let requestURL = URL(string: requestString),
 			      requestURL.scheme == OpenWithBridgeConstants.requestScheme,
@@ -675,7 +675,7 @@ public final class OpenWithBridgeServer {
 		} catch {
 			guard let responseRequestID else {
 				Log.general.error(
-					"Could not decode Open With bridge request: \((error as NSError).domain, privacy: .public) \((error as NSError).code, privacy: .public)"
+					"Could not decode Open With bridge request: \((error as NSError).domain, privacy: .public) \((error as NSError).code, privacy: .public)",
 				)
 				return
 			}
@@ -690,12 +690,12 @@ public final class OpenWithBridgeServer {
 		do {
 			notificationCenter.post(
 				name: OpenWithBridgeConstants.responseNotification,
-				object: try OpenWithBridgeCodec.responseString(for: response)
+				object: try OpenWithBridgeCodec.responseString(for: response),
 			)
 		} catch {
 			let nsError = error as NSError
 			Log.general.error(
-				"Could not send Open With bridge response: \(nsError.domain, privacy: .public) \(nsError.code, privacy: .public)"
+				"Could not send Open With bridge response: \(nsError.domain, privacy: .public) \(nsError.code, privacy: .public)",
 			)
 		}
 	}
@@ -720,7 +720,7 @@ public final class OpenWithBridgeClient: OpenWithBridgeSending {
 		notificationCenter: OpenWithBridgeNotifying = SystemOpenWithBridgeNotificationCenter(),
 		dispatcher: OpenWithBridgeDispatching = WorkspaceOpenWithRequestDispatcher(),
 		requestStore: OpenWithBridgeRequestStoring = SystemOpenWithBridgeRequestStore(),
-		timeout: Duration = .seconds(5)
+		timeout: Duration = .seconds(5),
 	) {
 		self.notificationCenter = notificationCenter
 		self.dispatcher = dispatcher
@@ -735,7 +735,7 @@ public final class OpenWithBridgeClient: OpenWithBridgeSending {
 	public func open(
 		fileURL: URL,
 		with applicationURL: URL,
-		completion: @escaping @MainActor (Error?) -> Void
+		completion: @escaping @MainActor (Error?) -> Void,
 	) {
 		let requestID = UUID()
 		let requestURL: URL
@@ -749,10 +749,10 @@ public final class OpenWithBridgeClient: OpenWithBridgeSending {
 				fileBookmark: try fileURL.bookmarkData(
 					options: .minimalBookmark,
 					includingResourceValuesForKeys: nil,
-					relativeTo: nil
+					relativeTo: nil,
 				),
 				applicationPath: applicationURL.resolvingSymlinksInPath()
-					.standardizedFileURL.path
+					.standardizedFileURL.path,
 			)
 			requestURL = try OpenWithBridgeCodec.requestURL(for: request)
 			requestStoreName = try requestStore.store(requestURL.absoluteString)
@@ -760,7 +760,7 @@ public final class OpenWithBridgeClient: OpenWithBridgeSending {
 			handoffURL = try OpenWithBridgeCodec.handoffURL(for: OpenWithBridgeHandoff(
 				version: OpenWithBridgeConstants.currentVersion,
 				requestID: requestID,
-				requestStoreName: requestStoreName
+				requestStoreName: requestStoreName,
 			))
 		} catch {
 			if let storedRequestName {
@@ -771,7 +771,7 @@ public final class OpenWithBridgeClient: OpenWithBridgeSending {
 		}
 
 		let observer = notificationCenter.addObserver(
-			forName: OpenWithBridgeConstants.responseNotification
+			forName: OpenWithBridgeConstants.responseNotification,
 		) { [weak self] responseString in
 			guard let response = try? OpenWithBridgeCodec.response(from: responseString),
 			      response.version == OpenWithBridgeConstants.currentVersion,
@@ -799,7 +799,7 @@ public final class OpenWithBridgeClient: OpenWithBridgeSending {
 			observer: observer,
 			timeoutTask: timeoutTask,
 			requestStoreName: requestStoreName,
-			completion: completion
+			completion: completion,
 		)
 
 		dispatcher.dispatch(requestURL: handoffURL) { [weak self] error in

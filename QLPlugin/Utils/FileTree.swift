@@ -26,17 +26,17 @@ extension FileTreeError: LocalizedError {
 			case let .notADirectoryError(pathParts, pathPartIndex):
 				NSLocalizedString(
 					"Cannot create file tree node with path \"\(pathParts.joined())\": \"\(pathParts[pathPartIndex])\" is not a directory",
-					comment: ""
+					comment: "",
 				)
 			case let .pathDepthLimitExceeded(path, maxDepth):
 				NSLocalizedString(
 					"Cannot create file tree node with path \"\(path)\": maximum path depth of \(maxDepth) exceeded",
-					comment: ""
+					comment: "",
 				)
 			case let .nodeCountLimitExceeded(maxNodeCount):
 				NSLocalizedString(
 					"Cannot create file tree node: maximum node count of \(maxNodeCount) exceeded",
-					comment: ""
+					comment: "",
 				)
 		}
 	}
@@ -122,7 +122,7 @@ class FileTreeNode: NSObject {
 		contentTypeIdentifier: String? = nil,
 		icon: NSImage? = nil,
 		role: FileTreeNodeRole = .item,
-		directoryChildrenState: DirectoryChildrenState = .loaded(nextOffset: nil)
+		directoryChildrenState: DirectoryChildrenState = .loaded(nextOffset: nil),
 	) {
 		self.name = name
 		self.size = size
@@ -145,7 +145,7 @@ class FileTreeNode: NSObject {
 			isDirectory: false,
 			dateModified: nil,
 			icon: NSImage(systemSymbolName: "progress.indicator", accessibilityDescription: nil),
-			role: .loading
+			role: .loading,
 		)
 		node.parentNode = parent
 		return node
@@ -158,7 +158,7 @@ class FileTreeNode: NSObject {
 			isDirectory: false,
 			dateModified: nil,
 			icon: NSImage(systemSymbolName: "arrow.down.circle", accessibilityDescription: nil),
-			role: .loadMore(offset: offset)
+			role: .loadMore(offset: offset),
 		)
 		node.parentNode = parent
 		return node
@@ -172,9 +172,9 @@ class FileTreeNode: NSObject {
 			dateModified: nil,
 			icon: NSImage(
 				systemSymbolName: "arrow.clockwise.circle",
-				accessibilityDescription: nil
+				accessibilityDescription: nil,
 			),
-			role: .retry(offset: offset)
+			role: .retry(offset: offset),
 		)
 		node.parentNode = parent
 		return node
@@ -194,7 +194,7 @@ class FileTree {
 
 	init(
 		maxPathDepth: Int = FileTree.defaultMaxPathDepth,
-		maxNodeCount: Int = FileTree.defaultMaxNodeCount
+		maxNodeCount: Int = FileTree.defaultMaxNodeCount,
 	) {
 		self.maxPathDepth = max(1, maxPathDepth)
 		self.maxNodeCount = max(1, maxNodeCount)
@@ -212,7 +212,7 @@ class FileTree {
 		archiveEntryPath: String? = nil,
 		isPackage: Bool = false,
 		isSymbolicLink: Bool = false,
-		contentTypeIdentifier: String? = nil
+		contentTypeIdentifier: String? = nil,
 	) throws {
 		let pathParts = path.split(separator: "/", omittingEmptySubsequences: true)
 		guard !pathParts.isEmpty else {
@@ -250,7 +250,7 @@ class FileTree {
 						archiveEntryPath: archiveEntryPath,
 						isPackage: isPackage,
 						isSymbolicLink: isSymbolicLink,
-						contentTypeIdentifier: contentTypeIdentifier
+						contentTypeIdentifier: contentTypeIdentifier,
 					)
 				}
 			} else {
@@ -258,7 +258,7 @@ class FileTree {
 					guard currentNode.isDirectory else {
 						throw FileTreeError.notADirectoryError(
 							pathParts: pathParts,
-							pathPartIndex: pathPartIndex
+							pathPartIndex: pathPartIndex,
 						)
 					}
 					parentNode = currentNode
@@ -273,7 +273,7 @@ class FileTree {
 						archiveEntryPath: nil,
 						isPackage: false,
 						isSymbolicLink: false,
-						contentTypeIdentifier: nil
+						contentTypeIdentifier: nil,
 					)
 				}
 			}
@@ -290,7 +290,7 @@ class FileTree {
 		archiveEntryPath: String?,
 		isPackage: Bool,
 		isSymbolicLink: Bool,
-		contentTypeIdentifier: String?
+		contentTypeIdentifier: String?,
 	) throws -> FileTreeNode {
 		guard nodeCount < maxNodeCount else {
 			throw FileTreeError.nodeCountLimitExceeded(maxNodeCount: maxNodeCount)
@@ -304,7 +304,7 @@ class FileTree {
 			archiveEntryPath: archiveEntryPath,
 			isPackage: isPackage,
 			isSymbolicLink: isSymbolicLink,
-			contentTypeIdentifier: contentTypeIdentifier
+			contentTypeIdentifier: contentTypeIdentifier,
 		)
 		parentNode.children[name] = node
 		nodeCount += 1

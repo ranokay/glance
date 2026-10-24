@@ -12,7 +12,7 @@ class SevenZipPreview: Preview {
 			format: .sevenZip,
 			depth: depth,
 			scan: { try PreviewCoreBridge.scanSevenZip(at: fileURL) },
-			policy: .sevenZip
+			policy: .sevenZip,
 		)
 	}
 

@@ -1,4 +1,6 @@
---swiftversion 6.0
+# Xcode 26 ships Swift 6.2; the project builds in language mode 6.0.
+--swift-version 6.2
+--language-mode 6.0
 
 --indent tab
 --indentcase true

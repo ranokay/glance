@@ -14,7 +14,7 @@ final class FLACPreviewTests: XCTestCase {
 			.appendingPathComponent("GlanceFLACTests-\(UUID().uuidString)", isDirectory: true)
 		try FileManager.default.createDirectory(
 			at: temporaryDirectory,
-			withIntermediateDirectories: true
+			withIntermediateDirectories: true,
 		)
 	}
 
@@ -58,7 +58,7 @@ final class FLACPreviewTests: XCTestCase {
 			isDirectory: false,
 			dateModified: nil,
 			fileURL: fileURL,
-			contentTypeIdentifier: UTType.data.identifier
+			contentTypeIdentifier: UTType.data.identifier,
 		)
 		let nested = try await DefaultNestedPreviewProvider().makePreviewController(for: node)
 		let nestedMedia = try XCTUnwrap(nested as? AVPlayerPreviewVC)
@@ -76,7 +76,7 @@ final class FLACPreviewTests: XCTestCase {
 			contentRect: NSRect(x: 0, y: 0, width: 360, height: 300),
 			styleMask: [.titled],
 			backing: .buffered,
-			defer: false
+			defer: false,
 		)
 		window.level = .floating
 		window.contentView = preview.view
@@ -85,7 +85,7 @@ final class FLACPreviewTests: XCTestCase {
 		XCTAssertNotEqual(player.timeControlStatus, .paused)
 
 		preview.handlePreviewWindowChange(
-			Notification(name: NSWindow.didChangeOcclusionStateNotification, object: window)
+			Notification(name: NSWindow.didChangeOcclusionStateNotification, object: window),
 		)
 		XCTAssertEqual(player.timeControlStatus, .paused)
 		XCTAssertEqual(player.rate, 0)
@@ -99,7 +99,7 @@ final class FLACPreviewTests: XCTestCase {
 			contentRect: NSRect(x: 0, y: 0, width: 313, height: 406),
 			styleMask: [.titled],
 			backing: .buffered,
-			defer: false
+			defer: false,
 		)
 		window.level = .normal
 		window.contentView = preview.view
@@ -148,7 +148,7 @@ final class FLACPreviewTests: XCTestCase {
 			contentRect: NSRect(x: 0, y: 0, width: 360, height: 300),
 			styleMask: [.titled],
 			backing: .buffered,
-			defer: false
+			defer: false,
 		)
 		window.level = .floating
 		window.contentView = preview.view
@@ -178,7 +178,7 @@ final class FLACPreviewTests: XCTestCase {
 	func testWaveformPreferenceDefaultsOnWhenTheBridgeIsUnavailable() async {
 		let client = PreviewSettingsClient(
 			notificationCenter: StubPreviewSettingsCenter(),
-			timeout: .milliseconds(1)
+			timeout: .milliseconds(1),
 		)
 		let enabled = await client.flacWaveformEnabled()
 		XCTAssertTrue(enabled)
@@ -329,7 +329,7 @@ private final class StubPreviewSettingsCenter: OpenWithBridgeNotifying {
 
 	func addObserver(
 		forName name: Notification.Name,
-		handler: @escaping @MainActor @Sendable (String) -> Void
+		handler: @escaping @MainActor @Sendable (String) -> Void,
 	) -> NSObjectProtocol {
 		let token = ObserverToken()
 		observers[ObjectIdentifier(token)] = Observer(name: name, handler: handler)

@@ -7,7 +7,7 @@ func assertNode(
 	name: String,
 	size: Int,
 	isDirectory: Bool,
-	dateModified: Date?
+	dateModified: Date?,
 ) -> FileTreeNode {
 	guard let node = parent.childrenList.first(where: { $0.name == name }) else {
 		XCTFail("Node \"\(parent.name)\" doesn't have child node \"\(name)\"")
@@ -41,7 +41,7 @@ class FileTreeTests: XCTestCase {
 			path: "",
 			isDirectory: false,
 			size: 123,
-			dateModified: now
+			dateModified: now,
 		)
 
 		XCTAssert(try XCTUnwrap(fileTree?.root.children.isEmpty))
@@ -53,13 +53,13 @@ class FileTreeTests: XCTestCase {
 				path: name,
 				isDirectory: false,
 				size: 0,
-				dateModified: now
+				dateModified: now,
 			)
 		}
 
 		XCTAssertEqual(
 			fileTree?.root.childrenList.map(\.name),
-			["file-1", "file-2", "file-10"]
+			["file-1", "file-2", "file-10"],
 		)
 	}
 
@@ -69,7 +69,7 @@ class FileTreeTests: XCTestCase {
 				path: name,
 				isDirectory: false,
 				size: 0,
-				dateModified: now
+				dateModified: now,
 			)
 		}
 
@@ -84,7 +84,7 @@ class FileTreeTests: XCTestCase {
 			isDirectory: false,
 			size: 13,
 			dateModified: now,
-			archiveEntryPath: "example/hello.txt"
+			archiveEntryPath: "example/hello.txt",
 		)
 
 		let node = assertNode(
@@ -92,7 +92,7 @@ class FileTreeTests: XCTestCase {
 			name: "hello.txt",
 			size: 13,
 			isDirectory: false,
-			dateModified: now
+			dateModified: now,
 		)
 		XCTAssertEqual(node.archiveEntryPath, "example/hello.txt")
 	}
@@ -106,7 +106,7 @@ class FileTreeTests: XCTestCase {
 			path: "file",
 			isDirectory: false,
 			size: 123,
-			dateModified: now
+			dateModified: now,
 		)
 
 		_ = assertNode(
@@ -114,7 +114,7 @@ class FileTreeTests: XCTestCase {
 			name: "file",
 			size: 123,
 			isDirectory: false,
-			dateModified: now
+			dateModified: now,
 		)
 	}
 
@@ -127,7 +127,7 @@ class FileTreeTests: XCTestCase {
 			path: "empty-directory",
 			isDirectory: true,
 			size: 0,
-			dateModified: now
+			dateModified: now,
 		)
 
 		_ = assertNode(
@@ -135,7 +135,7 @@ class FileTreeTests: XCTestCase {
 			name: "empty-directory",
 			size: 0,
 			isDirectory: true,
-			dateModified: now
+			dateModified: now,
 		)
 	}
 
@@ -151,19 +151,19 @@ class FileTreeTests: XCTestCase {
 			path: "non-empty-directory",
 			isDirectory: true,
 			size: 0,
-			dateModified: now
+			dateModified: now,
 		)
 		try fileTree?.addNode(
 			path: "non-empty-directory/file-1",
 			isDirectory: false,
 			size: 123,
-			dateModified: now
+			dateModified: now,
 		)
 		try fileTree?.addNode(
 			path: "non-empty-directory/file-2",
 			isDirectory: false,
 			size: 123,
-			dateModified: now
+			dateModified: now,
 		)
 
 		let nonEmptyDirectory = assertNode(
@@ -171,21 +171,21 @@ class FileTreeTests: XCTestCase {
 			name: "non-empty-directory",
 			size: 0,
 			isDirectory: true,
-			dateModified: now
+			dateModified: now,
 		)
 		_ = assertNode(
 			parent: nonEmptyDirectory,
 			name: "file-1",
 			size: 123,
 			isDirectory: false,
-			dateModified: now
+			dateModified: now,
 		)
 		_ = assertNode(
 			parent: nonEmptyDirectory,
 			name: "file-2",
 			size: 123,
 			isDirectory: false,
-			dateModified: now
+			dateModified: now,
 		)
 	}
 
@@ -195,19 +195,19 @@ class FileTreeTests: XCTestCase {
 			path: "non-empty-directory/file-1",
 			isDirectory: false,
 			size: 123,
-			dateModified: now
+			dateModified: now,
 		)
 		try fileTree?.addNode(
 			path: "non-empty-directory",
 			isDirectory: true,
 			size: 0,
-			dateModified: now
+			dateModified: now,
 		)
 		try fileTree?.addNode(
 			path: "non-empty-directory/file-2",
 			isDirectory: false,
 			size: 123,
-			dateModified: now
+			dateModified: now,
 		)
 
 		let nonEmptyDirectory = assertNode(
@@ -215,21 +215,21 @@ class FileTreeTests: XCTestCase {
 			name: "non-empty-directory",
 			size: 0,
 			isDirectory: true,
-			dateModified: now
+			dateModified: now,
 		)
 		_ = assertNode(
 			parent: nonEmptyDirectory,
 			name: "file-1",
 			size: 123,
 			isDirectory: false,
-			dateModified: now
+			dateModified: now,
 		)
 		_ = assertNode(
 			parent: nonEmptyDirectory,
 			name: "file-2",
 			size: 123,
 			isDirectory: false,
-			dateModified: now
+			dateModified: now,
 		)
 	}
 
@@ -239,19 +239,19 @@ class FileTreeTests: XCTestCase {
 			path: "non-empty-directory/file-1",
 			isDirectory: false,
 			size: 123,
-			dateModified: now
+			dateModified: now,
 		)
 		try fileTree?.addNode(
 			path: "non-empty-directory/file-2",
 			isDirectory: false,
 			size: 123,
-			dateModified: now
+			dateModified: now,
 		)
 		try fileTree?.addNode(
 			path: "non-empty-directory",
 			isDirectory: true,
 			size: 0,
-			dateModified: now
+			dateModified: now,
 		)
 
 		let nonEmptyDirectory = assertNode(
@@ -259,21 +259,21 @@ class FileTreeTests: XCTestCase {
 			name: "non-empty-directory",
 			size: 0,
 			isDirectory: true,
-			dateModified: now
+			dateModified: now,
 		)
 		_ = assertNode(
 			parent: nonEmptyDirectory,
 			name: "file-1",
 			size: 123,
 			isDirectory: false,
-			dateModified: now
+			dateModified: now,
 		)
 		_ = assertNode(
 			parent: nonEmptyDirectory,
 			name: "file-2",
 			size: 123,
 			isDirectory: false,
-			dateModified: now
+			dateModified: now,
 		)
 	}
 
@@ -283,13 +283,13 @@ class FileTreeTests: XCTestCase {
 			path: "non-empty-directory/file-1",
 			isDirectory: false,
 			size: 123,
-			dateModified: now
+			dateModified: now,
 		)
 		try fileTree?.addNode(
 			path: "non-empty-directory/file-2",
 			isDirectory: false,
 			size: 123,
-			dateModified: now
+			dateModified: now,
 		)
 
 		let nonEmptyDirectory = assertNode(
@@ -297,21 +297,21 @@ class FileTreeTests: XCTestCase {
 			name: "non-empty-directory",
 			size: 0,
 			isDirectory: true,
-			dateModified: nil // Date is not know because directory was created implicitly
+			dateModified: nil, // Date is not know because directory was created implicitly
 		)
 		_ = assertNode(
 			parent: nonEmptyDirectory,
 			name: "file-1",
 			size: 123,
 			isDirectory: false,
-			dateModified: now
+			dateModified: now,
 		)
 		_ = assertNode(
 			parent: nonEmptyDirectory,
 			name: "file-2",
 			size: 123,
 			isDirectory: false,
-			dateModified: now
+			dateModified: now,
 		)
 	}
 
@@ -328,31 +328,31 @@ class FileTreeTests: XCTestCase {
 			path: "empty-directory",
 			isDirectory: true,
 			size: 0,
-			dateModified: now
+			dateModified: now,
 		)
 		try fileTree?.addNode(
 			path: "non-empty-directory/file-2",
 			isDirectory: false,
 			size: 123,
-			dateModified: now
+			dateModified: now,
 		)
 		try fileTree?.addNode(
 			path: "file-1",
 			isDirectory: false,
 			size: 123,
-			dateModified: now
+			dateModified: now,
 		)
 		try fileTree?.addNode(
 			path: "non-empty-directory",
 			isDirectory: true,
 			size: 0,
-			dateModified: now
+			dateModified: now,
 		)
 		try fileTree?.addNode(
 			path: "non-empty-directory/file-3",
 			isDirectory: false,
 			size: 123,
-			dateModified: now
+			dateModified: now,
 		)
 
 		_ = assertNode(
@@ -360,35 +360,35 @@ class FileTreeTests: XCTestCase {
 			name: "empty-directory",
 			size: 0,
 			isDirectory: true,
-			dateModified: now
+			dateModified: now,
 		)
 		_ = assertNode(
 			parent: try XCTUnwrap(fileTree?.root),
 			name: "file-1",
 			size: 123,
 			isDirectory: false,
-			dateModified: now
+			dateModified: now,
 		)
 		let nonEmptyDirectory = assertNode(
 			parent: try XCTUnwrap(fileTree?.root),
 			name: "non-empty-directory",
 			size: 0,
 			isDirectory: true,
-			dateModified: now
+			dateModified: now,
 		)
 		_ = assertNode(
 			parent: nonEmptyDirectory,
 			name: "file-2",
 			size: 123,
 			isDirectory: false,
-			dateModified: now
+			dateModified: now,
 		)
 		_ = assertNode(
 			parent: nonEmptyDirectory,
 			name: "file-3",
 			size: 123,
 			isDirectory: false,
-			dateModified: now
+			dateModified: now,
 		)
 	}
 
@@ -397,7 +397,7 @@ class FileTreeTests: XCTestCase {
 			path: "directory//nested///file.txt",
 			isDirectory: false,
 			size: 123,
-			dateModified: now
+			dateModified: now,
 		)
 
 		let directory = assertNode(
@@ -405,21 +405,21 @@ class FileTreeTests: XCTestCase {
 			name: "directory",
 			size: 0,
 			isDirectory: true,
-			dateModified: nil
+			dateModified: nil,
 		)
 		let nested = assertNode(
 			parent: directory,
 			name: "nested",
 			size: 0,
 			isDirectory: true,
-			dateModified: nil
+			dateModified: nil,
 		)
 		_ = assertNode(
 			parent: nested,
 			name: "file.txt",
 			size: 123,
 			isDirectory: false,
-			dateModified: now
+			dateModified: now,
 		)
 	}
 
@@ -428,7 +428,7 @@ class FileTreeTests: XCTestCase {
 			path: "folder with spaces/unicode-\u{00E9}.txt",
 			isDirectory: false,
 			size: 123,
-			dateModified: now
+			dateModified: now,
 		)
 
 		let directory = assertNode(
@@ -436,14 +436,14 @@ class FileTreeTests: XCTestCase {
 			name: "folder with spaces",
 			size: 0,
 			isDirectory: true,
-			dateModified: nil
+			dateModified: nil,
 		)
 		_ = assertNode(
 			parent: directory,
 			name: "unicode-\u{00E9}.txt",
 			size: 123,
 			isDirectory: false,
-			dateModified: now
+			dateModified: now,
 		)
 	}
 
@@ -452,7 +452,7 @@ class FileTreeTests: XCTestCase {
 			path: "file",
 			isDirectory: false,
 			size: 123,
-			dateModified: now
+			dateModified: now,
 		)
 
 		XCTAssertThrowsError(
@@ -460,8 +460,8 @@ class FileTreeTests: XCTestCase {
 				path: "file/child",
 				isDirectory: false,
 				size: 456,
-				dateModified: now
-			)
+				dateModified: now,
+			),
 		)
 	}
 
@@ -472,7 +472,7 @@ class FileTreeTests: XCTestCase {
 			path: "a/b/c",
 			isDirectory: false,
 			size: 123,
-			dateModified: now
+			dateModified: now,
 		)
 
 		let a = assertNode(
@@ -480,21 +480,21 @@ class FileTreeTests: XCTestCase {
 			name: "a",
 			size: 0,
 			isDirectory: true,
-			dateModified: nil
+			dateModified: nil,
 		)
 		let b = assertNode(
 			parent: a,
 			name: "b",
 			size: 0,
 			isDirectory: true,
-			dateModified: nil
+			dateModified: nil,
 		)
 		_ = assertNode(
 			parent: b,
 			name: "c",
 			size: 123,
 			isDirectory: false,
-			dateModified: now
+			dateModified: now,
 		)
 	}
 
@@ -506,8 +506,8 @@ class FileTreeTests: XCTestCase {
 				path: "a/b/c",
 				isDirectory: false,
 				size: 123,
-				dateModified: now
-			)
+				dateModified: now,
+			),
 		) { error in
 			guard let fileTreeError = error as? FileTreeError,
 			      case FileTreeError.pathDepthLimitExceeded = fileTreeError
@@ -524,7 +524,7 @@ class FileTreeTests: XCTestCase {
 			path: "first",
 			isDirectory: false,
 			size: 123,
-			dateModified: now
+			dateModified: now,
 		)
 
 		XCTAssertThrowsError(
@@ -532,8 +532,8 @@ class FileTreeTests: XCTestCase {
 				path: "second",
 				isDirectory: false,
 				size: 456,
-				dateModified: now
-			)
+				dateModified: now,
+			),
 		) { error in
 			guard let fileTreeError = error as? FileTreeError,
 			      case FileTreeError.nodeCountLimitExceeded = fileTreeError

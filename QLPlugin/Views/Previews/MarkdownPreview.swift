@@ -4,23 +4,23 @@ import GlanceKit
 class MarkdownPreview: Preview {
 	private let chromaStylesheetURL = WebPreviewVC.resourceBundle.url(
 		forResource: "shared-chroma",
-		withExtension: "css"
+		withExtension: "css",
 	)
 	private let mainStylesheetURL = WebPreviewVC.resourceBundle.url(
 		forResource: "markdown-main",
-		withExtension: "css"
+		withExtension: "css",
 	)
 	private let mermaidScriptURL = WebPreviewVC.resourceBundle.url(
 		forResource: "markdown-pele-1.9.0.global",
-		withExtension: "js"
+		withExtension: "js",
 	)
 	private let katexScriptURL = WebPreviewVC.resourceBundle.url(
 		forResource: "jupyter-katex.min",
-		withExtension: "js"
+		withExtension: "js",
 	)
 	private let katexStylesheetURL = WebPreviewVC.resourceBundle.url(
 		forResource: "jupyter-katex.min",
-		withExtension: "css"
+		withExtension: "css",
 	)
 
 	/// This exact comment is emitted only by PreviewCore's Mermaid fence renderer. Raw HTML is
@@ -171,11 +171,11 @@ class MarkdownPreview: Preview {
 				html: html,
 				stylesheets: getStylesheets(html: html),
 				scripts: getScripts(html: html),
-				appearancePreferences: PreviewSettingsClient.shared.appearancePreferences()
+				appearancePreferences: PreviewSettingsClient.shared.appearancePreferences(),
 			)
 		} catch {
 			Log.render.error(
-				"Could not generate Markdown HTML: \(error.localizedDescription, privacy: .private)"
+				"Could not generate Markdown HTML: \(error.localizedDescription, privacy: .private)",
 			)
 			throw error
 		}

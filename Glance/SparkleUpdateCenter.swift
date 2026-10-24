@@ -15,7 +15,7 @@ final class SparkleUpdateCenter: NSObject {
 	static let shared = SparkleUpdateCenter()
 
 	nonisolated static let statusDidChangeNotification = Notification.Name(
-		"com.chamburr.Glance.updateStatusDidChange"
+		"com.chamburr.Glance.updateStatusDidChange",
 	)
 
 	private static let statusTextKey = "statusText"
@@ -37,20 +37,20 @@ final class SparkleUpdateCenter: NSObject {
 		let hostBundle = Bundle.main
 		let userDriver = SPUStandardUserDriver(
 			hostBundle: hostBundle,
-			delegate: self
+			delegate: self,
 		)
 		let newUpdater = SPUUpdater(
 			hostBundle: hostBundle,
 			applicationBundle: hostBundle,
 			userDriver: userDriver,
-			delegate: self
+			delegate: self,
 		)
 		updater = newUpdater
 
 		migrateLegacyAutomaticChecks(autoChecksEnabled)
 		canCheckObservation = newUpdater.observe(
 			\.canCheckForUpdates,
-			options: [.initial, .new]
+			options: [.initial, .new],
 		) { [weak self] observedUpdater, _ in
 			// SPUUpdater mutates this property on the main thread only.
 			MainActor.assumeIsolated {
@@ -63,7 +63,7 @@ final class SparkleUpdateCenter: NSObject {
 					object: nil,
 					userInfo: [
 						Self.canCheckKey: self.canCheckForUpdates,
-					]
+					],
 				)
 			}
 		}
@@ -79,7 +79,7 @@ final class SparkleUpdateCenter: NSObject {
 	/// of its own yet. Afterwards Sparkle owns the value.
 	private func migrateLegacyAutomaticChecks(_ legacyEnabled: Bool) {
 		guard let updater, UserDefaults.standard.object(
-			forKey: "SUEnableAutomaticChecks"
+			forKey: "SUEnableAutomaticChecks",
 		) == nil else {
 			return
 		}
@@ -124,7 +124,7 @@ final class SparkleUpdateCenter: NSObject {
 			userInfo: [
 				Self.statusTextKey: text,
 				Self.installReadyKey: installReady,
-			]
+			],
 		)
 	}
 }

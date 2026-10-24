@@ -18,7 +18,7 @@ protocol DirectoryThumbnailGenerating: AnyObject {
 		for fileURL: URL,
 		size: CGSize,
 		scale: CGFloat,
-		completion: @escaping @MainActor @Sendable (NSImage?) -> Void
+		completion: @escaping @MainActor @Sendable (NSImage?) -> Void,
 	) -> DirectoryThumbnailToken
 
 	func cancel(_ token: DirectoryThumbnailToken)
@@ -37,13 +37,13 @@ final class QuickLookDirectoryThumbnailGenerator: DirectoryThumbnailGenerating {
 		for fileURL: URL,
 		size: CGSize,
 		scale: CGFloat,
-		completion: @escaping @MainActor @Sendable (NSImage?) -> Void
+		completion: @escaping @MainActor @Sendable (NSImage?) -> Void,
 	) -> DirectoryThumbnailToken {
 		let request = QLThumbnailGenerator.Request(
 			fileAt: fileURL,
 			size: size,
 			scale: scale,
-			representationTypes: .thumbnail
+			representationTypes: .thumbnail,
 		)
 		let token = DirectoryThumbnailToken()
 		requests[token] = request
@@ -94,7 +94,7 @@ final class DirectoryThumbnailLoader {
 
 	init(
 		generator: DirectoryThumbnailGenerating = QuickLookDirectoryThumbnailGenerator(),
-		maxConcurrentRequests: Int = 4
+		maxConcurrentRequests: Int = 4,
 	) {
 		self.generator = generator
 		self.maxConcurrentRequests = max(1, maxConcurrentRequests)
@@ -103,7 +103,7 @@ final class DirectoryThumbnailLoader {
 	func requestThumbnail(
 		for node: FileTreeNode,
 		scale: CGFloat,
-		completion: @escaping (FileTreeNode) -> Void
+		completion: @escaping (FileTreeNode) -> Void,
 	) {
 		guard Self.isEligible(node), let fileURL = node.fileURL else {
 			return
@@ -125,8 +125,8 @@ final class DirectoryThumbnailLoader {
 				node: node,
 				fileURL: fileURL,
 				scale: scale,
-				completion: completion
-			)
+				completion: completion,
+			),
 		)
 		startPendingRequests()
 	}
@@ -172,7 +172,7 @@ final class DirectoryThumbnailLoader {
 			let token = generator.generateThumbnail(
 				for: fileURL,
 				size: Self.thumbnailSize,
-				scale: pendingRequest.scale
+				scale: pendingRequest.scale,
 			) { [weak self] image in
 				self?.finishRequest(for: fileURL, requestID: requestID, image: image)
 			}
@@ -180,7 +180,7 @@ final class DirectoryThumbnailLoader {
 				requestID: requestID,
 				token: token,
 				node: pendingRequest.node,
-				completion: pendingRequest.completion
+				completion: pendingRequest.completion,
 			)
 		}
 	}

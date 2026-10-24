@@ -69,8 +69,8 @@ final class PlistCoverageTests: XCTestCase {
 			try PropertyListSerialization.propertyList(
 				from: data,
 				options: [],
-				format: nil
-			) as? [String: Any]
+				format: nil,
+			) as? [String: Any],
 		)
 
 		XCTAssertEqual(plist["LSUIElement"] as? Bool, true)
@@ -85,7 +85,7 @@ final class PlistCoverageTests: XCTestCase {
 			let plist = try PropertyListSerialization.propertyList(
 				from: data,
 				options: [],
-				format: nil
+				format: nil,
 			) as? [String: Any],
 			let urlTypes = plist["CFBundleURLTypes"] as? [[String: Any]]
 		else {
@@ -107,7 +107,7 @@ final class PlistCoverageTests: XCTestCase {
 			let plist = try PropertyListSerialization.propertyList(
 				from: data,
 				options: [],
-				format: nil
+				format: nil,
 			) as? [String: Any]
 		else {
 			throw PlistCoverageError.missingURLTypes(plistURL)
@@ -126,7 +126,7 @@ final class PlistCoverageTests: XCTestCase {
 				.appendingPathComponent("Glance", isDirectory: true)
 				.appendingPathComponent("Utils", isDirectory: true)
 				.appendingPathComponent("Menu.swift"),
-			encoding: .utf8
+			encoding: .utf8,
 		)
 
 		XCTAssertTrue(menuContents.contains("\(repositoryURL)/issues"))
@@ -145,7 +145,7 @@ final class PlistCoverageTests: XCTestCase {
 			let plist = try PropertyListSerialization.propertyList(
 				from: data,
 				options: [],
-				format: nil
+				format: nil,
 			) as? [String: Any],
 			let extensionDictionary = plist["NSExtension"] as? [String: Any],
 			let attributes = extensionDictionary["NSExtensionAttributes"] as? [String: Any],

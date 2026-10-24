@@ -44,7 +44,7 @@ enum ArchivePreviewFactory {
 	static func makePreview(
 		file: File,
 		format: ArchiveEntryFormat,
-		depth: Int
+		depth: Int,
 	) async throws -> PreviewVC {
 		switch format {
 			case .zip:
@@ -75,7 +75,7 @@ enum ArchivePreview {
 			entrySize: @escaping (UInt64) throws -> Int,
 			rethrowsEntryError: @escaping (Error) -> Bool,
 			validateTotal: @escaping (ArchivePreviewPayload) throws -> Void,
-			label: @escaping @MainActor (File, ArchivePreviewPayload) -> String
+			label: @escaping @MainActor (File, ArchivePreviewPayload) -> String,
 		) {
 			self.entrySize = entrySize
 			self.rethrowsEntryError = rethrowsEntryError
@@ -90,26 +90,26 @@ enum ArchivePreview {
 		format: ArchiveEntryFormat,
 		depth: Int,
 		scan: @Sendable @escaping () throws -> ArchivePreviewPayload,
-		policy: Policy
+		policy: Policy,
 	) async throws -> PreviewVC {
 		let payload = try await PreviewExecutor.run(scan)
 		let fileTree = try buildTree(from: payload.entries, policy: policy)
 		try policy.validateTotal(payload)
 		let outline = OutlinePreviewVC(
 			rootNodes: fileTree.root.childrenList,
-			labelText: policy.label(file, payload)
+			labelText: policy.label(file, payload),
 		)
 		outline.archiveContext = ArchivePreviewContext(
 			fileURL: file.url,
 			format: format,
-			depth: depth
+			depth: depth,
 		)
 		return outline
 	}
 
 	static func buildTree(
 		from entries: [ArchivePreviewEntry],
-		policy: Policy
+		policy: Policy,
 	) throws -> FileTree {
 		let fileTree = FileTree()
 		for entry in entries {
@@ -119,7 +119,7 @@ enum ArchivePreview {
 					isDirectory: entry.entryType == .directory,
 					size: try policy.entrySize(entry.size),
 					dateModified: entry.modifiedUnixSeconds.map(Date.init(timeIntervalSince1970:)),
-					archiveEntryPath: entry.entryType == .file ? entry.path : nil
+					archiveEntryPath: entry.entryType == .file ? entry.path : nil,
 				)
 			} catch {
 				if policy.rethrowsEntryError(error) {
@@ -149,7 +149,7 @@ enum ArchivePreview {
 	static func standardLabel(file: File, payload: ArchivePreviewPayload) -> String {
 		ArchiveStatusFormatter.status(
 			compressed: UInt64(max(0, file.size)),
-			uncompressed: payload.uncompressedSize
+			uncompressed: payload.uncompressedSize,
 		)
 	}
 }
@@ -160,17 +160,17 @@ extension ArchivePreview.Policy {
 			entrySize: {
 				try ArchivePreview.boundedInt(
 					$0,
-					overLimit: ZIPPreviewError.metadataSizeLimitExceeded
+					overLimit: ZIPPreviewError.metadataSizeLimitExceeded,
 				)
 			},
 			rethrowsEntryError: { $0 is ZIPPreviewError },
 			validateTotal: {
 				_ = try ArchivePreview.boundedInt(
 					$0.uncompressedSize,
-					overLimit: ZIPPreviewError.metadataSizeLimitExceeded
+					overLimit: ZIPPreviewError.metadataSizeLimitExceeded,
 				)
 			},
-			label: ArchivePreview.standardLabel
+			label: ArchivePreview.standardLabel,
 		)
 	}
 
@@ -179,17 +179,17 @@ extension ArchivePreview.Policy {
 			entrySize: {
 				try ArchivePreview.boundedInt(
 					$0,
-					overLimit: RARPreviewError.metadataSizeLimitExceeded
+					overLimit: RARPreviewError.metadataSizeLimitExceeded,
 				)
 			},
 			rethrowsEntryError: { $0 is RARPreviewError },
 			validateTotal: {
 				_ = try ArchivePreview.boundedInt(
 					$0.uncompressedSize,
-					overLimit: RARPreviewError.metadataSizeLimitExceeded
+					overLimit: RARPreviewError.metadataSizeLimitExceeded,
 				)
 			},
-			label: ArchivePreview.standardLabel
+			label: ArchivePreview.standardLabel,
 		)
 	}
 
@@ -198,17 +198,17 @@ extension ArchivePreview.Policy {
 			entrySize: {
 				try ArchivePreview.boundedInt(
 					$0,
-					overLimit: SevenZipPreviewError.metadataSizeLimitExceeded
+					overLimit: SevenZipPreviewError.metadataSizeLimitExceeded,
 				)
 			},
 			rethrowsEntryError: { $0 is SevenZipPreviewError },
 			validateTotal: {
 				_ = try ArchivePreview.boundedInt(
 					$0.uncompressedSize,
-					overLimit: SevenZipPreviewError.metadataSizeLimitExceeded
+					overLimit: SevenZipPreviewError.metadataSizeLimitExceeded,
 				)
 			},
-			label: ArchivePreview.standardLabel
+			label: ArchivePreview.standardLabel,
 		)
 	}
 
@@ -217,14 +217,14 @@ extension ArchivePreview.Policy {
 			entrySize: {
 				try ArchivePreview.boundedInt(
 					$0,
-					overLimit: TARPreviewError.metadataSizeLimitExceeded
+					overLimit: TARPreviewError.metadataSizeLimitExceeded,
 				)
 			},
 			rethrowsEntryError: { $0 is TARPreviewError },
 			validateTotal: {
 				_ = try ArchivePreview.boundedInt64(
 					$0.scannedUncompressedSize ?? 0,
-					overLimit: TARPreviewError.metadataSizeLimitExceeded
+					overLimit: TARPreviewError.metadataSizeLimitExceeded,
 				)
 			},
 			label: { @MainActor file, payload in
@@ -235,17 +235,17 @@ extension ArchivePreview.Policy {
 						uncompressed: payload.scannedUncompressedSize ?? 0,
 						uncompressedPrefix: payload.truncated ? "at least " : "",
 						trailingNote: payload.truncated ? "Preview truncated" : nil,
-						includesPercentage: !payload.truncated
+						includesPercentage: !payload.truncated,
 					)
 				} else {
 					return ArchiveStatusFormatter.size(
 						UInt64(max(0, archiveSize)),
 						trailingNote: payload.truncated
 							? "Preview truncated after \(maxEntryCount) entries"
-							: nil
+							: nil,
 					)
 				}
-			}
+			},
 		)
 	}
 }
