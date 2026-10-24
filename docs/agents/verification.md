@@ -26,10 +26,10 @@ confirm only what automation cannot.
 Cargo runs through Mr Boxington (`mbx`) via the `mr_boxington` option in
 `mise.toml`. The local store lives in `~/Library/Caches/mbx`; `mbx cache stats`
 and `mbx gc --dry-run` inspect it. CI restores the store with
-`jdx/mr-boxington-action` and saves each pull request's own scope. Seed or
-refresh the shared `develop` cache with `gh workflow run verify.yaml --ref
-develop` after dependency changes. Release builds use the local store only,
-never a remote cache.
+`jdx/mr-boxington-action`; pull requests restore only. Pushes to `develop` that
+change dependencies or tooling refresh the shared cache, and
+`gh workflow run verify.yaml --ref develop` seeds it manually. Release builds
+use the local store only, never a remote cache.
 
 ## Manual capture (per UI ticket, alongside automated evidence)
 
