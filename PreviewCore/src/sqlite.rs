@@ -284,16 +284,18 @@ fn copy_with_wal(path: &Path, max_copy_bytes: u64) -> Result<Option<TemporaryCop
         }
     };
 
+    // Own the directory before the final source check so an I/O error on the
+    // check also removes the copy instead of leaving it in temporary storage.
+    let temporary = TemporaryCopy {
+        directory,
+        database_path,
+    };
     // A checkpoint can rewrite the main file or reset the WAL while the copy
     // is in flight. Only keep the copy when both files are unchanged.
     if SnapshotSignature::read(path)?.as_ref() != Some(&before) {
-        let _ = fs::remove_dir_all(&directory);
         return Ok(None);
     }
-    Ok(Some(TemporaryCopy {
-        directory,
-        database_path,
-    }))
+    Ok(Some(temporary))
 }
 
 fn copy_limit_error(max_copy_bytes: u64) -> CoreError {
