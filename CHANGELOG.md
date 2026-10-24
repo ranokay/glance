@@ -9,8 +9,8 @@ Append-only. Newest entry first.
   instead of inline bytes. Tables, columns, cells, and rendered output are capped with explicit
   notices. Previews open immutable when no `-wal` sidecar exists and otherwise read a temporary
   copy, so the database file and its directory are never modified. Virtual generated columns are
-  omitted, individual cells above the per-value safety limit fail with a clear message instead of
-  allocating unbounded memory, and encrypted, truncated, or non-SQLite files show a clear message.
+  omitted, individual cells above the per-value safety limit are reported in place while the table
+  list stays usable, and encrypted, truncated, or non-SQLite files show a clear message.
 
 - Quick Look previews for structured data: `.json`, `.plist` (XML and binary), and `.xml` now
   render as collapsible trees with distinct string, number, boolean, null, date, data, key, and

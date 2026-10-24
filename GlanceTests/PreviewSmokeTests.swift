@@ -1311,6 +1311,33 @@ final class PreviewSmokeTests: XCTestCase {
 		XCTAssertFalse(preview.previousButton.isEnabled)
 	}
 
+	func testSQLitePreviewReportsOversizedRowsWithoutLosingTheTableList() async throws {
+		let fileURL = temporaryDirectory.appendingPathComponent("oversized-cell.sqlite")
+		try runProcess(
+			"/usr/bin/sqlite3",
+			arguments: [
+				fileURL.path,
+				"CREATE TABLE large (value TEXT); INSERT INTO large VALUES (printf('%.*c', 5000000, 'x'));",
+			],
+		)
+
+		let generatedPreview = try await SQLitePreview().createPreviewVC(
+			file: File(url: fileURL),
+		)
+		let preview = try XCTUnwrap(generatedPreview as? SQLitePreviewVC)
+		preview.loadViewIfNeeded()
+
+		XCTAssertEqual(preview.previewStatusText, "large — too large")
+		XCTAssertEqual(preview.currentTable?.rowsTooLarge, true)
+		XCTAssertEqual(preview.tableView.numberOfRows, 0)
+		XCTAssertEqual(preview.tableView.tableColumns.count, 1)
+		XCTAssertEqual(preview.pageLabel.stringValue, "Too large")
+		XCTAssertEqual(
+			preview.noticeLabel.stringValue,
+			"This table contains values above the preview size limit.",
+		)
+	}
+
 	func testSQLitePreviewRejectsNonDatabaseFiles() async throws {
 		let fileURL = try writeFile(
 			named: "not-a-database.sqlite",

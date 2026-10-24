@@ -13,6 +13,7 @@ use std::slice;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 const SQLITE_OK: c_int = 0;
+const SQLITE_TOOBIG: c_int = 18;
 const SQLITE_ROW: c_int = 100;
 const SQLITE_DONE: c_int = 101;
 const SQLITE_OPEN_READONLY: c_int = 0x0000_0001;
@@ -58,6 +59,24 @@ pub(crate) struct SqliteTable {
     pub has_more: bool,
     pub page_truncated: bool,
     pub values_truncated: bool,
+    pub rows_too_large: bool,
+}
+
+impl SqliteTable {
+    fn too_large(name: &str, offset: u64) -> Self {
+        Self {
+            name: name.to_owned(),
+            columns: Vec::new(),
+            columns_truncated: false,
+            virtual_columns_omitted: false,
+            rows: Vec::new(),
+            offset,
+            has_more: false,
+            page_truncated: false,
+            values_truncated: false,
+            rows_too_large: true,
+        }
+    }
 }
 
 #[derive(Debug, PartialEq, Serialize)]
@@ -175,7 +194,13 @@ fn parse_sqlite_with_limits(
         .or_else(|| tables.first())
         .cloned();
     let table = match selected {
-        Some(name) => Some(read_table(&database.connection, &name, offset, &limits)?),
+        Some(name) => match read_table(&database.connection, &name, offset, &limits) {
+            Ok(table) => Some(table),
+            Err(_) if database.connection.is_too_big() => {
+                Some(SqliteTable::too_large(&name, offset))
+            }
+            Err(error) => return Err(error),
+        },
         None => None,
     };
     Ok(SqlitePayload {
@@ -619,6 +644,7 @@ fn read_table(
     let retained_columns = columns.len();
 
     let mut values_truncated = false;
+    let mut rows_too_large = false;
     let mut rows = Vec::new();
     let mut has_more = false;
     let mut page_truncated = false;
@@ -658,7 +684,18 @@ fn read_table(
         )?;
 
         let mut rendered_bytes = 0_usize;
-        while let SQLITE_ROW = step(database, &statement)? {
+        loop {
+            let status = match step(database, &statement) {
+                Ok(status) => status,
+                Err(_) if database.is_too_big() => {
+                    rows_too_large = true;
+                    break;
+                }
+                Err(error) => return Err(error),
+            };
+            if status != SQLITE_ROW {
+                break;
+            }
             if rows.len() >= limits.rows_per_page {
                 has_more = true;
                 break;
@@ -714,6 +751,7 @@ fn read_table(
         has_more,
         page_truncated,
         values_truncated,
+        rows_too_large,
     })
 }
 
@@ -864,6 +902,10 @@ impl Connection {
             error_message(self.0)
         ))
     }
+
+    fn is_too_big(&self) -> bool {
+        unsafe { sqlite3_errcode(self.0) == SQLITE_TOOBIG }
+    }
 }
 
 impl Drop for Connection {
@@ -926,6 +968,7 @@ unsafe extern "C" {
     ) -> c_int;
     fn sqlite3_close_v2(database: *mut Sqlite3) -> c_int;
     fn sqlite3_errmsg(database: *mut Sqlite3) -> *const c_char;
+    fn sqlite3_errcode(database: *mut Sqlite3) -> c_int;
     fn sqlite3_limit(database: *mut Sqlite3, id: c_int, new_value: c_int) -> c_int;
     fn sqlite3_db_config(database: *mut Sqlite3, op: c_int, ...) -> c_int;
     fn sqlite3_progress_handler(
@@ -1286,7 +1329,7 @@ mod tests {
     }
 
     #[test]
-    fn rejects_cells_over_the_sqlite_length_limit() {
+    fn reports_cells_over_the_sqlite_length_limit_without_losing_the_table_list() {
         let directory = temporary_directory("length-limit");
         let path = directory.join("large.sqlite");
         let connection = open_write(&path);
@@ -1297,9 +1340,13 @@ mod tests {
         );
         drop(connection);
 
-        let error = parse_sqlite(&path, None, 0).unwrap_err();
-        assert!(matches!(error, CoreError::Parse(_)));
-        assert!(error.to_string().contains("too big"));
+        let payload = parse_sqlite(&path, None, 0).unwrap();
+        assert_eq!(payload.tables, ["large"]);
+        let table = payload.table.unwrap();
+        assert!(table.rows_too_large);
+        assert_eq!(table.columns.len(), 1);
+        assert!(table.rows.is_empty());
+        assert!(!table.has_more);
 
         fs::remove_dir_all(directory).unwrap();
     }

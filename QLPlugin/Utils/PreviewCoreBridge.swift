@@ -47,6 +47,7 @@ struct SQLitePreviewTable: Decodable {
 	let hasMore: Bool
 	let pageTruncated: Bool
 	let valuesTruncated: Bool
+	let rowsTooLarge: Bool
 
 	private enum CodingKeys: String, CodingKey {
 		case name
@@ -58,6 +59,7 @@ struct SQLitePreviewTable: Decodable {
 		case hasMore = "has_more"
 		case pageTruncated = "page_truncated"
 		case valuesTruncated = "values_truncated"
+		case rowsTooLarge = "rows_too_large"
 	}
 }
 

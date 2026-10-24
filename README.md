@@ -113,7 +113,8 @@ Release DMGs are currently unsigned and unnotarized. To install Glance:
 - **SQLite databases** (read-only, parsed by Glance's bounded Rust preview core): `.sqlite`,
   `.sqlite3`, `.db`. Tables are listed alphabetically and shown 50 rows at a time with declared
   column types, distinct `NULL` and empty values, and BLOB sizes instead of inline bytes. Virtual
-  generated columns are omitted; stored generated columns render normally. Glance never writes to
+  generated columns are omitted; stored generated columns render normally. Rows above the per-value
+  safety limit are reported in place while the table list stays usable. Glance never writes to
   the user's file: it opens immutable when no `-wal` sidecar exists and otherwise reads a temporary
   copy. Encrypted, truncated, or non-SQLite files show a clear message.
 

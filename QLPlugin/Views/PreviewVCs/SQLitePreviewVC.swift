@@ -14,7 +14,7 @@ final class SQLitePreviewVC: NSViewController, PreviewVC, PreviewStatusProviding
 	var previewStatusDidChange: (@MainActor (String) -> Void)?
 
 	private let emptyLabel = NSTextField(labelWithString: "No tables in this database")
-	private let noticeLabel = NSTextField(labelWithString: "")
+	private(set) var noticeLabel = NSTextField(labelWithString: "")
 	private var offsetHistory: [UInt64] = []
 	private var loadGeneration = 0
 	private var isLoading = false
@@ -31,7 +31,9 @@ final class SQLitePreviewVC: NSViewController, PreviewVC, PreviewStatusProviding
 			return "No tables"
 		}
 		var parts = [table.name]
-		if table.rows.isEmpty {
+		if table.rowsTooLarge {
+			parts.append("too large")
+		} else if table.rows.isEmpty {
 			parts.append("empty")
 		} else {
 			parts.append("rows \(rowRangeText(for: table))\(table.hasMore ? "+" : "")")
@@ -344,9 +346,13 @@ final class SQLitePreviewVC: NSViewController, PreviewVC, PreviewStatusProviding
 		} else if loadFailed {
 			pageLabel.stringValue = "Couldn’t load page"
 		} else if let table = currentTable {
-			pageLabel.stringValue = table.rows.isEmpty
-				? "No rows"
-				: "Rows \(rowRangeText(for: table))"
+			if table.rowsTooLarge {
+				pageLabel.stringValue = "Too large"
+			} else if table.rows.isEmpty {
+				pageLabel.stringValue = "No rows"
+			} else {
+				pageLabel.stringValue = "Rows \(rowRangeText(for: table))"
+			}
 		} else {
 			pageLabel.stringValue = ""
 		}
@@ -360,7 +366,7 @@ final class SQLitePreviewVC: NSViewController, PreviewVC, PreviewStatusProviding
 	private func updateFooterNotice() {
 		guard let table = currentTable,
 		      table.pageTruncated || table.columnsTruncated || table.valuesTruncated
-		      || table.virtualColumnsOmitted
+		      || table.virtualColumnsOmitted || table.rowsTooLarge
 		else {
 			noticeLabel.stringValue = ""
 			noticeLabel.isHidden = true
@@ -383,6 +389,9 @@ final class SQLitePreviewVC: NSViewController, PreviewVC, PreviewStatusProviding
 		}
 		if table.virtualColumnsOmitted {
 			sentences.append("Virtual generated columns are omitted.")
+		}
+		if table.rowsTooLarge {
+			sentences.append("This table contains values above the preview size limit.")
 		}
 		return sentences.joined(separator: " ")
 	}
