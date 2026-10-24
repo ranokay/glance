@@ -26,16 +26,16 @@ jobs:
   verify:
     name: Rust, Xcode, and release gates
     runs-on: macos-26
-    timeout-minutes: 45
+    timeout-minutes: 25
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
       - name: Cache pinned tool downloads (keyed by tool-versions hash)
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.local/share/mise
           key: mise-${{ hashFiles('mise.toml') }}
@@ -47,14 +47,14 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
 
       - name: Cache Rust build (keyed by lockfile plus toolchain version)
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
             PreviewCore/target
-          key: rust-1.97.1-${{ hashFiles('PreviewCore/Cargo.lock') }}
-          restore-keys: rust-1.97.1-
+          key: rust-1.99.1-${{ hashFiles('PreviewCore/Cargo.lock') }}
+          restore-keys: rust-1.99.1-
 
       - name: Check release metadata strings
         run: |
@@ -67,23 +67,12 @@ jobs:
           mise run verify
           mise run verify:app 2>&1 | tee build/verify-app.log
 
-      - name: Run scripted Quick Look corpus (exploratory signal, not gating)
-        # Runner proof (PR #74): the hosted thumbnail daemon serves only
-        # Apple-owned types and never dispatches to the registered appex,
-        # so this stays exploratory until the daemon story is resolved.
-        # The gating corpus check is CorpusSweepTests in the unit suite.
-        continue-on-error: true
-        run: |
-          set -euo pipefail
-          sh scripts/qlmanage-corpus.sh 2>&1 | tee build/qlmanage-corpus.log
-
       - name: Retain evidence bundle keyed by commit
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: verify-evidence-${{ github.sha }}
           path: |
             build/TestResults/Glance.xcresult
             build/verify-app.log
-            build/qlmanage-corpus.log
           if-no-files-found: warn

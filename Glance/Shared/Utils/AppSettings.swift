@@ -143,7 +143,7 @@ public struct AppSettingsStore {
 				let storedValue = defaults.object(forKey: Self.previewFontSizeKey) as? NSNumber,
 				storedValue.doubleValue.isFinite,
 				(Self.minimumPreviewFontSize ... Self.maximumPreviewFontSize)
-				.contains(storedValue.doubleValue)
+					.contains(storedValue.doubleValue)
 			else {
 				return PreviewAppearancePreferences.defaultFontSize
 			}
@@ -191,11 +191,7 @@ public struct AppSettingsStore {
 	}
 
 	public func migrateStandardDefaultsIfNeeded() {
-		guard let standardDefaults else {
-			return
-		}
-
-		guard !defaults.bool(forKey: Self.previewDefaultsMigrationKey) else {
+		guard let standardDefaults, !defaults.bool(forKey: Self.previewDefaultsMigrationKey) else {
 			return
 		}
 
@@ -242,10 +238,9 @@ public enum PreviewSettingsBridge {
 
 	public static func decode(_ value: String) -> (UUID, PreviewPreferenceSnapshot)? {
 		let parts = value.split(separator: "|", omittingEmptySubsequences: false)
-		guard parts.count == 5, let requestID = UUID(uuidString: String(parts[0])) else {
-			return nil
-		}
-		guard parts[1] == "0" || parts[1] == "1" else {
+		guard parts.count == 5, let requestID = UUID(uuidString: String(parts[0])),
+		      parts[1] == "0" || parts[1] == "1"
+		else {
 			return nil
 		}
 		var fontFamily: String?
@@ -261,7 +256,7 @@ public enum PreviewSettingsBridge {
 			fontSize.isFinite,
 			(PreviewAppearancePreferences.minimumFontSize ... PreviewAppearancePreferences
 				.maximumFontSize)
-			.contains(fontSize),
+				.contains(fontSize),
 			parts[4] == "0" || parts[4] == "1"
 		else {
 			return nil

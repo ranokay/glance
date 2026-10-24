@@ -8,7 +8,7 @@ steps {
 		fix = "swiftformat {{files}}"
 	}
 	["swiftlint"] = (Builtins.swiftlint) {
-		check = "swiftlint lint --strict {{files}}"
+		check = "swiftlint lint --strict --config .swiftlint.yaml {{files}}"
 	}
 	["cargo-fmt"] = Builtins.cargo_fmt
 	["jactionlint"] = Builtins.jactionlint

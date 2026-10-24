@@ -19,6 +19,13 @@ Append-only. Newest entry first.
 - Lint and hooks now run through hk, with jactionlint checking GitHub Actions
   workflows. The release workflow drops its caches and pins every action to a
   commit SHA.
+- CI no longer runs the 30-minute exploratory Quick Look corpus on every pull
+  request; the gating corpus sweep remains in the unit suite. Workflow files and
+  the SwiftLint configuration now use the `.yaml` extension, and actions,
+  toolchains, and Rust dependencies were refreshed.
+- Removed the obsolete macOS UI-test target (and its Automation permission
+  prompt), main storyboard, main window controller, and unused icon/XIB code.
+  The app menu is built in code.
 
 # Glance 1.8.2
 

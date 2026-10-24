@@ -397,19 +397,16 @@ final class PreviewSettingsBridgeTests: XCTestCase {
 
 	func testClientReceivesServerSnapshotRoundTrip() async throws {
 		let suiteName = UUID().uuidString
-		let defaults = UserDefaults(suiteName: suiteName)
-		try XCTUnwrap(defaults)
+		let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
 		defer {
-			defaults?.removePersistentDomain(forName: suiteName)
+			defaults.removePersistentDomain(forName: suiteName)
 		}
-		defaults?.set(true, forKey: "flacWaveformEnabled")
-		defaults?.set("SF Mono", forKey: "previewFontFamily")
-		defaults?.set(21.5, forKey: "previewFontSize")
-		defaults?.set(true, forKey: "previewLineWrapping")
+		defaults.set(true, forKey: "flacWaveformEnabled")
+		defaults.set("SF Mono", forKey: "previewFontFamily")
+		defaults.set(21.5, forKey: "previewFontSize")
+		defaults.set(true, forKey: "previewLineWrapping")
 
-		let store = AppSettingsStore(
-			defaults: try XCTUnwrap(defaults)
-		)
+		let store = AppSettingsStore(defaults: defaults)
 		let server = PreviewSettingsServer(settingsStore: store, notificationCenter: center)
 		server.start()
 		let client = PreviewSettingsClient(notificationCenter: center)

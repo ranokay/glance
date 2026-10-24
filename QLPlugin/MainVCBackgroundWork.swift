@@ -118,10 +118,7 @@ extension MainVC {
 		setDisplayedStatus(message)
 		statusResetTask = Task { @MainActor [weak self] in
 			try? await Task.sleep(for: .seconds(3))
-			guard !Task.isCancelled else {
-				return
-			}
-			guard let self else {
+			guard !Task.isCancelled, let self else {
 				return
 			}
 			setDisplayedStatus(baseStatusText)

@@ -11,34 +11,34 @@ crate-type = ["staticlib", "rlib"]
 [dependencies]
 # These migration-critical renderer/parser versions are exact by design; Cargo.lock pins the
 # complete transitive graph used by all locked production builds.
-ammonia = "4.2.3"
-ansi-to-html = "0.2.3"
+ammonia = "4.2.4"
+ansi-to-html = "0.2.4"
 base64 = "0.23.1"
 calamine = "=0.37.0"
-comrak = { version = "0.54.0", default-features = false }
+comrak = { version = "0.57.0", default-features = false }
 csv = "=1.4.0"
-flate2 = { version = "=1.1.9", default-features = false, features = ["rust_backend"] }
+flate2 = { version = "=1.1.10", default-features = false, features = ["rust_backend"] }
 libc = "=0.2.189"
 quick-xml = "=0.41.0"
-rars = "=0.9.4"
+rars = "=0.12.0"
 serde = { version = "1.0.229", features = ["derive"] }
-serde_json = "1.0.151"
+serde_json = "1.0.154"
 tar = "=0.4.46"
-sevenz-rust2 = { version = "=0.21.4", default-features = false, features = [
+sevenz-rust2 = { version = "=0.24.1", default-features = false, features = [
 	"bzip2",
 	"ppmd",
 ] }
 two-face = { version = "=0.5.2", default-features = false, features = [
 	"syntect-default-onig",
 ] }
-zip = { version = "=9.0.3", default-features = false, features = ["deflate-flate2", "time"] }
+zip = { version = "=9.0.5", default-features = false, features = ["deflate-flate2", "time"] }
 
 [profile.release]
 codegen-units = 1
 lto = "thin"
 panic = "unwind"
 
-# macOS 27 rejects proc-macro dylibs stripped by rustc 1.97 (rust-lang/rust#157750).
+# macOS 27 rejects proc-macro dylibs stripped by older rustc releases (rust-lang/rust#157750).
 # Build-time crates are not included in the shipped static library.
 [profile.release.build-override]
 strip = false

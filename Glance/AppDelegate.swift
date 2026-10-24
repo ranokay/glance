@@ -9,6 +9,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 	private let previewSettingsServer = PreviewSettingsServer()
 
 	func applicationWillFinishLaunching(_: Notification) {
+		NSApp.mainMenu = makeMainMenu()
 		openWithBridgeServer.start()
 		previewSettingsServer.start()
 	}
@@ -42,6 +43,56 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		statusItem.menu = makeStatusMenu()
 
 		self.statusItem = statusItem
+	}
+
+	private func makeMainMenu() -> NSMenu {
+		let mainMenu = NSMenu()
+
+		let appMenuItem = NSMenuItem(title: "Glance", action: nil, keyEquivalent: "")
+		let appMenu = NSMenu(title: "Glance")
+		appMenu.addItem(NSMenuItem(
+			title: "About Glance",
+			action: #selector(openAbout(_:)),
+			keyEquivalent: ""
+		))
+		appMenu.addItem(.separator())
+		appMenu.addItem(NSMenuItem(
+			title: "Settings\u{2026}",
+			action: #selector(openSettingsWindow(_:)),
+			keyEquivalent: ","
+		))
+		appMenu.addItem(.separator())
+		appMenu.addItem(NSMenuItem(
+			title: "Quit Glance",
+			action: #selector(quitGlance(_:)),
+			keyEquivalent: "q"
+		))
+		for item in appMenu.items where item.action != nil {
+			item.target = self
+		}
+		appMenuItem.submenu = appMenu
+		mainMenu.addItem(appMenuItem)
+
+		let editMenuItem = NSMenuItem(title: "Edit", action: nil, keyEquivalent: "")
+		let editMenu = NSMenu(title: "Edit")
+		for (title, selector, key) in [
+			("Undo", "undo:", "z"),
+			("Redo", "redo:", "Z"),
+			("Cut", "cut:", "x"),
+			("Copy", "copy:", "c"),
+			("Paste", "paste:", "v"),
+			("Select All", "selectAll:", "a"),
+		] {
+			editMenu.addItem(NSMenuItem(
+				title: title,
+				action: Selector(selector),
+				keyEquivalent: key
+			))
+		}
+		editMenuItem.submenu = editMenu
+		mainMenu.addItem(editMenuItem)
+
+		return mainMenu
 	}
 
 	private func makeStatusMenu() -> NSMenu {

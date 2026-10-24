@@ -31,7 +31,7 @@ same commit as any intentional bump, then run it.
 4. `CHANGELOG.md`: new entry on top, append-only, never rewrite history.
 5. `scripts/check-release-metadata.sh`: version/build literals and occurrence
    counts; run the script.
-6. Tag `vX.Y.Z` and push the tag — `release.yml` extracts that version's
+6. Tag `vX.Y.Z` and push the tag — `release.yaml` extracts that version's
    section from `CHANGELOG.md`, builds the DMG, and creates the GitHub
    release with the section as its notes.
 

@@ -88,13 +88,9 @@ final class CorpusSweepTests: XCTestCase {
 			.enumerator(at: root, includingPropertiesForKeys: [.isDirectoryKey])?
 			.compactMap { $0 as? URL }
 			.filter { url in
-				guard !url.lastPathComponent.hasPrefix(".") else {
-					return false
-				}
-				guard url.pathExtension != "b64" else {
-					return false
-				}
-				guard !url.path.contains(modelParts) else {
+				guard !url.lastPathComponent.hasPrefix("."), url.pathExtension != "b64",
+				      !url.path.contains(modelParts)
+				else {
 					return false
 				}
 				return (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == false
