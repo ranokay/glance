@@ -9,7 +9,7 @@ final class FileTests: XCTestCase {
 			.appendingPathComponent("GlanceFileTests-\(UUID().uuidString)", isDirectory: true)
 		try FileManager.default.createDirectory(
 			at: temporaryDirectory,
-			withIntermediateDirectories: true
+			withIntermediateDirectories: true,
 		)
 	}
 

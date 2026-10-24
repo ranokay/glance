@@ -12,7 +12,7 @@ class RARPreview: Preview {
 			format: .rar,
 			depth: depth,
 			scan: { try PreviewCoreBridge.scanRAR(at: fileURL) },
-			policy: .rar
+			policy: .rar,
 		)
 	}
 

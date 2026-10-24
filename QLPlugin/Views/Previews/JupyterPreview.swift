@@ -4,23 +4,23 @@ import GlanceKit
 class JupyterPreview: Preview {
 	private let chromaStylesheetURL = WebPreviewVC.resourceBundle.url(
 		forResource: "shared-chroma",
-		withExtension: "css"
+		withExtension: "css",
 	)
 	private let katexAutoRenderScriptURL = WebPreviewVC.resourceBundle.url(
 		forResource: "jupyter-katex-auto-render.min",
-		withExtension: "js"
+		withExtension: "js",
 	)
 	private let katexScriptURL = WebPreviewVC.resourceBundle.url(
 		forResource: "jupyter-katex.min",
-		withExtension: "js"
+		withExtension: "js",
 	)
 	private let katexStylesheetURL = WebPreviewVC.resourceBundle.url(
 		forResource: "jupyter-katex.min",
-		withExtension: "css"
+		withExtension: "css",
 	)
 	private let mainStylesheetURL = WebPreviewVC.resourceBundle.url(
 		forResource: "jupyter-main",
-		withExtension: "css"
+		withExtension: "css",
 	)
 
 	required init() {}
@@ -105,13 +105,13 @@ class JupyterPreview: Preview {
 				html: html,
 				stylesheets: getStylesheets(),
 				scripts: getScripts(),
-				appearancePreferences: PreviewSettingsClient.shared.appearancePreferences()
+				appearancePreferences: PreviewSettingsClient.shared.appearancePreferences(),
 			)
 		} catch let error as CancellationError {
 			throw error
 		} catch {
 			Log.render.error(
-				"Could not generate Jupyter Notebook HTML: \(error.localizedDescription, privacy: .private)"
+				"Could not generate Jupyter Notebook HTML: \(error.localizedDescription, privacy: .private)",
 			)
 			throw error
 		}

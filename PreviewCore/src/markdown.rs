@@ -27,11 +27,25 @@ impl CodefenceRendererAdapter for MermaidRenderer {
     }
 }
 
+/// Dollar math becomes `<span data-math-style="inline|display">` with escaped TeX source.
+/// The Markdown preview uses that attribute as its trusted signal to load KaTeX, so keep the
+/// element and attribute in sync with `MarkdownPreview.containsTrustedMath(in:)`.
 pub(crate) fn render_markdown(source: &str) -> Result<String, RenderError> {
+    render_markdown_with(source, true)
+}
+
+/// Notebook markdown cells keep dollar delimiters literal: the notebook page renders math with
+/// KaTeX auto-render, which needs the original `$$…$$` source.
+pub(crate) fn render_markdown_cell(source: &str) -> Result<String, RenderError> {
+    render_markdown_with(source, false)
+}
+
+fn render_markdown_with(source: &str, math: bool) -> Result<String, RenderError> {
     let source = rewrite_front_matter(source);
     let mut options = Options::default();
     options.render.r#unsafe = false;
     options.extension.autolink = true;
+    options.extension.math_dollars = math;
     options.extension.strikethrough = true;
     options.extension.table = true;
     options.extension.tasklist = true;
@@ -105,6 +119,44 @@ mod tests {
         assert!(html.contains("<pre class=\"mermaid-source\" data-glance-mermaid=\"1\">"));
         assert!(html.contains("&lt;b&gt;one&lt;/b&gt;"));
         assert!(!html.contains("<pre class=\"chroma\">"));
+    }
+
+    #[test]
+    fn renders_inline_and_display_math_with_renderer_markers() {
+        let html =
+            render_markdown("Inline $E = mc^2$ math.\n\n$$\n\\int_0^1 x^2 \\, dx\n$$\n").unwrap();
+
+        assert!(html.contains("<span data-math-style=\"inline\">E = mc^2</span>"));
+        assert!(html.contains("<span data-math-style=\"display\">"));
+        assert!(html.contains("\\int_0^1 x^2 \\, dx"));
+    }
+
+    #[test]
+    fn keeps_dollars_literal_in_code_spans_and_fences() {
+        let html = render_markdown("`$x$`\n\n```text\n$y$\n```\n").unwrap();
+
+        assert!(html.contains("<code>$x$</code>"));
+        assert!(html.contains("<pre"));
+        assert!(html.contains("$y$"));
+        assert!(!html.contains("data-math-style"));
+    }
+
+    #[test]
+    fn leaves_currency_and_unpaired_dollars_literal() {
+        let html = render_markdown("$20,000 and $30,000\n\nlone $ dollar\n").unwrap();
+
+        assert!(html.contains("$20,000 and $30,000"));
+        assert!(html.contains("lone $ dollar"));
+        assert!(!html.contains("data-math-style"));
+    }
+
+    #[test]
+    fn escapes_math_source_instead_of_trusting_it() {
+        let html = render_markdown("$<script>alert('bad')</script>$\n").unwrap();
+
+        assert!(html.contains("data-math-style=\"inline\""));
+        assert!(!html.to_ascii_lowercase().contains("<script"));
+        assert!(html.contains("&lt;script&gt;"));
     }
 
     #[test]

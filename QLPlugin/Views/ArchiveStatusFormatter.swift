@@ -8,14 +8,14 @@ enum ArchiveStatusFormatter {
 		compressedLabel: String = "Compressed",
 		uncompressedPrefix: String = "",
 		trailingNote: String? = nil,
-		includesPercentage: Bool = true
+		includesPercentage: Bool = true,
 	) -> String {
 		let byteCountFormatter = ByteCountFormatter()
 		let compressedText = byteCountFormatter.string(
-			fromByteCount: clampedByteCount(compressed)
+			fromByteCount: clampedByteCount(compressed),
 		)
 		let uncompressedText = byteCountFormatter.string(
-			fromByteCount: clampedByteCount(uncompressed)
+			fromByteCount: clampedByteCount(uncompressed),
 		)
 		var components = [
 			"\(compressedLabel) \(compressedText)",
@@ -35,7 +35,7 @@ enum ArchiveStatusFormatter {
 	@MainActor
 	static func size(
 		_ size: UInt64,
-		trailingNote: String? = nil
+		trailingNote: String? = nil,
 	) -> String {
 		let byteCountFormatter = ByteCountFormatter()
 		var components = [

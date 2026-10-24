@@ -6,7 +6,7 @@ import Foundation
 /// then its result is discarded; bounded parser limits keep that wait finite.
 enum PreviewExecutor {
 	static func run<Output: Sendable>(
-		_ operation: @escaping @Sendable () throws -> Output
+		_ operation: @escaping @Sendable () throws -> Output,
 	) async throws -> Output {
 		let task = Task.detached(priority: .userInitiated) {
 			try Task.checkCancellation()

@@ -4,7 +4,7 @@ import GlanceKit
 class CodePreview: Preview {
 	private let chromaStylesheetURL = WebPreviewVC.resourceBundle.url(
 		forResource: "shared-chroma",
-		withExtension: "css"
+		withExtension: "css",
 	)
 
 	required init() {}
@@ -33,13 +33,13 @@ class CodePreview: Preview {
 			return await WebPreviewVC(
 				html: html,
 				stylesheets: getStylesheets(),
-				appearancePreferences: PreviewSettingsClient.shared.appearancePreferences()
+				appearancePreferences: PreviewSettingsClient.shared.appearancePreferences(),
 			)
 		} catch let error as CancellationError {
 			throw error
 		} catch {
 			Log.render.error(
-				"Could not generate code HTML: \(error.localizedDescription, privacy: .private)"
+				"Could not generate code HTML: \(error.localizedDescription, privacy: .private)",
 			)
 			throw error
 		}

@@ -19,7 +19,7 @@ final class ThreeMFPreview: Preview {
 		return ModelPreviewVC(
 			scene: model.scene,
 			camera: model.camera,
-			labelText: label(for: model)
+			labelText: label(for: model),
 		)
 	}
 

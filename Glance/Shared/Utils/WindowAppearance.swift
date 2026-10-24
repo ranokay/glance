@@ -3,7 +3,7 @@ import AppKit
 @MainActor
 enum WindowAppearance {
 	private static let materialViewIdentifier = NSUserInterfaceItemIdentifier(
-		"Glance.WindowMaterial"
+		"Glance.WindowMaterial",
 	)
 
 	@discardableResult

@@ -27,7 +27,7 @@ class WebPreviewVC: NSViewController, PreviewVC, WKNavigationDelegate {
 	/// Stylesheet with CSS that applies to all file types
 	private let sharedStylesheetURL = WebPreviewVC.resourceBundle.url(
 		forResource: "shared-main",
-		withExtension: "css"
+		withExtension: "css",
 	)
 
 	required convenience init(
@@ -35,7 +35,7 @@ class WebPreviewVC: NSViewController, PreviewVC, WKNavigationDelegate {
 		stylesheets: [Stylesheet] = [],
 		scripts: [Script] = [],
 		appearancePreferences: PreviewAppearancePreferences = PreviewAppearancePreferences.default,
-		availableFontFamilies: [String] = NSFontManager.shared.availableFontFamilies
+		availableFontFamilies: [String] = NSFontManager.shared.availableFontFamilies,
 	) {
 		self.init(
 			nibName: nil,
@@ -44,7 +44,7 @@ class WebPreviewVC: NSViewController, PreviewVC, WKNavigationDelegate {
 			stylesheets: stylesheets,
 			scripts: scripts,
 			appearancePreferences: appearancePreferences,
-			availableFontFamilies: availableFontFamilies
+			availableFontFamilies: availableFontFamilies,
 		)
 	}
 
@@ -55,7 +55,7 @@ class WebPreviewVC: NSViewController, PreviewVC, WKNavigationDelegate {
 		stylesheets: [Stylesheet] = [],
 		scripts: [Script] = [],
 		appearancePreferences: PreviewAppearancePreferences = PreviewAppearancePreferences.default,
-		availableFontFamilies: [String] = NSFontManager.shared.availableFontFamilies
+		availableFontFamilies: [String] = NSFontManager.shared.availableFontFamilies,
 	) {
 		self.html = html
 		var resolvedStylesheets = stylesheets
@@ -67,9 +67,9 @@ class WebPreviewVC: NSViewController, PreviewVC, WKNavigationDelegate {
 		resolvedStylesheets.append(
 			Stylesheet(
 				content: appearancePreferences.stylesheet(
-					availableFontFamilies: availableFontFamilies
-				)
-			)
+					availableFontFamilies: availableFontFamilies,
+				),
+			),
 		)
 		self.stylesheets = resolvedStylesheets
 		self.scripts = scripts
@@ -145,7 +145,7 @@ class WebPreviewVC: NSViewController, PreviewVC, WKNavigationDelegate {
 		var sanitized = replaceMatches(
 			in: html,
 			pattern: #"<script\b[^>]*>.*?(</script\s*>|$)"#,
-			options: [.caseInsensitive, .dotMatchesLineSeparators]
+			options: [.caseInsensitive, .dotMatchesLineSeparators],
 		)
 
 		let unsafeAttributePatterns = [
@@ -167,7 +167,7 @@ class WebPreviewVC: NSViewController, PreviewVC, WKNavigationDelegate {
 	private static func replaceMatches(
 		in html: String,
 		pattern: String,
-		options: NSRegularExpression.Options
+		options: NSRegularExpression.Options,
 	) -> String {
 		guard let expression = try? NSRegularExpression(pattern: pattern, options: options) else {
 			return html
@@ -178,7 +178,7 @@ class WebPreviewVC: NSViewController, PreviewVC, WKNavigationDelegate {
 			in: html,
 			options: [],
 			range: range,
-			withTemplate: ""
+			withTemplate: "",
 		)
 	}
 
@@ -197,7 +197,7 @@ class WebPreviewVC: NSViewController, PreviewVC, WKNavigationDelegate {
 	func webView(
 		_ webView: WKWebView,
 		didFailProvisionalNavigation _: WKNavigation!,
-		withError _: Error
+		withError _: Error,
 	) {
 		webView.alphaValue = 1
 	}
@@ -222,7 +222,7 @@ class WebPreviewVC: NSViewController, PreviewVC, WKNavigationDelegate {
 			"await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))",
 			arguments: [:],
 			in: nil,
-			in: .page
+			in: .page,
 		) { [weak self, weak webView] _ in
 			guard let self, let webView else {
 				return

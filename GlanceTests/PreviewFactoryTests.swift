@@ -39,7 +39,7 @@ final class PreviewFactoryTests: XCTestCase {
 			// swiftlint:disable:next xct_specific_matcher
 			XCTAssertTrue(
 				PreviewVCFactory.getPreviewInitializer(fileURL: fileURL) == testCase.expected,
-				testCase.path
+				testCase.path,
 			)
 		}
 	}
@@ -50,7 +50,7 @@ final class PreviewFactoryTests: XCTestCase {
 			XCTAssertTrue(
 				PreviewVCFactory.getPreviewInitializer(fileURL: fileURL, isDirectory: true)
 					== DirectoryPreview.self,
-				path
+				path,
 			)
 		}
 	}

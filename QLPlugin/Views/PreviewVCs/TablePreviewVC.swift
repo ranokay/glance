@@ -14,14 +14,14 @@ class TablePreviewVC: NSViewController, PreviewVC {
 	convenience init(
 		headers: [String],
 		cells: [[String: String]],
-		truncated: Bool
+		truncated: Bool,
 	) {
 		self.init(
 			nibName: nil,
 			bundle: nil,
 			headers: headers,
 			cells: cells,
-			truncated: truncated
+			truncated: truncated,
 		)
 	}
 
@@ -30,7 +30,7 @@ class TablePreviewVC: NSViewController, PreviewVC {
 		bundle nibBundleOrNil: Bundle?,
 		headers: [String],
 		cells: [[String: String]],
-		truncated: Bool = false
+		truncated: Bool = false,
 	) {
 		self.headers = headers
 		self.cells = cells
@@ -86,7 +86,7 @@ extension TablePreviewVC: NSTableViewDataSource, NSTableViewDelegate {
 	func tableView(
 		_: NSTableView,
 		viewFor tableColumn: NSTableColumn?,
-		row rowIndex: Int
+		row rowIndex: Int,
 	) -> NSView? {
 		guard let tableColumn else {
 			return nil

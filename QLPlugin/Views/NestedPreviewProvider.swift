@@ -57,14 +57,14 @@ protocol NestedPreviewProviding {
 	func makePreviewController(for node: FileTreeNode) async throws -> PreviewVC
 	func makeArchiveEntryPreview(
 		for node: FileTreeNode,
-		context: ArchivePreviewContext
+		context: ArchivePreviewContext,
 	) async throws -> NestedPreviewResult
 }
 
 extension NestedPreviewProviding {
 	func makeArchiveEntryPreview(
 		for node: FileTreeNode,
-		context _: ArchivePreviewContext
+		context _: ArchivePreviewContext,
 	) async throws -> NestedPreviewResult {
 		throw NestedPreviewError.archiveEntryUnavailable(name: node.name)
 	}
@@ -102,7 +102,7 @@ struct DefaultNestedPreviewProvider: NestedPreviewProviding {
 
 	func makeArchiveEntryPreview(
 		for node: FileTreeNode,
-		context: ArchivePreviewContext
+		context: ArchivePreviewContext,
 	) async throws -> NestedPreviewResult {
 		guard let entryPath = node.archiveEntryPath,
 		      !node.isDirectory,
@@ -116,7 +116,7 @@ struct DefaultNestedPreviewProvider: NestedPreviewProviding {
 				at: context.fileURL,
 				format: context.format,
 				entryPath: entryPath,
-				maxBytes: 25_000_000
+				maxBytes: 25_000_000,
 			)
 		}
 		let temporaryURL = try writeTemporaryEntry(named: node.name, data: data)
@@ -130,7 +130,7 @@ struct DefaultNestedPreviewProvider: NestedPreviewProviding {
 				dateModified: nil,
 				fileURL: temporaryURL,
 				contentTypeIdentifier: UTType(filenameExtension: temporaryURL.pathExtension)?
-					.identifier
+					.identifier,
 			)
 
 			switch route(for: temporaryNode) {
@@ -138,7 +138,7 @@ struct DefaultNestedPreviewProvider: NestedPreviewProviding {
 					if let entry = SupportedPreviewRegistry.entry(matching: temporaryURL),
 					   let format = ArchiveEntryFormat(
 					   	previewFileType: entry.previewFileType,
-					   	fileURL: temporaryURL
+					   	fileURL: temporaryURL,
 					   )
 					{
 						guard context.depth < 3 else {
@@ -147,17 +147,17 @@ struct DefaultNestedPreviewProvider: NestedPreviewProviding {
 						let preview = try await ArchivePreviewFactory.makePreview(
 							file: file,
 							format: format,
-							depth: context.depth + 1
+							depth: context.depth + 1,
 						)
 						return NestedPreviewResult(
 							previewVC: preview,
-							temporaryFileURL: temporaryURL
+							temporaryFileURL: temporaryURL,
 						)
 					}
 					let preview = try await previewType.init().createPreviewVC(file: file)
 					return NestedPreviewResult(
 						previewVC: preview,
-						temporaryFileURL: temporaryURL
+						temporaryFileURL: temporaryURL,
 					)
 				case .media:
 					let showsWaveform = PreviewSupport.isStreamedAudio(fileURL: temporaryURL)
@@ -166,9 +166,9 @@ struct DefaultNestedPreviewProvider: NestedPreviewProviding {
 					return NestedPreviewResult(
 						previewVC: AVPlayerPreviewVC(
 							fileURL: temporaryURL,
-							showsWaveform: showsWaveform
+							showsWaveform: showsWaveform,
 						),
-						temporaryFileURL: temporaryURL
+						temporaryFileURL: temporaryURL,
 					)
 				case .native:
 					let previewVC = NativePreviewVC(fileURL: temporaryURL)
@@ -178,7 +178,7 @@ struct DefaultNestedPreviewProvider: NestedPreviewProviding {
 					}
 					return NestedPreviewResult(
 						previewVC: previewVC,
-						temporaryFileURL: temporaryURL
+						temporaryFileURL: temporaryURL,
 					)
 			}
 		} catch {
@@ -192,7 +192,7 @@ struct DefaultNestedPreviewProvider: NestedPreviewProviding {
 			.appendingPathComponent("GlanceArchive-\(UUID().uuidString)", isDirectory: true)
 		try FileManager.default.createDirectory(
 			at: directory,
-			withIntermediateDirectories: true
+			withIntermediateDirectories: true,
 		)
 		let url = directory.appendingPathComponent(Self.temporaryFileName(for: name))
 		do {
@@ -365,7 +365,7 @@ final class AVPlayerPreviewVC: NSViewController, PreviewVC {
 		if waveformView != nil {
 			playbackTimeObserver = player.addPeriodicTimeObserver(
 				forInterval: CMTime(seconds: 0.1, preferredTimescale: 600),
-				queue: .main
+				queue: .main,
 			) { [weak self, weak player] time in
 				Task { @MainActor [weak self, weak player] in
 					guard let player else {
@@ -373,7 +373,7 @@ final class AVPlayerPreviewVC: NSViewController, PreviewVC {
 					}
 					self?.updateWaveformProgress(
 						elapsed: time.seconds,
-						duration: player.currentItem?.duration.seconds ?? .nan
+						duration: player.currentItem?.duration.seconds ?? .nan,
 					)
 				}
 			}
@@ -413,7 +413,7 @@ final class AVPlayerPreviewVC: NSViewController, PreviewVC {
 				self,
 				selector: #selector(handlePreviewWindowChange),
 				name: name,
-				object: window
+				object: window,
 			)
 		}
 	}

@@ -17,7 +17,7 @@ extension PreviewError: LocalizedError {
 extension MainVC {
 	func startPreviewPreparation(
 		at fileURL: URL,
-		completionHandler handler: @escaping @Sendable (Error?) -> Void
+		completionHandler handler: @escaping @Sendable (Error?) -> Void,
 	) {
 		previewPreparationTask?.cancel()
 		let preparationID = UUID()
@@ -53,7 +53,7 @@ extension MainVC {
 			throw NSError(
 				domain: "com.chamburr.Glance.QLPlugin",
 				code: 1,
-				userInfo: [NSLocalizedDescriptionKey: "Glance app is not running"]
+				userInfo: [NSLocalizedDescriptionKey: "Glance app is not running"],
 			)
 		}
 
@@ -62,7 +62,7 @@ extension MainVC {
 			file = try File(url: fileURL)
 		} catch {
 			Log.general.error(
-				"Could not obtain information about file \(fileURL.path, privacy: .private): \(error.localizedDescription, privacy: .private)"
+				"Could not obtain information about file \(fileURL.path, privacy: .private): \(error.localizedDescription, privacy: .private)",
 			)
 			throw error
 		}
@@ -79,7 +79,7 @@ extension MainVC {
 			try await previewFile(file: file)
 		} catch {
 			Log.general.error(
-				"Could not generate preview for file \(file.path, privacy: .private): \(error.localizedDescription, privacy: .private)"
+				"Could not generate preview for file \(file.path, privacy: .private): \(error.localizedDescription, privacy: .private)",
 			)
 			throw error
 		}
@@ -90,7 +90,7 @@ extension MainVC {
 		// Initialize `PreviewVC` for the file type
 		if let previewInitializerType = PreviewVCFactory.getPreviewInitializer(
 			fileURL: file.url,
-			isDirectory: file.isDirectory
+			isDirectory: file.isDirectory,
 		) {
 			// Generate file preview
 			let previewInitializer = previewInitializerType.init()
@@ -103,12 +103,12 @@ extension MainVC {
 			stats.increaseStatsCounts(fileExtension: file.url.pathExtension)
 		} else {
 			Log.general.info(
-				"Skipping preview for file \(file.path, privacy: .private): File type not supported"
+				"Skipping preview for file \(file.path, privacy: .private): File type not supported",
 			)
 			throw NSError(
 				domain: "com.chamburr.Glance.QLPlugin",
 				code: 2,
-				userInfo: [NSLocalizedDescriptionKey: "File type is not supported"]
+				userInfo: [NSLocalizedDescriptionKey: "File type is not supported"],
 			)
 		}
 	}
@@ -135,11 +135,11 @@ extension MainVC {
 			}
 			let nsError = error as NSError
 			Log.general.error(
-				"Could not open \(fileURL.path, privacy: .private) with \(applicationURL.path, privacy: .private): \(nsError.domain, privacy: .public) \(nsError.code, privacy: .public) \(error.localizedDescription, privacy: .private)"
+				"Could not open \(fileURL.path, privacy: .private) with \(applicationURL.path, privacy: .private): \(nsError.domain, privacy: .public) \(nsError.code, privacy: .public) \(error.localizedDescription, privacy: .private)",
 			)
 			self?
 				.showTransientError(
-					"Couldn’t open with \(applicationURL.deletingPathExtension().lastPathComponent)"
+					"Couldn’t open with \(applicationURL.deletingPathExtension().lastPathComponent)",
 				)
 		}
 	}
@@ -157,7 +157,7 @@ extension MainVC {
 				if let archiveContext = source.archiveContext {
 					let result = try await nestedPreviewProvider.makeArchiveEntryPreview(
 						for: node,
-						context: archiveContext
+						context: archiveContext,
 					)
 					do {
 						try Task.checkCancellation()
@@ -176,7 +176,7 @@ extension MainVC {
 					pushPreview(
 						result.previewVC,
 						openWithTargetURL: nil,
-						temporaryFileURL: result.temporaryFileURL
+						temporaryFileURL: result.temporaryFileURL,
 					)
 				} else {
 					let previewVC = try await nestedPreviewProvider.makePreviewController(for: node)
@@ -190,7 +190,7 @@ extension MainVC {
 				return
 			} catch {
 				Log.general.error(
-					"Could not generate nested preview for \(node.name, privacy: .private): \(error.localizedDescription, privacy: .private)"
+					"Could not generate nested preview for \(node.name, privacy: .private): \(error.localizedDescription, privacy: .private)",
 				)
 				self?.showTransientError("Couldn’t preview \(node.name)")
 			}
@@ -217,7 +217,7 @@ extension MainVC {
 				return
 			} catch {
 				Log.general.error(
-					"Could not open folder \(node.name, privacy: .private): \(error.localizedDescription, privacy: .private)"
+					"Could not open folder \(node.name, privacy: .private): \(error.localizedDescription, privacy: .private)",
 				)
 				self?.showTransientError("Couldn’t open \(node.name)")
 			}

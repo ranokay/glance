@@ -12,7 +12,7 @@ final class DirectoryPreviewTests: XCTestCase {
 			.appendingPathComponent("GlanceDirectoryTests-\(UUID().uuidString)", isDirectory: true)
 		try FileManager.default.createDirectory(
 			at: temporaryDirectory,
-			withIntermediateDirectories: true
+			withIntermediateDirectories: true,
 		)
 	}
 
@@ -33,21 +33,21 @@ final class DirectoryPreviewTests: XCTestCase {
 		_ = try makeDirectory(named: "root/.hidden-folder")
 		try FileManager.default.setAttributes(
 			[.modificationDate: modificationDate],
-			ofItemAtPath: visibleURL.path
+			ofItemAtPath: visibleURL.path,
 		)
 
 		let previewVC = try await makePreview(for: rootURL)
 		let visibleNode = try XCTUnwrap(itemNode(named: "visible.txt", in: previewVC.rootNodes))
 		let nestedNode = try XCTUnwrap(itemNode(
 			named: nestedURL.lastPathComponent,
-			in: previewVC.rootNodes
+			in: previewVC.rootNodes,
 		))
 
 		XCTAssertEqual(visibleNode.size, 5)
 		XCTAssertEqual(
 			try XCTUnwrap(visibleNode.dateModified).timeIntervalSince1970,
 			modificationDate.timeIntervalSince1970,
-			accuracy: 1
+			accuracy: 1,
 		)
 		XCTAssertTrue(nestedNode.childrenList.isEmpty)
 		XCTAssertEqual(nestedNode.directoryChildrenState, .notLoaded)
@@ -70,7 +70,7 @@ final class DirectoryPreviewTests: XCTestCase {
 		for index in 0 ..< 501 {
 			_ = try writeFile(
 				named: "siblings/a-large/item-\(index).txt",
-				contents: "\(index)"
+				contents: "\(index)",
 			)
 		}
 
@@ -100,7 +100,7 @@ final class DirectoryPreviewTests: XCTestCase {
 		for index in 0 ..< 1001 {
 			_ = try writeFile(
 				named: "paged/item-\(String(format: "%04d", index)).txt",
-				contents: "x"
+				contents: "x",
 			)
 		}
 
@@ -160,7 +160,7 @@ final class DirectoryPreviewTests: XCTestCase {
 		try FileManager.default.removeItem(at: rootURL.appendingPathComponent("b.txt"))
 		try FileManager.default.setAttributes(
 			[.modificationDate: Date(timeIntervalSince1970: 1_800_000_000)],
-			ofItemAtPath: rootURL.path
+			ofItemAtPath: rootURL.path,
 		)
 		let secondPage = try await loader.page(at: rootURL, offset: 2, session: session)
 
@@ -182,18 +182,18 @@ final class DirectoryPreviewTests: XCTestCase {
 		let retainedFirstPage = try await loader.page(
 			at: rootURL,
 			offset: 0,
-			session: retainedSession
+			session: retainedSession,
 		)
 		_ = try writeFile(named: "shared-loader/a.txt", contents: "a")
 		let navigatedFirstPage = try await loader.page(
 			at: rootURL,
 			offset: 0,
-			session: navigatedSession
+			session: navigatedSession,
 		)
 		let retainedSecondPage = try await loader.page(
 			at: rootURL,
 			offset: 2,
-			session: retainedSession
+			session: retainedSession,
 		)
 
 		XCTAssertEqual(retainedFirstPage.entries.map(\.name), ["b.txt", "c.txt"])
@@ -206,12 +206,12 @@ final class DirectoryPreviewTests: XCTestCase {
 		let childURL = try makeDirectory(named: "collision-root/child")
 		_ = try writeFile(
 			named: "collision-root/child/__glance_load_more__",
-			contents: "real file"
+			contents: "real file",
 		)
 		for index in 0 ..< 500 {
 			_ = try writeFile(
 				named: "collision-root/child/item-\(String(format: "%04d", index)).txt",
-				contents: "x"
+				contents: "x",
 			)
 		}
 
@@ -219,7 +219,7 @@ final class DirectoryPreviewTests: XCTestCase {
 		let outlineView = try loadOutlineView(for: previewVC)
 		let childNode = try XCTUnwrap(itemNode(
 			named: childURL.lastPathComponent,
-			in: previewVC.rootNodes
+			in: previewVC.rootNodes,
 		))
 		try expand(childNode, in: outlineView)
 		try await waitUntil { childNode.directoryChildrenState == .loaded(nextOffset: 500) }
@@ -315,19 +315,19 @@ final class DirectoryPreviewTests: XCTestCase {
 
 	private func makePreview(
 		for directoryURL: URL,
-		pageSize: Int = DirectoryPreview.defaultPageSize
+		pageSize: Int = DirectoryPreview.defaultPageSize,
 	) async throws -> OutlinePreviewVC {
 		let generatedPreview = try await DirectoryPreview(
 			fileManager: .default,
 			maxItemCount: pageSize,
-			excludedRootURLs: []
+			excludedRootURLs: [],
 		).createPreviewVC(file: File(url: directoryURL))
 		return try XCTUnwrap(generatedPreview as? OutlinePreviewVC)
 	}
 
 	private func activateLoadMore(
 		in previewVC: OutlinePreviewVC,
-		outlineView: NSOutlineView
+		outlineView: NSOutlineView,
 	) throws {
 		let loadMoreRow = try XCTUnwrap((0 ..< outlineView.numberOfRows).first { row in
 			guard let node = representedNode(at: row, in: outlineView) else {
@@ -368,7 +368,7 @@ final class DirectoryPreviewTests: XCTestCase {
 		let directoryURL = temporaryDirectory.appendingPathComponent(name, isDirectory: true)
 		try FileManager.default.createDirectory(
 			at: directoryURL,
-			withIntermediateDirectories: true
+			withIntermediateDirectories: true,
 		)
 		return directoryURL
 	}
@@ -377,7 +377,7 @@ final class DirectoryPreviewTests: XCTestCase {
 		let fileURL = temporaryDirectory.appendingPathComponent(name)
 		try FileManager.default.createDirectory(
 			at: fileURL.deletingLastPathComponent(),
-			withIntermediateDirectories: true
+			withIntermediateDirectories: true,
 		)
 		try contents.write(to: fileURL, atomically: true, encoding: .utf8)
 		return fileURL
@@ -404,7 +404,7 @@ final class DirectoryPreviewTests: XCTestCase {
 
 	private func waitUntil(
 		timeout: Duration = .seconds(3),
-		condition: @escaping @MainActor () async -> Bool
+		condition: @escaping @MainActor () async -> Bool,
 	) async throws {
 		let clock = ContinuousClock()
 		let deadline = clock.now.advanced(by: timeout)
@@ -430,13 +430,13 @@ private actor RetryingDirectoryLoader: DirectoryPageLoading {
 	func page(
 		at directoryURL: URL,
 		offset _: Int,
-		session _: DirectoryPaginationSession
+		session _: DirectoryPaginationSession,
 	) async throws -> DirectoryPage {
 		if directoryURL == rootURL {
 			return DirectoryPage(
 				entries: [.directory(named: "child", url: childURL)],
 				nextOffset: nil,
-				totalItemCount: 1
+				totalItemCount: 1,
 			)
 		}
 		childAttempts += 1
@@ -447,11 +447,11 @@ private actor RetryingDirectoryLoader: DirectoryPageLoading {
 			entries: [
 				.file(
 					named: "recovered.txt",
-					url: childURL.appendingPathComponent("recovered.txt")
+					url: childURL.appendingPathComponent("recovered.txt"),
 				),
 			],
 			nextOffset: nil,
-			totalItemCount: 1
+			totalItemCount: 1,
 		)
 	}
 }
@@ -470,13 +470,13 @@ private actor CancellableDirectoryLoader: DirectoryPageLoading {
 	func page(
 		at directoryURL: URL,
 		offset _: Int,
-		session _: DirectoryPaginationSession
+		session _: DirectoryPaginationSession,
 	) async throws -> DirectoryPage {
 		if directoryURL == rootURL {
 			return DirectoryPage(
 				entries: [.directory(named: "child", url: childURL)],
 				nextOffset: nil,
-				totalItemCount: 1
+				totalItemCount: 1,
 			)
 		}
 		childLoadStarted = true
@@ -505,7 +505,7 @@ extension DirectoryPreviewEntry {
 			fileURL: url,
 			isPackage: false,
 			isSymbolicLink: false,
-			contentTypeIdentifier: nil
+			contentTypeIdentifier: nil,
 		)
 	}
 
@@ -518,7 +518,7 @@ extension DirectoryPreviewEntry {
 			fileURL: url,
 			isPackage: false,
 			isSymbolicLink: false,
-			contentTypeIdentifier: nil
+			contentTypeIdentifier: nil,
 		)
 	}
 }

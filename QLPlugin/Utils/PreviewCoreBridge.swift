@@ -130,7 +130,7 @@ enum PreviewCoreBridge {
 		let result = data.withUnsafeBytes { buffer in
 			glance_parse_tsv(
 				buffer.bindMemory(to: UInt8.self).baseAddress,
-				buffer.count
+				buffer.count,
 			)
 		}
 		return try decode(TSVPreviewPayload.self, result: result)
@@ -139,14 +139,14 @@ enum PreviewCoreBridge {
 	static func parseXLSX(at url: URL) throws -> SpreadsheetPreviewPayload {
 		try decode(
 			SpreadsheetPreviewPayload.self,
-			result: pathResult(for: url, call: glance_parse_xlsx)
+			result: pathResult(for: url, call: glance_parse_xlsx),
 		)
 	}
 
 	static func parseThreeMF(at url: URL) throws -> ThreeMFPreviewPayload {
 		try decode(
 			ThreeMFPreviewPayload.self,
-			result: pathResult(for: url, call: glance_parse_three_mf)
+			result: pathResult(for: url, call: glance_parse_three_mf),
 		)
 	}
 
@@ -162,7 +162,7 @@ enum PreviewCoreBridge {
 			return glance_scan_tar(
 				UnsafeRawPointer(path).assumingMemoryBound(to: UInt8.self),
 				Int(strlen(path)),
-				isGzipped
+				isGzipped,
 			)
 		}
 		return try decode(ArchivePreviewPayload.self, result: result)
@@ -171,7 +171,7 @@ enum PreviewCoreBridge {
 	static func scanSevenZip(at url: URL) throws -> ArchivePreviewPayload {
 		try decode(
 			ArchivePreviewPayload.self,
-			result: pathResult(for: url, call: glance_scan_seven_zip)
+			result: pathResult(for: url, call: glance_scan_seven_zip),
 		)
 	}
 
@@ -179,7 +179,7 @@ enum PreviewCoreBridge {
 		at url: URL,
 		format: ArchiveEntryFormat,
 		entryPath: String,
-		maxBytes: Int
+		maxBytes: Int,
 	) throws -> Data {
 		let result = try url.withUnsafeFileSystemRepresentation { path in
 			guard let path else {
@@ -192,7 +192,7 @@ enum PreviewCoreBridge {
 					UnsafeRawPointer(entry).assumingMemoryBound(to: UInt8.self),
 					entryPath.utf8.count,
 					format.rawValue,
-					maxBytes
+					maxBytes,
 				)
 			}
 		}
@@ -202,13 +202,13 @@ enum PreviewCoreBridge {
 	static func scanRAR(at url: URL) throws -> ArchivePreviewPayload {
 		try decode(
 			ArchivePreviewPayload.self,
-			result: pathResult(for: url, call: glance_scan_rar)
+			result: pathResult(for: url, call: glance_scan_rar),
 		)
 	}
 
 	private static func pathResult(
 		for url: URL,
-		call: (UnsafePointer<UInt8>?, Int) -> GlanceRenderResult
+		call: (UnsafePointer<UInt8>?, Int) -> GlanceRenderResult,
 	) throws -> GlanceRenderResult {
 		try url.withUnsafeFileSystemRepresentation { path in
 			guard let path else {
@@ -216,14 +216,14 @@ enum PreviewCoreBridge {
 			}
 			return call(
 				UnsafeRawPointer(path).assumingMemoryBound(to: UInt8.self),
-				Int(strlen(path))
+				Int(strlen(path)),
 			)
 		}
 	}
 
 	private static func decode<Payload: Decodable>(
 		_ type: Payload.Type,
-		result: GlanceRenderResult
+		result: GlanceRenderResult,
 	) throws -> Payload {
 		let data = try consume(result)
 		do {
