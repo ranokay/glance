@@ -54,10 +54,14 @@ same commit as any intentional bump, then run it.
 1. `Glance/Glance.icon` is the editable Icon Composer document. Its layers are
    plain white SVG discs; colour and glass come from `icon.json`
    fill/glass specializations, so edit colours there, not in the SVGs.
-2. Re-render the README hero from the document
-   (`Icon Composer.app/Contents/Executables/ictool Glance/Glance.icon
-   --export-image --rendition Default --width 512 --height 512 --scale 1`),
-   flatten it to 8-bit, and commit it as `AppStore/Assets/AppIcon.png`.
+2. Re-render the README hero from the document, then flatten it to 8-bit and
+   commit it as `AppStore/Assets/AppIcon.png`:
+
+   ```sh
+   "/Applications/Xcode.app/Contents/Applications/Icon Composer.app/Contents/Executables/ictool" \
+     Glance/Glance.icon --export-image --platform macOS --rendition Default \
+     --width 512 --height 512 --scale 1 --output-file /tmp/AppIcon.png
+   ```
 3. `Glance/Utils/StatusItemMark.swift` is the menu-bar reduction of the same
    mark; re-check it at 18 pt on light, dark, and tinted menu bars whenever the
    silhouette changes.
