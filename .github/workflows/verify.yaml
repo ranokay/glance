@@ -1,6 +1,15 @@
 name: Production Verification
 
 on:
+  push:
+    branches:
+      - develop
+    paths:
+      - "PreviewCore/Cargo.toml"
+      - "PreviewCore/Cargo.lock"
+      - "mise.toml"
+      - ".github/workflows/verify.yaml"
+      - ".github/actions/setup/**"
   pull_request:
     branches:
       - main
@@ -46,15 +55,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
-      - name: Cache Rust build (keyed by lockfile plus toolchain version)
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      - name: Cache Rust compiler outputs
+        uses: jdx/mr-boxington-action@47ce49b32025d93a7a2f4570815afaa2b7092240 # v1.7.2
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            PreviewCore/target
-          key: rust-1.99.1-${{ hashFiles('PreviewCore/Cargo.lock') }}
-          restore-keys: rust-1.99.1-
+          working-directory: PreviewCore
+          save-on-workflow-dispatch: true
 
       - name: Check release metadata strings
         run: |
