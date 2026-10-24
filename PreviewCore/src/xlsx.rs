@@ -62,16 +62,17 @@ fn parse_xlsx_with_limits(
     }
 
     let mut sheets = Vec::with_capacity(sheet_names.len());
+    let mut rendered_bytes = 0_usize;
     for name in sheet_names {
         let mut reader = workbook
             .worksheet_cells_reader(&name)
             .map_err(map_xlsx_error)?;
         let dimensions = reader.dimensions();
         let start_row = dimensions.start.0 as usize;
-        let rows_truncated = dimensions.end.0 as usize + 1 > max_rows;
+        let row_span = dimensions.end.0.saturating_sub(dimensions.start.0) as usize + 1;
+        let rows_truncated = row_span > max_rows;
         let columns_truncated = dimensions.end.1 as usize + 1 > max_columns;
         let mut rows_by_offset = BTreeMap::new();
-        let mut rendered_bytes = 0_usize;
 
         while let Some(cell) = reader.next_cell().map_err(map_xlsx_error)? {
             let (row, column) = cell.get_position();
@@ -255,6 +256,25 @@ mod tests {
             payload.sheets[0].rows,
             vec![vec!["Top"], vec![], vec!["", "Bottom"]]
         );
+    }
+
+    #[test]
+    fn row_limit_uses_the_sheet_span_not_the_absolute_end_row() {
+        let payload = parse_xlsx_with_limits(
+            &Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("../GlanceTests/TestFiles/spreadsheet/late-start.xlsx"),
+            2,
+            MAX_COLUMNS,
+            MAX_SHEETS,
+            MAX_RENDERED_BYTES,
+        )
+        .unwrap();
+
+        assert_eq!(
+            payload.sheets[0].rows,
+            vec![vec!["Late"], vec!["Still late"]]
+        );
+        assert!(!payload.sheets[0].rows_truncated);
     }
 
     #[test]

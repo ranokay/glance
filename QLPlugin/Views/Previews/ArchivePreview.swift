@@ -2,11 +2,11 @@ import Foundation
 import GlanceKit
 
 enum ArchiveEntryFormat: UInt8 {
-	case zip
-	case tar
-	case tarGz
-	case sevenZip
-	case rar
+	case zip = 0
+	case tar = 1
+	case tarGz = 2
+	case sevenZip = 3
+	case rar = 4
 
 	init?(previewFileType: PreviewFileType, fileURL: URL) {
 		switch previewFileType {

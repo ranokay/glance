@@ -32,6 +32,20 @@ struct NestedPreviewResult {
 	let temporaryFileURL: URL?
 }
 
+enum ArchiveTemporaryFile {
+	static func remove(containing url: URL) {
+		let directory = url.deletingLastPathComponent()
+		guard
+			directory.deletingLastPathComponent().standardizedFileURL
+			== FileManager.default.temporaryDirectory.standardizedFileURL,
+			directory.lastPathComponent.hasPrefix("GlanceArchive-")
+		else {
+			return
+		}
+		try? FileManager.default.removeItem(at: directory)
+	}
+}
+
 enum NestedPreviewRoute {
 	case glance(Preview.Type)
 	case media
@@ -189,13 +203,13 @@ struct DefaultNestedPreviewProvider: NestedPreviewProviding {
 			try data.write(to: url, options: .atomic)
 			return url
 		} catch {
-			try? FileManager.default.removeItem(at: directory)
+			ArchiveTemporaryFile.remove(containing: url)
 			throw error
 		}
 	}
 
 	private func removeTemporaryEntry(_ url: URL) {
-		try? FileManager.default.removeItem(at: url.deletingLastPathComponent())
+		ArchiveTemporaryFile.remove(containing: url)
 	}
 
 	static func safeExtension(of name: String) -> String {

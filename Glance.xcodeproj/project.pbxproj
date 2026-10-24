@@ -961,6 +961,7 @@
 				"$(PROJECT_DIR)/PreviewCore/build-xcode.sh",
 				"$(PROJECT_DIR)/PreviewCore/src/error.rs",
 				"$(PROJECT_DIR)/PreviewCore/src/epub.rs",
+				"$(PROJECT_DIR)/PreviewCore/src/extract.rs",
 				"$(PROJECT_DIR)/PreviewCore/src/ffi.rs",
 				"$(PROJECT_DIR)/PreviewCore/src/highlight.rs",
 				"$(PROJECT_DIR)/PreviewCore/src/lib.rs",
@@ -972,6 +973,7 @@
 				"$(PROJECT_DIR)/PreviewCore/src/tar.rs",
 				"$(PROJECT_DIR)/PreviewCore/src/three_mf.rs",
 				"$(PROJECT_DIR)/PreviewCore/src/tsv.rs",
+				"$(PROJECT_DIR)/PreviewCore/src/xlsx.rs",
 				"$(PROJECT_DIR)/PreviewCore/src/zip.rs",
 			);
 			outputFileListPaths = (

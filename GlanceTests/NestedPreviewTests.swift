@@ -273,7 +273,11 @@ final class NestedPreviewTests: XCTestCase {
 				context: nestedContext
 			)
 			XCTFail("Expected a fourth archive level to be rejected")
-		} catch {}
+		} catch {
+			guard case NestedPreviewError.archiveNestingTooDeep = error else {
+				return XCTFail("Expected archiveNestingTooDeep, got \(error)")
+			}
+		}
 	}
 
 	func testPreservesCompoundArchiveExtensionsForExtractedEntries() {
@@ -308,7 +312,11 @@ final class NestedPreviewTests: XCTestCase {
 			do {
 				_ = try await provider.makeArchiveEntryPreview(for: node, context: context)
 				XCTFail("Expected \(node.name) to be rejected")
-			} catch {}
+			} catch {
+				guard case NestedPreviewError.archiveEntryUnavailable = error else {
+					return XCTFail("Expected archiveEntryUnavailable, got \(error)")
+				}
+			}
 		}
 	}
 

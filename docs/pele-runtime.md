@@ -1,7 +1,8 @@
 # Pele runtime
 
 Glance bundles Pele 1.9.0 for offline Mermaid-diagram rendering in Markdown.
-The source asset is the npm package's `dist/pele.global.js`; its SHA-256 digest
+The source asset is the npm package's `dist/pele.global.js`, downloaded from
+<https://registry.npmjs.org/pele/-/pele-1.9.0.tgz>; its SHA-256 digest
 is `323c16de7844d4b609743f70449ebce041a531e4f48f23b1e9e7ec9d3b917287`.
 `PELE_LICENSE.txt` is included beside the runtime in the Quick Look extension;
 its SHA-256 digest is
@@ -25,8 +26,9 @@ source block remains visible.
 
 ## Release-size impact
 
-Measured locally at this branch's release build (macOS 27.2, Xcode 27.0,
-arm64): `Glance.app` is 15,297,314 bytes and `QLPlugin.appex` is 11,710,231
-bytes. The runtime swap's direct contribution is the 2,866,508-byte resource
-reduction above; the rest of the bundle includes the XLSX and archive-entry
-preview code on this branch.
+Measured Release bundles on Apple silicon. The historical Mermaid 11.17.2
+measurement was `Glance.app` 13,205,504 bytes and `QLPlugin.appex` 11,423,744
+bytes. The current branch, which also adds XLSX and archive-entry preview code,
+measures `Glance.app` 15,297,314 bytes and `QLPlugin.appex` 11,710,231 bytes.
+The runtime swap's direct contribution is the 2,866,508-byte resource reduction
+above, isolated from those other branch changes.

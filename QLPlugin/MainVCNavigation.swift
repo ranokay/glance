@@ -103,25 +103,13 @@ extension MainVC {
 		guard let url = temporaryFiles.removeValue(forKey: ObjectIdentifier(controller)) else {
 			return
 		}
-		removeArchiveTemporaryDirectory(containing: url)
+		ArchiveTemporaryFile.remove(containing: url)
 	}
 
 	func removeAllTemporaryFiles() {
 		for url in temporaryFiles.values {
-			removeArchiveTemporaryDirectory(containing: url)
+			ArchiveTemporaryFile.remove(containing: url)
 		}
 		temporaryFiles.removeAll()
-	}
-
-	private func removeArchiveTemporaryDirectory(containing url: URL) {
-		let directory = url.deletingLastPathComponent()
-		guard
-			directory.deletingLastPathComponent().standardizedFileURL
-			== FileManager.default.temporaryDirectory.standardizedFileURL,
-			directory.lastPathComponent.hasPrefix("GlanceArchive-")
-		else {
-			return
-		}
-		try? FileManager.default.removeItem(at: directory)
 	}
 }

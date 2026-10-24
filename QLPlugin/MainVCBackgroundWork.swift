@@ -163,17 +163,13 @@ extension MainVC {
 						try Task.checkCancellation()
 					} catch {
 						if let temporaryFileURL = result.temporaryFileURL {
-							try? FileManager.default.removeItem(
-								at: temporaryFileURL.deletingLastPathComponent()
-							)
+							ArchiveTemporaryFile.remove(containing: temporaryFileURL)
 						}
 						throw error
 					}
 					guard currentPreviewController === source else {
 						if let temporaryFileURL = result.temporaryFileURL {
-							try? FileManager.default.removeItem(
-								at: temporaryFileURL.deletingLastPathComponent()
-							)
+							ArchiveTemporaryFile.remove(containing: temporaryFileURL)
 						}
 						return
 					}

@@ -202,6 +202,10 @@ fn is_rar4_symlink(host_os: u8, attributes: u32) -> bool {
     host_os == 3 && crate::extract::is_unix_symlink(attributes)
 }
 
+fn is_rar_link(host_os: Option<u64>, attributes: u64, is_redirection: bool) -> bool {
+    is_redirection || (host_os == Some(3) && crate::extract::is_unix_symlink(attributes as u32))
+}
+
 fn normalize_path(path: &str) -> Result<String, CoreError> {
     let normalized = path.replace('\\', "/");
     let mut components = Vec::new();
@@ -558,6 +562,13 @@ pub(crate) fn extract_entry(
             "Encrypted RAR entries are not supported",
         ));
     }
+    if is_rar_link(
+        member.meta.host_os,
+        member.meta.file_attr,
+        member.meta.is_redirection,
+    ) {
+        return Err(CoreError::invalid("RAR links cannot be previewed"));
+    }
     if member.meta.unpacked_size > max_bytes as u64 {
         return Err(CoreError::limit(
             "RAR entry exceeds the extracted preview size limit",
@@ -610,6 +621,10 @@ mod tests {
         assert!(is_rar4_symlink(3, 0o120777));
         assert!(!is_rar4_symlink(3, 0o100644));
         assert!(!is_rar4_symlink(2, 0o120777));
+        assert!(is_rar_link(Some(3), 0o120777, false));
+        assert!(!is_rar_link(Some(3), 0o100644, false));
+        assert!(!is_rar_link(Some(2), 0o120777, false));
+        assert!(is_rar_link(None, 0, true));
     }
 
     #[test]
