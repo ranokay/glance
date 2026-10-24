@@ -11,7 +11,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		let application = NSApplication.shared
 		let delegate = AppDelegate()
 		application.delegate = delegate
-		_ = NSApplicationMain(CommandLine.argc, CommandLine.unsafeArgv)
+		// `NSApplication.delegate` is weak, so the local would be released at its
+		// last use and launch callbacks would reach nil. Hold it for the process.
+		withExtendedLifetime(delegate) {
+			_ = NSApplicationMain(CommandLine.argc, CommandLine.unsafeArgv)
+		}
 	}
 
 	private var statusItem: NSStatusItem?
