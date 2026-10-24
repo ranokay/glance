@@ -6,7 +6,7 @@ use std::fmt::Write as _;
 use std::fs;
 use std::io::{Read, Write};
 use std::os::unix::ffi::OsStrExt;
-use std::os::unix::fs::{MetadataExt, PermissionsExt};
+use std::os::unix::fs::{DirBuilderExt, MetadataExt, PermissionsExt};
 use std::path::{Path, PathBuf};
 use std::ptr;
 use std::slice;
@@ -424,8 +424,24 @@ fn create_temporary_directory() -> Result<PathBuf, CoreError> {
     for attempt in 0..100 {
         let name = format!("glance-sqlite-{}-{nanos}-{attempt}", std::process::id());
         let directory = base.join(name);
-        match fs::create_dir(&directory) {
-            Ok(()) => return Ok(directory),
+        match fs::DirBuilder::new().mode(0o700).create(&directory) {
+            Ok(()) => {
+                let mut permissions = fs::metadata(&directory)
+                    .map_err(|error| {
+                        CoreError::io(format!(
+                            "Could not inspect a temporary SQLite preview directory: {error}"
+                        ))
+                    })?
+                    .permissions();
+                permissions.set_mode(0o700);
+                if let Err(error) = fs::set_permissions(&directory, permissions) {
+                    let _ = fs::remove_dir_all(&directory);
+                    return Err(CoreError::io(format!(
+                        "Could not restrict a temporary SQLite preview directory: {error}"
+                    )));
+                }
+                return Ok(directory);
+            }
             Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => continue,
             Err(error) => {
                 return Err(CoreError::io(format!(
@@ -1285,6 +1301,14 @@ mod tests {
         assert!(matches!(error, CoreError::Parse(_)));
         assert!(error.to_string().contains("too big"));
 
+        fs::remove_dir_all(directory).unwrap();
+    }
+
+    #[test]
+    fn temporary_directories_are_private() {
+        let directory = create_temporary_directory().unwrap();
+        let mode = fs::metadata(&directory).unwrap().permissions().mode() & 0o777;
+        assert_eq!(mode, 0o700);
         fs::remove_dir_all(directory).unwrap();
     }
 
