@@ -1,18 +1,14 @@
 # Source: https://github.com/sindresorhus/swiftlint-sindre (with modifications)
 
-# Rules covered by SwiftFormat are commented out
+# SwiftFormat owns layout and whitespace (see `.swiftformat`); this file owns
+# semantics. Rules covered by SwiftFormat are commented out.
 only_rules:
   - array_init
   - attributes
   - block_based_kvo
   - class_delegate_protocol
-  - closing_brace
-  - closure_end_indentation
   - closure_parameter_position
   - closure_spacing
-  - collection_alignment
-  - colon
-  - comma
   - compiler_protocol_init
   - conditional_returns_on_newline
   - contains_over_filter_count
@@ -23,7 +19,6 @@ only_rules:
   - deployment_target
   - discarded_notification_center_observer
   - discouraged_direct_init
-  - discouraged_object_literal
   - discouraged_optional_boolean
   - discouraged_optional_collection
   - duplicate_enum_cases
@@ -50,7 +45,6 @@ only_rules:
   - is_disjoint
   - joined_default_parameter
   - last_where
-  - leading_whitespace
   - legacy_cggeometry_functions
   - legacy_constant
   - legacy_constructor
@@ -66,21 +60,16 @@ only_rules:
   - multiline_literal_brackets
   - multiline_parameters
   - multiline_parameters_brackets
-  - nimble_operator
   - no_extension_access_modifier
   - no_fallthrough_only
   - no_space_in_method_call
   - notification_center_detachment
   - nsobject_prefer_isequal
-  - object_literal
-  - opening_brace
-  - operator_usage_whitespace
   - function_name_whitespace
   - overridden_super_call
   - pattern_matching_keywords
   - private_action
   - private_outlet
-  - private_unit_test
   - prohibited_super_call
   - protocol_property_accessors_order
   - reduce_boolean
@@ -94,10 +83,8 @@ only_rules:
   - redundant_type_annotation
   - redundant_void_return
   - required_enum_case
-  - return_arrow_whitespace
   - shorthand_operator
   - sorted_first_last
-  - statement_position
   - static_operator
   - strong_iboutlet
   - superfluous_disable_command
@@ -132,21 +119,35 @@ only_rules:
   - xct_specific_matcher
   - xctfail_message
   - yoda_condition
-analyzer_rules:
-  - unused_declaration
-  - unused_import
+
+  # Swift 6-era correctness rules.
+  - blanket_disable_command
+  - duplicate_conditions
+  - force_cast
+  - force_try
+  - invalid_swiftlint_command
+  - invisible_character
+  - non_optional_string_data_conversion
+  - optional_data_string_conversion
+  - prefer_type_checking
+  - private_over_fileprivate
+  - redundant_sendable
+  - unavailable_condition
+  - unhandled_throwing_task
+  - unneeded_override
+  - unneeded_synthesized_initializer
+  - void_function_in_ternary
+
+# `unused_declaration` and `unused_import` need `swiftlint analyze` with a
+# compiler log, which no task runs. Omit until it is wired into CI.
 excluded:
   - build
   - PreviewCore/target
   - PreviewCore/build
-object_literal:
-  image_literal: false
-discouraged_object_literal:
-  color_literal: false
 identifier_name:
   max_length:
-    warning: 100
-    error: 100
+    warning: 50
+    error: 50
   min_length:
     warning: 2
     error: 2
@@ -162,6 +163,3 @@ identifier_name:
     - "x2"
     - "y1"
     - "y2"
-opening_brace:
-  ignore_multiline_function_signatures: true
-  ignore_multiline_statement_conditions: true

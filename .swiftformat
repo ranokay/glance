@@ -9,3 +9,4 @@
 --exclude PreviewCore/build
 
 --disable hoistTry
+--enable commonTypos,forWhere,isEmpty,preferContains,preferFirstWhere,preferFlatMap,preferMinOverSorted,redundantSendable

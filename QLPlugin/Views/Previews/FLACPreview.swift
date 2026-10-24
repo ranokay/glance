@@ -3,8 +3,6 @@ import Cocoa
 import GlanceKit
 
 struct FLACPreview: Preview {
-	init() {}
-
 	func createPreviewVC(file: File) async throws -> PreviewVC {
 		let showsWaveform = await PreviewSettingsClient.shared.flacWaveformEnabled()
 		return AVPlayerPreviewVC(fileURL: file.url, showsWaveform: showsWaveform)
