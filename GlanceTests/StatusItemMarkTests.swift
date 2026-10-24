@@ -44,7 +44,7 @@ final class StatusItemMarkTests: XCTestCase {
 
 		let color = try XCTUnwrap(bitmap.colorAt(
 			x: Int(point.x * scale),
-			y: Int(point.y * scale),
+			y: side - 1 - Int(point.y * scale),
 		))
 		return color.alphaComponent
 	}

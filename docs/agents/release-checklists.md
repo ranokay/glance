@@ -49,6 +49,19 @@ same commit as any intentional bump, then run it.
 5. Docs: extend the supported-types list in `AppStore/Listing/Description.txt`
    when the type is user-facing.
 
+## App icon edit (`Glance/Glance.icon`)
+
+1. `Glance/Glance.icon` is the editable Icon Composer document. Its layers are
+   plain white SVG discs; colour and glass come from `icon.json`
+   fill/glass specializations, so edit colours there, not in the SVGs.
+2. Re-render the README hero from the document
+   (`Icon Composer.app/Contents/Executables/ictool Glance/Glance.icon
+   --export-image --rendition Default --width 512 --height 512 --scale 1`),
+   flatten it to 8-bit, and commit it as `AppStore/Assets/AppIcon.png`.
+3. `Glance/Utils/StatusItemMark.swift` is the menu-bar reduction of the same
+   mark; re-check it at 18 pt on light, dark, and tinted menu bars whenever the
+   silhouette changes.
+
 ## Web-runtime bump (drawio, Pele/Mermaid diagrams, or similar bundled viewer)
 
 1. `docs/<name>-runtime.md`: new version, source URL, SHA-256 digest of the
