@@ -993,6 +993,7 @@
 				"$(PROJECT_DIR)/PreviewCore/src/notebook.rs",
 				"$(PROJECT_DIR)/PreviewCore/src/rar.rs",
 				"$(PROJECT_DIR)/PreviewCore/src/sevenzip.rs",
+				"$(PROJECT_DIR)/PreviewCore/src/structured.rs",
 				"$(PROJECT_DIR)/PreviewCore/src/tar.rs",
 				"$(PROJECT_DIR)/PreviewCore/src/three_mf.rs",
 				"$(PROJECT_DIR)/PreviewCore/src/tsv.rs",

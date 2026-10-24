@@ -255,6 +255,7 @@ fn xml_tree(data: &[u8], budget: &mut Budget) -> Result<Node, CoreError> {
     let mut buffer = Vec::new();
     let mut stack: Vec<XmlFrame> = Vec::new();
     let mut roots = Vec::new();
+    let mut pending_text = String::new();
 
     loop {
         let event = reader
@@ -262,13 +263,15 @@ fn xml_tree(data: &[u8], budget: &mut Budget) -> Result<Node, CoreError> {
             .map_err(|error| CoreError::parse(format!("Could not parse XML: {error}")))?;
         match event {
             Event::Start(start) => {
-                if !budget.take(stack.len()) {
+                flush_xml_text(&mut pending_text, &mut stack, &mut roots, budget)?;
+                if budget.exhausted || !budget.take(stack.len()) {
                     break;
                 }
                 stack.push(xml_frame(&start, &reader, budget));
             }
             Event::Empty(start) => {
-                if !budget.take(stack.len()) {
+                flush_xml_text(&mut pending_text, &mut stack, &mut roots, budget)?;
+                if budget.exhausted || !budget.take(stack.len()) {
                     break;
                 }
                 let frame = xml_frame(&start, &reader, budget);
@@ -284,6 +287,10 @@ fn xml_tree(data: &[u8], budget: &mut Budget) -> Result<Node, CoreError> {
                 );
             }
             Event::End(_) => {
+                flush_xml_text(&mut pending_text, &mut stack, &mut roots, budget)?;
+                if budget.exhausted {
+                    break;
+                }
                 let Some(frame) = stack.pop() else {
                     return Err(CoreError::parse(
                         "XML closes an element that was not opened",
@@ -300,64 +307,34 @@ fn xml_tree(data: &[u8], budget: &mut Budget) -> Result<Node, CoreError> {
                     },
                 );
             }
-            Event::Text(text) => {
-                let value = xml_text(&text)?;
-                if value.trim().is_empty() {
-                    continue;
-                }
-                if stack.is_empty() {
-                    return Err(CoreError::parse(
-                        "XML text appears outside the root element",
-                    ));
-                }
-                if !budget.take(stack.len()) {
-                    break;
-                }
-                push_xml_node(
-                    &mut stack,
-                    &mut roots,
-                    Node::Text(budget.text(value.trim_end())),
-                );
-            }
+            Event::Text(text) => pending_text.push_str(&xml_text(&text)?),
             Event::CData(text) => {
-                if stack.is_empty() {
-                    return Err(CoreError::parse(
-                        "XML text appears outside the root element",
-                    ));
-                }
-                let value = String::from_utf8_lossy(text.as_ref()).into_owned();
-                if !budget.take(stack.len()) {
-                    break;
-                }
-                push_xml_node(&mut stack, &mut roots, Node::Text(budget.text(&value)));
+                pending_text.push_str(&String::from_utf8_lossy(text.as_ref()));
             }
             Event::Comment(comment) => {
-                if !budget.take(stack.len()) {
+                flush_xml_text(&mut pending_text, &mut stack, &mut roots, budget)?;
+                if budget.exhausted || !budget.take(stack.len()) {
                     break;
                 }
                 let value = String::from_utf8_lossy(comment.as_ref()).into_owned();
                 push_xml_node(&mut stack, &mut roots, Node::Comment(budget.text(&value)));
             }
             Event::GeneralRef(reference) => {
-                if stack.is_empty() {
-                    return Err(CoreError::parse(
-                        "XML text appears outside the root element",
-                    ));
-                }
                 let name = reference.decode().map_err(|error| {
                     CoreError::parse(format!("Could not decode XML entity: {error}"))
                 })?;
-                let value = reference_text(&name);
-                if value.is_empty() {
-                    continue;
-                }
-                if !budget.take(stack.len()) {
+                pending_text.push_str(&reference_text(&name));
+            }
+            Event::Eof => {
+                flush_xml_text(&mut pending_text, &mut stack, &mut roots, budget)?;
+                break;
+            }
+            Event::Decl(_) | Event::PI(_) | Event::DocType(_) => {
+                flush_xml_text(&mut pending_text, &mut stack, &mut roots, budget)?;
+                if budget.exhausted {
                     break;
                 }
-                push_xml_node(&mut stack, &mut roots, Node::Text(value));
             }
-            Event::Eof => break,
-            Event::Decl(_) | Event::PI(_) | Event::DocType(_) => {}
         }
     }
 
@@ -392,6 +369,33 @@ fn xml_tree(data: &[u8], budget: &mut Budget) -> Result<Node, CoreError> {
     }
 
     Ok(Node::Fragment(roots))
+}
+
+fn flush_xml_text(
+    pending: &mut String,
+    stack: &mut [XmlFrame],
+    roots: &mut Vec<Node>,
+    budget: &mut Budget,
+) -> Result<(), CoreError> {
+    if pending.is_empty() {
+        return Ok(());
+    }
+    let value = pending.trim_end();
+    if value.trim().is_empty() {
+        pending.clear();
+        return Ok(());
+    }
+    if stack.is_empty() {
+        return Err(CoreError::parse(
+            "XML text appears outside the root element",
+        ));
+    }
+    if budget.take(stack.len()) {
+        let text = budget.text(value);
+        push_xml_node(stack, roots, Node::Text(text));
+    }
+    pending.clear();
+    Ok(())
 }
 
 struct XmlFrame {
@@ -923,6 +927,18 @@ mod tests {
 
         assert!(html.contains("Preview truncated"));
         assert!(html.contains("larger than the 4 MB preview limit"));
+    }
+
+    #[test]
+    fn merges_text_around_entities_into_one_node() {
+        let html = render_structured(
+            b"<root>XML &amp; entity preview</root>",
+            StructuredFormat::Xml,
+        )
+        .unwrap();
+
+        assert_eq!(html.matches("structured-text").count(), 1);
+        assert!(html.contains("XML &amp; entity preview"));
     }
 
     #[test]
