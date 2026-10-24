@@ -33,6 +33,7 @@ License texts are available from the linked standard licenses and each crate's s
 | lzma-rust2 | 0.23.0 | Apache-2.0 |
 | miniz_oxide | 0.9.1 | MIT OR Zlib OR Apache-2.0 |
 | onig, onig_sys | 6.5.3, 69.9.3 | MIT |
+| plist | 1.10.3 | MIT |
 | ppmd-rust | 1.5.2 | CC0-1.0 OR MIT-0 |
 | quick-xml | 0.41.0, 0.42.0 | MIT |
 | rars | 0.12.0 | MIT OR Apache-2.0 |

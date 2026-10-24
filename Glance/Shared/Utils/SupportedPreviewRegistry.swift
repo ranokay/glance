@@ -9,6 +9,7 @@ public enum SupportedPreviewGroup: CaseIterable, Sendable {
 	case jupyter
 	case tsv
 	case spreadsheet
+	case structured
 	case code
 
 	public var title: String {
@@ -29,6 +30,8 @@ public enum SupportedPreviewGroup: CaseIterable, Sendable {
 				"Tab-separated values"
 			case .spreadsheet:
 				"Spreadsheet"
+			case .structured:
+				"Structured data"
 			case .code:
 				"Source code and text"
 		}
@@ -52,6 +55,8 @@ public enum SupportedPreviewGroup: CaseIterable, Sendable {
 				"tsv"
 			case .spreadsheet:
 				"spreadsheet"
+			case .structured:
+				"structured"
 			case .code:
 				"code"
 		}
@@ -227,6 +232,28 @@ public enum SupportedPreviewRegistry {
 			searchTokens: ["Excel", "workbook", "sheet"],
 		),
 
+		extensionEntry(
+			"json",
+			group: .structured,
+			previewFileType: .structured,
+			codeLexer: "json",
+			searchTokens: ["JSON", "structured data"],
+		),
+		extensionEntry(
+			"plist",
+			group: .structured,
+			previewFileType: .structured,
+			codeLexer: "xml",
+			searchTokens: ["property list", "binary plist", "XML"],
+		),
+		extensionEntry(
+			"xml",
+			group: .structured,
+			previewFileType: .structured,
+			codeLexer: "xml",
+			searchTokens: ["XML", "structured data"],
+		),
+
 		fileNameEntry(
 			".bashrc",
 			group: .code,
@@ -376,12 +403,6 @@ public enum SupportedPreviewRegistry {
 			searchTokens: ["scientific output", "plain text"],
 		),
 		extensionEntry("pbxproj", group: .code, codeLexer: "txt", searchTokens: ["Xcode"]),
-		extensionEntry(
-			"plist",
-			group: .code,
-			codeLexer: "xml",
-			searchTokens: ["property list", "XML"],
-		),
 		extensionEntry("props", group: .code, codeLexer: "xml", searchTokens: ["MSBuild", "XML"]),
 		extensionEntry(
 			"resolved",

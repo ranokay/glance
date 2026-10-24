@@ -22,6 +22,9 @@ final class PreviewSupportTests: XCTestCase {
 			("/tmp/notebook.ipynb", "jupyter.extension.ipynb", .jupyter),
 			("/tmp/table.tsv", "tsv.extension.tsv", .tsv),
 			("/tmp/workbook.xlsx", "spreadsheet.extension.xlsx", .spreadsheet),
+			("/tmp/data.json", "structured.extension.json", .structured),
+			("/tmp/config.plist", "structured.extension.plist", .structured),
+			("/tmp/document.xml", "structured.extension.xml", .structured),
 			("/tmp/archive.zip", "archive.extension.zip", .zip),
 			("/tmp/archive.7z", "archive.extension.7z", .sevenZip),
 			("/tmp/archive.rar", "archive.extension.rar", .rar),
@@ -72,6 +75,9 @@ final class PreviewSupportTests: XCTestCase {
 			("/tmp/table.tab", .tsv),
 			("/tmp/table.tsv", .tsv),
 			("/tmp/workbook.xlsx", .spreadsheet),
+			("/tmp/data.json", .structured),
+			("/tmp/config.plist", .structured),
+			("/tmp/document.xml", .structured),
 			("/tmp/archive.7z", .sevenZip),
 			("/tmp/archive.rar", .rar),
 			("/tmp/archive.ear", .zip),
@@ -124,26 +130,30 @@ final class PreviewSupportTests: XCTestCase {
 		)
 	}
 
-	func testSpreadsheetFilesUseThePreviewCoreSizeLimit() throws {
+	func testPreviewPolicyExemptsBoundedPreviewKindsFromTheSharedSizeLimit() throws {
 		let directory = FileManager.default.temporaryDirectory
-			.appendingPathComponent("GlanceSpreadsheetPolicy-\(UUID().uuidString)")
+			.appendingPathComponent("GlancePreviewPolicy-\(UUID().uuidString)")
 		try FileManager.default.createDirectory(
 			at: directory,
 			withIntermediateDirectories: true,
 		)
 		defer { try? FileManager.default.removeItem(at: directory) }
 		let spreadsheet = directory.appendingPathComponent("large.xlsx")
+		let structured = directory.appendingPathComponent("large.json")
 		let text = directory.appendingPathComponent("large.md")
-		for url in [spreadsheet, text] {
+		for url in [spreadsheet, structured, text] {
 			XCTAssertTrue(FileManager.default.createFile(atPath: url.path, contents: nil))
 			let handle = try FileHandle(forWritingTo: url)
 			try handle.truncate(atOffset: 20_000_000)
 			try handle.close()
 		}
 
-		XCTAssertNoThrow(
-			try PreviewPolicy.validateFileSize(try File(url: spreadsheet)),
-		)
+		for url in [spreadsheet, structured] {
+			XCTAssertNoThrow(
+				try PreviewPolicy.validateFileSize(try File(url: url)),
+				url.lastPathComponent,
+			)
+		}
 		XCTAssertThrowsError(
 			try PreviewPolicy.validateFileSize(try File(url: text)),
 		)
@@ -234,6 +244,7 @@ final class PreviewSupportTests: XCTestCase {
 			("strings", "c"),
 			("ttml", "xml"),
 			("vtt", "txt"),
+			("xml", "xml"),
 		]
 
 		for (fileExtension, lexer) in cases {

@@ -31,8 +31,6 @@
 				<!--
 					File types that Glance cannot provide previews for:
 					- Files that are already supported by macOS (e.g. .csv)
-					- com.apple.property-list (.plist)
-					- public.xml (.xml)
 
 					Note: .ts is claimed as TypeScript source even though the extension
 					is also used by MPEG-2 transport stream video.
@@ -89,6 +87,11 @@
 
 				<!-- Spreadsheet -->
 				<string>org.openxmlformats.spreadsheetml.sheet</string> <!-- .xlsx -->
+
+				<!-- Structured data -->
+				<string>com.apple.property-list</string> <!-- .plist -->
+				<string>public.json</string> <!-- .json -->
+				<string>public.xml</string> <!-- .xml -->
 
 				<!-- Code / plain text -->
 				<string>com.adobe.jsx</string> <!-- .jsx (used for React instead of ExtendScript) -->
@@ -322,7 +325,6 @@
 				<string>dyn.ah62d4rv4ge80n5x0</string> <!-- .env -->
 				<string>public.fortran-90-source</string> <!-- .f90 (Fortran) -->
 				<string>public.fortran-source</string> <!-- .f, .for (Fortran) -->
-				<string>public.json</string> <!-- .json -->
 				<string>public.ksh-script</string> <!-- .ksh (KornShell) -->
 				<string>public.make-source</string> <!-- .mak (Makefile) -->
 				<string>public.module-map</string> <!-- .modulemap (Clang module map) -->

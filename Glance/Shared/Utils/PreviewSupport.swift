@@ -10,6 +10,7 @@ public enum PreviewFileType: Equatable, Sendable {
 	case rar
 	case sevenZip
 	case spreadsheet
+	case structured
 	case tar
 	case threeMF
 	case tsv
@@ -42,5 +43,11 @@ public enum PreviewSupport {
 	/// Whether the file is streamed audio exempt from the size limit and routed to media playback.
 	public static func isStreamedAudio(fileURL: URL) -> Bool {
 		getPreviewFileType(fileURL: fileURL) == .flac
+	}
+
+	/// Whether the preview reads a bounded prefix, so the shared file-size preflight does not
+	/// apply.
+	public static func isStructuredData(fileURL: URL) -> Bool {
+		getPreviewFileType(fileURL: fileURL) == .structured
 	}
 }

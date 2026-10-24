@@ -82,6 +82,31 @@ pub unsafe extern "C" fn glance_render_notebook(
     })
 }
 
+/// Renders a JSON document, property list, or XML document as an escaped, collapsible tree.
+///
+/// # Safety
+///
+/// The pointer must be valid for reads of `data_length` bytes for the duration of this call. A
+/// null pointer is accepted only when `data_length` is zero.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn glance_render_structured(
+    data: *const u8,
+    data_length: usize,
+    format: u8,
+) -> GlanceRenderResult {
+    ffi_call(|| unsafe {
+        let data = byte_input(data, data_length, "Structured preview")?;
+        let format = crate::structured::StructuredFormat::from_ffi(format)?;
+        crate::structured::render_structured(data, format).map(String::into_bytes)
+    })
+}
+
+/// Returns the structured preview input cap in bytes.
+#[unsafe(no_mangle)]
+pub extern "C" fn glance_structured_max_input_bytes() -> usize {
+    crate::structured::MAX_INPUT_BYTES
+}
+
 /// Renders a DRM-free EPUB 2 or EPUB 3 book at a raw filesystem path.
 ///
 /// # Safety

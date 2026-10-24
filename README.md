@@ -74,7 +74,7 @@ Release DMGs are currently unsigned and unnotarized. To install Glance:
   or package to preview it in place. The utility bar can open a selected nested item once with any
   compatible app without changing its macOS default.
 
-- **Source code and text** (with [two-face/syntect](https://github.com/CosmicHorrorDev/two-face) syntax highlighting): `.cpp`, `.elrc`, `.ini`, `.js`, `.json`, `.py`, `.swift`, `.tmpl`, `.toml`, `.ts`, `.ttml`, `.yml`, common extensionless configuration files, and many more
+- **Source code and text** (with [two-face/syntect](https://github.com/CosmicHorrorDev/two-face) syntax highlighting): `.cpp`, `.elrc`, `.ini`, `.js`, `.jsonl`, `.py`, `.swift`, `.tmpl`, `.toml`, `.ts`, `.ttml`, `.yml`, common extensionless configuration files, and many more
 
   <p><img src="./AppStore/Assets/Screenshots/ScreenshotSourceCode.png" alt="" width="600"></p>
 
@@ -109,6 +109,12 @@ Release DMGs are currently unsigned and unnotarized. To install Glance:
   worksheet is available from a sheet picker, with dates, booleans, cached formula values, and
   column letters. Cell styles, charts, images, conditional formatting, `.xls`, and `.numbers` are
   not supported.
+
+- **Structured data** (parsed by Glance's bounded Rust preview core): `.json`, `.plist` (XML and
+  binary), and `.xml`. Objects, arrays, and elements are collapsible; strings, numbers, booleans,
+  nulls, dates, and data are labelled by type; keys keep their authored order. Malformed input
+  falls back to syntax-highlighted text. Files above 4 MB, deeply nested documents, and very large
+  trees show an explicit truncation notice instead of failing.
 
 ## Images
 
@@ -156,8 +162,6 @@ No. Glance opens the selected file once with the chosen compatible app. It does 
 
 Feel free to [open an issue](https://github.com/ranokay/glance/issues/new) or [contribute](#contributing)! When opening an issue, please describe what kind of preview you'd expect for your file.
 
-Please note that macOS doesn't allow the handling of some file types (e.g. `.plist` and `.xml`).
-
 `.ts` files preview as TypeScript source (macOS also uses this extension for MPEG-2 video).
 
 **How do I disable Glance for a file type?**
@@ -167,9 +171,10 @@ Glance doesn't currently support disabling individual file types.
 **You claim to support [file type], but previews aren't showing up.**
 
 Glance skips non-archive files larger than 10 MB to avoid slowing down your Mac; spreadsheets get
-the Rust core’s 25 MB limit. Archive entries larger than 25 MB are not extracted. Folder previews
-load off-main one directory at a time in pages of 500 so large descendants cannot hide their
-siblings or block the initial preview.
+the Rust core’s 25 MB limit. Structured data files are exempt from that preflight: Glance reads at
+most 4 MB and shows a truncation notice when the file is larger. Archive entries larger than 25 MB
+are not extracted. Folder previews load off-main one directory at a time in pages of 500 so large
+descendants cannot hide their siblings or block the initial preview.
 
 It's possible that your file's extension or [UTI](https://en.wikipedia.org/wiki/Uniform_Type_Identifier) isn't associated with Glance. You can easily verify this:
 

@@ -70,6 +70,9 @@
 		C0DE00000000000000000315 /* CodePreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E1DC529240E6FDE00D0A061 /* CodePreview.swift */; };
 		C0DE00000000000000000316 /* TSVPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E413F7F2418DD6200CFBB1D /* TSVPreview.swift */; };
 		7F00000000000000000011 /* SpreadsheetPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F00000000000000000001 /* SpreadsheetPreview.swift */; };
+		7A1000000000000000000002 /* StructuredPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1000000000000000000001 /* StructuredPreview.swift */; };
+		7A1000000000000000000003 /* StructuredPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1000000000000000000001 /* StructuredPreview.swift */; };
+		7A1000000000000000000011 /* structured-main.css in Resources */ = {isa = PBXBuildFile; fileRef = 7A1000000000000000000010 /* structured-main.css */; };
 		7F00000000000000000012 /* SpreadsheetPreviewVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F00000000000000000002 /* SpreadsheetPreviewVC.swift */; };
 		C0DE00000000000000000317 /* TARPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E7A9DAC244F24B900276E51 /* TARPreview.swift */; };
 		C0DE00000000000000000318 /* ZIPPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EB36489244B665700D7F96F /* ZIPPreview.swift */; };
@@ -326,6 +329,8 @@
 		7E21C89024390E3100818EB2 /* Date.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Date.swift; sourceTree = "<group>"; };
 		7E413F7F2418DD6200CFBB1D /* TSVPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TSVPreview.swift; sourceTree = "<group>"; };
 		7F00000000000000000001 /* SpreadsheetPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpreadsheetPreview.swift; sourceTree = "<group>"; };
+		7A1000000000000000000001 /* StructuredPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StructuredPreview.swift; sourceTree = "<group>"; };
+		7A1000000000000000000010 /* structured-main.css */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.css; path = "structured-main.css"; sourceTree = "<group>"; };
 		7F00000000000000000002 /* SpreadsheetPreviewVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpreadsheetPreviewVC.swift; sourceTree = "<group>"; };
 		7E42B61C245857D9008D7116 /* glance_preview_core.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = glance_preview_core.h; path = PreviewCore/include/glance_preview_core.h; sourceTree = "<group>"; };
 		7E42B61D245857D9008D7116 /* libglance_preview_core.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libglance_preview_core.a; path = "PreviewCore/build/$(CONFIGURATION)/libglance_preview_core.a"; sourceTree = "<group>"; };
@@ -486,8 +491,17 @@
 				7EB363F6244B03CC00D7F96F /* jupyter */,
 				7EB3643B244B03CC00D7F96F /* markdown */,
 				7EB36438244B03CC00D7F96F /* shared */,
+				7A1000000000000000000020 /* structured */,
 			);
 			path = Resources;
+			sourceTree = "<group>";
+		};
+		7A1000000000000000000020 /* structured */ = {
+			isa = PBXGroup;
+			children = (
+				7A1000000000000000000010 /* structured-main.css */,
+			);
+			path = structured;
 			sourceTree = "<group>";
 		};
 		7E1DC52C240E9A3700D0A061 /* Previews */ = {
@@ -509,6 +523,7 @@
 				52CE030000000000000003 /* ArchivePreview.swift */,
 				7E413F7F2418DD6200CFBB1D /* TSVPreview.swift */,
 				7F00000000000000000001 /* SpreadsheetPreview.swift */,
+				7A1000000000000000000001 /* StructuredPreview.swift */,
 				7EB36489244B665700D7F96F /* ZIPPreview.swift */,
 			);
 			path = Previews;
@@ -930,6 +945,7 @@
 				7EB36479244B03CC00D7F96F /* KaTeX_Size2-Regular.woff2 in Resources */,
 				7EB36453244B03CC00D7F96F /* KaTeX_Size4-Regular.woff2 in Resources */,
 				7EB36482244B03CC00D7F96F /* markdown-main.css in Resources */,
+				7A1000000000000000000011 /* structured-main.css in Resources */,
 				7EB3644A244B03CC00D7F96F /* KaTeX_Caligraphic-Bold.woff2 in Resources */,
 				7E022BEE245253B3000EFCD3 /* OutlinePreviewVC.xib in Resources */,
 			);
@@ -977,6 +993,7 @@
 				"$(PROJECT_DIR)/PreviewCore/src/notebook.rs",
 				"$(PROJECT_DIR)/PreviewCore/src/rar.rs",
 				"$(PROJECT_DIR)/PreviewCore/src/sevenzip.rs",
+				"$(PROJECT_DIR)/PreviewCore/src/structured.rs",
 				"$(PROJECT_DIR)/PreviewCore/src/tar.rs",
 				"$(PROJECT_DIR)/PreviewCore/src/three_mf.rs",
 				"$(PROJECT_DIR)/PreviewCore/src/tsv.rs",
@@ -1058,6 +1075,7 @@
 				C0DE00000000000000000313 /* MarkdownPreview.swift in Sources */,
 				C0DE00000000000000000321 /* TablePreviewVC.swift in Sources */,
 				7F00000000000000000011 /* SpreadsheetPreview.swift in Sources */,
+				7A1000000000000000000003 /* StructuredPreview.swift in Sources */,
 				7F00000000000000000012 /* SpreadsheetPreviewVC.swift in Sources */,
 				C0DE00000000000000000201 /* FileTreeTests.swift in Sources */,
 				C0DE00000000000000000305 /* File.swift in Sources */,
@@ -1120,6 +1138,7 @@
 				7E022BE52452181F000EFCD3 /* WebPreviewVC.swift in Sources */,
 				7E08A50F2454372200B7FF53 /* TablePreviewVC.swift in Sources */,
 				7F00000000000000000013 /* SpreadsheetPreview.swift in Sources */,
+				7A1000000000000000000002 /* StructuredPreview.swift in Sources */,
 				7F00000000000000000014 /* SpreadsheetPreviewVC.swift in Sources */,
 				102D56C526206A36000B5C0E /* MainVC.swift in Sources */,
 				53CE030000000000000011 /* MainVCBackgroundWork.swift in Sources */,

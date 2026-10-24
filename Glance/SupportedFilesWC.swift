@@ -16,7 +16,7 @@ final class SupportedFilesWC: NSWindowController {
 		),
 		SupportedFileSection(
 			title: "Source Code",
-			details: ".cpp, .elrc, .ini, .js, .json, .jsonl, .py, .swift, .tmpl, .toml, .ts, .ttml, .yml and many more",
+			details: ".cpp, .elrc, .ini, .js, .jsonl, .py, .swift, .tmpl, .toml, .ts, .ttml, .yml and many more",
 		),
 		SupportedFileSection(
 			title: "Markdown",
@@ -39,6 +39,10 @@ final class SupportedFilesWC: NSWindowController {
 		SupportedFileSection(
 			title: "Spreadsheet",
 			details: ".xlsx • Values, dates, and every worksheet",
+		),
+		SupportedFileSection(
+			title: "Structured Data",
+			details: ".json, .plist, .xml • Collapsible trees, typed values, and truncation notices",
 		),
 		SupportedFileSection(
 			title: "Folders",
