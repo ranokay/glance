@@ -56,6 +56,8 @@ extension MainVC {
 		previewRefreshTask?.cancel()
 		previewRefreshTask = Task { @MainActor [weak self] in
 			do {
+				// The file may have grown past the preview limit while it was open.
+				try PreviewPolicy.validateFileSize(try File(url: fileURL))
 				try await preview.refreshFromDisk()
 				guard let self, currentPreviewController === preview else {
 					return
@@ -70,14 +72,21 @@ extension MainVC {
 				Log.render.error(
 					"Could not refresh preview for \(fileURL.path, privacy: .private): \(error.localizedDescription, privacy: .private)",
 				)
-				let fileExists = FileManager.default.fileExists(atPath: fileURL.path)
-				showPreviewNotice(
-					fileExists
-						? "Couldn’t refresh preview"
-						: "File removed — showing last preview",
-				)
+				showPreviewNotice(Self.refreshFailureMessage(for: error, fileURL: fileURL))
 			}
 		}
+	}
+
+	private static func refreshFailureMessage(for error: Error, fileURL: URL) -> String {
+		guard FileManager.default.fileExists(atPath: fileURL.path) else {
+			return "File removed — showing last preview"
+		}
+		if let previewError = error as? PreviewError,
+		   case .fileSizeError = previewError
+		{
+			return "File too large to refresh — showing last preview"
+		}
+		return "Couldn’t refresh preview"
 	}
 }
 
@@ -188,7 +197,7 @@ extension MainVC {
 			guard !Task.isCancelled, let self else {
 				return
 			}
-			setDisplayedStatus(baseStatusText)
+			setDisplayedStatus(previewNoticeText ?? baseStatusText)
 		}
 	}
 

@@ -73,7 +73,7 @@ class MainVC: NSViewController, QLPreviewingController {
 	var nestedPreviewTask: Task<Void, Never>?
 	var fileChangeMonitor: FileChangeMonitor?
 	var previewRefreshTask: Task<Void, Never>?
-	var isShowingPreviewNotice = false
+	var previewNoticeText: String?
 	weak var boundStatusProvider: (any PreviewStatusProviding)?
 
 	override func loadView() {
@@ -208,7 +208,7 @@ class MainVC: NSViewController, QLPreviewingController {
 	}
 
 	func bindStatus(to previewVC: PreviewVC) {
-		isShowingPreviewNotice = false
+		previewNoticeText = nil
 		boundStatusProvider?.previewStatusDidChange = nil
 		boundStatusProvider = nil
 		guard let statusProvider = previewVC as? PreviewStatusProviding else {
@@ -236,17 +236,17 @@ class MainVC: NSViewController, QLPreviewingController {
 
 	/// Keeps the last good preview on screen and reports why it could not refresh.
 	func showPreviewNotice(_ message: String) {
-		isShowingPreviewNotice = true
+		previewNoticeText = message
 		statusResetTask?.cancel()
 		statusResetTask = nil
 		setDisplayedStatus(message)
 	}
 
 	func clearPreviewNotice() {
-		guard isShowingPreviewNotice else {
+		guard previewNoticeText != nil else {
 			return
 		}
-		isShowingPreviewNotice = false
+		previewNoticeText = nil
 		setDisplayedStatus(baseStatusText)
 	}
 

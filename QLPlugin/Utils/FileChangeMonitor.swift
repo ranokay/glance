@@ -62,7 +62,7 @@ final class FileChangeMonitor {
 		}
 		let watcher = FileSystemWatcher(
 			path: fileURL.path,
-			eventMask: [.write, .extend, .delete, .rename, .attrib],
+			eventMask: [.write, .extend, .delete, .rename],
 		) { [weak self] in
 			self?.fileDidChange()
 		}

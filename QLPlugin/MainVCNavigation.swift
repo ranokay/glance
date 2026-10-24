@@ -80,7 +80,7 @@ extension MainVC {
 
 	func clearPreviewControllers() {
 		stopWatchingPresentedFile()
-		isShowingPreviewNotice = false
+		previewNoticeText = nil
 		nestedPreviewTask?.cancel()
 		nestedPreviewTask = nil
 		statusResetTask?.cancel()

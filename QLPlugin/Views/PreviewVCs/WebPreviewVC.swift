@@ -311,7 +311,12 @@ extension WebPreviewVC: RefreshablePreview {
 		}
 		let loadedContent = try await contentLoader()
 		try Task.checkCancellation()
-		let scrollOffset = await currentScrollOffset()
+		// A previous reload may still be in flight; its saved position is still valid.
+		let scrollOffset: CGFloat? = if let pendingScrollOffset {
+			pendingScrollOffset
+		} else {
+			await currentScrollOffset()
+		}
 		try Task.checkCancellation()
 		content = loadedContent
 		pendingScrollOffset = scrollOffset

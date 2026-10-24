@@ -906,7 +906,7 @@ final class PreviewSmokeTests: XCTestCase {
 		try await waitForWebViewToFinishLoadingAsync(webView)
 		XCTAssertNotNil(mainVC.fileChangeMonitor)
 
-		_ = try await webView.evaluateJavaScript("window.scrollTo(0, 500);")
+		_ = try await webView.evaluateJavaScript("window.scrollTo(0, 500); window.scrollY;")
 		let scrollBefore = try await webView.evaluateJavaScript("window.scrollY") as? NSNumber
 		XCTAssertGreaterThan(scrollBefore?.doubleValue ?? 0, 0)
 
@@ -949,6 +949,33 @@ final class PreviewSmokeTests: XCTestCase {
 
 		mainVC.viewWillDisappear()
 		XCTAssertNil(mainVC.fileChangeMonitor)
+	}
+
+	func testRefreshKeepsTheLastPreviewWhenTheFileGrowsPastTheSizeLimit() async throws {
+		let fileURL = try writeFile(named: "growing.md", contents: "# Small")
+		let mainVC = MainVC()
+		mainVC.loadViewIfNeeded()
+		try await mainVC.previewFile(file: File(url: fileURL))
+		let previewVC = try XCTUnwrap(mainVC.currentPreviewController as? WebPreviewVC)
+		let webView = try XCTUnwrap(previewVC.view.subviews.compactMap { $0 as? WKWebView }.first)
+		try await waitForWebViewToFinishLoadingAsync(webView)
+
+		let handle = try FileHandle(forWritingTo: fileURL)
+		try handle.truncate(atOffset: UInt64(PreviewPolicy.maximumFileSize + 1))
+		try handle.close()
+
+		let notice = "File too large to refresh — showing last preview"
+		let clock = ContinuousClock()
+		let deadline = clock.now.advanced(by: .seconds(5))
+		while mainVC.statusLabel.stringValue != notice, clock.now < deadline {
+			try await Task.sleep(for: .milliseconds(20))
+		}
+		XCTAssertEqual(mainVC.statusLabel.stringValue, notice)
+		let renderedHeading = try await webView.evaluateJavaScript(
+			"document.querySelector('h1')?.textContent",
+		) as? String
+		XCTAssertEqual(renderedHeading, "Small")
+		mainVC.viewWillDisappear()
 	}
 
 	func testOnlyWebPreviewsWithAContentLoaderAdvertiseRefresh() async throws {
