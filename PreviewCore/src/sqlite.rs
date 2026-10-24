@@ -1,6 +1,7 @@
 use crate::error::CoreError;
 use serde::Serialize;
-use std::ffi::{CStr, CString, c_char, c_int, c_uchar};
+use std::cell::Cell;
+use std::ffi::{CStr, CString, c_char, c_int, c_uchar, c_void};
 use std::fmt::Write as _;
 use std::fs;
 use std::io::{Read, Write};
@@ -9,7 +10,7 @@ use std::os::unix::fs::{MetadataExt, PermissionsExt};
 use std::path::{Path, PathBuf};
 use std::ptr;
 use std::slice;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 const SQLITE_OK: c_int = 0;
 const SQLITE_ROW: c_int = 100;
@@ -18,6 +19,9 @@ const SQLITE_OPEN_READONLY: c_int = 0x0000_0001;
 const SQLITE_OPEN_READWRITE: c_int = 0x0000_0002;
 const SQLITE_OPEN_URI: c_int = 0x0000_0040;
 const SQLITE_LIMIT_LENGTH: c_int = 0;
+const SQLITE_DBCONFIG_TRUSTED_SCHEMA: c_int = 1017;
+const PROGRESS_INSTRUCTIONS: c_int = 10_000;
+const QUERY_DEADLINE: Duration = Duration::from_secs(5);
 
 const SQLITE_HEADER: &[u8; 16] = b"SQLite format 3\0";
 
@@ -164,6 +168,7 @@ fn parse_sqlite_with_limits(
 ) -> Result<SqlitePayload, CoreError> {
     validate_header(path)?;
     let database = Database::open(path, &limits)?;
+    database.connection.start_deadline();
     let (tables, tables_truncated) = read_tables(&database.connection, &limits)?;
     let selected = requested_table
         .and_then(|requested| tables.iter().find(|name| *name == requested))
@@ -458,10 +463,26 @@ fn open_connection(path: &Path, immutable: bool) -> Result<Connection, CoreError
             "Could not open SQLite database: {message}"
         )));
     }
+    let mut trusted_schema: c_int = 0;
+    let deadline = Box::new(ProgressDeadline {
+        expires: Cell::new(None),
+    });
     unsafe {
         sqlite3_limit(handle, SQLITE_LIMIT_LENGTH, SQL_LENGTH_LIMIT);
+        sqlite3_db_config(
+            handle,
+            SQLITE_DBCONFIG_TRUSTED_SCHEMA,
+            0 as c_int,
+            &mut trusted_schema as *mut c_int,
+        );
+        sqlite3_progress_handler(
+            handle,
+            PROGRESS_INSTRUCTIONS,
+            Some(progress_callback),
+            &*deadline as *const ProgressDeadline as *mut c_void,
+        );
     }
-    Ok(Connection(handle))
+    Ok(Connection(handle, deadline))
 }
 
 /// Builds a `file:` URI with the original path bytes percent-encoded. The
@@ -594,7 +615,8 @@ fn read_table(
             }
             let quoted = quote_identifier(name);
             // BLOBs only need their byte count; text is read as a bounded
-            // prefix so a huge cell cannot force SQLite to scan all of it.
+            // prefix. SQLite materializes the source value before substr()
+            // slices it, so SQLITE_LIMIT_LENGTH is the actual memory bound.
             let _ = write!(
                 sql,
                 "typeof({quoted}), \
@@ -808,10 +830,17 @@ fn error_message(database: *mut Sqlite3) -> String {
         .into_owned()
 }
 
-struct Connection(*mut Sqlite3);
+struct Connection(*mut Sqlite3, Box<ProgressDeadline>);
 
 impl Connection {
+    fn start_deadline(&self) {
+        self.1.set();
+    }
+
     fn read_error(&self) -> CoreError {
+        if self.1.expired() {
+            return CoreError::limit("SQLite preview timed out while reading the database");
+        }
         CoreError::parse(format!(
             "Could not read SQLite database: {}",
             error_message(self.0)
@@ -822,9 +851,31 @@ impl Connection {
 impl Drop for Connection {
     fn drop(&mut self) {
         unsafe {
+            sqlite3_progress_handler(self.0, 0, None, ptr::null_mut());
             sqlite3_close_v2(self.0);
         }
     }
+}
+
+struct ProgressDeadline {
+    expires: Cell<Option<Instant>>,
+}
+
+impl ProgressDeadline {
+    fn set(&self) {
+        self.expires.set(Some(Instant::now() + QUERY_DEADLINE));
+    }
+
+    fn expired(&self) -> bool {
+        self.expires
+            .get()
+            .is_some_and(|deadline| Instant::now() >= deadline)
+    }
+}
+
+unsafe extern "C" fn progress_callback(argument: *mut c_void) -> c_int {
+    let deadline = unsafe { &*(argument as *const ProgressDeadline) };
+    if deadline.expired() { 1 } else { 0 }
 }
 
 struct Statement(*mut Sqlite3Stmt);
@@ -858,6 +909,13 @@ unsafe extern "C" {
     fn sqlite3_close_v2(database: *mut Sqlite3) -> c_int;
     fn sqlite3_errmsg(database: *mut Sqlite3) -> *const c_char;
     fn sqlite3_limit(database: *mut Sqlite3, id: c_int, new_value: c_int) -> c_int;
+    fn sqlite3_db_config(database: *mut Sqlite3, op: c_int, ...) -> c_int;
+    fn sqlite3_progress_handler(
+        database: *mut Sqlite3,
+        instructions: c_int,
+        callback: Option<unsafe extern "C" fn(*mut c_void) -> c_int>,
+        argument: *mut c_void,
+    );
     fn sqlite3_prepare_v2(
         database: *mut Sqlite3,
         sql: *const c_char,
@@ -1229,6 +1287,18 @@ mod tests {
     }
 
     #[test]
+    fn progress_deadline_expires() {
+        let deadline = ProgressDeadline {
+            expires: Cell::new(None),
+        };
+        assert!(!deadline.expired());
+        deadline
+            .expires
+            .set(Some(Instant::now() - Duration::from_secs(1)));
+        assert!(deadline.expired());
+    }
+
+    #[test]
     fn bounded_copy_stops_at_the_shared_budget() {
         let directory = temporary_directory("copy-budget");
         let source = directory.join("source.bin");
@@ -1325,7 +1395,12 @@ mod tests {
         let flags = SQLITE_OPEN_READWRITE | 0x0000_0004; // SQLITE_OPEN_CREATE
         let status = unsafe { sqlite3_open_v2(filename.as_ptr(), &mut handle, flags, ptr::null()) };
         assert_eq!(status, SQLITE_OK);
-        Connection(handle)
+        Connection(
+            handle,
+            Box::new(ProgressDeadline {
+                expires: Cell::new(None),
+            }),
+        )
     }
 
     fn execute(connection: &Connection, sql: &str) {
