@@ -9,6 +9,7 @@ use zip::ZipArchive;
 pub(crate) const MAX_FILE_SIZE: u64 = 25 * 1_024 * 1_024;
 pub(crate) const MAX_UNCOMPRESSED_SIZE: u64 = 200 * 1_024 * 1_024;
 pub(crate) const MAX_RENDERED_BYTES: usize = 64 * 1_024 * 1_024;
+pub(crate) const MAX_CELLS: usize = 4_000_000;
 pub(crate) const MAX_ROWS: usize = 5_000;
 pub(crate) const MAX_COLUMNS: usize = 256;
 pub(crate) const MAX_SHEETS: usize = 64;
@@ -27,7 +28,14 @@ pub(crate) struct SpreadsheetSheet {
 }
 
 pub(crate) fn parse_xlsx(path: &Path) -> Result<SpreadsheetPayload, CoreError> {
-    parse_xlsx_with_limits(path, MAX_ROWS, MAX_COLUMNS, MAX_SHEETS, MAX_RENDERED_BYTES)
+    parse_xlsx_with_limits(
+        path,
+        MAX_ROWS,
+        MAX_COLUMNS,
+        MAX_SHEETS,
+        MAX_RENDERED_BYTES,
+        MAX_CELLS,
+    )
 }
 
 fn parse_xlsx_with_limits(
@@ -36,6 +44,7 @@ fn parse_xlsx_with_limits(
     max_columns: usize,
     max_sheets: usize,
     max_rendered_bytes: usize,
+    max_cells: usize,
 ) -> Result<SpreadsheetPayload, CoreError> {
     let file_size = std::fs::metadata(path)
         .map_err(|error| CoreError::io(format!("Could not inspect XLSX workbook: {error}")))?
@@ -63,6 +72,7 @@ fn parse_xlsx_with_limits(
 
     let mut sheets = Vec::with_capacity(sheet_names.len());
     let mut rendered_bytes = 0_usize;
+    let mut retained_cells = 0_usize;
     for name in sheet_names {
         let mut reader = workbook
             .worksheet_cells_reader(&name)
@@ -92,6 +102,14 @@ fn parse_xlsx_with_limits(
             }
             let values = rows_by_offset.entry(row_offset).or_insert_with(Vec::new);
             if values.len() <= column {
+                retained_cells = retained_cells
+                    .checked_add(column + 1 - values.len())
+                    .ok_or_else(|| CoreError::limit("XLSX cell slot count overflow"))?;
+                if retained_cells > max_cells {
+                    return Err(CoreError::limit(format!(
+                        "XLSX workbook exceeds the {max_cells} cell preview limit"
+                    )));
+                }
                 values.resize(column + 1, String::new());
             }
             values[column] = value;
@@ -267,6 +285,7 @@ mod tests {
             MAX_COLUMNS,
             MAX_SHEETS,
             MAX_RENDERED_BYTES,
+            MAX_CELLS,
         )
         .unwrap();
 
@@ -307,7 +326,8 @@ mod tests {
 
     #[test]
     fn truncates_rows_and_columns() {
-        let payload = parse_xlsx_with_limits(&fixture(), 1, 2, 2, MAX_RENDERED_BYTES).unwrap();
+        let payload =
+            parse_xlsx_with_limits(&fixture(), 1, 2, 2, MAX_RENDERED_BYTES, MAX_CELLS).unwrap();
 
         assert_eq!(payload.sheets.len(), 2);
         assert_eq!(payload.sheets[0].rows, vec![vec!["Name", "Value"]]);
@@ -318,14 +338,39 @@ mod tests {
     #[test]
     fn rejects_workbooks_over_the_sheet_limit() {
         assert!(
-            parse_xlsx_with_limits(&fixture(), MAX_ROWS, MAX_COLUMNS, 1, MAX_RENDERED_BYTES)
-                .is_err()
+            parse_xlsx_with_limits(
+                &fixture(),
+                MAX_ROWS,
+                MAX_COLUMNS,
+                1,
+                MAX_RENDERED_BYTES,
+                MAX_CELLS,
+            )
+            .is_err()
         );
     }
 
     #[test]
     fn rejects_workbooks_over_the_rendered_text_budget() {
-        assert!(parse_xlsx_with_limits(&fixture(), MAX_ROWS, MAX_COLUMNS, MAX_SHEETS, 1).is_err());
+        assert!(
+            parse_xlsx_with_limits(&fixture(), MAX_ROWS, MAX_COLUMNS, MAX_SHEETS, 1, MAX_CELLS,)
+                .is_err()
+        );
+    }
+
+    #[test]
+    fn rejects_workbooks_over_the_cell_budget() {
+        assert!(
+            parse_xlsx_with_limits(
+                &fixture(),
+                MAX_ROWS,
+                MAX_COLUMNS,
+                MAX_SHEETS,
+                MAX_RENDERED_BYTES,
+                1,
+            )
+            .is_err()
+        );
     }
 
     #[test]

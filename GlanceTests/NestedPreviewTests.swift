@@ -1,5 +1,6 @@
 import AVKit
 import Cocoa
+import GlanceKit
 import UniformTypeIdentifiers
 import XCTest
 
@@ -286,6 +287,46 @@ final class NestedPreviewTests: XCTestCase {
 			"tar.gz"
 		)
 		XCTAssertEqual(DefaultNestedPreviewProvider.safeExtension(of: "example.zip"), "zip")
+	}
+
+	func testPreservesFilenameBasedTypesForExtractedEntries() async throws {
+		let zipURL = try archiveFixture("filename-types.zip")
+		let generatedPreview = try await ZIPPreview().createPreviewVC(file: File(url: zipURL))
+		let outline = try XCTUnwrap(generatedPreview as? OutlinePreviewVC)
+		outline.loadViewIfNeeded()
+		let context = try XCTUnwrap(outline.archiveContext)
+
+		for name in ["Makefile", "Dockerfile", ".env"] {
+			let node = try XCTUnwrap(findNode(named: name, in: outline.rootNodes))
+			let result = try await DefaultNestedPreviewProvider().makeArchiveEntryPreview(
+				for: node,
+				context: context
+			)
+			XCTAssertTrue(result.previewVC is WebPreviewVC, name)
+			let temporaryURL = try XCTUnwrap(result.temporaryFileURL)
+			XCTAssertEqual(
+				PreviewSupport.getPreviewFileType(fileURL: temporaryURL),
+				.code,
+				name
+			)
+			try? FileManager.default.removeItem(at: temporaryURL.deletingLastPathComponent())
+		}
+	}
+
+	func testTemporaryEntryNamesStayInsideTheGeneratedDirectory() {
+		XCTAssertEqual(
+			DefaultNestedPreviewProvider.temporaryFileName(for: "Makefile"),
+			"Makefile"
+		)
+		XCTAssertEqual(
+			DefaultNestedPreviewProvider.temporaryFileName(for: "example.tar.gz"),
+			"example.tar.gz"
+		)
+		let longName = String(repeating: "a", count: 201)
+		XCTAssertTrue(
+			DefaultNestedPreviewProvider.temporaryFileName(for: longName)
+				.hasPrefix("entry-")
+		)
 	}
 
 	func testArchiveEntryProviderRejectsDirectoriesAndLinks() async throws {

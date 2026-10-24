@@ -4,11 +4,13 @@
 
 Archive previews used to show only a tree. To preview a file inside an archive,
 Glance now extracts that single entry from PreviewCore into a private temporary
-directory with a generated filename, then reuses the existing nested-preview
-navigation. Extraction is bounded to 25 MB per entry, rejects directories,
-links, and oversized entries, and deletes the temporary directory when the
-nested preview is popped or the archive preview is torn down. Nested archives
-are allowed to a depth of 3.
+directory. The directory name is generated; the file keeps a sanitized version
+of the entry basename (or a generated fallback for unsafe or overlong names), so
+filename-based previews such as `Makefile` and `Dockerfile` still work. Glance
+then reuses the existing nested-preview navigation. Extraction is bounded to
+25 MB per entry, rejects directories, links, and oversized entries, and deletes
+the temporary directory when the nested preview is popped or the archive
+preview is torn down. Nested archives are allowed to a depth of 3.
 
 ## Considered options
 

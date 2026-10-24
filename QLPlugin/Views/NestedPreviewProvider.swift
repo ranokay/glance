@@ -194,11 +194,7 @@ struct DefaultNestedPreviewProvider: NestedPreviewProviding {
 			at: directory,
 			withIntermediateDirectories: true
 		)
-		let fileExtension = Self.safeExtension(of: name)
-		let fileName = fileExtension.isEmpty
-			? "entry-\(UUID().uuidString)"
-			: "entry-\(UUID().uuidString).\(fileExtension)"
-		let url = directory.appendingPathComponent(fileName)
+		let url = directory.appendingPathComponent(Self.temporaryFileName(for: name))
 		do {
 			try data.write(to: url, options: .atomic)
 			return url
@@ -210,6 +206,24 @@ struct DefaultNestedPreviewProvider: NestedPreviewProviding {
 
 	private func removeTemporaryEntry(_ url: URL) {
 		ArchiveTemporaryFile.remove(containing: url)
+	}
+
+	static func temporaryFileName(for name: String) -> String {
+		let lastComponent = (name as NSString).lastPathComponent
+			.replacingOccurrences(of: "/", with: "_")
+			.trimmingCharacters(in: .whitespacesAndNewlines)
+		if !lastComponent.isEmpty,
+		   lastComponent != ".",
+		   lastComponent != "..",
+		   lastComponent.utf8.count <= 200
+		{
+			return lastComponent
+		}
+
+		let fileExtension = safeExtension(of: name)
+		return fileExtension.isEmpty
+			? "entry-\(UUID().uuidString)"
+			: "entry-\(UUID().uuidString).\(fileExtension)"
 	}
 
 	static func safeExtension(of name: String) -> String {
