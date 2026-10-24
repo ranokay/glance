@@ -24,16 +24,12 @@ class CodePreview: Preview {
 
 	func createPreviewVC(file: File) async throws -> PreviewVC {
 		let fileURL = file.url
-		let lexer = PreviewSupport.getCodeLexer(fileURL: fileURL)
 		do {
-			let html = try await PreviewExecutor.run {
-				let source = try String(contentsOf: fileURL, encoding: .utf8)
-				return try HTMLRenderer.renderCode(source, lexer: lexer)
-			}
+			let content = try await makeContent(fileURL: fileURL)
 			return await WebPreviewVC(
-				html: html,
-				stylesheets: getStylesheets(),
+				content: content,
 				appearancePreferences: PreviewSettingsClient.shared.appearancePreferences(),
+				contentLoader: { try await self.makeContent(fileURL: fileURL) },
 			)
 		} catch let error as CancellationError {
 			throw error
@@ -43,5 +39,15 @@ class CodePreview: Preview {
 			)
 			throw error
 		}
+	}
+
+	@MainActor
+	private func makeContent(fileURL: URL) async throws -> WebPreviewContent {
+		let lexer = PreviewSupport.getCodeLexer(fileURL: fileURL)
+		let html = try await PreviewExecutor.run {
+			let source = try String(contentsOf: fileURL, encoding: .utf8)
+			return try HTMLRenderer.renderCode(source, lexer: lexer)
+		}
+		return WebPreviewContent(html: html, stylesheets: getStylesheets())
 	}
 }

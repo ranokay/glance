@@ -894,6 +894,72 @@ final class PreviewSmokeTests: XCTestCase {
 		XCTAssertTrue(mainVC.currentPreviewController is WebPreviewVC)
 	}
 
+	func testWebPreviewRefreshesChangedMarkdownContentAndKeepsScrollPosition() async throws {
+		let source = "# First heading\n\n"
+			+ (1 ... 120).map { "Paragraph \($0)." }.joined(separator: "\n\n")
+		let fileURL = try writeFile(named: "refresh.md", contents: source)
+		let mainVC = MainVC()
+		mainVC.loadViewIfNeeded()
+		try await mainVC.previewFile(file: File(url: fileURL))
+		let previewVC = try XCTUnwrap(mainVC.currentPreviewController as? WebPreviewVC)
+		let webView = try XCTUnwrap(previewVC.view.subviews.compactMap { $0 as? WKWebView }.first)
+		try await waitForWebViewToFinishLoadingAsync(webView)
+		XCTAssertNotNil(mainVC.fileChangeMonitor)
+
+		_ = try await webView.evaluateJavaScript("window.scrollTo(0, 500);")
+		let scrollBefore = try await webView.evaluateJavaScript("window.scrollY") as? NSNumber
+		XCTAssertGreaterThan(scrollBefore?.doubleValue ?? 0, 0)
+
+		try source.replacingOccurrences(of: "First heading", with: "Second heading")
+			.write(to: fileURL, atomically: true, encoding: .utf8)
+		try await waitForJavaScript(
+			"document.querySelector('h1')?.textContent === 'Second heading'",
+			in: webView,
+		)
+		try await waitForJavaScript(
+			"Math.abs(window.scrollY - \(scrollBefore?.doubleValue ?? 0)) < 2",
+			in: webView,
+		)
+		mainVC.viewWillDisappear()
+	}
+
+	func testRemovingTheWatchedFileKeepsTheLastPreviewAndShowsNotice() async throws {
+		let fileURL = try writeFile(named: "removed.md", contents: "# Kept heading")
+		let mainVC = MainVC()
+		mainVC.loadViewIfNeeded()
+		try await mainVC.previewFile(file: File(url: fileURL))
+		let previewVC = try XCTUnwrap(mainVC.currentPreviewController as? WebPreviewVC)
+		let webView = try XCTUnwrap(previewVC.view.subviews.compactMap { $0 as? WKWebView }.first)
+		try await waitForWebViewToFinishLoadingAsync(webView)
+		XCTAssertNotNil(mainVC.fileChangeMonitor)
+
+		try FileManager.default.removeItem(at: fileURL)
+
+		let clock = ContinuousClock()
+		let deadline = clock.now.advanced(by: .seconds(5))
+		while mainVC.statusLabel.stringValue.isEmpty, clock.now < deadline {
+			try await Task.sleep(for: .milliseconds(20))
+		}
+		XCTAssertIdentical(mainVC.currentPreviewController, previewVC)
+		XCTAssertEqual(mainVC.statusLabel.stringValue, "File removed — showing last preview")
+		let renderedHeading = try await webView.evaluateJavaScript(
+			"document.querySelector('h1')?.textContent",
+		) as? String
+		XCTAssertEqual(renderedHeading, "Kept heading")
+
+		mainVC.viewWillDisappear()
+		XCTAssertNil(mainVC.fileChangeMonitor)
+	}
+
+	func testOnlyWebPreviewsWithAContentLoaderAdvertiseRefresh() async throws {
+		XCTAssertFalse(WebPreviewVC(html: "<p>Static</p>").isRefreshable)
+
+		let fileURL = try writeFile(named: "refreshable.md", contents: "# Heading")
+		let generated = try await MarkdownPreview().createPreviewVC(file: File(url: fileURL))
+		let previewVC = try XCTUnwrap(generated as? WebPreviewVC)
+		XCTAssertTrue(previewVC.isRefreshable)
+	}
+
 	func testTSVPreviewHandlesQuotedTabsUnicodeAndBlankCells() async throws {
 		let tsv = """
 		name\tvalue

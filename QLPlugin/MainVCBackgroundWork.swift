@@ -15,6 +15,73 @@ extension PreviewError: LocalizedError {
 }
 
 extension MainVC {
+	/// The file whose preview is on screen, if it lives on disk rather than in a temporary
+	/// archive extraction. Folder trees and archive entries are deliberately not watched.
+	var presentedFileURL: URL? {
+		previewNavigationStack.count == 1 ? topLevelFile?.url : nestedOpenWithTargetURL
+	}
+
+	/// Watches the presented top-level or folder-entry file so an external edit refreshes it.
+	func startWatchingPresentedFile() {
+		stopWatchingPresentedFile()
+		guard let fileURL = presentedFileURL,
+		      let preview = currentPreviewController as? RefreshablePreview,
+		      preview.isRefreshable
+		else {
+			return
+		}
+		let monitor = FileChangeMonitor(fileURL: fileURL) { [weak self] in
+			self?.refreshPresentedFile()
+		}
+		guard monitor.start() else {
+			return
+		}
+		fileChangeMonitor = monitor
+	}
+
+	func stopWatchingPresentedFile() {
+		fileChangeMonitor?.stop()
+		fileChangeMonitor = nil
+		previewRefreshTask?.cancel()
+		previewRefreshTask = nil
+	}
+
+	func refreshPresentedFile() {
+		guard let fileURL = fileChangeMonitor?.fileURL,
+		      let preview = currentPreviewController as? RefreshablePreview,
+		      preview.isRefreshable
+		else {
+			return
+		}
+		previewRefreshTask?.cancel()
+		previewRefreshTask = Task { @MainActor [weak self] in
+			do {
+				try await preview.refreshFromDisk()
+				guard let self, currentPreviewController === preview else {
+					return
+				}
+				clearPreviewNotice()
+			} catch is CancellationError {
+				return
+			} catch {
+				guard let self, currentPreviewController === preview else {
+					return
+				}
+				Log.render.error(
+					"Could not refresh preview for \(fileURL.path, privacy: .private): \(error.localizedDescription, privacy: .private)",
+				)
+				let fileExists = FileManager.default.fileExists(atPath: fileURL.path)
+				showPreviewNotice(
+					fileExists
+						? "Couldn’t refresh preview"
+						: "File removed — showing last preview",
+				)
+			}
+		}
+	}
+}
+
+extension MainVC {
 	func startPreviewPreparation(
 		at fileURL: URL,
 		completionHandler handler: @escaping @Sendable (Error?) -> Void,

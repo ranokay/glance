@@ -2,11 +2,19 @@ import Cocoa
 import GlanceKit
 import WebKit
 
+/// A document body plus the assets that depend on its content.
+struct WebPreviewContent {
+	var html: String
+	var stylesheets: [Stylesheet] = []
+	var scripts: [Script] = []
+}
+
 class WebPreviewVC: NSViewController, PreviewVC, WKNavigationDelegate {
-	private let html: String
-	private let stylesheets: [Stylesheet]
-	private let scripts: [Script]
+	private var content: WebPreviewContent
+	private let appearanceStylesheet: Stylesheet
+	private let contentLoader: (@MainActor () async throws -> WebPreviewContent)?
 	private let previewNonce = UUID().uuidString.replacingOccurrences(of: "-", with: "")
+	private var pendingScrollOffset: CGFloat?
 	private var webView: WKWebView?
 
 	nonisolated static let resourceBundle: Bundle = {
@@ -25,10 +33,9 @@ class WebPreviewVC: NSViewController, PreviewVC, WKNavigationDelegate {
 	}()
 
 	/// Stylesheet with CSS that applies to all file types
-	private let sharedStylesheetURL = WebPreviewVC.resourceBundle.url(
-		forResource: "shared-main",
-		withExtension: "css",
-	)
+	private static var sharedStylesheetURL: URL? {
+		resourceBundle.url(forResource: "shared-main", withExtension: "css")
+	}
 
 	required convenience init(
 		html: String,
@@ -48,6 +55,25 @@ class WebPreviewVC: NSViewController, PreviewVC, WKNavigationDelegate {
 		)
 	}
 
+	/// Creates a preview whose document can be rebuilt with the same loader after the file changes.
+	convenience init(
+		content: WebPreviewContent,
+		appearancePreferences: PreviewAppearancePreferences = PreviewAppearancePreferences.default,
+		availableFontFamilies: [String] = NSFontManager.shared.availableFontFamilies,
+		contentLoader: @escaping @MainActor () async throws -> WebPreviewContent,
+	) {
+		self.init(
+			nibName: nil,
+			bundle: nil,
+			html: content.html,
+			stylesheets: content.stylesheets,
+			scripts: content.scripts,
+			appearancePreferences: appearancePreferences,
+			availableFontFamilies: availableFontFamilies,
+			contentLoader: contentLoader,
+		)
+	}
+
 	init(
 		nibName nibNameOrNil: NSNib.Name?,
 		bundle nibBundleOrNil: Bundle?,
@@ -56,24 +82,34 @@ class WebPreviewVC: NSViewController, PreviewVC, WKNavigationDelegate {
 		scripts: [Script] = [],
 		appearancePreferences: PreviewAppearancePreferences = PreviewAppearancePreferences.default,
 		availableFontFamilies: [String] = NSFontManager.shared.availableFontFamilies,
+		contentLoader: (@MainActor () async throws -> WebPreviewContent)? = nil,
 	) {
-		self.html = html
+		content = WebPreviewContent(
+			html: html,
+			stylesheets: stylesheets,
+			scripts: scripts,
+		)
+		self.contentLoader = contentLoader
+		appearanceStylesheet = Stylesheet(
+			content: appearancePreferences.stylesheet(
+				availableFontFamilies: availableFontFamilies,
+			),
+		)
+		super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
+	}
+
+	private static func resolvedStylesheets(
+		_ stylesheets: [Stylesheet],
+		appearanceStylesheet: Stylesheet,
+	) -> [Stylesheet] {
 		var resolvedStylesheets = stylesheets
 		if let sharedStylesheetURL {
 			resolvedStylesheets.insert(Stylesheet(url: sharedStylesheetURL), at: 0)
 		} else {
 			Log.render.error("Could not find shared stylesheet")
 		}
-		resolvedStylesheets.append(
-			Stylesheet(
-				content: appearancePreferences.stylesheet(
-					availableFontFamilies: availableFontFamilies,
-				),
-			),
-		)
-		self.stylesheets = resolvedStylesheets
-		self.scripts = scripts
-		super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
+		resolvedStylesheets.append(appearanceStylesheet)
+		return resolvedStylesheets
 	}
 
 	@available(*, unavailable)
@@ -98,24 +134,36 @@ class WebPreviewVC: NSViewController, PreviewVC, WKNavigationDelegate {
 	}
 
 	private func loadPreview() {
-		let webView = WKWebView(frame: view.bounds)
-		webView.autoresizingMask = [.height, .width]
-		webView.underPageBackgroundColor = .clear
-		webView.alphaValue = 0
-		webView.navigationDelegate = self
-		self.webView = webView
+		let webView: WKWebView
+		if let existingWebView = self.webView {
+			webView = existingWebView
+		} else {
+			webView = WKWebView(frame: view.bounds)
+			webView.autoresizingMask = [.height, .width]
+			webView.underPageBackgroundColor = .clear
+			webView.alphaValue = 0
+			webView.navigationDelegate = self
+			self.webView = webView
+			view.addSubview(webView)
+		}
 
-		view.addSubview(webView)
+		webView.loadHTMLString(documentHTML(), baseURL: Self.resourceBundle.resourceURL)
+	}
 
+	private func documentHTML() -> String {
+		let stylesheets = Self.resolvedStylesheets(
+			content.stylesheets,
+			appearanceStylesheet: appearanceStylesheet,
+		)
 		let linkTags = stylesheets
 			.map { $0.getInlineHTML() }
 			.joined(separator: "\n")
-		let scriptTags = scripts
+		let scriptTags = content.scripts
 			.map { $0.getInlineHTML(nonce: previewNonce) }
 			.joined(separator: "\n")
-		let sanitizedHTML = Self.sanitizePreviewHTML(html)
+		let sanitizedHTML = Self.sanitizePreviewHTML(content.html)
 
-		let fullHTML = """
+		return """
 		<!DOCTYPE html>
 		<html>
 			<head>
@@ -138,7 +186,6 @@ class WebPreviewVC: NSViewController, PreviewVC, WKNavigationDelegate {
 			</body>
 		</html>
 		"""
-		webView.loadHTMLString(fullHTML, baseURL: Self.resourceBundle.resourceURL)
 	}
 
 	private static func sanitizePreviewHTML(_ html: String) -> String {
@@ -184,8 +231,14 @@ class WebPreviewVC: NSViewController, PreviewVC, WKNavigationDelegate {
 
 	// MARK: - WKNavigationDelegate
 
-	/// Reveal the web view once the content has finished loading to prevent flickering
+	/// Reveal the web view once loading finishes, restoring the reader's place after a refresh.
 	func webView(_ webView: WKWebView, didFinish _: WKNavigation!) {
+		if let scrollOffset = pendingScrollOffset {
+			pendingScrollOffset = nil
+			webView.evaluateJavaScript("window.scrollTo(0, \(scrollOffset));")
+			webView.alphaValue = 1
+			return
+		}
 		revealAfterFirstPaint(webView)
 	}
 
@@ -243,5 +296,34 @@ class WebPreviewVC: NSViewController, PreviewVC, WKNavigationDelegate {
 			context.duration = 0.08
 			webView.animator().alphaValue = 1
 		}
+	}
+}
+
+extension WebPreviewVC: RefreshablePreview {
+	var isRefreshable: Bool {
+		contentLoader != nil
+	}
+
+	/// Rebuilds the document from disk and restores the reader's scroll position.
+	func refreshFromDisk() async throws {
+		guard let contentLoader else {
+			throw PreviewRefreshError.unavailable
+		}
+		let loadedContent = try await contentLoader()
+		try Task.checkCancellation()
+		let scrollOffset = await currentScrollOffset()
+		try Task.checkCancellation()
+		content = loadedContent
+		pendingScrollOffset = scrollOffset
+		webView?.alphaValue = 0
+		loadPreview()
+	}
+
+	private func currentScrollOffset() async -> CGFloat? {
+		guard let webView else {
+			return nil
+		}
+		let value = try? await webView.evaluateJavaScript("window.scrollY")
+		return (value as? NSNumber).map { CGFloat($0.doubleValue) }
 	}
 }
