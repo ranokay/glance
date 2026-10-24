@@ -4,6 +4,20 @@ import GlanceKit
 @main
 @MainActor
 class AppDelegate: NSObject, NSApplicationDelegate {
+	/// `@main` on an `NSApplicationDelegate` only runs `NSApplicationMain`, which
+	/// never assigns a delegate: without this, no callback fires and the app runs
+	/// as a shell with no status item or menu.
+	static func main() {
+		let application = NSApplication.shared
+		let delegate = AppDelegate()
+		application.delegate = delegate
+		// `NSApplication.delegate` is weak, so the local would be released at its
+		// last use and launch callbacks would reach nil. Hold it for the process.
+		withExtendedLifetime(delegate) {
+			_ = NSApplicationMain(CommandLine.argc, CommandLine.unsafeArgv)
+		}
+	}
+
 	private var statusItem: NSStatusItem?
 	private let openWithBridgeServer = OpenWithBridgeServer()
 	private let previewSettingsServer = PreviewSettingsServer()
@@ -34,11 +48,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
 	private func setUpStatusItem() {
 		let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-		statusItem.button?.image = NSImage(
-			systemSymbolName: "eye",
-			accessibilityDescription: "Glance",
-		)
-		statusItem.button?.image?.isTemplate = true
+		statusItem.button?.image = StatusItemMark.make()
 		statusItem.button?.toolTip = "Glance"
 		statusItem.menu = makeStatusMenu()
 

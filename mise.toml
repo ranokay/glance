@@ -125,6 +125,21 @@ cargo audit --file PreviewCore/Cargo.lock --deny warnings \
 	--ignore RUSTSEC-2024-0320
 '''
 
+[tasks."registrations:prune"]
+description = "Unregister Quick Look extensions left by local builds, keeping the installed /Applications/Glance.app copy"
+run = '''
+set -eu
+pluginkit -m -A -D -v | grep "com.chamburr.Glance.QLPlugin" | sed -E 's/^.*\t//' \
+	| grep -vx "/Applications/Glance.app/Contents/PlugIns/QLPlugin.appex" > "$TMPDIR/glance-stale-registrations.txt" || true
+while IFS= read -r extension || [ -n "$extension" ]; do
+	echo "Unregistering $extension"
+	pluginkit -r "$extension"
+done < "$TMPDIR/glance-stale-registrations.txt"
+rm -f "$TMPDIR/glance-stale-registrations.txt"
+echo "Remaining:"
+pluginkit -m -A -D -v | grep "com.chamburr.Glance.QLPlugin" || true
+'''
+
 [tasks."test:xcode"]
 description = "Run Xcode tests (Debug, isolated dir, retained result bundle)"
 run = '''

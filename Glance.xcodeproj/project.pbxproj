@@ -45,6 +45,7 @@
 		F5A000000000000000000003 /* FileChangeMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5A000000000000000000001 /* FileChangeMonitor.swift */; };
 		F5A000000000000000000005 /* FileChangeMonitorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5A000000000000000000004 /* FileChangeMonitorTests.swift */; };
 		A19F4D4426218B2B008A903C /* PreviewSupportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A19F4D4626218B2B008A903C /* PreviewSupportTests.swift */; };
+		A1C0DE0000000000000000C2 /* StatusItemMarkTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C0DE0000000000000000D2 /* StatusItemMarkTests.swift */; };
 		C0DE00000000000000000201 /* FileTreeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE00000000000000000101 /* FileTreeTests.swift */; };
 		C0DE00000000000000000202 /* FileTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE00000000000000000102 /* FileTests.swift */; };
 		C0DE00000000000000000203 /* PreviewFactoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE00000000000000000103 /* PreviewFactoryTests.swift */; };
@@ -131,6 +132,7 @@
 		7F00000000000000000014 /* SpreadsheetPreviewVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F00000000000000000002 /* SpreadsheetPreviewVC.swift */; };
 		7E458AF0243944810091BD0F /* URL.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E458AEF243944810091BD0F /* URL.swift */; };
 		7E458AF52439481F0091BD0F /* Menu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E458AF42439481F0091BD0F /* Menu.swift */; };
+		A1C0DE0000000000000000C1 /* StatusItemMark.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C0DE0000000000000000D1 /* StatusItemMark.swift */; };
 		7E45F899244DA45500BFB869 /* FileTree.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E45F898244DA45500BFB869 /* FileTree.swift */; };
 		7E6EF1FD240CC802009E4199 /* Quartz.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7E6EF1FC240CC802009E4199 /* Quartz.framework */; };
 		7E6EF208240CC802009E4199 /* QLPlugin.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 7E6EF1FA240CC802009E4199 /* QLPlugin.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -175,6 +177,7 @@
 		60CE09000000000000000087 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 60CE09000000000000000081 /* Sparkle */; };
 		60CE09000000000000000088 /* SparkleUpdateCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60CE09000000000000000086 /* SparkleUpdateCenter.swift */; };
 		7ECC8CF6240CB4CC000D6970 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7ECC8CF5240CB4CC000D6970 /* Assets.xcassets */; };
+		A1C0DE0000000000000000B1 /* Glance.icon in Resources */ = {isa = PBXBuildFile; fileRef = A1C0DE0000000000000000F1 /* Glance.icon */; };
 		7ED140642450C4A7007A7C70 /* Credits.rtf in Resources */ = {isa = PBXBuildFile; fileRef = 7ED140632450C4A7007A7C70 /* Credits.rtf */; };
 		7ED140662450C671007A7C70 /* SupportedFilesWC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ED140652450C671007A7C70 /* SupportedFilesWC.swift */; };
 		60CE09000000000000000101 /* PreviewSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = A19F4D4526218B2B008A903C /* PreviewSupport.swift */; };
@@ -289,6 +292,7 @@
 		10779C1126218B2B008A903C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A19F4D4526218B2B008A903C /* PreviewSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewSupport.swift; sourceTree = "<group>"; };
 		A19F4D4626218B2B008A903C /* PreviewSupportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewSupportTests.swift; sourceTree = "<group>"; };
+		A1C0DE0000000000000000D2 /* StatusItemMarkTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusItemMarkTests.swift; sourceTree = "<group>"; };
 		A5A000000000000000000001 /* PreviewCoreBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewCoreBridge.swift; sourceTree = "<group>"; };
 		A5A000000000000000000002 /* PreviewExecutor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewExecutor.swift; sourceTree = "<group>"; };
 		F5A000000000000000000001 /* FileChangeMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileChangeMonitor.swift; sourceTree = "<group>"; };
@@ -342,6 +346,7 @@
 		7E42B61D245857D9008D7116 /* libglance_preview_core.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libglance_preview_core.a; path = "PreviewCore/build/$(CONFIGURATION)/libglance_preview_core.a"; sourceTree = "<group>"; };
 		7E458AEF243944810091BD0F /* URL.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URL.swift; sourceTree = "<group>"; };
 		7E458AF42439481F0091BD0F /* Menu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Menu.swift; sourceTree = "<group>"; };
+		A1C0DE0000000000000000D1 /* StatusItemMark.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusItemMark.swift; sourceTree = "<group>"; };
 		7E45F898244DA45500BFB869 /* FileTree.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileTree.swift; sourceTree = "<group>"; };
 		7E6EF1FA240CC802009E4199 /* QLPlugin.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = QLPlugin.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		7E6EF1FC240CC802009E4199 /* Quartz.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Quartz.framework; path = System/Library/Frameworks/Quartz.framework; sourceTree = SDKROOT; };
@@ -389,6 +394,7 @@
 		7ECC8CF1240CB4CC000D6970 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		60CE09000000000000000086 /* SparkleUpdateCenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SparkleUpdateCenter.swift; sourceTree = "<group>"; };
 		7ECC8CF5240CB4CC000D6970 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A1C0DE0000000000000000F1 /* Glance.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = Glance.icon; sourceTree = "<group>"; };
 		7ECC8CFA240CB4CC000D6970 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		7ECC8CFB240CB4CC000D6970 /* Glance.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Glance.entitlements; sourceTree = "<group>"; };
 		7ED140632450C4A7007A7C70 /* Credits.rtf */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.rtf; path = Credits.rtf; sourceTree = "<group>"; };
@@ -453,6 +459,7 @@
 				C0DE00000000000000000104 /* PreviewSmokeTests.swift */,
 				62CE0B000000000000000002 /* CorpusSweepTests.swift */,
 				A19F4D4626218B2B008A903C /* PreviewSupportTests.swift */,
+				A1C0DE0000000000000000D2 /* StatusItemMarkTests.swift */,
 				F5A000000000000000000004 /* FileChangeMonitorTests.swift */,
 				10779C1126218B2B008A903C /* Info.plist */,
 			);
@@ -598,6 +605,7 @@
 			isa = PBXGroup;
 			children = (
 				7E458AF42439481F0091BD0F /* Menu.swift */,
+				A1C0DE0000000000000000D1 /* StatusItemMark.swift */,
 			);
 			path = Utils;
 			sourceTree = "<group>";
@@ -755,6 +763,7 @@
 				7E458AF3243948130091BD0F /* Utils */,
 				7E458AEC243917600091BD0F /* Shared */,
 				7ECC8CF5240CB4CC000D6970 /* Assets.xcassets */,
+				A1C0DE0000000000000000F1 /* Glance.icon */,
 				7ECC8CFA240CB4CC000D6970 /* Info.plist */,
 				7ECC8CFB240CB4CC000D6970 /* Glance.entitlements */,
 				7ED140632450C4A7007A7C70 /* Credits.rtf */,
@@ -964,6 +973,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				7ECC8CF6240CB4CC000D6970 /* Assets.xcassets in Resources */,
+				A1C0DE0000000000000000B1 /* Glance.icon in Resources */,
 				7ED140642450C4A7007A7C70 /* Credits.rtf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1114,6 +1124,7 @@
 				C0DE00000000000000000203 /* PreviewFactoryTests.swift in Sources */,
 				C0DE00000000000000000314 /* JupyterPreview.swift in Sources */,
 				A19F4D4426218B2B008A903C /* PreviewSupportTests.swift in Sources */,
+				A1C0DE0000000000000000C2 /* StatusItemMarkTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1180,6 +1191,7 @@
 			files = (
 				7E458AF0243944810091BD0F /* URL.swift in Sources */,
 				7E458AF52439481F0091BD0F /* Menu.swift in Sources */,
+				A1C0DE0000000000000000C1 /* StatusItemMark.swift in Sources */,
 				F1A000000000000000000002 /* WindowAppearance.swift in Sources */,
 				7ECC8CF2240CB4CC000D6970 /* AppDelegate.swift in Sources */,
 				60CE09000000000000000085 /* SparkleUpdateCenter.swift in Sources */,
@@ -1493,7 +1505,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ARCHS = arm64;
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = Glance;
 				CODE_SIGN_ENTITLEMENTS = Glance/Glance.entitlements;
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Manual;
@@ -1519,7 +1531,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ARCHS = arm64;
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = Glance;
 				CODE_SIGN_ENTITLEMENTS = Glance/Glance.entitlements;
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Manual;

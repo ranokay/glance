@@ -31,6 +31,13 @@ change dependencies or tooling refresh the shared cache, and
 `gh workflow run verify.yaml --ref develop` seeds it manually. Release builds
 use the local store only, never a remote cache.
 
+## Local Quick Look registrations
+
+Every local build registers its `QLPlugin.appex` with `pluginkit`, so System
+Settings → Login Items gains one "Glance — Quick Look" row per build directory.
+`mise run registrations:prune` unregisters everything except the installed
+`/Applications/Glance.app` copy.
+
 ## Manual capture (per UI ticket, alongside automated evidence)
 
 Each UI-affecting ticket adds one manual Quick Look capture: Spacebar-preview
