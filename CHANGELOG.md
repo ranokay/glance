@@ -4,6 +4,11 @@ Append-only. Newest entry first.
 
 # Unreleased
 
+- Quick Look previews of Markdown, source code, and Jupyter notebooks now
+  re-render when the file changes on disk, including atomic editor saves, and
+  keep their scroll position. Deleting the file leaves the last good preview
+  with a notice instead of an error page.
+
 - Markdown previews now render inline and display TeX math with the bundled
   KaTeX, fully offline. Dollars inside code spans and fences stay literal, and
   invalid TeX shows its escaped source instead of failing the preview.

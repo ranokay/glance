@@ -71,6 +71,9 @@ class MainVC: NSViewController, QLPreviewingController {
 	var previewPreparationTask: Task<Void, Error>?
 	var previewPreparationID: UUID?
 	var nestedPreviewTask: Task<Void, Never>?
+	var fileChangeMonitor: FileChangeMonitor?
+	var previewRefreshTask: Task<Void, Never>?
+	var previewNoticeText: String?
 	weak var boundStatusProvider: (any PreviewStatusProviding)?
 
 	override func loadView() {
@@ -84,6 +87,7 @@ class MainVC: NSViewController, QLPreviewingController {
 
 	override func viewWillDisappear() {
 		super.viewWillDisappear()
+		stopWatchingPresentedFile()
 		nestedPreviewTask?.cancel()
 		nestedPreviewTask = nil
 		removeAllTemporaryFiles()
@@ -204,6 +208,7 @@ class MainVC: NSViewController, QLPreviewingController {
 	}
 
 	func bindStatus(to previewVC: PreviewVC) {
+		previewNoticeText = nil
 		boundStatusProvider?.previewStatusDidChange = nil
 		boundStatusProvider = nil
 		guard let statusProvider = previewVC as? PreviewStatusProviding else {
@@ -227,6 +232,22 @@ class MainVC: NSViewController, QLPreviewingController {
 		statusLabel.toolTip = status.isEmpty ? nil : status
 		statusLabel.setAccessibilityLabel(status)
 		updateChrome()
+	}
+
+	/// Keeps the last good preview on screen and reports why it could not refresh.
+	func showPreviewNotice(_ message: String) {
+		previewNoticeText = message
+		statusResetTask?.cancel()
+		statusResetTask = nil
+		setDisplayedStatus(message)
+	}
+
+	func clearPreviewNotice() {
+		guard previewNoticeText != nil else {
+			return
+		}
+		previewNoticeText = nil
+		setDisplayedStatus(baseStatusText)
 	}
 
 	func updateOpenWithTarget() {

@@ -16,6 +16,7 @@ extension MainVC {
 		bindStatus(to: previewVC)
 		show(previewVC)
 		updateOpenWithTarget()
+		startWatchingPresentedFile()
 	}
 
 	func pushPreview(
@@ -42,6 +43,7 @@ extension MainVC {
 		bindStatus(to: previewVC)
 		show(previewVC)
 		updateOpenWithTarget()
+		startWatchingPresentedFile()
 	}
 
 	@objc
@@ -73,9 +75,12 @@ extension MainVC {
 		bindStatus(to: previousController)
 		show(previousController)
 		updateOpenWithTarget()
+		startWatchingPresentedFile()
 	}
 
 	func clearPreviewControllers() {
+		stopWatchingPresentedFile()
+		previewNoticeText = nil
 		nestedPreviewTask?.cancel()
 		nestedPreviewTask = nil
 		statusResetTask?.cancel()

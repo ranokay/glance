@@ -41,6 +41,9 @@
 		A5A000000000000000000004 /* PreviewCoreBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A000000000000000000001 /* PreviewCoreBridge.swift */; };
 		A5A000000000000000000005 /* PreviewExecutor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A000000000000000000002 /* PreviewExecutor.swift */; };
 		A5A000000000000000000006 /* PreviewExecutor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A000000000000000000002 /* PreviewExecutor.swift */; };
+		F5A000000000000000000002 /* FileChangeMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5A000000000000000000001 /* FileChangeMonitor.swift */; };
+		F5A000000000000000000003 /* FileChangeMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5A000000000000000000001 /* FileChangeMonitor.swift */; };
+		F5A000000000000000000005 /* FileChangeMonitorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5A000000000000000000004 /* FileChangeMonitorTests.swift */; };
 		A19F4D4426218B2B008A903C /* PreviewSupportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A19F4D4626218B2B008A903C /* PreviewSupportTests.swift */; };
 		C0DE00000000000000000201 /* FileTreeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE00000000000000000101 /* FileTreeTests.swift */; };
 		C0DE00000000000000000202 /* FileTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE00000000000000000102 /* FileTests.swift */; };
@@ -281,6 +284,8 @@
 		A19F4D4626218B2B008A903C /* PreviewSupportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewSupportTests.swift; sourceTree = "<group>"; };
 		A5A000000000000000000001 /* PreviewCoreBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewCoreBridge.swift; sourceTree = "<group>"; };
 		A5A000000000000000000002 /* PreviewExecutor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewExecutor.swift; sourceTree = "<group>"; };
+		F5A000000000000000000001 /* FileChangeMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileChangeMonitor.swift; sourceTree = "<group>"; };
+		F5A000000000000000000004 /* FileChangeMonitorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileChangeMonitorTests.swift; sourceTree = "<group>"; };
 		C0DE00000000000000000101 /* FileTreeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileTreeTests.swift; sourceTree = "<group>"; };
 		C0DE00000000000000000102 /* FileTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileTests.swift; sourceTree = "<group>"; };
 		C0DE00000000000000000103 /* PreviewFactoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewFactoryTests.swift; sourceTree = "<group>"; };
@@ -437,6 +442,7 @@
 				C0DE00000000000000000104 /* PreviewSmokeTests.swift */,
 				62CE0B000000000000000002 /* CorpusSweepTests.swift */,
 				A19F4D4626218B2B008A903C /* PreviewSupportTests.swift */,
+				F5A000000000000000000004 /* FileChangeMonitorTests.swift */,
 				10779C1126218B2B008A903C /* Info.plist */,
 			);
 			path = GlanceTests;
@@ -452,6 +458,7 @@
 				7E1B16912455D93E00E2B84D /* HTMLRenderer.swift */,
 				A5A000000000000000000001 /* PreviewCoreBridge.swift */,
 				A5A000000000000000000002 /* PreviewExecutor.swift */,
+				F5A000000000000000000001 /* FileChangeMonitor.swift */,
 				7E9F0D7924168870007F1008 /* WebAsset */,
 			);
 			path = Utils;
@@ -1024,6 +1031,8 @@
 				D2A000000000000000000003 /* DirectoryThumbnailLoader.swift in Sources */,
 				A5A000000000000000000004 /* PreviewCoreBridge.swift in Sources */,
 				A5A000000000000000000006 /* PreviewExecutor.swift in Sources */,
+				F5A000000000000000000002 /* FileChangeMonitor.swift in Sources */,
+				F5A000000000000000000005 /* FileChangeMonitorTests.swift in Sources */,
 				D2A000000000000000000005 /* DirectoryThumbnailTests.swift in Sources */,
 				D4A000000000000000000003 /* NestedPreviewProvider.swift in Sources */,
 				D4A000000000000000000005 /* NestedPreviewTests.swift in Sources */,
@@ -1095,6 +1104,7 @@
 				D2A000000000000000000002 /* DirectoryThumbnailLoader.swift in Sources */,
 				A5A000000000000000000003 /* PreviewCoreBridge.swift in Sources */,
 				A5A000000000000000000005 /* PreviewExecutor.swift in Sources */,
+				F5A000000000000000000003 /* FileChangeMonitor.swift in Sources */,
 				D4A000000000000000000002 /* NestedPreviewProvider.swift in Sources */,
 				D5A000000000000000000002 /* OpenWithService.swift in Sources */,
 				7EB36488244B65D900D7F96F /* String.swift in Sources */,

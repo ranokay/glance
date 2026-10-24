@@ -163,15 +163,11 @@ class MarkdownPreview: Preview {
 	func createPreviewVC(file: File) async throws -> PreviewVC {
 		let fileURL = file.url
 		do {
-			let html = try await PreviewExecutor.run {
-				let source = try String(contentsOf: fileURL, encoding: .utf8)
-				return "<div class=\"markdown-body\">\(try HTMLRenderer.renderMarkdown(source))</div>"
-			}
+			let content = try await makeContent(fileURL: fileURL)
 			return await WebPreviewVC(
-				html: html,
-				stylesheets: getStylesheets(html: html),
-				scripts: getScripts(html: html),
+				content: content,
 				appearancePreferences: PreviewSettingsClient.shared.appearancePreferences(),
+				contentLoader: { try await self.makeContent(fileURL: fileURL) },
 			)
 		} catch {
 			Log.render.error(
@@ -179,5 +175,18 @@ class MarkdownPreview: Preview {
 			)
 			throw error
 		}
+	}
+
+	@MainActor
+	private func makeContent(fileURL: URL) async throws -> WebPreviewContent {
+		let html = try await PreviewExecutor.run {
+			let source = try String(contentsOf: fileURL, encoding: .utf8)
+			return "<div class=\"markdown-body\">\(try HTMLRenderer.renderMarkdown(source))</div>"
+		}
+		return WebPreviewContent(
+			html: html,
+			stylesheets: getStylesheets(html: html),
+			scripts: getScripts(html: html),
+		)
 	}
 }

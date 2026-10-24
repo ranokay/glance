@@ -97,15 +97,11 @@ class JupyterPreview: Preview {
 	func createPreviewVC(file: File) async throws -> PreviewVC {
 		let fileURL = file.url
 		do {
-			let html = try await PreviewExecutor.run {
-				let source = try String(contentsOf: fileURL, encoding: .utf8)
-				return try HTMLRenderer.renderNotebook(source)
-			}
+			let content = try await makeContent(fileURL: fileURL)
 			return await WebPreviewVC(
-				html: html,
-				stylesheets: getStylesheets(),
-				scripts: getScripts(),
+				content: content,
 				appearancePreferences: PreviewSettingsClient.shared.appearancePreferences(),
+				contentLoader: { try await self.makeContent(fileURL: fileURL) },
 			)
 		} catch let error as CancellationError {
 			throw error
@@ -115,5 +111,18 @@ class JupyterPreview: Preview {
 			)
 			throw error
 		}
+	}
+
+	@MainActor
+	private func makeContent(fileURL: URL) async throws -> WebPreviewContent {
+		let html = try await PreviewExecutor.run {
+			let source = try String(contentsOf: fileURL, encoding: .utf8)
+			return try HTMLRenderer.renderNotebook(source)
+		}
+		return WebPreviewContent(
+			html: html,
+			stylesheets: getStylesheets(),
+			scripts: getScripts(),
+		)
 	}
 }
