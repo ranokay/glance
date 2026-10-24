@@ -1,6 +1,6 @@
 use crate::error::RenderError;
 use crate::highlight::render_code;
-use crate::markdown::render_markdown;
+use crate::markdown::render_markdown_cell;
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD as BASE64;
 use serde::Deserialize;
@@ -158,7 +158,7 @@ fn notebook_language(notebook: &Notebook) -> String {
 fn render_cell_input(cell: &Cell, language: &str) -> Result<String, RenderError> {
     let source = cell.source.joined();
     match cell.cell_type.as_str() {
-        "markdown" => render_markdown(&source),
+        "markdown" => render_markdown_cell(&source),
         "code" => render_code(&source, language),
         "raw" => Ok(format!("<pre>{}</pre>", escape_html(&source))),
         _ => Ok(String::new()),
@@ -218,7 +218,7 @@ fn render_data_output(data: &OutputData) -> Result<String, RenderError> {
         return render_image("jpeg", &value.joined());
     }
     if let Some(value) = &data.text_markdown {
-        return render_markdown(&value.joined());
+        return render_markdown_cell(&value.joined());
     }
     if let Some(value) = &data.text_plain {
         return Ok(format!("<pre>{}</pre>", escape_html(&value.joined())));
@@ -352,6 +352,20 @@ mod tests {
         assert!(html.contains("output-future-output"));
         assert!(html.contains("storage type swift"));
         assert!(!html.contains("source python"));
+    }
+
+    #[test]
+    fn keeps_markdown_cell_math_for_the_notebook_page_renderer() {
+        let source = r##"{
+            "cells":[{"cell_type":"markdown","source":["$$c = \\sqrt{a^2 + b^2}$$"]}],
+            "metadata":{},
+            "nbformat":4
+        }"##;
+
+        let html = render_notebook(source).unwrap();
+
+        assert!(html.contains("$$c = \\sqrt{a^2 + b^2}$$"));
+        assert!(!html.contains("data-math-style"));
     }
 
     #[test]

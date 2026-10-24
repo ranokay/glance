@@ -80,3 +80,9 @@ pre code {
 	height: auto;
 	max-width: 100%;
 }
+
+/* Long display equations scroll inside the preview instead of widening the page. */
+.katex-display {
+	overflow-x: auto;
+	overflow-y: hidden;
+}

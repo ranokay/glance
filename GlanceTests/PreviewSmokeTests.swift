@@ -224,7 +224,7 @@ final class PreviewSmokeTests: XCTestCase {
 			(invalidUTF8URL, "Draw.io diagram is not valid UTF-8"),
 			(compressedURL, "Compressed Draw.io diagrams are not supported"),
 			(oversizedURL, "Draw.io diagram exceeds the 10 MB preview limit"),
-			(externalEntityURL, "document type declarations are not allowed"),
+			(externalEntityURL, "document type declarations are not allowed")
 		]
 
 		for (fileURL, expectedMessage) in failures {
@@ -479,7 +479,7 @@ final class PreviewSmokeTests: XCTestCase {
 	func testMarkdownPreviewRendersMermaidInLightAndDarkAppearances() async throws {
 		for (appearanceName, expectedBackground) in [
 			(NSAppearance.Name.aqua, "#ffffff"),
-			(.darkAqua, "#1e1e1e"),
+			(.darkAqua, "#1e1e1e")
 		] {
 			let fileURL = try writeFile(
 				named: "diagram-\(expectedBackground).md",
@@ -505,6 +505,40 @@ final class PreviewSmokeTests: XCTestCase {
 			) as? String
 			XCTAssertEqual(background, expectedBackground)
 		}
+	}
+
+	func testMarkdownPreviewRendersTexMathButNotInsideCode() async throws {
+		let fileURL = URL(fileURLWithPath: #filePath)
+			.deletingLastPathComponent()
+			.appendingPathComponent("TestFiles/markdown/math.md")
+		let generatedPreview = try await MarkdownPreview().createPreviewVC(
+			file: File(url: fileURL)
+		)
+		let previewVC = try XCTUnwrap(generatedPreview as? WebPreviewVC)
+		previewVC.loadViewIfNeeded()
+		let webView = try XCTUnwrap(previewVC.view.subviews.compactMap { $0 as? WKWebView }.first)
+
+		try await waitForWebViewToFinishLoadingAsync(webView)
+		try await waitForJavaScript(
+			"document.querySelectorAll('[data-glance-math-state=\"rendered\"]').length === 3",
+			in: webView
+		)
+		let state = try await webView.evaluateJavaScript(
+			"""
+			[
+				typeof katex,
+				document.querySelectorAll('[data-math-style="inline"]').length,
+				document.querySelectorAll('[data-math-style="display"] .katex-display').length,
+				document.querySelectorAll('code').length,
+				document.querySelector('code').textContent,
+				document.querySelector('.katex-error')?.textContent.includes('frac') ?? false,
+				document.body.textContent.includes('renders as escaped literal text'),
+				document.querySelectorAll('script').length
+			].join('|')
+			"""
+		) as? String
+
+		XCTAssertEqual(state, "object|2|1|2|$E = mc^2$|true|true|2")
 	}
 
 	func testPeleRuntimeAndLicenseAreBundled() throws {
@@ -625,7 +659,7 @@ final class PreviewSmokeTests: XCTestCase {
 	func testPreviewBackgroundMatchesWebContentBeforeFirstPaintInBothAppearances() throws {
 		for (appearanceName, expectedComponent) in [
 			(NSAppearance.Name.aqua, CGFloat(1)),
-			(NSAppearance.Name.darkAqua, CGFloat(30) / 255),
+			(NSAppearance.Name.darkAqua, CGFloat(30) / 255)
 		] {
 			let previewVC = WebPreviewVC(html: "<p>Matched background</p>")
 			previewVC.loadViewIfNeeded()
@@ -707,7 +741,7 @@ final class PreviewSmokeTests: XCTestCase {
 		let formatHTML = [
 			#"<pre class="chroma"><code>code</code></pre>"#,
 			#"<div class="markdown-body"><pre><code>markdown</code></pre></div>"#,
-			#"<div class="cell cell-code"><pre><code>notebook</code></pre></div>"#,
+			#"<div class="cell cell-code"><pre><code>notebook</code></pre></div>"#
 		]
 
 		for html in formatHTML {
@@ -1100,7 +1134,7 @@ final class PreviewSmokeTests: XCTestCase {
 		let rejectedURLs = [
 			malformed,
 			fixtures.appendingPathComponent("encrypted-rar5.rar"),
-			fixtures.appendingPathComponent("multipart-rar5.rar"),
+			fixtures.appendingPathComponent("multipart-rar5.rar")
 		]
 
 		for rejectedURL in rejectedURLs {
