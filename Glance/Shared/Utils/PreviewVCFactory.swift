@@ -34,6 +34,8 @@ class PreviewVCFactory {
 				return TSVPreview.self
 			case .spreadsheet:
 				return SpreadsheetPreview.self
+			case .database:
+				return SQLitePreview.self
 			case .structured:
 				return StructuredPreview.self
 			case .sevenZip:

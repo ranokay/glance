@@ -175,6 +175,31 @@ pub unsafe extern "C" fn glance_parse_xlsx(
     })
 }
 
+/// Parses one page of a SQLite database at a raw filesystem path into typed JSON.
+///
+/// # Safety
+///
+/// Each non-null pointer must be valid for reads of its paired length for the duration of this
+/// call. A null table pointer is accepted only when its paired length is zero.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn glance_parse_sqlite(
+    path_data: *const u8,
+    path_length: usize,
+    table_data: *const u8,
+    table_length: usize,
+    offset: u64,
+) -> GlanceRenderResult {
+    ffi_call(|| unsafe {
+        let path = path_input(path_data, path_length)?;
+        let table = if table_length == 0 {
+            None
+        } else {
+            Some(utf8_input(table_data, table_length)?)
+        };
+        json_bytes(&crate::sqlite::parse_sqlite(path, table, offset)?)
+    })
+}
+
 /// Extracts one file entry from a supported archive into raw bytes.
 ///
 /// # Safety
@@ -461,6 +486,11 @@ mod tests {
         assert_eq!(status, STATUS_INVALID_INPUT);
         assert!(message.contains("null"));
 
+        let result = unsafe { glance_parse_sqlite(ptr::null(), 1, ptr::null(), 0, 0) };
+        let (status, message) = take(result);
+        assert_eq!(status, STATUS_INVALID_INPUT);
+        assert!(message.contains("null"));
+
         let result = unsafe { glance_scan_tar(ptr::null(), 0, false) };
         let (status, message) = take(result);
         assert_eq!(status, STATUS_INVALID_INPUT);
@@ -481,6 +511,25 @@ mod tests {
         let (status, json) = take(result);
         assert_eq!(status, STATUS_OK);
         assert!(json.contains("\"path\":\"hello.txt\""));
+
+        let sqlite = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../GlanceTests/TestFiles/sqlite/example.sqlite");
+        let sqlite_bytes = sqlite.as_os_str().as_bytes();
+        let table = b"people";
+        let result = unsafe {
+            glance_parse_sqlite(
+                sqlite_bytes.as_ptr(),
+                sqlite_bytes.len(),
+                table.as_ptr(),
+                table.len(),
+                0,
+            )
+        };
+        let (status, json) = take(result);
+        assert_eq!(status, STATUS_OK);
+        assert!(json.contains("\"tables\":[\"big\""));
+        assert!(json.contains("\"name\":\"people\""));
+        assert!(json.contains("\"byte_count\":4"));
     }
 
     #[test]
@@ -501,6 +550,19 @@ mod tests {
         let missing = Path::new("/definitely/missing/glance-preview.epub");
         let missing_bytes = missing.as_os_str().as_bytes();
         let result = unsafe { glance_render_epub(missing_bytes.as_ptr(), missing_bytes.len()) };
+        assert_eq!(take(result).0, STATUS_IO_ERROR);
+
+        let missing = Path::new("/definitely/missing/glance-preview.sqlite");
+        let missing_bytes = missing.as_os_str().as_bytes();
+        let result = unsafe {
+            glance_parse_sqlite(
+                missing_bytes.as_ptr(),
+                missing_bytes.len(),
+                ptr::null(),
+                0,
+                0,
+            )
+        };
         assert_eq!(take(result).0, STATUS_IO_ERROR);
 
         let encrypted = Path::new(env!("CARGO_MANIFEST_DIR"))

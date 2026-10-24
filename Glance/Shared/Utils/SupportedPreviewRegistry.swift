@@ -9,6 +9,7 @@ public enum SupportedPreviewGroup: CaseIterable, Sendable {
 	case jupyter
 	case tsv
 	case spreadsheet
+	case database
 	case structured
 	case code
 
@@ -30,6 +31,8 @@ public enum SupportedPreviewGroup: CaseIterable, Sendable {
 				"Tab-separated values"
 			case .spreadsheet:
 				"Spreadsheet"
+			case .database:
+				"Database"
 			case .structured:
 				"Structured data"
 			case .code:
@@ -55,6 +58,8 @@ public enum SupportedPreviewGroup: CaseIterable, Sendable {
 				"tsv"
 			case .spreadsheet:
 				"spreadsheet"
+			case .database:
+				"database"
 			case .structured:
 				"structured"
 			case .code:
@@ -230,6 +235,25 @@ public enum SupportedPreviewRegistry {
 			group: .spreadsheet,
 			previewFileType: .spreadsheet,
 			searchTokens: ["Excel", "workbook", "sheet"],
+		),
+
+		extensionEntry(
+			"db",
+			group: .database,
+			previewFileType: .database,
+			searchTokens: ["SQLite", "database", "table"],
+		),
+		extensionEntry(
+			"sqlite",
+			group: .database,
+			previewFileType: .database,
+			searchTokens: ["SQLite", "database", "table"],
+		),
+		extensionEntry(
+			"sqlite3",
+			group: .database,
+			previewFileType: .database,
+			searchTokens: ["SQLite", "database", "table"],
 		),
 
 		extensionEntry(

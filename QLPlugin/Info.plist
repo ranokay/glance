@@ -88,6 +88,11 @@
 				<!-- Spreadsheet -->
 				<string>org.openxmlformats.spreadsheetml.sheet</string> <!-- .xlsx -->
 
+				<!-- Database -->
+				<string>dyn.ah62d4rv4ge81g6pqrf4gn</string> <!-- .sqlite -->
+				<string>dyn.ah62d4rv4ge81g6pqrf4gnq2</string> <!-- .sqlite3 -->
+				<string>dyn.ah62d4rv4ge80k2u</string> <!-- .db -->
+
 				<!-- Structured data -->
 				<string>com.apple.property-list</string> <!-- .plist -->
 				<string>public.json</string> <!-- .json -->

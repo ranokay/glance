@@ -25,6 +25,72 @@ struct SpreadsheetPreviewSheet: Decodable {
 	}
 }
 
+struct SQLitePreviewPayload: Decodable {
+	let tables: [String]
+	let tablesTruncated: Bool
+	let table: SQLitePreviewTable?
+
+	private enum CodingKeys: String, CodingKey {
+		case tables
+		case tablesTruncated = "tables_truncated"
+		case table
+	}
+}
+
+struct SQLitePreviewTable: Decodable {
+	let name: String
+	let columns: [SQLitePreviewColumn]
+	let columnsTruncated: Bool
+	let rows: [[SQLitePreviewCell]]
+	let offset: UInt64
+	let hasMore: Bool
+	let pageTruncated: Bool
+	let valuesTruncated: Bool
+
+	private enum CodingKeys: String, CodingKey {
+		case name
+		case columns
+		case columnsTruncated = "columns_truncated"
+		case rows
+		case offset
+		case hasMore = "has_more"
+		case pageTruncated = "page_truncated"
+		case valuesTruncated = "values_truncated"
+	}
+}
+
+struct SQLitePreviewColumn: Decodable {
+	let name: String
+	let declaredType: String?
+
+	private enum CodingKeys: String, CodingKey {
+		case name
+		case declaredType = "declared_type"
+	}
+}
+
+struct SQLitePreviewCell: Decodable {
+	enum Kind: String, Decodable {
+		case null
+		case integer
+		case real
+		case text
+		case blob
+	}
+
+	let kind: Kind
+	let text: String
+	let truncated: Bool
+	let byteCount: UInt64?
+
+	private enum CodingKeys: String, CodingKey {
+		case kind
+		case text
+		case truncated
+		case byteCount = "byte_count"
+	}
+}
+
 struct ArchivePreviewPayload: Decodable {
 	let entries: [ArchivePreviewEntry]
 	let compressedSize: UInt64
@@ -143,6 +209,28 @@ enum PreviewCoreBridge {
 		)
 	}
 
+	static func parseSQLite(
+		at url: URL,
+		table: String?,
+		offset: UInt64,
+	) throws -> SQLitePreviewPayload {
+		let result = try withPath(for: url) { pathPointer, pathLength in
+			guard let table else {
+				return glance_parse_sqlite(pathPointer, pathLength, nil, 0, offset)
+			}
+			return table.withCString { tablePointer in
+				glance_parse_sqlite(
+					pathPointer,
+					pathLength,
+					UnsafeRawPointer(tablePointer).assumingMemoryBound(to: UInt8.self),
+					table.utf8.count,
+					offset,
+				)
+			}
+		}
+		return try decode(SQLitePreviewPayload.self, result: result)
+	}
+
 	static func parseThreeMF(at url: URL) throws -> ThreeMFPreviewPayload {
 		try decode(
 			ThreeMFPreviewPayload.self,
@@ -210,11 +298,18 @@ enum PreviewCoreBridge {
 		for url: URL,
 		call: (UnsafePointer<UInt8>?, Int) -> GlanceRenderResult,
 	) throws -> GlanceRenderResult {
+		try withPath(for: url) { path, length in call(path, length) }
+	}
+
+	private static func withPath<Output>(
+		for url: URL,
+		_ body: (UnsafePointer<UInt8>, Int) throws -> Output,
+	) throws -> Output {
 		try url.withUnsafeFileSystemRepresentation { path in
 			guard let path else {
 				throw PreviewCoreBridgeError.invalidFileSystemPath
 			}
-			return call(
+			return try body(
 				UnsafeRawPointer(path).assumingMemoryBound(to: UInt8.self),
 				Int(strlen(path)),
 			)

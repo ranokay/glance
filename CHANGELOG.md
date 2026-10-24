@@ -4,6 +4,13 @@ Append-only. Newest entry first.
 
 # Unreleased
 
+- Quick Look previews for SQLite databases: `.sqlite`, `.sqlite3`, and `.db` files list their tables
+  and show 50-row pages with declared column types, distinct `NULL` and empty values, and BLOB sizes
+  instead of inline bytes. Tables, columns, cells, and rendered output are capped with explicit
+  notices. Previews open immutable when no `-wal` sidecar exists and otherwise read a temporary
+  copy, so the database file and its directory are never modified. Encrypted, truncated, or
+  non-SQLite files show a clear message.
+
 - Quick Look previews for structured data: `.json`, `.plist` (XML and binary), and `.xml` now
   render as collapsible trees with distinct string, number, boolean, null, date, data, key, and
   array-index presentation. Object keys keep their authored order. Malformed input falls back to

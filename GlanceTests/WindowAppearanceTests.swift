@@ -291,6 +291,7 @@ final class WindowAppearanceTests: XCTestCase {
 				"Jupyter Notebook",
 				"Tab-separated Values",
 				"Spreadsheet",
+				"Database",
 				"Structured Data",
 				"Folders",
 			],
@@ -302,6 +303,10 @@ final class WindowAppearanceTests: XCTestCase {
 		XCTAssertEqual(
 			SupportedFilesWC.sections.first { $0.title == "Spreadsheet" }?.details,
 			".xlsx • Values, dates, and every worksheet",
+		)
+		XCTAssertEqual(
+			SupportedFilesWC.sections.first { $0.title == "Database" }?.details,
+			".sqlite, .sqlite3, .db • Read-only tables with typed columns",
 		)
 		XCTAssertEqual(
 			SupportedFilesWC.sections.first { $0.title == "Structured Data" }?.details,

@@ -44,6 +44,13 @@ GlanceRenderResult glance_render_structured(
 GlanceRenderResult glance_render_epub(const uint8_t *path_data, size_t path_length);
 GlanceRenderResult glance_parse_tsv(const uint8_t *data, size_t data_length);
 GlanceRenderResult glance_parse_xlsx(const uint8_t *path_data, size_t path_length);
+GlanceRenderResult glance_parse_sqlite(
+	const uint8_t *path_data,
+	size_t path_length,
+	const uint8_t *table_data,
+	size_t table_length,
+	uint64_t offset
+);
 GlanceRenderResult glance_extract_archive_entry(
 	const uint8_t *path_data,
 	size_t path_length,
