@@ -4,6 +4,16 @@ import GlanceKit
 @main
 @MainActor
 class AppDelegate: NSObject, NSApplicationDelegate {
+	/// `@main` on an `NSApplicationDelegate` only runs `NSApplicationMain`, which
+	/// never assigns a delegate: without this, no callback fires and the app runs
+	/// as a shell with no status item or menu.
+	static func main() {
+		let application = NSApplication.shared
+		let delegate = AppDelegate()
+		application.delegate = delegate
+		_ = NSApplicationMain(CommandLine.argc, CommandLine.unsafeArgv)
+	}
+
 	private var statusItem: NSStatusItem?
 	private let openWithBridgeServer = OpenWithBridgeServer()
 	private let previewSettingsServer = PreviewSettingsServer()
