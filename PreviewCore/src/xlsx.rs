@@ -97,12 +97,16 @@ fn parse_xlsx_with_limits(
         }
 
         let mut rows = Vec::new();
-        for (_, mut values) in rows_by_offset {
-            while values.last().is_some_and(String::is_empty) {
-                values.pop();
-            }
-            if !values.is_empty() {
+        if let Some(max_offset) = rows_by_offset.keys().next_back().copied() {
+            for offset in 0..=max_offset {
+                let mut values = rows_by_offset.remove(&offset).unwrap_or_default();
+                while values.last().is_some_and(String::is_empty) {
+                    values.pop();
+                }
                 rows.push(values);
+            }
+            while rows.last().is_some_and(Vec::is_empty) {
+                rows.pop();
             }
         }
         sheets.push(SpreadsheetSheet {
@@ -237,6 +241,20 @@ mod tests {
 
         assert_eq!(payload.sheets[0].rows, vec![vec!["", "", "Hello"]]);
         assert!(!payload.sheets[0].columns_truncated);
+    }
+
+    #[test]
+    fn preserves_interior_empty_rows() {
+        let payload = parse_xlsx(
+            &Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("../GlanceTests/TestFiles/spreadsheet/gap-rows.xlsx"),
+        )
+        .unwrap();
+
+        assert_eq!(
+            payload.sheets[0].rows,
+            vec![vec!["Top"], vec![], vec!["", "Bottom"]]
+        );
     }
 
     #[test]
