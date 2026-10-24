@@ -1,0 +1,143 @@
+/* Structured data (JSON, property lists, XML) */
+
+.structured-preview {
+	--structured-punct: #6a737d;
+	--structured-key: #005cc5;
+	--structured-index: #6a737d;
+	--structured-string: #032f62;
+	--structured-number: #b31d28;
+	--structured-boolean: #6f42c1;
+	--structured-null: #6a737d;
+	--structured-date: #22863a;
+	--structured-data: #b7791f;
+	--structured-tag: #22863a;
+	--structured-attribute: #6f42c1;
+	--structured-notice-background: #fff8c5;
+	--structured-notice-border: #d4a72c;
+	font-family: var(--font-family-monospace);
+	font-size: 0.85em;
+	line-height: 1.55;
+}
+
+@media (prefers-color-scheme: dark) {
+	.structured-preview {
+		--structured-punct: #9b9b9b;
+		--structured-key: #79b8ff;
+		--structured-index: #9b9b9b;
+		--structured-string: #9ecbff;
+		--structured-number: #ffab70;
+		--structured-boolean: #d2a8ff;
+		--structured-null: #9b9b9b;
+		--structured-date: #85e89d;
+		--structured-data: #ffd33d;
+		--structured-tag: #85e89d;
+		--structured-attribute: #d2a8ff;
+		--structured-notice-background: #3a2d00;
+		--structured-notice-border: #9e6a03;
+	}
+}
+
+.structured-preview .structured-node {
+	margin: 0;
+}
+
+.structured-preview .structured-row,
+.structured-preview .structured-summary {
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+
+.structured-preview .structured-summary {
+	cursor: pointer;
+}
+
+.structured-preview .structured-summary::marker {
+	color: var(--structured-punct);
+}
+
+.structured-preview .structured-children {
+	margin-left: 0.4em;
+	padding-left: 1.35em;
+	border-left: 1px solid var(--color-border);
+}
+
+.structured-preview .structured-closing {
+	white-space: pre-wrap;
+}
+
+.structured-preview .structured-key {
+	color: var(--structured-key);
+}
+
+.structured-preview .structured-index {
+	color: var(--structured-index);
+}
+
+.structured-preview .structured-punct {
+	color: var(--structured-punct);
+}
+
+.structured-preview .structured-meta {
+	margin-left: 0.5em;
+	color: var(--structured-punct);
+	font-style: italic;
+}
+
+.structured-preview .structured-string {
+	color: var(--structured-string);
+}
+
+.structured-preview .structured-number {
+	color: var(--structured-number);
+}
+
+.structured-preview .structured-boolean {
+	color: var(--structured-boolean);
+}
+
+.structured-preview .structured-null {
+	color: var(--structured-null);
+	font-style: italic;
+}
+
+.structured-preview .structured-date {
+	color: var(--structured-date);
+}
+
+.structured-preview .structured-data {
+	color: var(--structured-data);
+}
+
+.structured-preview .structured-tag {
+	color: var(--structured-tag);
+}
+
+.structured-preview .structured-attribute {
+	color: var(--structured-attribute);
+}
+
+.structured-preview .structured-text {
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+
+.structured-preview .structured-comment {
+	color: var(--structured-punct);
+	font-style: italic;
+	white-space: pre-wrap;
+}
+
+.structured-preview .structured-ellipsis {
+	color: var(--structured-punct);
+}
+
+.structured-preview .structured-truncated {
+	margin: 0 0 var(--spacing-normal);
+	padding: 8px 10px;
+	color: var(--color-text);
+	font-family: var(--font-family-sans-serif);
+	font-size: 1rem;
+	background: var(--structured-notice-background);
+	border: 1px solid var(--structured-notice-border);
+	border-radius: var(--border-radius);
+}

@@ -34,6 +34,8 @@ class PreviewVCFactory {
 				return TSVPreview.self
 			case .spreadsheet:
 				return SpreadsheetPreview.self
+			case .structured:
+				return StructuredPreview.self
 			case .sevenZip:
 				return SevenZipPreview.self
 			case .zip:

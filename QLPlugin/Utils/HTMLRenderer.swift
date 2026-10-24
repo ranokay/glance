@@ -5,6 +5,13 @@ enum HTMLRendererError {
 	case rendererError(fileType: String, errorMessage: String)
 }
 
+/// Selects the PreviewCore parser for a structured preview.
+enum StructuredPreviewFormat: UInt8 {
+	case json
+	case plist
+	case xml
+}
+
 extension HTMLRendererError: LocalizedError {
 	var errorDescription: String? {
 		switch self {
@@ -39,6 +46,18 @@ enum HTMLRenderer {
 			glance_render_markdown(sourcePointer, sourceLength)
 		}
 		return try makeHTMLString(fileType: "Markdown", result: result)
+	}
+
+	/// Converts a JSON document, property list, or XML document to a collapsible, escaped tree.
+	static func renderStructured(_ data: Data, format: StructuredPreviewFormat) throws -> String {
+		let result = data.withUnsafeBytes { buffer in
+			glance_render_structured(
+				buffer.bindMemory(to: UInt8.self).baseAddress,
+				buffer.count,
+				format.rawValue,
+			)
+		}
+		return try makeHTMLString(fileType: "structured data", result: result)
 	}
 
 	/// Converts a Jupyter Notebook JSON file to HTML.

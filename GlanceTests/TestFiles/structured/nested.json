@@ -1,0 +1,26 @@
+{
+  "service": {
+    "name": "glance",
+    "enabled": true,
+    "replicas": 3,
+    "tags": ["preview", "offline", "rust"],
+    "limits": {
+      "nodes": 20000,
+      "depth": 64,
+      "outputBytes": 1000000
+    }
+  },
+  "endpoints": [
+    {
+      "path": "/health",
+      "methods": ["GET"],
+      "public": true
+    },
+    {
+      "path": "/preview",
+      "methods": ["GET", "HEAD"],
+      "public": false,
+      "timeoutMs": 1500
+    }
+  ]
+}

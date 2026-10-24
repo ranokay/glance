@@ -22,6 +22,9 @@ final class PreviewSupportTests: XCTestCase {
 			("/tmp/notebook.ipynb", "jupyter.extension.ipynb", .jupyter),
 			("/tmp/table.tsv", "tsv.extension.tsv", .tsv),
 			("/tmp/workbook.xlsx", "spreadsheet.extension.xlsx", .spreadsheet),
+			("/tmp/data.json", "structured.extension.json", .structured),
+			("/tmp/config.plist", "structured.extension.plist", .structured),
+			("/tmp/document.xml", "structured.extension.xml", .structured),
 			("/tmp/archive.zip", "archive.extension.zip", .zip),
 			("/tmp/archive.7z", "archive.extension.7z", .sevenZip),
 			("/tmp/archive.rar", "archive.extension.rar", .rar),
@@ -72,6 +75,9 @@ final class PreviewSupportTests: XCTestCase {
 			("/tmp/table.tab", .tsv),
 			("/tmp/table.tsv", .tsv),
 			("/tmp/workbook.xlsx", .spreadsheet),
+			("/tmp/data.json", .structured),
+			("/tmp/config.plist", .structured),
+			("/tmp/document.xml", .structured),
 			("/tmp/archive.7z", .sevenZip),
 			("/tmp/archive.rar", .rar),
 			("/tmp/archive.ear", .zip),
@@ -234,6 +240,7 @@ final class PreviewSupportTests: XCTestCase {
 			("strings", "c"),
 			("ttml", "xml"),
 			("vtt", "txt"),
+			("xml", "xml"),
 		]
 
 		for (fileExtension, lexer) in cases {

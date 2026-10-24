@@ -10,6 +10,7 @@ public enum PreviewFileType: Equatable, Sendable {
 	case rar
 	case sevenZip
 	case spreadsheet
+	case structured
 	case tar
 	case threeMF
 	case tsv

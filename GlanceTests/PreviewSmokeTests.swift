@@ -350,6 +350,70 @@ final class PreviewSmokeTests: XCTestCase {
 		XCTAssertFalse(state?.split(separator: "|").last?.isEmpty ?? true)
 	}
 
+	func testStructuredPreviewRendersJSONTreeWithAuthoredOrder() async throws {
+		let webView = try await structuredPreviewWebView(named: "scalars.json")
+
+		let state = try await webView.evaluateJavaScript(
+			"""
+			[
+				document.querySelector('details.structured-container[open]') !== null,
+				document.querySelector('.structured-key')?.textContent || '',
+				Array.from(document.querySelectorAll('.structured-key')).slice(0, 3)
+					.map(element => element.textContent).join(','),
+				document.querySelector('.structured-number')?.textContent || '',
+				document.querySelector('.structured-null')?.textContent || '',
+				document.querySelector('script') === null,
+				document.body.textContent.includes('Glance & <preview>')
+			].join('|')
+			""",
+		) as? String
+		XCTAssertEqual(
+			state,
+			#"true|"string"|"string","emptyString","unicode"|42|null|true|true"#,
+		)
+	}
+
+	func testStructuredPreviewFallsBackToHighlightedTextForMalformedJSON() async throws {
+		let webView = try await structuredPreviewWebView(named: "malformed.json")
+
+		let state = try await webView.evaluateJavaScript(
+			"""
+			[
+				document.querySelector('pre.chroma') !== null,
+				document.querySelector('.structured-preview') === null,
+				document.querySelector('pre.chroma span') !== null,
+				document.body.textContent.includes('broken')
+			].join('|')
+			""",
+		) as? String
+		XCTAssertEqual(state, "true|true|true|true")
+	}
+
+	func testStructuredPreviewShowsTruncationNoticeForOversizedJSON() async throws {
+		let webView = try await structuredPreviewWebView(named: "oversized.json")
+
+		let notice = try await webView.evaluateJavaScript(
+			"document.querySelector('.structured-truncated')?.textContent || ''",
+		) as? String
+		XCTAssertTrue(try XCTUnwrap(notice).contains("Preview truncated"))
+	}
+
+	func testStructuredPreviewRendersBinaryPlistAndXMLDocuments() async throws {
+		let cases = [("example-binary.plist", "Glance & fixture"), ("example.xml", "priority")]
+		for (name, expectedText) in cases {
+			let webView = try await structuredPreviewWebView(named: name)
+			let state = try await webView.evaluateJavaScript(
+				"""
+				[
+					document.body.textContent.includes(\(expectedText.debugDescription)),
+					document.querySelector('script') === null
+				].join('|')
+				""",
+			) as? String
+			XCTAssertEqual(state, "true|true", name)
+		}
+	}
+
 	func testMarkdownPreviewHandlesFrontMatterAndRawHTML() async throws {
 		let markdown = """
 		---
@@ -1235,6 +1299,20 @@ final class PreviewSmokeTests: XCTestCase {
 				_ = try await RARPreview().createPreviewVC(file: File(url: rejectedURL))
 			}
 		}
+	}
+
+	private func structuredPreviewWebView(named name: String) async throws -> WKWebView {
+		let fixture = URL(fileURLWithPath: #filePath)
+			.deletingLastPathComponent()
+			.appendingPathComponent("TestFiles/structured/\(name)")
+		let generated = try await StructuredPreview().createPreviewVC(file: File(url: fixture))
+		let previewVC = try XCTUnwrap(generated as? WebPreviewVC)
+		previewVC.loadViewIfNeeded()
+		let webView = try XCTUnwrap(
+			previewVC.view.subviews.compactMap { $0 as? WKWebView }.first,
+		)
+		try await waitForWebViewToFinishLoadingAsync(webView)
+		return webView
 	}
 
 	private func writeFile(named name: String, contents: String) throws -> URL {

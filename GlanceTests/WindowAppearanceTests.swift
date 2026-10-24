@@ -291,6 +291,7 @@ final class WindowAppearanceTests: XCTestCase {
 				"Jupyter Notebook",
 				"Tab-separated Values",
 				"Spreadsheet",
+				"Structured Data",
 				"Folders",
 			],
 		)
@@ -301,6 +302,10 @@ final class WindowAppearanceTests: XCTestCase {
 		XCTAssertEqual(
 			SupportedFilesWC.sections.first { $0.title == "Spreadsheet" }?.details,
 			".xlsx • Values, dates, and every worksheet",
+		)
+		XCTAssertEqual(
+			SupportedFilesWC.sections.first { $0.title == "Structured Data" }?.details,
+			".json, .plist, .xml • Collapsible trees, typed values, and truncation notices",
 		)
 		XCTAssertEqual(
 			SupportedFilesWC.sections.first { $0.title == "Folders" }?.details,

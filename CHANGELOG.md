@@ -4,6 +4,12 @@ Append-only. Newest entry first.
 
 # Unreleased
 
+- Quick Look previews for structured data: `.json`, `.plist` (XML and binary), and `.xml` now
+  render as collapsible trees with distinct string, number, boolean, null, date, data, key, and
+  array-index presentation. Object keys keep their authored order. Malformed input falls back to
+  syntax-highlighted text, and input, node, depth, and output caps show an explicit truncation
+  notice instead of failing. XML entity declarations are never resolved.
+
 - Quick Look previews of Markdown, source code, and Jupyter notebooks now
   re-render when the file changes on disk, including atomic editor saves, and
   keep their scroll position. Deleting the file leaves the last good preview

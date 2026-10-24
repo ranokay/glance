@@ -35,6 +35,11 @@ GlanceRenderResult glance_render_code(
 );
 GlanceRenderResult glance_render_markdown(const uint8_t *source_data, size_t source_length);
 GlanceRenderResult glance_render_notebook(const uint8_t *source_data, size_t source_length);
+GlanceRenderResult glance_render_structured(
+	const uint8_t *data,
+	size_t data_length,
+	uint8_t format
+);
 GlanceRenderResult glance_render_epub(const uint8_t *path_data, size_t path_length);
 GlanceRenderResult glance_parse_tsv(const uint8_t *data, size_t data_length);
 GlanceRenderResult glance_parse_xlsx(const uint8_t *path_data, size_t path_length);

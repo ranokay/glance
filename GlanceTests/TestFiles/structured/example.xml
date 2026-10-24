@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE note [
+  <!ENTITY xxe SYSTEM "file:///etc/passwd">
+]>
+<note priority="high" owner="Glance &amp; friends">
+  <!-- Attributes and text are escaped, never executed. -->
+  <to>&xxe;</to>
+  <subject>XML &amp; entity preview</subject>
+  <body><![CDATA[<script>alert("cdata")</script>]]></body>
+  <items>
+    <item index="1">first</item>
+    <item index="2">second</item>
+    <empty />
+  </items>
+</note>
