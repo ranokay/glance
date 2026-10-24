@@ -8,6 +8,8 @@ enum NestedPreviewError: LocalizedError {
 	case missingFileURL(name: String)
 	case nativePreviewUnavailable(name: String)
 	case nonNavigableItem(name: String)
+	case archiveEntryUnavailable(name: String)
+	case archiveNestingTooDeep
 
 	var errorDescription: String? {
 		switch self {
@@ -17,7 +19,30 @@ enum NestedPreviewError: LocalizedError {
 				"The native preview for \(name) is unavailable"
 			case let .nonNavigableItem(name):
 				"\(name) cannot be previewed from this folder"
+			case let .archiveEntryUnavailable(name):
+				"\(name) is not a file inside this archive"
+			case .archiveNestingTooDeep:
+				"Archives nested this deeply cannot be previewed"
 		}
+	}
+}
+
+struct NestedPreviewResult {
+	let previewVC: PreviewVC
+	let temporaryFileURL: URL?
+}
+
+enum ArchiveTemporaryFile {
+	static func remove(containing url: URL) {
+		let directory = url.deletingLastPathComponent()
+		guard
+			directory.deletingLastPathComponent().standardizedFileURL
+			== FileManager.default.temporaryDirectory.standardizedFileURL,
+			directory.lastPathComponent.hasPrefix("GlanceArchive-")
+		else {
+			return
+		}
+		try? FileManager.default.removeItem(at: directory)
 	}
 }
 
@@ -30,6 +55,19 @@ enum NestedPreviewRoute {
 @MainActor
 protocol NestedPreviewProviding {
 	func makePreviewController(for node: FileTreeNode) async throws -> PreviewVC
+	func makeArchiveEntryPreview(
+		for node: FileTreeNode,
+		context: ArchivePreviewContext
+	) async throws -> NestedPreviewResult
+}
+
+extension NestedPreviewProviding {
+	func makeArchiveEntryPreview(
+		for node: FileTreeNode,
+		context _: ArchivePreviewContext
+	) async throws -> NestedPreviewResult {
+		throw NestedPreviewError.archiveEntryUnavailable(name: node.name)
+	}
 }
 
 @MainActor
@@ -60,6 +98,142 @@ struct DefaultNestedPreviewProvider: NestedPreviewProviding {
 				}
 				return previewVC
 		}
+	}
+
+	func makeArchiveEntryPreview(
+		for node: FileTreeNode,
+		context: ArchivePreviewContext
+	) async throws -> NestedPreviewResult {
+		guard let entryPath = node.archiveEntryPath,
+		      !node.isDirectory,
+		      !node.isSymbolicLink
+		else {
+			throw NestedPreviewError.archiveEntryUnavailable(name: node.name)
+		}
+
+		let data = try await PreviewExecutor.run {
+			try PreviewCoreBridge.extractArchiveEntry(
+				at: context.fileURL,
+				format: context.format,
+				entryPath: entryPath,
+				maxBytes: 25_000_000
+			)
+		}
+		let temporaryURL = try writeTemporaryEntry(named: node.name, data: data)
+		do {
+			let file = try File(url: temporaryURL)
+			try PreviewPolicy.validateFileSize(file)
+			let temporaryNode = FileTreeNode(
+				name: temporaryURL.lastPathComponent,
+				size: data.count,
+				isDirectory: false,
+				dateModified: nil,
+				fileURL: temporaryURL,
+				contentTypeIdentifier: UTType(filenameExtension: temporaryURL.pathExtension)?
+					.identifier
+			)
+
+			switch route(for: temporaryNode) {
+				case let .glance(previewType):
+					if let entry = SupportedPreviewRegistry.entry(matching: temporaryURL),
+					   let format = ArchiveEntryFormat(
+					   	previewFileType: entry.previewFileType,
+					   	fileURL: temporaryURL
+					   )
+					{
+						guard context.depth < 3 else {
+							throw NestedPreviewError.archiveNestingTooDeep
+						}
+						let preview = try await ArchivePreviewFactory.makePreview(
+							file: file,
+							format: format,
+							depth: context.depth + 1
+						)
+						return NestedPreviewResult(
+							previewVC: preview,
+							temporaryFileURL: temporaryURL
+						)
+					}
+					let preview = try await previewType.init().createPreviewVC(file: file)
+					return NestedPreviewResult(
+						previewVC: preview,
+						temporaryFileURL: temporaryURL
+					)
+				case .media:
+					let showsWaveform = PreviewSupport.isStreamedAudio(fileURL: temporaryURL)
+						? await PreviewSettingsClient.shared.flacWaveformEnabled()
+						: false
+					return NestedPreviewResult(
+						previewVC: AVPlayerPreviewVC(
+							fileURL: temporaryURL,
+							showsWaveform: showsWaveform
+						),
+						temporaryFileURL: temporaryURL
+					)
+				case .native:
+					let previewVC = NativePreviewVC(fileURL: temporaryURL)
+					previewVC.loadViewIfNeeded()
+					guard previewVC.previewView != nil else {
+						throw NestedPreviewError.nativePreviewUnavailable(name: node.name)
+					}
+					return NestedPreviewResult(
+						previewVC: previewVC,
+						temporaryFileURL: temporaryURL
+					)
+			}
+		} catch {
+			removeTemporaryEntry(temporaryURL)
+			throw error
+		}
+	}
+
+	private func writeTemporaryEntry(named name: String, data: Data) throws -> URL {
+		let directory = FileManager.default.temporaryDirectory
+			.appendingPathComponent("GlanceArchive-\(UUID().uuidString)", isDirectory: true)
+		try FileManager.default.createDirectory(
+			at: directory,
+			withIntermediateDirectories: true
+		)
+		let url = directory.appendingPathComponent(Self.temporaryFileName(for: name))
+		do {
+			try data.write(to: url, options: .atomic)
+			return url
+		} catch {
+			ArchiveTemporaryFile.remove(containing: url)
+			throw error
+		}
+	}
+
+	private func removeTemporaryEntry(_ url: URL) {
+		ArchiveTemporaryFile.remove(containing: url)
+	}
+
+	static func temporaryFileName(for name: String) -> String {
+		let lastComponent = (name as NSString).lastPathComponent
+			.replacingOccurrences(of: "/", with: "_")
+			.trimmingCharacters(in: .whitespacesAndNewlines)
+		if !lastComponent.isEmpty,
+		   lastComponent != ".",
+		   lastComponent != "..",
+		   lastComponent.utf8.count <= 200
+		{
+			return lastComponent
+		}
+
+		let fileExtension = safeExtension(of: name)
+		return fileExtension.isEmpty
+			? "entry-\(UUID().uuidString)"
+			: "entry-\(UUID().uuidString).\(fileExtension)"
+	}
+
+	static func safeExtension(of name: String) -> String {
+		let lowercased = name.lowercased()
+		if lowercased.hasSuffix(".tar.gz") {
+			return "tar.gz"
+		}
+		let fileExtension = (name as NSString).pathExtension
+		let sanitized = fileExtension.filter { $0.isLetter || $0.isNumber }
+		return String(sanitized.prefix(16))
 	}
 
 	func route(for node: FileTreeNode) -> NestedPreviewRoute {

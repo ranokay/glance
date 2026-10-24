@@ -224,6 +224,7 @@ impl TarScanner {
         if path.is_empty() {
             return Ok(());
         }
+        let path = normalize_entry_path(&path)?;
         let is_directory = header.entry_type == TarEntryType::Directory || path.ends_with('/');
         let size = if is_directory { 0 } else { payload_size };
         self.uncompressed_size = self
@@ -478,10 +479,81 @@ fn tar_integer(bytes: &[u8]) -> Result<u64, CoreError> {
         .map_err(|_| CoreError::parse("TAR archive contains invalid numeric metadata"))
 }
 
+fn normalize_entry_path(path: &str) -> Result<String, CoreError> {
+    let mut normalized = path.replace('\\', "/");
+    while let Some(stripped) = normalized.strip_prefix("./") {
+        normalized = stripped.to_string();
+    }
+    if normalized.starts_with('/') || normalized.split('/').any(|component| component == "..") {
+        return Err(CoreError::parse(
+            "TAR archive contains an unsafe entry path",
+        ));
+    }
+    Ok(normalized)
+}
+
 fn padded_tar_size(size: u64) -> Result<u64, CoreError> {
     size.checked_add(511)
         .map(|value| value / 512 * 512)
         .ok_or_else(|| CoreError::limit("TAR payload size overflow"))
+}
+
+pub(crate) fn extract_entry(
+    path: &Path,
+    entry_name: &str,
+    is_gzipped: bool,
+    max_bytes: usize,
+) -> Result<Vec<u8>, CoreError> {
+    let file = File::open(path)
+        .map_err(|error| CoreError::io(format!("Could not open TAR archive: {error}")))?;
+    let reader: Box<dyn Read> = if is_gzipped {
+        Box::new(MultiGzDecoder::new(file))
+    } else {
+        Box::new(file)
+    };
+    let mut archive = tar::Archive::new(reader);
+    let entries = archive
+        .entries()
+        .map_err(|error| CoreError::parse(format!("Could not read TAR archive: {error}")))?;
+
+    for entry in entries {
+        let entry = entry
+            .map_err(|error| CoreError::parse(format!("Could not read TAR entry: {error}")))?;
+        let path = entry
+            .path()
+            .map_err(|error| CoreError::parse(format!("Could not read TAR entry path: {error}")))?;
+        let entry_path = normalize_entry_path(&path.to_string_lossy())?;
+        let wanted_path = normalize_entry_path(entry_name)?;
+        if entry_path != wanted_path {
+            continue;
+        }
+        if !entry.header().entry_type().is_file() {
+            return Err(CoreError::invalid(
+                "TAR entries other than files cannot be previewed",
+            ));
+        }
+        let size = entry.size();
+        if size > max_bytes as u64 {
+            return Err(CoreError::limit(
+                "TAR entry exceeds the extracted preview size limit",
+            ));
+        }
+        let mut data = Vec::with_capacity(size as usize);
+        entry
+            .take(max_bytes as u64 + 1)
+            .read_to_end(&mut data)
+            .map_err(|error| CoreError::io(format!("Could not read TAR entry: {error}")))?;
+        if data.len() > max_bytes {
+            return Err(CoreError::limit(
+                "TAR entry exceeds the extracted preview size limit",
+            ));
+        }
+        return Ok(data);
+    }
+
+    Err(CoreError::invalid(format!(
+        "TAR entry \"{entry_name}\" was not found"
+    )))
 }
 
 #[cfg(test)]

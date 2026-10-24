@@ -24,6 +24,7 @@ final class PreviewFactoryTests: XCTestCase {
 			("/tmp/diagram.drawio", DrawIOPreview.self),
 			("/tmp/table.tab", TSVPreview.self),
 			("/tmp/table.tsv", TSVPreview.self),
+			("/tmp/workbook.xlsx", SpreadsheetPreview.self),
 			("/tmp/archive.7z", SevenZipPreview.self),
 			("/tmp/archive.rar", RARPreview.self),
 			("/tmp/archive.ear", ZIPPreview.self),

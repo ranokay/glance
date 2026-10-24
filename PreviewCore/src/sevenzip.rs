@@ -57,6 +57,8 @@ pub(crate) fn scan_seven_zip(path: &Path) -> Result<ArchivePayload, CoreError> {
             path: entry.name.clone(),
             entry_type: if entry.is_directory {
                 ArchiveEntryType::Directory
+            } else if is_seven_zip_symlink(entry) {
+                ArchiveEntryType::Other
             } else {
                 ArchiveEntryType::File
             },
@@ -151,6 +153,13 @@ fn map_seven_zip_error(error: SevenZipError) -> CoreError {
     }
 }
 
+fn is_seven_zip_symlink(entry: &sevenz_rust2::ArchiveEntry) -> bool {
+    const FILE_ATTRIBUTE_UNIX_EXTENSION: u32 = 0x8000;
+    entry.has_windows_attributes
+        && entry.windows_attributes & FILE_ATTRIBUTE_UNIX_EXTENSION != 0
+        && crate::extract::is_unix_symlink(entry.windows_attributes >> 16)
+}
+
 fn system_time_to_unix(time: SystemTime) -> f64 {
     match time.duration_since(UNIX_EPOCH) {
         Ok(duration) => duration.as_secs_f64(),
@@ -198,6 +207,64 @@ fn read_u64(bytes: &[u8], offset: usize) -> Option<u64> {
         .map(u64::from_le_bytes)
 }
 
+pub(crate) fn extract_entry(
+    path: &Path,
+    entry_name: &str,
+    max_bytes: usize,
+) -> Result<Vec<u8>, CoreError> {
+    let file = File::open(path)
+        .map_err(|error| CoreError::io(format!("Could not open 7z archive: {error}")))?;
+    let mut reader = ArchiveReader::new(file, Password::empty()).map_err(map_seven_zip_error)?;
+    let mut selected: Option<Result<Vec<u8>, CoreError>> = None;
+
+    reader
+        .for_each_entries(|entry, reader| {
+            if entry.name != entry_name {
+                return Ok(true);
+            }
+            if entry.is_directory {
+                selected = Some(Err(CoreError::invalid(
+                    "7z directory entries cannot be previewed",
+                )));
+                return Ok(false);
+            }
+            if is_seven_zip_symlink(entry) {
+                selected = Some(Err(CoreError::invalid("7z links cannot be previewed")));
+                return Ok(false);
+            }
+            if entry.size > max_bytes as u64 {
+                selected = Some(Err(CoreError::limit(
+                    "7z entry exceeds the extracted preview size limit",
+                )));
+                return Ok(false);
+            }
+            let mut data = Vec::with_capacity(entry.size as usize);
+            selected = Some(
+                reader
+                    .take(max_bytes as u64 + 1)
+                    .read_to_end(&mut data)
+                    .map_err(|error| CoreError::io(format!("Could not read 7z entry: {error}")))
+                    .and_then(|_| {
+                        if data.len() > max_bytes {
+                            Err(CoreError::limit(
+                                "7z entry exceeds the extracted preview size limit",
+                            ))
+                        } else {
+                            Ok(data)
+                        }
+                    }),
+            );
+            Ok(false)
+        })
+        .map_err(map_seven_zip_error)?;
+
+    selected.unwrap_or_else(|| {
+        Err(CoreError::invalid(format!(
+            "7z entry \"{entry_name}\" was not found"
+        )))
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -231,6 +298,17 @@ mod tests {
                 .iter()
                 .any(|entry| entry.path.contains("unicode-ș.txt"))
         );
+    }
+
+    #[test]
+    fn recognizes_unix_symlink_attributes() {
+        let mut entry = sevenz_rust2::ArchiveEntry::new_file("link");
+        entry.has_windows_attributes = true;
+        entry.windows_attributes = 0x8000 | (0o120777 << 16);
+        assert!(is_seven_zip_symlink(&entry));
+
+        entry.windows_attributes = 0x8000 | (0o100644 << 16);
+        assert!(!is_seven_zip_symlink(&entry));
     }
 
     #[test]

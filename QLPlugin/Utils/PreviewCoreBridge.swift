@@ -7,6 +7,24 @@ struct TSVPreviewPayload: Decodable {
 	let truncated: Bool
 }
 
+struct SpreadsheetPreviewPayload: Decodable {
+	let sheets: [SpreadsheetPreviewSheet]
+}
+
+struct SpreadsheetPreviewSheet: Decodable {
+	let name: String
+	let rows: [[String]]
+	let rowsTruncated: Bool
+	let columnsTruncated: Bool
+
+	private enum CodingKeys: String, CodingKey {
+		case name
+		case rows
+		case rowsTruncated = "rows_truncated"
+		case columnsTruncated = "columns_truncated"
+	}
+}
+
 struct ArchivePreviewPayload: Decodable {
 	let entries: [ArchivePreviewEntry]
 	let compressedSize: UInt64
@@ -118,6 +136,13 @@ enum PreviewCoreBridge {
 		return try decode(TSVPreviewPayload.self, result: result)
 	}
 
+	static func parseXLSX(at url: URL) throws -> SpreadsheetPreviewPayload {
+		try decode(
+			SpreadsheetPreviewPayload.self,
+			result: pathResult(for: url, call: glance_parse_xlsx)
+		)
+	}
+
 	static func parseThreeMF(at url: URL) throws -> ThreeMFPreviewPayload {
 		try decode(
 			ThreeMFPreviewPayload.self,
@@ -148,6 +173,30 @@ enum PreviewCoreBridge {
 			ArchivePreviewPayload.self,
 			result: pathResult(for: url, call: glance_scan_seven_zip)
 		)
+	}
+
+	static func extractArchiveEntry(
+		at url: URL,
+		format: ArchiveEntryFormat,
+		entryPath: String,
+		maxBytes: Int
+	) throws -> Data {
+		let result = try url.withUnsafeFileSystemRepresentation { path in
+			guard let path else {
+				throw PreviewCoreBridgeError.invalidFileSystemPath
+			}
+			return entryPath.withCString { entry in
+				glance_extract_archive_entry(
+					UnsafeRawPointer(path).assumingMemoryBound(to: UInt8.self),
+					Int(strlen(path)),
+					UnsafeRawPointer(entry).assumingMemoryBound(to: UInt8.self),
+					entryPath.utf8.count,
+					format.rawValue,
+					maxBytes
+				)
+			}
+		}
+		return try consume(result)
 	}
 
 	static func scanRAR(at url: URL) throws -> ArchivePreviewPayload {

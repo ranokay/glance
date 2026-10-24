@@ -647,10 +647,8 @@ public final class OpenWithBridgeServer {
 				request = try OpenWithBridgeCodec.request(from: requestURL)
 				responseRequestID = request.requestID
 			}
-			guard request.version == OpenWithBridgeConstants.currentVersion else {
-				throw OpenWithBridgeError.invalidRequest
-			}
-			guard request.applicationPath.utf8.count <= 4096,
+			guard request.version == OpenWithBridgeConstants.currentVersion,
+			      request.applicationPath.utf8.count <= 4096,
 			      NSString(string: request.applicationPath).isAbsolutePath
 			else {
 				throw OpenWithBridgeError.invalidRequest

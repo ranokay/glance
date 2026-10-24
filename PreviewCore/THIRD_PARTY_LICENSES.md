@@ -16,31 +16,34 @@ License texts are available from the linked standard licenses and each crate's s
 
 | Crate | Version | License expression |
 | --- | --- | --- |
-| ammonia | 4.1.4 | MIT OR Apache-2.0 |
-| ansi-to-html | 0.2.3 | MIT |
-| base64 | 0.22.1, 0.23.1 | MIT OR Apache-2.0 |
+| ammonia | 4.2.4 | MIT OR Apache-2.0 |
+| ctutils | 0.4.5 | Apache-2.0 OR MIT |
+| ansi-to-html | 0.2.4 | MIT |
+| base64 | 0.23.1 | MIT OR Apache-2.0 |
 | bzip2 | 0.6.1 | MIT OR Apache-2.0 |
-| comrak | 0.54.0 | BSD-2-Clause |
+| calamine | 0.37.0 | MIT |
+| comrak | 0.57.0 | BSD-2-Clause |
 | cssparser, dtoa-short | 0.37.0, 0.3.5 | MPL-2.0 |
 | csv, csv-core | 1.4.0, 0.1.13 | Unlicense OR MIT |
 | finl_unicode | 1.4.0 | (MIT OR Apache-2.0) AND Unicode-DFS-2016 |
-| flate2 | 1.1.9 | MIT OR Apache-2.0 |
+| flate2 | 1.1.10 | MIT OR Apache-2.0 |
 | ICU4X Unicode data crates | locked versions | Unicode-3.0 |
 | libbz2-rs-sys | 0.2.5 | bzip2-1.0.6 |
 | libc | 0.2.189 | MIT OR Apache-2.0 |
-| lzma-rust2 | 0.18.1 | Apache-2.0 |
-| miniz_oxide | 0.8.9 | MIT OR Zlib OR Apache-2.0 |
+| lzma-rust2 | 0.23.0 | Apache-2.0 |
+| miniz_oxide | 0.9.1 | MIT OR Zlib OR Apache-2.0 |
 | onig, onig_sys | 6.5.3, 69.9.3 | MIT |
-| ppmd-rust | 1.4.0 | CC0-1.0 OR MIT-0 |
-| quick-xml | 0.41.0 | MIT |
-| rars | 0.9.4 | MIT OR Apache-2.0 |
+| ppmd-rust | 1.5.2 | CC0-1.0 OR MIT-0 |
+| quick-xml | 0.41.0, 0.42.0 | MIT |
+| rars | 0.12.0 | MIT OR Apache-2.0 |
 | ryu | 1.0.23 | Apache-2.0 OR BSL-1.0 |
 | serde, serde_core, serde_derive | 1.0.229 | MIT OR Apache-2.0 |
-| serde_json | 1.0.151 | MIT OR Apache-2.0 |
-| sevenz-rust2 | 0.21.4 | Apache-2.0 |
+| serde_json | 1.0.154 | MIT OR Apache-2.0 |
+| sevenz-rust2 | 0.24.1 | Apache-2.0 |
 | syntect | 5.3.0 | MIT |
+| tar | 0.4.46 | MIT OR Apache-2.0 |
 | two-face | 0.5.2+bat-0.26.1 | MIT OR Apache-2.0 |
-| zip | 9.0.3 | MIT |
+| zip | 9.0.5 | MIT |
 
 The RAR fixtures under `GlanceTests/TestFiles/archives` are derived from the `rars` 0.9.4 test
 fixtures and are redistributed under the same MIT OR Apache-2.0 terms.

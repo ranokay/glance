@@ -27,6 +27,7 @@ final class PlistCoverageTests: XCTestCase {
 			"public.markdown",
 			"net.daringfireball.markdown",
 			"public.tab-separated-values-text",
+			"org.openxmlformats.spreadsheetml.sheet",
 			"dyn.ah62d4rv4ge80n5dwqq",
 			"public.source-code",
 			"public.swift-source",
@@ -57,6 +58,22 @@ final class PlistCoverageTests: XCTestCase {
 		let supportedTypes = try quickLookSupportedContentTypes()
 
 		XCTAssertEqual(Set(supportedTypes).count, supportedTypes.count)
+	}
+
+	func testAppInfoPlistMarksTheAppAsMenuBarOnly() throws {
+		let plistURL = repositoryRoot()
+			.appendingPathComponent("Glance", isDirectory: true)
+			.appendingPathComponent("Info.plist")
+		let data = try Data(contentsOf: plistURL)
+		let plist = try XCTUnwrap(
+			try PropertyListSerialization.propertyList(
+				from: data,
+				options: [],
+				format: nil
+			) as? [String: Any]
+		)
+
+		XCTAssertEqual(plist["LSUIElement"] as? Bool, true)
 	}
 
 	func testAppInfoPlistRegistersOpenWithBridgeURLScheme() throws {

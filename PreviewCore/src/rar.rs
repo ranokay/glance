@@ -59,7 +59,7 @@ pub(crate) fn scan_rar(path: &Path) -> Result<ArchivePayload, CoreError> {
                 scanner.push(
                     entry.name_lossy(),
                     entry.is_directory(),
-                    false,
+                    is_rar4_symlink(entry.host_os, entry.attr),
                     entry.is_encrypted(),
                     entry.is_split_before() || entry.is_split_after(),
                     entry.pack_size,
@@ -196,6 +196,14 @@ impl ArchiveScanner {
         });
         Ok(())
     }
+}
+
+fn is_rar4_symlink(host_os: u8, attributes: u32) -> bool {
+    host_os == 3 && crate::extract::is_unix_symlink(attributes)
+}
+
+fn is_rar_link(host_os: Option<u64>, attributes: u64, is_redirection: bool) -> bool {
+    is_redirection || (host_os == Some(3) && crate::extract::is_unix_symlink(attributes as u32))
 }
 
 fn normalize_path(path: &str) -> Result<String, CoreError> {
@@ -523,6 +531,62 @@ fn root_rar_error(mut error: &RarError) -> &RarError {
     }
 }
 
+pub(crate) fn extract_entry(
+    path: &Path,
+    entry_name: &str,
+    max_bytes: usize,
+) -> Result<Vec<u8>, CoreError> {
+    let mut file = File::open(path)
+        .map_err(|error| CoreError::io(format!("Could not open RAR archive: {error}")))?;
+    let file_size = file
+        .metadata()
+        .map_err(|error| CoreError::io(format!("Could not inspect RAR archive: {error}")))?
+        .len();
+    preflight_archive(&mut file, file_size)?;
+    let archive = read_preflighted_archive(&mut file)?;
+    let wanted_name = normalize_path(entry_name)?;
+    let member = archive
+        .members()
+        .find(|member| {
+            normalize_path(&member.meta.name_lossy()).is_ok_and(|name| name == wanted_name)
+        })
+        .ok_or_else(|| CoreError::invalid(format!("RAR entry \"{entry_name}\" was not found")))?;
+    let member_name = member.meta.name_bytes().to_vec();
+    if member.meta.is_directory {
+        return Err(CoreError::invalid(
+            "RAR directory entries cannot be previewed",
+        ));
+    }
+    if member.meta.is_encrypted {
+        return Err(CoreError::unsupported(
+            "Encrypted RAR entries are not supported",
+        ));
+    }
+    if is_rar_link(
+        member.meta.host_os,
+        member.meta.file_attr,
+        member.meta.is_redirection,
+    ) {
+        return Err(CoreError::invalid("RAR links cannot be previewed"));
+    }
+    if member.meta.unpacked_size > max_bytes as u64 {
+        return Err(CoreError::limit(
+            "RAR entry exceeds the extracted preview size limit",
+        ));
+    }
+
+    let data = archive
+        .read_member(&member_name, None)
+        .map_err(map_rar_error)?
+        .ok_or_else(|| CoreError::invalid(format!("RAR entry \"{entry_name}\" was not found")))?;
+    if data.len() > max_bytes {
+        return Err(CoreError::limit(
+            "RAR entry exceeds the extracted preview size limit",
+        ));
+    }
+    Ok(data)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -545,6 +609,22 @@ mod tests {
         assert_eq!(rar5.entries[0].path, "hello.txt");
         assert_eq!(rar5.entries[0].size, 30);
         assert!(rar5.entries[0].modified_unix_seconds.is_some());
+    }
+
+    #[test]
+    fn normalizes_rar_paths_and_detects_rar4_links() {
+        assert_eq!(
+            normalize_path(".\\nested\\file.txt").unwrap(),
+            "nested/file.txt"
+        );
+        assert_eq!(normalize_path("./file.txt").unwrap(), "file.txt");
+        assert!(is_rar4_symlink(3, 0o120777));
+        assert!(!is_rar4_symlink(3, 0o100644));
+        assert!(!is_rar4_symlink(2, 0o120777));
+        assert!(is_rar_link(Some(3), 0o120777, false));
+        assert!(!is_rar_link(Some(3), 0o100644, false));
+        assert!(!is_rar_link(Some(2), 0o120777, false));
+        assert!(is_rar_link(None, 0, true));
     }
 
     #[test]

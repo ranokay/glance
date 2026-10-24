@@ -26,7 +26,7 @@
 > - a bounded Rust preview core with responsive off-main rendering and parsing
 > - pinned `mise` build and test tooling with expanded automated coverage
 > - downloadable unsigned DMGs from this fork's GitHub Releases
-> - Settings controls for Start at Login, the Dock icon, and preview appearance
+> - Settings controls for Start at Login and preview appearance
 >
 > Release DMGs are unsigned and unnotarized. Verify the attached SHA-256 checksum before using the quarantine-removal command shown in the installation steps.
 
@@ -56,13 +56,13 @@ Release DMGs are currently unsigned and unnotarized. To install Glance:
    ```
 
 4. Launch Glance once so macOS can register its Quick Look extension.
-5. Keep Glance running while using its previews. Settings can start Glance at login, hide the Dock
-   icon, customize the font, size, and line wrapping used by new code, Markdown, and notebook
-   previews, and manage update checking. Later Glance releases download and install inside the app
-   ("Install and Relaunch" in Settings) without opening a browser; update integrity is enforced with
-   EdDSA signatures via [Sparkle](https://sparkle-project.org). The macOS quarantine step above is a
-   one-time hurdle for this first DMG install only — in-app updates are not quarantined. Glance
-   remains available from the menu bar.
+5. Keep Glance running while using its previews. Glance runs from the menu bar only, with no Dock
+   icon or main window. Settings can start Glance at login, customize the font, size, and line
+   wrapping used by new code, Markdown, and notebook previews, and manage update checking. Later
+   Glance releases download and install inside the app ("Install and Relaunch" in Settings) without
+   opening a browser; update integrity is enforced with EdDSA signatures via
+   [Sparkle](https://sparkle-project.org). The macOS quarantine step above is a one-time hurdle for
+   this first DMG install only — in-app updates are not quarantined.
 
 ## Supported file types
 
@@ -78,13 +78,16 @@ Release DMGs are currently unsigned and unnotarized. To install Glance:
 
   <p><img src="./AppStore/Assets/Screenshots/ScreenshotSourceCode.png" alt="" width="600"></p>
 
-- **Markdown** (rendered using [Comrak](https://github.com/kivikakk/comrak), with offline [Mermaid](https://mermaid.js.org/) diagrams): `.md`, `.markdown`, `.mdown`, `.mkdn`, `.mkd`, `.Rmd`, `.qmd`
+- **Markdown** (rendered using [Comrak](https://github.com/kivikakk/comrak), with offline [Mermaid](https://mermaid.js.org/) diagrams rendered by [Pele](https://pele.run/)): `.md`, `.markdown`, `.mdown`, `.mkdn`, `.mkd`, `.Rmd`, `.qmd`
 
   <p><img src="./AppStore/Assets/Screenshots/ScreenshotMarkdown.png" alt="" width="600"></p>
 
 - **Draw.io diagrams** (rendered locally with the bundled diagrams.net viewer): uncompressed `.drawio`
 
-- **Archive**: `.7z`, `.ear`, `.jar`, `.rar`, `.tar`, `.tar.gz`, `.tgz`, `.war`, `.zip`
+- **Archive**: `.7z`, `.ear`, `.jar`, `.rar`, `.tar`, `.tar.gz`, `.tgz`, `.war`, `.zip`.
+  Double-click a file entry to preview it in place without extracting the whole archive; Back
+  returns to the tree. Extracted entries are temporary, capped at 25 MB, and deleted when you leave
+  the preview. Nested archives can be opened up to three levels deep.
 
   <p><img src="./AppStore/Assets/Screenshots/ScreenshotArchive.png" alt="" width="600"></p>
 
@@ -101,6 +104,11 @@ Release DMGs are currently unsigned and unnotarized. To install Glance:
 - **Tab-separated values** (parsed by Glance's bounded Rust preview core): `.tab`, `.tsv`
 
   <p><img src="./AppStore/Assets/Screenshots/ScreenshotTSV.png" alt="" width="600"></p>
+
+- **Spreadsheets** (values-only, parsed by Glance's bounded Rust preview core): `.xlsx`. Every
+  worksheet is available from a sheet picker, with dates, booleans, cached formula values, and
+  column letters. Cell styles, charts, images, conditional formatting, `.xls`, and `.numbers` are
+  not supported.
 
 ## Images
 
@@ -134,7 +142,7 @@ The app uses the macOS 26 AppKit design system and intentionally ships Apple sil
 
 **Why must Glance remain running?**
 
-The containing app provides the sandbox-safe Open With bridge and keeps the extension available. Glance can stay unobtrusive in the menu bar with its Dock icon hidden.
+The containing app provides the sandbox-safe Open With bridge and keeps the extension available. Glance runs from the menu bar only; it has no Dock icon or main window.
 
 **Why are images in my Markdown files not loading?**
 
@@ -158,7 +166,8 @@ Glance doesn't currently support disabling individual file types.
 
 **You claim to support [file type], but previews aren't showing up.**
 
-Glance skips non-archive files larger than 10 MB to avoid slowing down your Mac. Folder previews
+Glance skips non-archive files larger than 10 MB to avoid slowing down your Mac; spreadsheets get
+the Rust core’s 25 MB limit. Archive entries larger than 25 MB are not extracted. Folder previews
 load off-main one directory at a time in pages of 500 so large descendants cannot hide their
 siblings or block the initial preview.
 
@@ -177,6 +186,7 @@ Building requires Xcode 26 on an Apple silicon Mac running macOS 26, plus
 the pinned Rust, SwiftFormat, and SwiftLint versions.
 Common local commands are:
 
+- `mise run hooks` to install the hk pre-commit checks for this checkout
 - `mise run test` to run the Rust and Xcode test suites
 - `mise run build` to build the app in the `build` directory
 - `mise run verify` to run tests and a release build

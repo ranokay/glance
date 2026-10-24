@@ -1,3 +1,27 @@
+body {
+	--pele-bg: #ffffff;
+	--pele-fg: #000000;
+	--pele-muted: #6a737d;
+	--pele-line: #000000;
+	--pele-surface: #f6f8fa;
+	--pele-surface-alt: #f3f3f3;
+	--pele-border: #dfe2e5;
+	--pele-error: #b00020;
+}
+
+@media (prefers-color-scheme: dark) {
+	body {
+		--pele-bg: #1e1e1e;
+		--pele-fg: #ffffff;
+		--pele-muted: #9b9b9b;
+		--pele-line: #ffffff;
+		--pele-surface: #111111;
+		--pele-surface-alt: #090909;
+		--pele-border: #6f6f6f;
+		--pele-error: #ff6b6b;
+	}
+}
+
 code {
 	margin: 0;
 	padding: 0.2em 0.4em;

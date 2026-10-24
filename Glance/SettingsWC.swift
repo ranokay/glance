@@ -3,11 +3,6 @@ import GlanceKit
 import ServiceManagement
 
 @MainActor
-protocol DockIconVisibilityUpdating: AnyObject {
-	func updateDockIconVisibility()
-}
-
-@MainActor
 protocol LoginItemManaging {
 	var status: SMAppService.Status { get }
 	func register() throws
@@ -88,11 +83,6 @@ final class SettingsWC: NSWindowController {
 	private let loginItem: any LoginItemManaging
 	private let fontFamilies: [String]
 	private let fontSizeStepper = NSStepper()
-	private let hideDockIconCheckbox = NSButton(
-		checkboxWithTitle: "Hide Dock icon",
-		target: nil,
-		action: nil
-	)
 
 	init(
 		settingsStore: AppSettingsStore,
@@ -149,8 +139,6 @@ final class SettingsWC: NSWindowController {
 			return
 		}
 
-		hideDockIconCheckbox.target = self
-		hideDockIconCheckbox.action = #selector(hideDockIconChanged)
 		startAtLoginCheckbox.target = self
 		startAtLoginCheckbox.action = #selector(startAtLoginChanged)
 		loginItemStatusLabel.textColor = .secondaryLabelColor
@@ -158,10 +146,6 @@ final class SettingsWC: NSWindowController {
 		loginItemStatusLabel.maximumNumberOfLines = 0
 		openLoginItemsButton.target = self
 		openLoginItemsButton.action = #selector(openLoginItemsSettings)
-
-		let dockDescriptionLabel = descriptionLabel(
-			"The Dock icon is hidden when all windows are closed. Glance stays available from the menu bar."
-		)
 
 		fontFamilyPopUpButton.addItem(withTitle: "System Default")
 		fontFamilyPopUpButton.addItems(withTitles: fontFamilies)
@@ -229,8 +213,6 @@ final class SettingsWC: NSWindowController {
 
 		let stackView = NSStackView(views: [
 			sectionLabel("General"),
-			hideDockIconCheckbox,
-			dockDescriptionLabel,
 			startAtLoginCheckbox,
 			loginItemStatusLabel,
 			openLoginItemsButton,
@@ -278,7 +260,6 @@ final class SettingsWC: NSWindowController {
 	// MARK: - State
 
 	func syncState() {
-		hideDockIconCheckbox.state = settingsStore.hideDockIcon ? .on : .off
 		syncLoginItemState()
 		if
 			let fontFamily = settingsStore.previewFontFamily,
@@ -313,12 +294,6 @@ final class SettingsWC: NSWindowController {
 		if let canCheck = userInfo["canCheckForUpdates"] as? Bool {
 			checkForUpdatesButton.isEnabled = canCheck
 		}
-	}
-
-	@objc
-	private func hideDockIconChanged(_ sender: NSButton) {
-		settingsStore.hideDockIcon = sender.state == .on
-		(NSApp.delegate as? DockIconVisibilityUpdating)?.updateDockIconVisibility()
 	}
 
 	private func syncLoginItemState(error: Error? = nil) {

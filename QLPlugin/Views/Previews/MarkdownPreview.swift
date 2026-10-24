@@ -11,7 +11,7 @@ class MarkdownPreview: Preview {
 		withExtension: "css"
 	)
 	private let mermaidScriptURL = WebPreviewVC.resourceBundle.url(
-		forResource: "markdown-mermaid-11.17.2.min",
+		forResource: "markdown-pele-1.9.0.global",
 		withExtension: "js"
 	)
 
@@ -51,7 +51,7 @@ class MarkdownPreview: Preview {
 			return []
 		}
 		guard let mermaidScriptURL else {
-			Log.render.error("Could not find bundled Mermaid script")
+			Log.render.error("Could not find bundled Pele script")
 			return []
 		}
 
@@ -60,30 +60,29 @@ class MarkdownPreview: Preview {
 			const sources = Array.from(
 				document.querySelectorAll('pre[data-glance-mermaid="1"]')
 			);
-			const isDark = window.matchMedia
-				&& window.matchMedia('(prefers-color-scheme: dark)').matches;
-			mermaid.initialize({
-				startOnLoad: false,
-				securityLevel: 'strict',
-				suppressErrorRendering: true,
-				theme: isDark ? 'dark' : 'default'
-			});
+			const styles = getComputedStyle(document.body);
+			const fontFamily = styles.getPropertyValue('--font-family-sans-serif').trim()
+				|| styles.fontFamily;
+			const fontFamilyMono = styles.getPropertyValue('--font-family-monospace').trim()
+				|| 'monospace';
+			const fontSize = parseFloat(styles.fontSize) || 14;
 
-			sources.forEach(async function(source, index) {
+			sources.forEach(function(source, index) {
 				try {
-					const result = await mermaid.render(
-						'glance-mermaid-' + index,
-						source.textContent || ''
-					);
+					const result = pele.render(source.textContent || '', {
+						idPrefix: 'glance-mermaid-' + index,
+						maxWidth: source.clientWidth || document.body.clientWidth || 800,
+						links: false,
+						images: false,
+						fontFamily: fontFamily,
+						fontFamilyMono: fontFamilyMono,
+						fontSize: fontSize
+					});
 					const diagram = document.createElement('div');
 					diagram.className = 'mermaid-diagram';
 					diagram.dataset.glanceMermaidState = 'rendered';
-					diagram.dataset.glanceMermaidTheme = isDark ? 'dark' : 'default';
 					diagram.innerHTML = result.svg;
 					source.replaceWith(diagram);
-					if (result.bindFunctions) {
-						result.bindFunctions(diagram);
-					}
 				} catch (error) {
 					source.dataset.glanceMermaidState = 'failed';
 					console.error('Could not render Mermaid diagram:', error);

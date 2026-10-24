@@ -1,6 +1,64 @@
 import Foundation
 import GlanceKit
 
+enum ArchiveEntryFormat: UInt8 {
+	case zip = 0
+	case tar = 1
+	case tarGz = 2
+	case sevenZip = 3
+	case rar = 4
+
+	init?(previewFileType: PreviewFileType, fileURL: URL) {
+		switch previewFileType {
+			case .zip:
+				self = .zip
+			case .tar:
+				let path = fileURL.path(percentEncoded: false).lowercased()
+				self = path.hasSuffix(".tar.gz") || path.hasSuffix(".tgz") ? .tarGz : .tar
+			case .sevenZip:
+				self = .sevenZip
+			case .rar:
+				self = .rar
+			default:
+				return nil
+		}
+	}
+}
+
+struct ArchivePreviewContext {
+	let fileURL: URL
+	let format: ArchiveEntryFormat
+	let depth: Int
+}
+
+enum ArchiveEntryPreviewError: LocalizedError {
+	case unsupportedFormat
+
+	var errorDescription: String? {
+		"Archive entry format cannot be previewed"
+	}
+}
+
+@MainActor
+enum ArchivePreviewFactory {
+	static func makePreview(
+		file: File,
+		format: ArchiveEntryFormat,
+		depth: Int
+	) async throws -> PreviewVC {
+		switch format {
+			case .zip:
+				try await ZIPPreview.makePreview(file: file, depth: depth)
+			case .tar, .tarGz:
+				try await TARPreview.makePreview(file: file, depth: depth)
+			case .sevenZip:
+				try await SevenZipPreview.makePreview(file: file, depth: depth)
+			case .rar:
+				try await RARPreview.makePreview(file: file, depth: depth)
+		}
+	}
+}
+
 /// Shared scan → tree → outline pipeline for archive previews.
 ///
 /// ZIP, RAR, 7z, and TAR previews are adapters over this module: each declares
@@ -29,16 +87,24 @@ enum ArchivePreview {
 	@MainActor
 	static func makePreview(
 		file: File,
+		format: ArchiveEntryFormat,
+		depth: Int,
 		scan: @Sendable @escaping () throws -> ArchivePreviewPayload,
 		policy: Policy
 	) async throws -> PreviewVC {
 		let payload = try await PreviewExecutor.run(scan)
 		let fileTree = try buildTree(from: payload.entries, policy: policy)
 		try policy.validateTotal(payload)
-		return OutlinePreviewVC(
+		let outline = OutlinePreviewVC(
 			rootNodes: fileTree.root.childrenList,
 			labelText: policy.label(file, payload)
 		)
+		outline.archiveContext = ArchivePreviewContext(
+			fileURL: file.url,
+			format: format,
+			depth: depth
+		)
+		return outline
 	}
 
 	static func buildTree(
@@ -52,7 +118,8 @@ enum ArchivePreview {
 					path: entry.path,
 					isDirectory: entry.entryType == .directory,
 					size: try policy.entrySize(entry.size),
-					dateModified: entry.modifiedUnixSeconds.map(Date.init(timeIntervalSince1970:))
+					dateModified: entry.modifiedUnixSeconds.map(Date.init(timeIntervalSince1970:)),
+					archiveEntryPath: entry.entryType == .file ? entry.path : nil
 				)
 			} catch {
 				if policy.rethrowsEntryError(error) {

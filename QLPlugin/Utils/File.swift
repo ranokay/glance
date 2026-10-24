@@ -43,6 +43,10 @@ class File {
 		return entry.group == .archive || entry.previewFileType == .epub
 	}
 
+	var isSpreadsheet: Bool {
+		SupportedPreviewRegistry.entry(matching: url)?.previewFileType == .spreadsheet
+	}
+
 	var size: Int {
 		attributes[.size] as? Int ?? 0
 	}

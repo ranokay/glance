@@ -21,6 +21,7 @@ final class PreviewSupportTests: XCTestCase {
 			("/tmp/readme.markdown", "markdown.extension.markdown", .markdown),
 			("/tmp/notebook.ipynb", "jupyter.extension.ipynb", .jupyter),
 			("/tmp/table.tsv", "tsv.extension.tsv", .tsv),
+			("/tmp/workbook.xlsx", "spreadsheet.extension.xlsx", .spreadsheet),
 			("/tmp/archive.zip", "archive.extension.zip", .zip),
 			("/tmp/archive.7z", "archive.extension.7z", .sevenZip),
 			("/tmp/archive.rar", "archive.extension.rar", .rar),
@@ -70,6 +71,7 @@ final class PreviewSupportTests: XCTestCase {
 			("/tmp/model.3mf", .threeMF),
 			("/tmp/table.tab", .tsv),
 			("/tmp/table.tsv", .tsv),
+			("/tmp/workbook.xlsx", .spreadsheet),
 			("/tmp/archive.7z", .sevenZip),
 			("/tmp/archive.rar", .rar),
 			("/tmp/archive.ear", .zip),
@@ -119,6 +121,31 @@ final class PreviewSupportTests: XCTestCase {
 		XCTAssertEqual(
 			PreviewSupport.getPreviewFileType(fileURL: URL(fileURLWithPath: "/tmp/TRACK.FLAC")),
 			.flac
+		)
+	}
+
+	func testSpreadsheetFilesUseThePreviewCoreSizeLimit() throws {
+		let directory = FileManager.default.temporaryDirectory
+			.appendingPathComponent("GlanceSpreadsheetPolicy-\(UUID().uuidString)")
+		try FileManager.default.createDirectory(
+			at: directory,
+			withIntermediateDirectories: true
+		)
+		defer { try? FileManager.default.removeItem(at: directory) }
+		let spreadsheet = directory.appendingPathComponent("large.xlsx")
+		let text = directory.appendingPathComponent("large.md")
+		for url in [spreadsheet, text] {
+			XCTAssertTrue(FileManager.default.createFile(atPath: url.path, contents: nil))
+			let handle = try FileHandle(forWritingTo: url)
+			try handle.truncate(atOffset: 20_000_000)
+			try handle.close()
+		}
+
+		XCTAssertNoThrow(
+			try PreviewPolicy.validateFileSize(try File(url: spreadsheet))
+		)
+		XCTAssertThrowsError(
+			try PreviewPolicy.validateFileSize(try File(url: text))
 		)
 	}
 
@@ -370,19 +397,16 @@ final class PreviewSettingsBridgeTests: XCTestCase {
 
 	func testClientReceivesServerSnapshotRoundTrip() async throws {
 		let suiteName = UUID().uuidString
-		let defaults = UserDefaults(suiteName: suiteName)
-		try XCTUnwrap(defaults)
+		let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
 		defer {
-			defaults?.removePersistentDomain(forName: suiteName)
+			defaults.removePersistentDomain(forName: suiteName)
 		}
-		defaults?.set(true, forKey: "flacWaveformEnabled")
-		defaults?.set("SF Mono", forKey: "previewFontFamily")
-		defaults?.set(21.5, forKey: "previewFontSize")
-		defaults?.set(true, forKey: "previewLineWrapping")
+		defaults.set(true, forKey: "flacWaveformEnabled")
+		defaults.set("SF Mono", forKey: "previewFontFamily")
+		defaults.set(21.5, forKey: "previewFontSize")
+		defaults.set(true, forKey: "previewLineWrapping")
 
-		let store = AppSettingsStore(
-			defaults: try XCTUnwrap(defaults)
-		)
+		let store = AppSettingsStore(defaults: defaults)
 		let server = PreviewSettingsServer(settingsStore: store, notificationCenter: center)
 		server.start()
 		let client = PreviewSettingsClient(notificationCenter: center)

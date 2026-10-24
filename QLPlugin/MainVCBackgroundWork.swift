@@ -118,10 +118,7 @@ extension MainVC {
 		setDisplayedStatus(message)
 		statusResetTask = Task { @MainActor [weak self] in
 			try? await Task.sleep(for: .seconds(3))
-			guard !Task.isCancelled else {
-				return
-			}
-			guard let self else {
+			guard !Task.isCancelled, let self else {
 				return
 			}
 			setDisplayedStatus(baseStatusText)
@@ -157,12 +154,38 @@ extension MainVC {
 				guard let self else {
 					return
 				}
-				let previewVC = try await nestedPreviewProvider.makePreviewController(for: node)
-				try Task.checkCancellation()
-				guard currentPreviewController === source else {
-					return
+				if let archiveContext = source.archiveContext {
+					let result = try await nestedPreviewProvider.makeArchiveEntryPreview(
+						for: node,
+						context: archiveContext
+					)
+					do {
+						try Task.checkCancellation()
+					} catch {
+						if let temporaryFileURL = result.temporaryFileURL {
+							ArchiveTemporaryFile.remove(containing: temporaryFileURL)
+						}
+						throw error
+					}
+					guard currentPreviewController === source else {
+						if let temporaryFileURL = result.temporaryFileURL {
+							ArchiveTemporaryFile.remove(containing: temporaryFileURL)
+						}
+						return
+					}
+					pushPreview(
+						result.previewVC,
+						openWithTargetURL: nil,
+						temporaryFileURL: result.temporaryFileURL
+					)
+				} else {
+					let previewVC = try await nestedPreviewProvider.makePreviewController(for: node)
+					try Task.checkCancellation()
+					guard currentPreviewController === source else {
+						return
+					}
+					pushPreview(previewVC, openWithTargetURL: node.fileURL)
 				}
-				pushPreview(previewVC, openWithTargetURL: node.fileURL)
 			} catch is CancellationError {
 				return
 			} catch {

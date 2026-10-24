@@ -4,7 +4,7 @@ import XCTest
 
 /// Corpus sweep: every renderable fixture must resolve through the production
 /// factory and construct without crashing. Missing coverage and regressions
-/// fail; only the encryption-gated archives may throw.
+/// fail; only the explicitly invalid fixtures may throw.
 ///
 /// Note: qlmanage cannot load appex plugins (`-g` rejects them) and the
 /// thumbnail daemon does not dispatch to unregistered extensions, so shelling
@@ -21,6 +21,7 @@ final class CorpusSweepTests: XCTestCase {
 			"encrypted-rar5.rar",
 			"encrypted.7z",
 			"multipart-rar5.rar",
+			"duplicate-sheets.xlsx", // deliberately invalid: sheet names must be unique
 		]
 		var missing = [String]()
 		var failed = [String]()
@@ -87,13 +88,9 @@ final class CorpusSweepTests: XCTestCase {
 			.enumerator(at: root, includingPropertiesForKeys: [.isDirectoryKey])?
 			.compactMap { $0 as? URL }
 			.filter { url in
-				guard !url.lastPathComponent.hasPrefix(".") else {
-					return false
-				}
-				guard url.pathExtension != "b64" else {
-					return false
-				}
-				guard !url.path.contains(modelParts) else {
+				guard !url.lastPathComponent.hasPrefix("."), url.pathExtension != "b64",
+				      !url.path.contains(modelParts)
+				else {
 					return false
 				}
 				return (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == false

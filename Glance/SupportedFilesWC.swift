@@ -37,6 +37,10 @@ final class SupportedFilesWC: NSWindowController {
 		SupportedFileSection(title: "Jupyter Notebook", details: ".ipynb"),
 		SupportedFileSection(title: "Tab-separated Values", details: ".tab, .tsv"),
 		SupportedFileSection(
+			title: "Spreadsheet",
+			details: ".xlsx • Values, dates, and every worksheet"
+		),
+		SupportedFileSection(
 			title: "Folders",
 			details: "Lazy trees with icons, thumbnails, 500-item pages, and Back navigation"
 		),

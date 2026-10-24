@@ -117,7 +117,13 @@ final class DirectoryPreviewTests: XCTestCase {
 		try await waitUntil { previewVC.rootNodes.count { $0.role == .item } == 1001 }
 		XCTAssertEqual(previewVC.previewStatusText, "1001 items")
 		XCTAssertNil(previewVC.rootNodes
-			.first { if case .loadMore = $0.role { true } else { false } })
+			.first {
+				if case .loadMore = $0.role {
+					true
+				} else {
+					false
+				}
+			})
 	}
 
 	func testNonPaddedNumericFilenamesPageContinuouslyThroughCursors() async throws {
@@ -221,7 +227,11 @@ final class DirectoryPreviewTests: XCTestCase {
 		XCTAssertNotNil(itemNode(named: "__glance_load_more__", in: childNode.childrenList))
 		XCTAssertEqual(childNode.childrenList.count { $0.role == .item }, 500)
 		XCTAssertEqual(childNode.childrenList.count {
-			if case .loadMore = $0.role { true } else { false }
+			if case .loadMore = $0.role {
+				true
+			} else {
+				false
+			}
 		}, 1)
 	}
 
@@ -238,7 +248,11 @@ final class DirectoryPreviewTests: XCTestCase {
 		try expand(childNode, in: outlineView)
 		try await waitUntil { childNode.directoryChildrenState == .failed }
 		let retryNode = try XCTUnwrap(childNode.childrenList.first {
-			if case .retry = $0.role { true } else { false }
+			if case .retry = $0.role {
+				true
+			} else {
+				false
+			}
 		})
 		let retryRow = try XCTUnwrap(row(for: retryNode, in: outlineView))
 		outlineView.selectRowIndexes(IndexSet(integer: retryRow), byExtendingSelection: false)

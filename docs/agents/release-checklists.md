@@ -31,7 +31,7 @@ same commit as any intentional bump, then run it.
 4. `CHANGELOG.md`: new entry on top, append-only, never rewrite history.
 5. `scripts/check-release-metadata.sh`: version/build literals and occurrence
    counts; run the script.
-6. Tag `vX.Y.Z` and push the tag — `release.yml` extracts that version's
+6. Tag `vX.Y.Z` and push the tag — `release.yaml` extracts that version's
    section from `CHANGELOG.md`, builds the DMG, and creates the GitHub
    release with the section as its notes.
 
@@ -49,7 +49,7 @@ same commit as any intentional bump, then run it.
 5. Docs: extend the supported-types list in `AppStore/Listing/Description.txt`
    when the type is user-facing.
 
-## Web-runtime bump (drawio, mermaid, or similar bundled viewer)
+## Web-runtime bump (drawio, Pele/Mermaid diagrams, or similar bundled viewer)
 
 1. `docs/<name>-runtime.md`: new version, source URL, SHA-256 digest of the
    runtime and of its license file, measured Release size impact

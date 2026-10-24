@@ -53,6 +53,11 @@ pub(crate) fn scan_zip(path: &Path) -> Result<ArchivePayload, CoreError> {
             .ok_or_else(|| CoreError::limit("ZIP archive metadata size overflow"))?;
         let entry_type = if entry.is_dir() {
             ArchiveEntryType::Directory
+        } else if entry
+            .unix_mode()
+            .is_some_and(crate::extract::is_unix_symlink)
+        {
+            ArchiveEntryType::Other
         } else if entry.is_file() {
             ArchiveEntryType::File
         } else {
@@ -238,6 +243,49 @@ fn read_u64(bytes: &[u8], offset: usize) -> Option<u64> {
         .try_into()
         .ok()
         .map(u64::from_le_bytes)
+}
+
+pub(crate) fn extract_entry(
+    path: &Path,
+    entry_name: &str,
+    max_bytes: usize,
+) -> Result<Vec<u8>, CoreError> {
+    let file = File::open(path)
+        .map_err(|error| CoreError::io(format!("Could not open ZIP archive: {error}")))?;
+    let mut archive = zip::ZipArchive::new(file).map_err(map_zip_error)?;
+    let entry = archive.by_name(entry_name).map_err(|error| match error {
+        ZipError::FileNotFound => {
+            CoreError::invalid(format!("ZIP entry \"{entry_name}\" was not found"))
+        }
+        error => map_zip_error(error),
+    })?;
+    if entry.is_dir() {
+        return Err(CoreError::invalid(
+            "ZIP directory entries cannot be previewed",
+        ));
+    }
+    if entry
+        .unix_mode()
+        .is_some_and(crate::extract::is_unix_symlink)
+    {
+        return Err(CoreError::invalid("ZIP links cannot be previewed"));
+    }
+    if entry.size() > max_bytes as u64 {
+        return Err(CoreError::limit(
+            "ZIP entry exceeds the extracted preview size limit",
+        ));
+    }
+    let mut data = Vec::with_capacity(entry.size() as usize);
+    entry
+        .take(max_bytes as u64 + 1)
+        .read_to_end(&mut data)
+        .map_err(|error| CoreError::io(format!("Could not read ZIP entry: {error}")))?;
+    if data.len() > max_bytes {
+        return Err(CoreError::limit(
+            "ZIP entry exceeds the extracted preview size limit",
+        ));
+    }
+    Ok(data)
 }
 
 #[cfg(test)]

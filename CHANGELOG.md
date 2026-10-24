@@ -2,6 +2,31 @@
 
 Append-only. Newest entry first.
 
+# Unreleased
+
+- Glance is now a true menu-bar-only app: no Dock icon, no main window, and no
+  “Hide Dock icon” preference. Settings and Supported Files remain available
+  from the status menu.
+- Added values-only `.xlsx` previews with every worksheet, dates, booleans,
+  cached formula values, and column letters. Styles, charts, `.xls`, and
+  `.numbers` are out of scope.
+- Archive previews now open files in place: double-click an entry in a ZIP,
+  TAR, TAR.GZ, 7z, or RAR tree. Extracted entries are temporary, capped at
+  25 MB, and deleted on Back; nested archives are allowed to depth 3.
+- Markdown diagrams now render with Pele 1.9.0 instead of Mermaid.js, shrinking
+  the bundled runtime by about 2.87 MB while keeping offline rendering and the
+  existing Mermaid fence syntax.
+- Lint and hooks now run through hk, with jactionlint checking GitHub Actions
+  workflows. The release workflow drops its caches and pins every action to a
+  commit SHA.
+- CI no longer runs the 30-minute exploratory Quick Look corpus on every pull
+  request; the gating corpus sweep remains in the unit suite. Workflow files and
+  the SwiftLint configuration now use the `.yaml` extension, and actions,
+  toolchains, and Rust dependencies were refreshed.
+- Removed the obsolete macOS UI-test target (and its Automation permission
+  prompt), main storyboard, main window controller, and unused icon/XIB code.
+  The app menu is built in code.
+
 # Glance 1.8.2
 
 Glance 1.8.2 makes Quick Look previews follow the app's appearance settings and

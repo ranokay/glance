@@ -370,7 +370,13 @@ final class PreviewSmokeTests: XCTestCase {
 	func testMarkdownPreviewLoadsBundledMermaidOnlyForTrustedFences() async throws {
 		let mermaidURL = try writeFile(
 			named: "diagram.md",
-			contents: "```mermaid\nflowchart LR\n    A --> B\n```\n"
+			contents: """
+			```mermaid
+			flowchart LR
+			    A --> B
+			    click A "https://example.com"
+			```
+			"""
 		)
 		let plainURL = try writeFile(
 			named: "plain.md",
@@ -400,7 +406,7 @@ final class PreviewSmokeTests: XCTestCase {
 		let mermaidState = try await mermaidWebView.evaluateJavaScript(
 			"""
 			[
-				typeof window.mermaid,
+				typeof window.pele,
 				document.querySelector('.mermaid-diagram svg') !== null,
 				document.querySelector('meta[http-equiv="Content-Security-Policy"]')
 					.content.includes("connect-src 'none'")
@@ -408,6 +414,20 @@ final class PreviewSmokeTests: XCTestCase {
 			"""
 		) as? String
 		XCTAssertEqual(mermaidState, "object|true|true")
+		let diagramState = try await mermaidWebView.evaluateJavaScript(
+			"""
+			(function() {
+				const svg = document.querySelector('.mermaid-diagram svg');
+				const ids = Array.from(svg.querySelectorAll('[id]')).map((node) => node.id);
+				return [
+					svg.querySelectorAll('a').length,
+					svg.querySelectorAll('image').length,
+					new Set(ids).size === ids.length
+				].join('|');
+			})();
+			"""
+		) as? String
+		XCTAssertEqual(diagramState, "0|0|true")
 
 		let generatedPlainPreview = try await MarkdownPreview().createPreviewVC(
 			file: File(url: plainURL)
@@ -421,7 +441,7 @@ final class PreviewSmokeTests: XCTestCase {
 		let plainState = try await plainWebView.evaluateJavaScript(
 			"""
 			[
-				typeof window.mermaid,
+				typeof window.pele,
 				document.querySelectorAll('script').length,
 				document.querySelector('pre code') !== null
 			].join('|')
@@ -457,12 +477,12 @@ final class PreviewSmokeTests: XCTestCase {
 	}
 
 	func testMarkdownPreviewRendersMermaidInLightAndDarkAppearances() async throws {
-		for (appearanceName, expectedTheme) in [
-			(NSAppearance.Name.aqua, "default"),
-			(.darkAqua, "dark"),
+		for (appearanceName, expectedBackground) in [
+			(NSAppearance.Name.aqua, "#ffffff"),
+			(.darkAqua, "#1e1e1e"),
 		] {
 			let fileURL = try writeFile(
-				named: "diagram-\(expectedTheme).md",
+				named: "diagram-\(expectedBackground).md",
 				contents: "```mermaid\nsequenceDiagram\n    Alice->>Bob: Hello\n```\n"
 			)
 			let generatedPreview = try await MarkdownPreview().createPreviewVC(
@@ -480,25 +500,25 @@ final class PreviewSmokeTests: XCTestCase {
 				"document.querySelector('.mermaid-diagram svg') !== null",
 				in: webView
 			)
-			let theme = try await webView.evaluateJavaScript(
-				"document.querySelector('.mermaid-diagram').dataset.glanceMermaidTheme"
+			let background = try await webView.evaluateJavaScript(
+				"getComputedStyle(document.body).getPropertyValue('--pele-bg').trim()"
 			) as? String
-			XCTAssertEqual(theme, expectedTheme)
+			XCTAssertEqual(background, expectedBackground)
 		}
 	}
 
-	func testMermaidRuntimeAndLicenseAreBundled() throws {
+	func testPeleRuntimeAndLicenseAreBundled() throws {
 		let bundle = WebPreviewVC.resourceBundle
 		let runtimeURL = try XCTUnwrap(
-			bundle.url(forResource: "markdown-mermaid-11.17.2.min", withExtension: "js")
+			bundle.url(forResource: "markdown-pele-1.9.0.global", withExtension: "js")
 		)
 		let licenseURL = try XCTUnwrap(
-			bundle.url(forResource: "MERMAID_LICENSE", withExtension: "txt")
+			bundle.url(forResource: "PELE_LICENSE", withExtension: "txt")
 		)
 
-		XCTAssertGreaterThan(try Data(contentsOf: runtimeURL).count, 3_000_000)
+		XCTAssertGreaterThan(try Data(contentsOf: runtimeURL).count, 500_000)
 		XCTAssertTrue(
-			try String(contentsOf: licenseURL, encoding: .utf8).contains("The MIT License")
+			try String(contentsOf: licenseURL, encoding: .utf8).contains("MIT License")
 		)
 	}
 
@@ -890,6 +910,28 @@ final class PreviewSmokeTests: XCTestCase {
 		XCTAssertEqual(previewVC.headers, ["name", "value"])
 		XCTAssertEqual(previewVC.cells.count, 5000)
 		XCTAssertEqual(previewVC.cells.last?["name"], "row-4999")
+	}
+
+	func testSpreadsheetPreviewShowsEveryWorksheetAndSwitchesSheets() async throws {
+		let fileURL = URL(fileURLWithPath: #filePath)
+			.deletingLastPathComponent()
+			.appendingPathComponent("TestFiles/spreadsheet/example.xlsx")
+		let generatedPreview = try await SpreadsheetPreview().createPreviewVC(
+			file: File(url: fileURL)
+		)
+		let preview = try XCTUnwrap(generatedPreview as? SpreadsheetPreviewVC)
+		preview.loadViewIfNeeded()
+
+		XCTAssertEqual(preview.sheetPopUpButton.itemTitles, ["Summary", "Data"])
+		XCTAssertEqual(preview.tableView.numberOfRows, 4)
+
+		preview.sheetPopUpButton.selectItem(at: 1)
+		preview.sheetPopUpButton.sendAction(
+			preview.sheetPopUpButton.action,
+			to: preview.sheetPopUpButton.target
+		)
+		XCTAssertEqual(preview.tableView.numberOfRows, 2)
+		XCTAssertEqual(preview.previewStatusText, "Data")
 	}
 
 	func testTSVPreviewRejectsFilesOverProductionSizeLimit() async throws {
