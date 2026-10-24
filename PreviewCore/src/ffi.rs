@@ -101,6 +101,12 @@ pub unsafe extern "C" fn glance_render_structured(
     })
 }
 
+/// Returns the structured preview input cap in bytes.
+#[unsafe(no_mangle)]
+pub extern "C" fn glance_structured_max_input_bytes() -> usize {
+    crate::structured::MAX_INPUT_BYTES
+}
+
 /// Renders a DRM-free EPUB 2 or EPUB 3 book at a raw filesystem path.
 ///
 /// # Safety

@@ -56,14 +56,7 @@ pub(crate) fn render_structured(
     let mut budget = Budget::default();
     let tree = match format {
         StructuredFormat::Json => json_tree(data, &mut budget)?,
-        StructuredFormat::Plist => {
-            if xml_plist_nests_too_deep(data) {
-                budget.truncated = true;
-                Node::Ellipsis
-            } else {
-                plist_tree(data, &mut budget)?
-            }
-        }
+        StructuredFormat::Plist => plist_tree(data, &mut budget)?,
         StructuredFormat::Xml => xml_tree(data, &mut budget)?,
     };
 
@@ -161,92 +154,170 @@ fn json_node(value: &JsonValue, depth: usize, budget: &mut Budget) -> Node {
 }
 
 fn plist_tree(data: &[u8], budget: &mut Budget) -> Result<Node, CoreError> {
-    let value = plist::Value::from_reader(Cursor::new(data))
-        .map_err(|error| CoreError::parse(format!("Could not parse property list: {error}")))?;
-    let node = plist_node(&value, 0, budget);
-    // A tens-of-thousands-deep value would otherwise overflow the stack in its recursive Drop.
-    dismantle_plist(value);
-    Ok(node)
-}
+    // Consume the event stream directly so repeated binary-plist references cannot expand
+    // into a full value tree before the node budget applies.
+    let events = plist::stream::Reader::new(Cursor::new(data));
+    let mut stack: Vec<PlistFrame> = Vec::new();
+    let mut roots = Vec::new();
 
-fn dismantle_plist(value: plist::Value) {
-    let mut pending = vec![value];
-    while let Some(value) = pending.pop() {
-        match value {
-            plist::Value::Array(values) => pending.extend(values),
-            plist::Value::Dictionary(dictionary) => {
-                pending.extend(dictionary.into_iter().map(|(_, value)| value));
-            }
-            _ => {}
-        }
-    }
-}
-
-/// Rejects deeply nested XML property lists before the plist crate recurses into them.
-fn xml_plist_nests_too_deep(data: &[u8]) -> bool {
-    if data.starts_with(b"bplist") {
-        return false;
-    }
-    let mut reader = Reader::from_reader(Cursor::new(data));
-    let mut buffer = Vec::new();
-    let mut depth = 0usize;
-    loop {
-        match reader.read_event_into(&mut buffer) {
-            Ok(Event::Start(_)) => {
-                depth += 1;
-                if depth > MAX_DEPTH {
-                    return true;
+    for event in events {
+        let event = event
+            .map_err(|error| CoreError::parse(format!("Could not parse property list: {error}")))?;
+        match event {
+            plist::stream::Event::StartArray(_) => {
+                if !budget.take(stack.len()) {
+                    mark_plist_truncated(&mut stack, &mut roots);
+                    break;
                 }
+                stack.push(PlistFrame::Array(Vec::new()));
             }
-            Ok(Event::End(_)) => depth = depth.saturating_sub(1),
-            Ok(Event::Eof) | Err(_) => return false,
-            _ => {}
+            plist::stream::Event::StartDictionary(_) => {
+                if !budget.take(stack.len()) {
+                    mark_plist_truncated(&mut stack, &mut roots);
+                    break;
+                }
+                stack.push(PlistFrame::Dictionary {
+                    entries: Vec::new(),
+                    pending_key: None,
+                });
+            }
+            plist::stream::Event::EndCollection => {
+                let Some(frame) = stack.pop() else {
+                    return Err(CoreError::parse(
+                        "Property list closes a collection that was not opened",
+                    ));
+                };
+                if !frame.is_complete() {
+                    return Err(CoreError::parse(
+                        "Property list dictionary is missing a value",
+                    ));
+                }
+                append_plist_node(&mut stack, &mut roots, frame.into_node())?;
+            }
+            event => {
+                if !budget.take(stack.len()) {
+                    mark_plist_truncated(&mut stack, &mut roots);
+                    break;
+                }
+                let node = plist_event_node(event, budget);
+                append_plist_node(&mut stack, &mut roots, node)?;
+            }
+        }
+    }
+
+    if budget.exhausted {
+        while let Some(frame) = stack.pop() {
+            append_plist_node(&mut stack, &mut roots, frame.into_node())?;
+        }
+    } else if !stack.is_empty() {
+        return Err(CoreError::parse(
+            "Property list ended before every collection was closed",
+        ));
+    }
+
+    if roots.len() != 1 {
+        return Err(CoreError::parse(
+            "Property list does not contain a single root value",
+        ));
+    }
+    Ok(roots.pop().expect("length checked"))
+}
+
+enum PlistFrame {
+    Array(Vec<Entry>),
+    Dictionary {
+        entries: Vec<Entry>,
+        pending_key: Option<String>,
+    },
+}
+
+impl PlistFrame {
+    fn is_complete(&self) -> bool {
+        match self {
+            Self::Array(_) => true,
+            Self::Dictionary { pending_key, .. } => pending_key.is_none(),
+        }
+    }
+
+    fn into_node(self) -> Node {
+        match self {
+            Self::Array(entries) => Node::Array(entries),
+            Self::Dictionary { entries, .. } => Node::Object(entries),
         }
     }
 }
 
-fn plist_node(value: &plist::Value, depth: usize, budget: &mut Budget) -> Node {
-    if !budget.take(depth) {
-        return Node::Ellipsis;
+fn plist_event_node(event: plist::stream::Event<'static>, budget: &mut Budget) -> Node {
+    match event {
+        plist::stream::Event::Boolean(value) => Node::Boolean(value),
+        plist::stream::Event::Data(bytes) => Node::Data(bytes.len()),
+        plist::stream::Event::Date(date) => Node::Date(date.to_xml_format()),
+        plist::stream::Event::Integer(value) => Node::Number(value.to_string()),
+        plist::stream::Event::Real(value) => Node::Number(value.to_string()),
+        plist::stream::Event::String(value) => Node::String(budget.text(&value)),
+        plist::stream::Event::Uid(value) => Node::Uid(value.get()),
+        _ => Node::String("Unsupported property list value".to_owned()),
     }
-    match value {
-        plist::Value::Array(array) => {
-            let mut entries = Vec::new();
-            for (index, value) in array.iter().enumerate() {
-                let node = plist_node(value, depth + 1, budget);
+}
+
+fn append_plist_node(
+    stack: &mut [PlistFrame],
+    roots: &mut Vec<Node>,
+    node: Node,
+) -> Result<(), CoreError> {
+    match stack.last_mut() {
+        None => roots.push(node),
+        Some(PlistFrame::Array(entries)) => entries.push(Entry {
+            label: Label::Index(entries.len()),
+            node,
+        }),
+        Some(PlistFrame::Dictionary {
+            entries,
+            pending_key,
+        }) => {
+            if let Some(key) = pending_key.take() {
                 entries.push(Entry {
-                    label: Label::Index(index),
+                    label: Label::Key {
+                        text: key,
+                        quoted: false,
+                    },
                     node,
                 });
-                if budget.exhausted {
-                    break;
+            } else {
+                match node {
+                    Node::String(key) => *pending_key = Some(key),
+                    _ => {
+                        return Err(CoreError::parse(
+                            "Property list dictionary key is not a string",
+                        ));
+                    }
                 }
             }
-            Node::Array(entries)
         }
-        plist::Value::Dictionary(dictionary) => {
-            let mut entries = Vec::new();
-            for (key, value) in dictionary {
-                let label = Label::Key {
-                    text: budget.text(key),
+    }
+    Ok(())
+}
+
+fn mark_plist_truncated(stack: &mut [PlistFrame], roots: &mut Vec<Node>) {
+    match stack.last_mut() {
+        Some(PlistFrame::Array(entries)) => entries.push(Entry {
+            label: Label::Index(entries.len()),
+            node: Node::Ellipsis,
+        }),
+        Some(PlistFrame::Dictionary {
+            entries,
+            pending_key,
+        }) => {
+            let key = pending_key.take().unwrap_or_else(|| "…".to_owned());
+            entries.push(Entry {
+                label: Label::Key {
+                    text: key,
                     quoted: false,
-                };
-                let node = plist_node(value, depth + 1, budget);
-                entries.push(Entry { label, node });
-                if budget.exhausted {
-                    break;
-                }
-            }
-            Node::Object(entries)
+                },
+                node: Node::Ellipsis,
+            });
         }
-        plist::Value::Boolean(value) => Node::Boolean(*value),
-        plist::Value::Data(bytes) => Node::Data(bytes.len()),
-        plist::Value::Date(date) => Node::Date(date.to_xml_format()),
-        plist::Value::Real(value) => Node::Number(value.to_string()),
-        plist::Value::Integer(value) => Node::Number(value.to_string()),
-        plist::Value::String(value) => Node::String(budget.text(value)),
-        plist::Value::Uid(value) => Node::Uid(value.get()),
-        _ => Node::String("Unsupported property list value".to_owned()),
+        None => roots.push(Node::Ellipsis),
     }
 }
 
@@ -267,14 +338,14 @@ fn xml_tree(data: &[u8], budget: &mut Budget) -> Result<Node, CoreError> {
                 if budget.exhausted || !budget.take(stack.len()) {
                     break;
                 }
-                stack.push(xml_frame(&start, &reader, budget));
+                stack.push(xml_frame(&start, &reader, budget)?);
             }
             Event::Empty(start) => {
                 flush_xml_text(&mut pending_text, &mut stack, &mut roots, budget)?;
                 if budget.exhausted || !budget.take(stack.len()) {
                     break;
                 }
-                let frame = xml_frame(&start, &reader, budget);
+                let frame = xml_frame(&start, &reader, budget)?;
                 push_xml_node(
                     &mut stack,
                     &mut roots,
@@ -380,8 +451,13 @@ fn flush_xml_text(
     if pending.is_empty() {
         return Ok(());
     }
-    let value = pending.trim_end();
-    if value.trim().is_empty() {
+    let preserve_space = preserves_xml_space(stack);
+    let value = if preserve_space {
+        pending.as_str()
+    } else {
+        pending.trim_end()
+    };
+    if value.is_empty() || (!preserve_space && value.trim().is_empty()) {
         pending.clear();
         return Ok(());
     }
@@ -398,6 +474,19 @@ fn flush_xml_text(
     Ok(())
 }
 
+fn preserves_xml_space(stack: &[XmlFrame]) -> bool {
+    for frame in stack.iter().rev() {
+        if let Some((_, value)) = frame
+            .attributes
+            .iter()
+            .find(|(name, _)| name == "xml:space")
+        {
+            return value == "preserve";
+        }
+    }
+    false
+}
+
 struct XmlFrame {
     name: String,
     attributes: Vec<(String, String)>,
@@ -408,9 +497,11 @@ fn xml_frame(
     start: &BytesStart<'_>,
     reader: &Reader<Cursor<&[u8]>>,
     budget: &mut Budget,
-) -> XmlFrame {
+) -> Result<XmlFrame, CoreError> {
     let mut attributes = Vec::new();
-    for attribute in start.attributes().with_checks(false).flatten() {
+    for attribute in start.attributes() {
+        let attribute = attribute
+            .map_err(|error| CoreError::parse(format!("Could not parse XML attribute: {error}")))?;
         let name = budget.text(&String::from_utf8_lossy(attribute.key.as_ref()));
         let value = attribute
             .decoded_and_normalized_value(quick_xml::XmlVersion::Implicit1_0, reader.decoder())
@@ -418,11 +509,11 @@ fn xml_frame(
             .unwrap_or_else(|_| String::from_utf8_lossy(&attribute.value).into_owned());
         attributes.push((name, budget.text(&value)));
     }
-    XmlFrame {
+    Ok(XmlFrame {
         name: budget.text(&String::from_utf8_lossy(start.name().as_ref())),
         attributes,
         children: Vec::new(),
-    }
+    })
 }
 
 fn xml_text(text: &quick_xml::events::BytesText<'_>) -> Result<String, CoreError> {
@@ -837,22 +928,42 @@ mod tests {
 
     /// A valid binary property list whose single-element array chain is `depth` levels deep.
     fn deep_binary_plist(depth: usize) -> Vec<u8> {
+        let mut objects = vec![vec![0x51, b'x']];
+        for index in 1..=depth {
+            let mut object = vec![0xA1];
+            object.extend_from_slice(&binary_reference((index - 1) as u32));
+            objects.push(object);
+        }
+        binary_plist(objects, depth)
+    }
+
+    /// A binary plist whose array chain references the previous level twice, so its expanded
+    /// tree is exponential in the file size.
+    fn amplified_binary_plist(depth: usize) -> Vec<u8> {
+        let mut objects = vec![vec![0x51, b'x']];
+        for index in 1..=depth {
+            let mut object = vec![0xA2];
+            for _ in 0..2 {
+                object.extend_from_slice(&binary_reference((index - 1) as u32));
+            }
+            objects.push(object);
+        }
+        binary_plist(objects, depth)
+    }
+
+    fn binary_reference(value: u32) -> [u8; 3] {
+        let bytes = value.to_be_bytes();
+        [bytes[1], bytes[2], bytes[3]]
+    }
+
+    fn binary_plist(objects: Vec<Vec<u8>>, top_object: usize) -> Vec<u8> {
         const OBJECT_REFERENCE_BYTES: usize = 3;
         let mut bytes = b"bplist00".to_vec();
         let mut offsets = Vec::new();
-
-        // Object 0: the innermost ASCII string "x".
-        offsets.push(bytes.len());
-        bytes.extend_from_slice(&[0x51, b'x']);
-
-        // Objects 1...depth: arrays that each reference the previous object.
-        for index in 1..=depth {
+        for object in &objects {
             offsets.push(bytes.len());
-            bytes.push(0xA1);
-            let reference = (index - 1) as u32;
-            bytes.extend_from_slice(&reference.to_be_bytes()[4 - OBJECT_REFERENCE_BYTES..]);
+            bytes.extend_from_slice(object);
         }
-
         let offset_table_offset = bytes.len();
         for offset in offsets {
             bytes.extend_from_slice(&(offset as u32).to_be_bytes());
@@ -860,8 +971,8 @@ mod tests {
         bytes.extend_from_slice(&[0; 6]);
         bytes.push(4);
         bytes.push(OBJECT_REFERENCE_BYTES as u8);
-        bytes.extend_from_slice(&((depth + 1) as u64).to_be_bytes());
-        bytes.extend_from_slice(&(depth as u64).to_be_bytes());
+        bytes.extend_from_slice(&(objects.len() as u64).to_be_bytes());
+        bytes.extend_from_slice(&(top_object as u64).to_be_bytes());
         bytes.extend_from_slice(&(offset_table_offset as u64).to_be_bytes());
         bytes
     }
@@ -961,9 +1072,33 @@ mod tests {
     }
 
     #[test]
-    fn truncates_deep_binary_plists_without_recursive_drops() {
+    fn truncates_deep_binary_plists() {
         let html = render_structured(&deep_binary_plist(50_000), StructuredFormat::Plist).unwrap();
         assert!(html.contains("Preview truncated"));
+    }
+
+    #[test]
+    fn truncates_amplified_binary_plists() {
+        let html = render_structured(&amplified_binary_plist(24), StructuredFormat::Plist).unwrap();
+        assert!(html.contains("Preview truncated"));
+    }
+
+    #[test]
+    fn preserves_xml_space_directives() {
+        let html = render_structured(
+            b"<root xml:space=\"preserve\"><value>   </value><trail>text   </trail></root>",
+            StructuredFormat::Xml,
+        )
+        .unwrap();
+
+        assert!(html.contains(">   </div>"));
+        assert!(html.contains("text   </div>"));
+    }
+
+    #[test]
+    fn rejects_malformed_xml_attributes() {
+        assert!(render_structured(b"<root bad=oops/>", StructuredFormat::Xml).is_err());
+        assert!(render_structured(b"<root a=\"1\" a=\"2\"/>", StructuredFormat::Xml).is_err());
     }
 
     #[test]
@@ -1007,7 +1142,7 @@ mod tests {
         assert!(output_html.len() < MAX_OUTPUT_BYTES + MAX_VALUE_CHARS * 2);
 
         let attributes = (0..60_000)
-            .map(|index| format!(" attribute{index}=\"value\"", index = index % 100))
+            .map(|index| format!(" attribute{index}=\"value\""))
             .collect::<String>();
         let attribute_html = render_structured(
             format!("<root{attributes}/>").as_bytes(),

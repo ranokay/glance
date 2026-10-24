@@ -55,7 +55,9 @@ class StructuredPreview: Preview {
 	private func makeContent(fileURL: URL) async throws -> WebPreviewContent {
 		let format = structuredFormat(for: fileURL)
 		let data = try await PreviewExecutor.run {
-			try Data(contentsOf: fileURL)
+			let handle = try FileHandle(forReadingFrom: fileURL)
+			defer { try? handle.close() }
+			return try handle.read(upToCount: HTMLRenderer.structuredMaximumReadBytes) ?? Data()
 		}
 
 		let html: String

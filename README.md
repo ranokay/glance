@@ -171,9 +171,10 @@ Glance doesn't currently support disabling individual file types.
 **You claim to support [file type], but previews aren't showing up.**
 
 Glance skips non-archive files larger than 10 MB to avoid slowing down your Mac; spreadsheets get
-the Rust core’s 25 MB limit, and structured data files above 4 MB show a truncation notice. Archive
-entries larger than 25 MB are not extracted. Folder previews load off-main one directory at a time
-in pages of 500 so large descendants cannot hide their siblings or block the initial preview.
+the Rust core’s 25 MB limit. Structured data files are exempt from that preflight: Glance reads at
+most 4 MB and shows a truncation notice when the file is larger. Archive entries larger than 25 MB
+are not extracted. Folder previews load off-main one directory at a time in pages of 500 so large
+descendants cannot hide their siblings or block the initial preview.
 
 It's possible that your file's extension or [UTI](https://en.wikipedia.org/wiki/Uniform_Type_Identifier) isn't associated with Glance. You can easily verify this:
 

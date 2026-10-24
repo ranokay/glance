@@ -35,6 +35,7 @@ GlanceRenderResult glance_render_code(
 );
 GlanceRenderResult glance_render_markdown(const uint8_t *source_data, size_t source_length);
 GlanceRenderResult glance_render_notebook(const uint8_t *source_data, size_t source_length);
+size_t glance_structured_max_input_bytes(void);
 GlanceRenderResult glance_render_structured(
 	const uint8_t *data,
 	size_t data_length,

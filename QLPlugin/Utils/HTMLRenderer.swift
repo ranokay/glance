@@ -25,6 +25,12 @@ extension HTMLRendererError: LocalizedError {
 }
 
 enum HTMLRenderer {
+	/// One byte over the core's structured cap tells the renderer the file is truncated without
+	/// reading the whole file.
+	static var structuredMaximumReadBytes: Int {
+		Int(glance_structured_max_input_bytes()) + 1
+	}
+
 	/// Converts a code string to HTML with support for syntax highlighting.
 	static func renderCode(_ source: String, lexer: String) throws -> String {
 		let result = withUTF8Buffer(source) { sourcePointer, sourceLength in

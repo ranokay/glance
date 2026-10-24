@@ -130,26 +130,30 @@ final class PreviewSupportTests: XCTestCase {
 		)
 	}
 
-	func testSpreadsheetFilesUseThePreviewCoreSizeLimit() throws {
+	func testPreviewPolicyExemptsBoundedPreviewKindsFromTheSharedSizeLimit() throws {
 		let directory = FileManager.default.temporaryDirectory
-			.appendingPathComponent("GlanceSpreadsheetPolicy-\(UUID().uuidString)")
+			.appendingPathComponent("GlancePreviewPolicy-\(UUID().uuidString)")
 		try FileManager.default.createDirectory(
 			at: directory,
 			withIntermediateDirectories: true,
 		)
 		defer { try? FileManager.default.removeItem(at: directory) }
 		let spreadsheet = directory.appendingPathComponent("large.xlsx")
+		let structured = directory.appendingPathComponent("large.json")
 		let text = directory.appendingPathComponent("large.md")
-		for url in [spreadsheet, text] {
+		for url in [spreadsheet, structured, text] {
 			XCTAssertTrue(FileManager.default.createFile(atPath: url.path, contents: nil))
 			let handle = try FileHandle(forWritingTo: url)
 			try handle.truncate(atOffset: 20_000_000)
 			try handle.close()
 		}
 
-		XCTAssertNoThrow(
-			try PreviewPolicy.validateFileSize(try File(url: spreadsheet)),
-		)
+		for url in [spreadsheet, structured] {
+			XCTAssertNoThrow(
+				try PreviewPolicy.validateFileSize(try File(url: url)),
+				url.lastPathComponent,
+			)
+		}
 		XCTAssertThrowsError(
 			try PreviewPolicy.validateFileSize(try File(url: text)),
 		)

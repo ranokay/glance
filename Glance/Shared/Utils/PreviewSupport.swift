@@ -44,4 +44,10 @@ public enum PreviewSupport {
 	public static func isStreamedAudio(fileURL: URL) -> Bool {
 		getPreviewFileType(fileURL: fileURL) == .flac
 	}
+
+	/// Whether the preview reads a bounded prefix, so the shared file-size preflight does not
+	/// apply.
+	public static func isStructuredData(fileURL: URL) -> Bool {
+		getPreviewFileType(fileURL: fileURL) == .structured
+	}
 }
