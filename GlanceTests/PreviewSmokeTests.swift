@@ -224,7 +224,7 @@ final class PreviewSmokeTests: XCTestCase {
 			(invalidUTF8URL, "Draw.io diagram is not valid UTF-8"),
 			(compressedURL, "Compressed Draw.io diagrams are not supported"),
 			(oversizedURL, "Draw.io diagram exceeds the 10 MB preview limit"),
-			(externalEntityURL, "document type declarations are not allowed")
+			(externalEntityURL, "document type declarations are not allowed"),
 		]
 
 		for (fileURL, expectedMessage) in failures {
@@ -479,7 +479,7 @@ final class PreviewSmokeTests: XCTestCase {
 	func testMarkdownPreviewRendersMermaidInLightAndDarkAppearances() async throws {
 		for (appearanceName, expectedBackground) in [
 			(NSAppearance.Name.aqua, "#ffffff"),
-			(.darkAqua, "#1e1e1e")
+			(.darkAqua, "#1e1e1e"),
 		] {
 			let fileURL = try writeFile(
 				named: "diagram-\(expectedBackground).md",
@@ -659,7 +659,7 @@ final class PreviewSmokeTests: XCTestCase {
 	func testPreviewBackgroundMatchesWebContentBeforeFirstPaintInBothAppearances() throws {
 		for (appearanceName, expectedComponent) in [
 			(NSAppearance.Name.aqua, CGFloat(1)),
-			(NSAppearance.Name.darkAqua, CGFloat(30) / 255)
+			(NSAppearance.Name.darkAqua, CGFloat(30) / 255),
 		] {
 			let previewVC = WebPreviewVC(html: "<p>Matched background</p>")
 			previewVC.loadViewIfNeeded()
@@ -741,7 +741,7 @@ final class PreviewSmokeTests: XCTestCase {
 		let formatHTML = [
 			#"<pre class="chroma"><code>code</code></pre>"#,
 			#"<div class="markdown-body"><pre><code>markdown</code></pre></div>"#,
-			#"<div class="cell cell-code"><pre><code>notebook</code></pre></div>"#
+			#"<div class="cell cell-code"><pre><code>notebook</code></pre></div>"#,
 		]
 
 		for html in formatHTML {
@@ -1134,7 +1134,7 @@ final class PreviewSmokeTests: XCTestCase {
 		let rejectedURLs = [
 			malformed,
 			fixtures.appendingPathComponent("encrypted-rar5.rar"),
-			fixtures.appendingPathComponent("multipart-rar5.rar")
+			fixtures.appendingPathComponent("multipart-rar5.rar"),
 		]
 
 		for rejectedURL in rejectedURLs {
