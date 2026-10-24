@@ -2,6 +2,7 @@ import Foundation
 
 public enum PreviewFileType: Equatable, Sendable {
 	case code
+	case database
 	case drawIO
 	case epub
 	case flac

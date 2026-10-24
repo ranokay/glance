@@ -47,6 +47,10 @@ class File {
 		SupportedPreviewRegistry.entry(matching: url)?.previewFileType == .spreadsheet
 	}
 
+	var isDatabase: Bool {
+		SupportedPreviewRegistry.entry(matching: url)?.previewFileType == .database
+	}
+
 	var size: Int {
 		attributes[.size] as? Int ?? 0
 	}

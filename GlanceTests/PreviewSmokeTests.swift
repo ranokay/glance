@@ -1125,6 +1125,249 @@ final class PreviewSmokeTests: XCTestCase {
 		XCTAssertEqual(preview.previewStatusText, "Data")
 	}
 
+	func testSQLitePreviewShowsTypedColumnsNullsAndBlobs() async throws {
+		let fileURL = URL(fileURLWithPath: #filePath)
+			.deletingLastPathComponent()
+			.appendingPathComponent("TestFiles/sqlite/example.sqlite")
+		let payload = try await PreviewExecutor.run {
+			try PreviewCoreBridge.parseSQLite(at: fileURL, table: nil, offset: 0)
+		}
+		XCTAssertEqual(
+			payload.tables,
+			[
+				"big",
+				"empty_names",
+				"empty_table",
+				"generated_columns",
+				"long_values",
+				"people",
+				"quoted",
+				"wide",
+				"without_rowid",
+			],
+		)
+		XCTAssertEqual(payload.table?.name, "big")
+		XCTAssertEqual(payload.table?.rows.count, 50)
+		XCTAssertEqual(payload.table?.hasMore, true)
+
+		let generatedPreview = try await SQLitePreview().createPreviewVC(
+			file: File(url: fileURL),
+		)
+		let preview = try XCTUnwrap(generatedPreview as? SQLitePreviewVC)
+		preview.loadViewIfNeeded()
+
+		XCTAssertEqual(preview.tablePopUpButton.itemTitles, payload.tables)
+		XCTAssertEqual(preview.tableView.numberOfRows, 50)
+		XCTAssertEqual(preview.previewStatusText, "big — rows 1–50+")
+
+		preview.tablePopUpButton.selectItem(withTitle: "people")
+		preview.tablePopUpButton.sendAction(
+			preview.tablePopUpButton.action,
+			to: preview.tablePopUpButton.target,
+		)
+		try await waitForSQLiteStatus("people — rows 1–3", on: preview)
+
+		XCTAssertEqual(
+			preview.tableView.tableColumns.map(\.title),
+			[
+				"id (INTEGER)",
+				"name (TEXT)",
+				"score (REAL)",
+				"note (TEXT)",
+				"avatar (BLOB)",
+				"active (INTEGER)",
+			],
+		)
+		let noteColumn = try XCTUnwrap(preview.tableView.tableColumns
+			.first { $0.title == "note (TEXT)" })
+		let nullNote = preview.tableView(preview.tableView, viewFor: noteColumn, row: 0)
+			as? NSTextField
+		let emptyNote = preview.tableView(preview.tableView, viewFor: noteColumn, row: 1)
+			as? NSTextField
+		XCTAssertEqual(nullNote?.stringValue, "NULL")
+		XCTAssertEqual(emptyNote?.stringValue, "")
+
+		let blobColumn = try XCTUnwrap(preview.tableView.tableColumns
+			.first { $0.title == "avatar (BLOB)" })
+		let blobCell = preview.tableView(preview.tableView, viewFor: blobColumn, row: 0)
+			as? NSTextField
+		XCTAssertEqual(blobCell?.stringValue.hasPrefix("BLOB ("), true)
+	}
+
+	func testSQLitePreviewPagesForwardAndBackBounded() async throws {
+		let fileURL = URL(fileURLWithPath: #filePath)
+			.deletingLastPathComponent()
+			.appendingPathComponent("TestFiles/sqlite/example.sqlite")
+		let generatedPreview = try await SQLitePreview().createPreviewVC(
+			file: File(url: fileURL),
+		)
+		let preview = try XCTUnwrap(generatedPreview as? SQLitePreviewVC)
+		preview.loadViewIfNeeded()
+
+		XCTAssertTrue(preview.nextButton.isEnabled)
+		XCTAssertFalse(preview.previousButton.isEnabled)
+		preview.nextButton.performClick(nil)
+		try await waitForSQLiteStatus("big — rows 51–75", on: preview)
+		XCTAssertEqual(preview.tableView.numberOfRows, 25)
+		XCTAssertFalse(preview.nextButton.isEnabled)
+		XCTAssertTrue(preview.previousButton.isEnabled)
+
+		preview.previousButton.performClick(nil)
+		try await waitForSQLiteStatus("big — rows 1–50+", on: preview)
+		XCTAssertEqual(preview.tableView.numberOfRows, 50)
+		XCTAssertTrue(preview.nextButton.isEnabled)
+		XCTAssertFalse(preview.previousButton.isEnabled)
+	}
+
+	func testSQLitePreviewLeavesTheDatabaseUntouched() async throws {
+		let fixtureURL = URL(fileURLWithPath: #filePath)
+			.deletingLastPathComponent()
+			.appendingPathComponent("TestFiles/sqlite/example.sqlite")
+		let directory = temporaryDirectory.appendingPathComponent("database", isDirectory: true)
+		try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+		let fileURL = directory.appendingPathComponent("example.sqlite")
+		try FileManager.default.copyItem(at: fixtureURL, to: fileURL)
+		let before = try Data(contentsOf: fileURL)
+		let entriesBefore = try FileManager.default.contentsOfDirectory(atPath: directory.path)
+			.sorted()
+
+		let generatedPreview = try await SQLitePreview().createPreviewVC(
+			file: File(url: fileURL),
+		)
+		let preview = try XCTUnwrap(generatedPreview as? SQLitePreviewVC)
+		preview.loadViewIfNeeded()
+		preview.tablePopUpButton.selectItem(withTitle: "people")
+		preview.tablePopUpButton.sendAction(
+			preview.tablePopUpButton.action,
+			to: preview.tablePopUpButton.target,
+		)
+		try await waitForSQLiteStatus("people — rows 1–3", on: preview)
+
+		XCTAssertEqual(try Data(contentsOf: fileURL), before)
+		XCTAssertEqual(
+			try FileManager.default.contentsOfDirectory(atPath: directory.path).sorted(),
+			entriesBefore,
+		)
+	}
+
+	func testSQLitePreviewReportsCapsOutsideTheTable() async throws {
+		let fileURL = URL(fileURLWithPath: #filePath)
+			.deletingLastPathComponent()
+			.appendingPathComponent("TestFiles/sqlite/example.sqlite")
+		let generatedPreview = try await SQLitePreview().createPreviewVC(
+			file: File(url: fileURL),
+		)
+		let preview = try XCTUnwrap(generatedPreview as? SQLitePreviewVC)
+		preview.loadViewIfNeeded()
+
+		preview.tablePopUpButton.selectItem(withTitle: "wide")
+		preview.tablePopUpButton.sendAction(
+			preview.tablePopUpButton.action,
+			to: preview.tablePopUpButton.target,
+		)
+		try await waitForSQLiteStatus("wide — rows 1–1 — truncated", on: preview)
+		XCTAssertEqual(preview.tableView.numberOfRows, 1)
+		XCTAssertEqual(preview.tableView.tableColumns.count, 64)
+
+		preview.tablePopUpButton.selectItem(withTitle: "generated_columns")
+		preview.tablePopUpButton.sendAction(
+			preview.tablePopUpButton.action,
+			to: preview.tablePopUpButton.target,
+		)
+		try await waitForSQLiteStatus("generated_columns — rows 1–1", on: preview)
+		XCTAssertEqual(
+			preview.tableView.tableColumns.map(\.title),
+			["id (INTEGER)", "base (TEXT)", "stored_text (TEXT)"],
+		)
+	}
+
+	func testSQLitePreviewKeepsBackHistoryAfterAReadFailure() async throws {
+		let fixtureURL = URL(fileURLWithPath: #filePath)
+			.deletingLastPathComponent()
+			.appendingPathComponent("TestFiles/sqlite/example.sqlite")
+		let directory = temporaryDirectory.appendingPathComponent("history", isDirectory: true)
+		try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+		let fileURL = directory.appendingPathComponent("example.sqlite")
+		try FileManager.default.copyItem(at: fixtureURL, to: fileURL)
+
+		let generatedPreview = try await SQLitePreview().createPreviewVC(
+			file: File(url: fileURL),
+		)
+		let preview = try XCTUnwrap(generatedPreview as? SQLitePreviewVC)
+		preview.loadViewIfNeeded()
+		preview.nextButton.performClick(nil)
+		try await waitForSQLiteStatus("big — rows 51–75", on: preview)
+		XCTAssertTrue(preview.previousButton.isEnabled)
+
+		try FileManager.default.removeItem(at: fileURL)
+		preview.previousButton.performClick(nil)
+		try await waitForSQLitePageLabel("Couldn’t load page", on: preview)
+		XCTAssertEqual(preview.currentTable?.offset, 50)
+		XCTAssertTrue(preview.previousButton.isEnabled)
+
+		try FileManager.default.copyItem(at: fixtureURL, to: fileURL)
+		preview.previousButton.performClick(nil)
+		try await waitForSQLiteStatus("big — rows 1–50+", on: preview)
+		XCTAssertFalse(preview.previousButton.isEnabled)
+	}
+
+	func testSQLitePreviewReportsOversizedRowsWithoutLosingTheTableList() async throws {
+		let fileURL = temporaryDirectory.appendingPathComponent("oversized-cell.sqlite")
+		try runProcess(
+			"/usr/bin/sqlite3",
+			arguments: [
+				fileURL.path,
+				"CREATE TABLE large (value TEXT); INSERT INTO large VALUES (printf('%.*c', 5000000, 'x'));",
+			],
+		)
+
+		let generatedPreview = try await SQLitePreview().createPreviewVC(
+			file: File(url: fileURL),
+		)
+		let preview = try XCTUnwrap(generatedPreview as? SQLitePreviewVC)
+		preview.loadViewIfNeeded()
+
+		XCTAssertEqual(preview.previewStatusText, "large — too large")
+		XCTAssertEqual(preview.currentTable?.rowsTooLarge, true)
+		XCTAssertEqual(preview.tableView.numberOfRows, 0)
+		XCTAssertEqual(preview.tableView.tableColumns.count, 1)
+		XCTAssertEqual(preview.pageLabel.stringValue, "Too large")
+		XCTAssertEqual(
+			preview.noticeLabel.stringValue,
+			"This table contains values above the preview size limit.",
+		)
+	}
+
+	func testSQLitePreviewRejectsNonDatabaseFiles() async throws {
+		let fileURL = try writeFile(
+			named: "not-a-database.sqlite",
+			contents: "not a database",
+		)
+
+		await XCTAssertThrowsErrorAsync {
+			_ = try await SQLitePreview().createPreviewVC(file: File(url: fileURL))
+		} errorHandler: { error in
+			XCTAssertTrue(error.localizedDescription.contains("not a SQLite database"))
+		}
+	}
+
+	func testSQLitePreviewRejectsTruncatedDatabases() async throws {
+		let fixtureURL = URL(fileURLWithPath: #filePath)
+			.deletingLastPathComponent()
+			.appendingPathComponent("TestFiles/sqlite/example.sqlite")
+		let data = try Data(contentsOf: fixtureURL)
+		let fileURL = try writeDataFile(
+			named: "truncated.sqlite",
+			data: Data(data.prefix(100)),
+		)
+
+		await XCTAssertThrowsErrorAsync {
+			_ = try await SQLitePreview().createPreviewVC(file: File(url: fileURL))
+		} errorHandler: { error in
+			XCTAssertTrue(error.localizedDescription.contains("SQLite"))
+		}
+	}
+
 	func testTSVPreviewRejectsFilesOverProductionSizeLimit() async throws {
 		let fileURL = temporaryDirectory.appendingPathComponent("oversized.tsv")
 		XCTAssertTrue(FileManager.default.createFile(atPath: fileURL.path, contents: nil))
@@ -1397,6 +1640,32 @@ final class PreviewSmokeTests: XCTestCase {
 			try await Task.sleep(for: .milliseconds(10))
 		}
 		XCTAssertFalse(webView.isLoading, "Web view did not finish loading within \(timeout)")
+	}
+
+	private func waitForSQLiteStatus(
+		_ expected: String,
+		on preview: SQLitePreviewVC,
+		timeout: Duration = .seconds(5),
+	) async throws {
+		let clock = ContinuousClock()
+		let deadline = clock.now.advanced(by: timeout)
+		while preview.previewStatusText != expected, clock.now < deadline {
+			try await Task.sleep(for: .milliseconds(10))
+		}
+		XCTAssertEqual(preview.previewStatusText, expected)
+	}
+
+	private func waitForSQLitePageLabel(
+		_ expected: String,
+		on preview: SQLitePreviewVC,
+		timeout: Duration = .seconds(5),
+	) async throws {
+		let clock = ContinuousClock()
+		let deadline = clock.now.advanced(by: timeout)
+		while preview.pageLabel.stringValue != expected, clock.now < deadline {
+			try await Task.sleep(for: .milliseconds(10))
+		}
+		XCTAssertEqual(preview.pageLabel.stringValue, expected)
 	}
 
 	private func waitForJavaScript(

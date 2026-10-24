@@ -41,6 +41,10 @@ final class SupportedFilesWC: NSWindowController {
 			details: ".xlsx • Values, dates, and every worksheet",
 		),
 		SupportedFileSection(
+			title: "Database",
+			details: ".sqlite, .sqlite3, .db • Read-only tables with typed columns",
+		),
+		SupportedFileSection(
 			title: "Structured Data",
 			details: ".json, .plist, .xml • Collapsible trees, typed values, and truncation notices",
 		),

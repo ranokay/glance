@@ -48,3 +48,6 @@ License texts are available from the linked standard licenses and each crate's s
 
 The RAR fixtures under `GlanceTests/TestFiles/archives` are derived from the `rars` 0.9.4 test
 fixtures and are redistributed under the same MIT OR Apache-2.0 terms.
+
+PreviewCore links the macOS system `libsqlite3` for read-only database previews. No SQLite source
+is vendored; SQLite is in the public domain.

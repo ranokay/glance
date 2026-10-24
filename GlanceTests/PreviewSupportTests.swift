@@ -22,6 +22,9 @@ final class PreviewSupportTests: XCTestCase {
 			("/tmp/notebook.ipynb", "jupyter.extension.ipynb", .jupyter),
 			("/tmp/table.tsv", "tsv.extension.tsv", .tsv),
 			("/tmp/workbook.xlsx", "spreadsheet.extension.xlsx", .spreadsheet),
+			("/tmp/data.db", "database.extension.db", .database),
+			("/tmp/data.sqlite", "database.extension.sqlite", .database),
+			("/tmp/data.sqlite3", "database.extension.sqlite3", .database),
 			("/tmp/data.json", "structured.extension.json", .structured),
 			("/tmp/config.plist", "structured.extension.plist", .structured),
 			("/tmp/document.xml", "structured.extension.xml", .structured),
@@ -75,6 +78,9 @@ final class PreviewSupportTests: XCTestCase {
 			("/tmp/table.tab", .tsv),
 			("/tmp/table.tsv", .tsv),
 			("/tmp/workbook.xlsx", .spreadsheet),
+			("/tmp/data.db", .database),
+			("/tmp/data.sqlite", .database),
+			("/tmp/data.sqlite3", .database),
 			("/tmp/data.json", .structured),
 			("/tmp/config.plist", .structured),
 			("/tmp/document.xml", .structured),
@@ -140,15 +146,16 @@ final class PreviewSupportTests: XCTestCase {
 		defer { try? FileManager.default.removeItem(at: directory) }
 		let spreadsheet = directory.appendingPathComponent("large.xlsx")
 		let structured = directory.appendingPathComponent("large.json")
+		let database = directory.appendingPathComponent("large.sqlite")
 		let text = directory.appendingPathComponent("large.md")
-		for url in [spreadsheet, structured, text] {
+		for url in [spreadsheet, structured, database, text] {
 			XCTAssertTrue(FileManager.default.createFile(atPath: url.path, contents: nil))
 			let handle = try FileHandle(forWritingTo: url)
 			try handle.truncate(atOffset: 20_000_000)
 			try handle.close()
 		}
 
-		for url in [spreadsheet, structured] {
+		for url in [spreadsheet, structured, database] {
 			XCTAssertNoThrow(
 				try PreviewPolicy.validateFileSize(try File(url: url)),
 				url.lastPathComponent,
