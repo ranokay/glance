@@ -78,6 +78,6 @@ jobs:
         with:
           name: verify-evidence-${{ github.sha }}
           path: |
-            build/TestResults/Glance.xcresult
+            build/TestResults/*.xcresult
             build/verify-app.log
           if-no-files-found: warn

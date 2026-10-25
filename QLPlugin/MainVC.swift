@@ -87,6 +87,9 @@ class MainVC: NSViewController, QLPreviewingController {
 
 	override func viewWillDisappear() {
 		super.viewWillDisappear()
+		previewPreparationTask?.cancel()
+		previewPreparationTask = nil
+		previewPreparationID = nil
 		stopWatchingPresentedFile()
 		nestedPreviewTask?.cancel()
 		nestedPreviewTask = nil

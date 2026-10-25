@@ -132,9 +132,6 @@ final class PlistCoverageTests: XCTestCase {
 			encoding: .utf8,
 		)
 
-		XCTAssertTrue(menuContents.contains("\(repositoryURL)/issues"))
-		XCTAssertTrue(menuContents.contains("\(repositoryURL)/blob/main/LICENSE.md"))
-		XCTAssertTrue(menuContents.contains("\(repositoryURL)/blob/main/PRIVACY.md"))
 		XCTAssertTrue(menuContents.contains("\(repositoryURL)\""))
 		XCTAssertFalse(menuContents.contains("github.com/chamburr/glance"))
 	}

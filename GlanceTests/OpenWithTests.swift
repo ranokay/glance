@@ -45,6 +45,60 @@ final class OpenWithTests: XCTestCase {
 		XCTAssertEqual(applications.map(\.isDefault), [false, true])
 	}
 
+	func testApplicationListPreservesCaseDistinctPathsWhenMetadataIsUnavailable() {
+		let upperURL = temporaryDirectory.appendingPathComponent("Editor.app")
+		let lowerURL = temporaryDirectory.appendingPathComponent("editor.app")
+		let workspace = StubWorkspaceApplicationProvider(
+			compatibleApplicationURLs: [upperURL, lowerURL],
+			defaultApplicationURL: lowerURL,
+		)
+		let service = OpenWithService(workspace: workspace)
+
+		let applications = service
+			.applications(for: temporaryDirectory.appendingPathComponent("file.txt"))
+
+		XCTAssertEqual(applications.map(\.applicationURL), [upperURL, lowerURL])
+		XCTAssertEqual(applications.map(\.isDefault), [false, true])
+	}
+
+	func testApplicationIdentityDeduplicatesSymlinkAliases() throws {
+		let applicationURL = try makeDirectory(named: "Editor.app")
+		let aliasURL = temporaryDirectory.appendingPathComponent("Alias.app")
+		try FileManager.default.createSymbolicLink(at: aliasURL, withDestinationURL: applicationURL)
+		let workspace = StubWorkspaceApplicationProvider(
+			compatibleApplicationURLs: [applicationURL, aliasURL],
+			defaultApplicationURL: aliasURL,
+		)
+		let service = OpenWithService(workspace: workspace)
+
+		let applications = service
+			.applications(for: temporaryDirectory.appendingPathComponent("file.txt"))
+
+		XCTAssertEqual(applications.map(\.applicationURL), [applicationURL])
+		XCTAssertEqual(applications.map(\.isDefault), [true])
+	}
+
+	func testApplicationIdentityRespectsTheFilesystemCaseSensitivity() throws {
+		let applicationURL = try makeDirectory(named: "Editor.app")
+		let alternateURL = temporaryDirectory.appendingPathComponent("editor.app")
+		let volumeValues = try applicationURL
+			.resourceValues(forKeys: [.volumeSupportsCaseSensitiveNamesKey])
+		let supportsCaseSensitiveNames = try XCTUnwrap(volumeValues
+			.volumeSupportsCaseSensitiveNames)
+		if supportsCaseSensitiveNames {
+			_ = try makeDirectory(named: "editor.app")
+			XCTAssertNotEqual(
+				OpenWithApplicationIdentity.key(for: applicationURL),
+				OpenWithApplicationIdentity.key(for: alternateURL),
+			)
+		} else {
+			XCTAssertEqual(
+				OpenWithApplicationIdentity.key(for: applicationURL),
+				OpenWithApplicationIdentity.key(for: alternateURL),
+			)
+		}
+	}
+
 	func testTopLevelFilesRelyOnFinderOpenWithAndCollapseTheEmptyUtilityBar() throws {
 		let fileURL = try writeFile(named: "notes.txt")
 		let firstAppURL = URL(fileURLWithPath: "/Applications/First.app")

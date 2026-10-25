@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A1C0DE0000000000000000E1 /* AppLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C0DE0000000000000000E2 /* AppLaunchTests.swift */; };
 		20A000000000000000000003 /* markdown-pele-1.9.0.global.js in Resources */ = {isa = PBXBuildFile; fileRef = 20A000000000000000000001 /* markdown-pele-1.9.0.global.js */; };
 		20A000000000000000000004 /* PELE_LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = 20A000000000000000000002 /* PELE_LICENSE.txt */; };
 		21A000000000000000000011 /* DrawIOPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21A000000000000000000001 /* DrawIOPreview.swift */; };
@@ -268,6 +269,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		A1C0DE0000000000000000E2 /* AppLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLaunchTests.swift; sourceTree = "<group>"; };
 		20A000000000000000000001 /* markdown-pele-1.9.0.global.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = "markdown-pele-1.9.0.global.js"; sourceTree = "<group>"; };
 		20A000000000000000000002 /* PELE_LICENSE.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = PELE_LICENSE.txt; sourceTree = "<group>"; };
 		21A000000000000000000001 /* DrawIOPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrawIOPreview.swift; sourceTree = "<group>"; };
@@ -446,6 +448,7 @@
 		10779C0E26218B2B008A903C /* GlanceTests */ = {
 			isa = PBXGroup;
 			children = (
+				A1C0DE0000000000000000E2 /* AppLaunchTests.swift */,
 				D1A000000000000000000004 /* DirectoryPreviewTests.swift */,
 				D2A000000000000000000004 /* DirectoryThumbnailTests.swift */,
 				D4A000000000000000000004 /* NestedPreviewTests.swift */,
@@ -1054,6 +1057,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A1C0DE0000000000000000E1 /* AppLaunchTests.swift in Sources */,
 				21A000000000000000000012 /* DrawIOPreview.swift in Sources */,
 				3F0000000000000000000021 /* SCNVector3.swift in Sources */,
 				3F0000000000000000000022 /* ThreeMFSceneBuilder.swift in Sources */,

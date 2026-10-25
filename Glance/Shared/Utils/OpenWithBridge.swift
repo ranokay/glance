@@ -142,7 +142,15 @@ public enum OpenWithApplicationIdentity {
 	]
 
 	public static func key(for applicationURL: URL) -> String {
-		applicationURL.resolvingSymlinksInPath().standardizedFileURL.path.lowercased()
+		let path = applicationURL.resolvingSymlinksInPath().standardizedFileURL.path
+		if let attributes = try? FileManager.default.attributesOfItem(atPath: path),
+		   let device = attributes[.systemNumber] as? NSNumber,
+		   let inode = attributes[.systemFileNumber] as? NSNumber
+		{
+			return "file:\(device.uint64Value):\(inode.uint64Value)"
+		}
+		// Missing metadata must not merge different apps on case-sensitive volumes.
+		return path
 	}
 }
 

@@ -3,6 +3,7 @@ use calamine::{Data, ExcelDateTime, Reader, Xlsx, open_workbook};
 use serde::Serialize;
 use std::collections::{BTreeMap, HashSet};
 use std::fs::File;
+use std::io::{Seek, SeekFrom};
 use std::path::Path;
 use zip::ZipArchive;
 
@@ -140,28 +141,32 @@ fn parse_xlsx_with_limits(
 }
 
 fn preflight_uncompressed_sizes(path: &Path, max_uncompressed: u64) -> Result<(), CoreError> {
-    let file = File::open(path)
+    let mut file = File::open(path)
         .map_err(|error| CoreError::io(format!("Could not open XLSX workbook: {error}")))?;
+    let file_size = file
+        .metadata()
+        .map_err(|error| CoreError::io(format!("Could not inspect XLSX workbook: {error}")))?
+        .len();
+    crate::zip::preflight_central_directory(&mut file, file_size)?;
+    file.seek(SeekFrom::Start(0))
+        .map_err(|error| CoreError::io(format!("Could not seek XLSX workbook: {error}")))?;
     let mut archive = ZipArchive::new(file)
         .map_err(|error| CoreError::parse(format!("Could not read XLSX archive: {error}")))?;
     let mut total = 0_u64;
     for index in 0..archive.len() {
         let entry = archive
-            .by_index(index)
+            .by_index_raw(index)
             .map_err(|error| CoreError::parse(format!("Could not read XLSX entry: {error}")))?;
-        let Ok(name) = entry.name() else {
-            continue;
-        };
-        if name == "xl/sharedStrings.xml" || name.starts_with("xl/worksheets/") {
-            total = total
-                .checked_add(entry.size())
-                .ok_or_else(|| CoreError::limit("XLSX uncompressed size overflow"))?;
+        // Calamine eagerly reads styles and relationships too, and package relationships can
+        // relocate workbook parts, so every entry must share the expansion budget.
+        total = total
+            .checked_add(entry.size())
+            .ok_or_else(|| CoreError::limit("XLSX uncompressed size overflow"))?;
+        if total > max_uncompressed {
+            return Err(CoreError::limit(format!(
+                "XLSX workbook exceeds the {max_uncompressed} byte uncompressed preview limit"
+            )));
         }
-    }
-    if total > max_uncompressed {
-        return Err(CoreError::limit(format!(
-            "XLSX workbook exceeds the {max_uncompressed} byte uncompressed preview limit"
-        )));
     }
     Ok(())
 }
@@ -223,7 +228,44 @@ fn map_xlsx_error(error: calamine::XlsxError) -> CoreError {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::io::Write;
     use std::path::PathBuf;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    use zip::write::SimpleFileOptions;
+
+    struct TemporaryWorkbook(PathBuf);
+
+    impl TemporaryWorkbook {
+        fn new(entries: &[(&str, &[u8])]) -> Self {
+            let file = Self::from_bytes(&[]);
+            let mut writer = zip::ZipWriter::new(File::create(&file.0).unwrap());
+            for (name, contents) in entries {
+                writer
+                    .start_file(*name, SimpleFileOptions::default())
+                    .unwrap();
+                writer.write_all(contents).unwrap();
+            }
+            writer.finish().unwrap();
+            file
+        }
+
+        fn from_bytes(bytes: &[u8]) -> Self {
+            static NEXT_FIXTURE: AtomicUsize = AtomicUsize::new(0);
+            let path = std::env::temp_dir().join(format!(
+                "glance-xlsx-{}-{}.xlsx",
+                std::process::id(),
+                NEXT_FIXTURE.fetch_add(1, Ordering::Relaxed)
+            ));
+            std::fs::write(&path, bytes).unwrap();
+            Self(path)
+        }
+    }
+
+    impl Drop for TemporaryWorkbook {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_file(&self.0);
+        }
+    }
 
     fn fixture() -> PathBuf {
         Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -311,6 +353,53 @@ mod tests {
     fn rejects_oversized_uncompressed_workbooks() {
         assert!(preflight_uncompressed_sizes(&fixture(), 1).is_err());
         assert!(preflight_uncompressed_sizes(&fixture(), 1_048_576).is_ok());
+    }
+
+    #[test]
+    fn rejects_oversized_styles_relationships_and_relocated_workbook_parts() {
+        for part in [
+            "xl/styles.xml",
+            "xl/workbook.xml",
+            "xl/_rels/workbook.xml.rels",
+            "_rels/.rels",
+            "custom/sharedStrings.xml",
+            "custom/worksheets/sheet1.xml",
+        ] {
+            let workbook = TemporaryWorkbook::new(&[(part, &[b'x'; 128])]);
+            assert!(
+                matches!(
+                    preflight_uncompressed_sizes(&workbook.0, 64),
+                    Err(CoreError::ResourceLimit(_))
+                ),
+                "part {part} bypassed the expanded-byte budget"
+            );
+        }
+    }
+
+    #[test]
+    fn expanded_byte_budget_is_shared_by_all_workbook_parts() {
+        let workbook = TemporaryWorkbook::new(&[
+            ("xl/worksheets/sheet1.xml", &[b'x'; 40]),
+            ("xl/styles.xml", &[b'x'; 40]),
+        ]);
+        assert!(matches!(
+            preflight_uncompressed_sizes(&workbook.0, 64),
+            Err(CoreError::ResourceLimit(_))
+        ));
+        assert!(preflight_uncompressed_sizes(&workbook.0, 80).is_ok());
+    }
+
+    #[test]
+    fn rejects_oversized_zip_metadata_before_workbook_parsing() {
+        let mut eocd = vec![0_u8; 22];
+        eocd[0..4].copy_from_slice(b"PK\x05\x06");
+        eocd[12..16].copy_from_slice(&(64_u32 * 1_024 * 1_024 + 1).to_le_bytes());
+        let workbook = TemporaryWorkbook::from_bytes(&eocd);
+
+        assert!(matches!(
+            preflight_uncompressed_sizes(&workbook.0, MAX_UNCOMPRESSED_SIZE),
+            Err(CoreError::ResourceLimit(_))
+        ));
     }
 
     #[test]
