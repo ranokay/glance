@@ -160,10 +160,19 @@ xcodebuild test -scheme "$APP_NAME" -configuration Debug -destination 'platform=
 description = "Test verification scripts without launching apps or writing to GitHub"
 run = "sh scripts/test-verification.sh"
 
+[tasks."test:registration"]
+description = "Check Xcode test-target membership and exercise the registration checker"
+run = '''
+set -e
+xcrun swift scripts/check-test-registration.swift
+sh scripts/tests/test-test-registration.sh
+'''
+
 [tasks.test]
 description = "Run all tests"
 run = '''
 set -e
+mise run test:registration
 mise run test:scripts
 mise run test:rust
 mise run test:xcode

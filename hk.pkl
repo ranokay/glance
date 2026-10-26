@@ -19,4 +19,7 @@ steps {
 	["release-metadata"] {
 		check = "sh scripts/check-release-metadata.sh"
 	}
+	["test-registration"] {
+		check = "xcrun swift scripts/check-test-registration.swift"
+	}
 }
