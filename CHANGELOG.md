@@ -50,7 +50,11 @@ Append-only. Newest entry first.
   syntax-highlighted text, and input, node, depth, and output caps show an explicit truncation
   notice instead of failing. XML entity declarations are never resolved. The tree uses the same
   Xcode-derived palette as the code previews, separates labels from values with a space, and
-  keeps key-count hints out of copied text.
+  keeps key-count hints out of copied text while preserving indentation.
+
+- Quick Look web previews accept the first click and no longer claim first-responder status,
+  so disclosure controls and other page interactions respond immediately instead of only
+  focusing the panel.
 
 - Quick Look previews of Markdown, source code, and Jupyter notebooks now
   re-render when the file changes on disk, including atomic editor saves, and

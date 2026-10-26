@@ -3,6 +3,12 @@ import GlanceKit
 import Quartz
 
 final class PreviewBackgroundView: NSView {
+	/// Quick Look panels can open without key status. Accept the first click so
+	/// interactive previews respond immediately instead of only focusing the panel.
+	override func acceptsFirstMouse(for _: NSEvent?) -> Bool {
+		true
+	}
+
 	override init(frame frameRect: NSRect) {
 		super.init(frame: frameRect)
 		wantsLayer = true

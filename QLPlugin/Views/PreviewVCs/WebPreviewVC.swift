@@ -9,6 +9,21 @@ struct WebPreviewContent {
 	var scripts: [Script] = []
 }
 
+/// Quick Look panels can open without key status. Accept the first click so the page
+/// receives a disclosure click immediately instead of only focusing the panel.
+private final class PreviewWebView: WKWebView {
+	override func acceptsFirstMouse(for _: NSEvent?) -> Bool {
+		true
+	}
+
+	/// Quick Look rejects previews whose views claim first responder; doing so also
+	/// swallows the first click while the panel takes focus. Mouse handling does not
+	/// need responder status.
+	override var acceptsFirstResponder: Bool {
+		false
+	}
+}
+
 class WebPreviewVC: NSViewController, PreviewVC, WKNavigationDelegate {
 	private var content: WebPreviewContent
 	private let appearanceStylesheet: Stylesheet
@@ -138,7 +153,7 @@ class WebPreviewVC: NSViewController, PreviewVC, WKNavigationDelegate {
 		if let existingWebView = self.webView {
 			webView = existingWebView
 		} else {
-			webView = WKWebView(frame: view.bounds)
+			webView = PreviewWebView(frame: view.bounds)
 			webView.autoresizingMask = [.height, .width]
 			webView.underPageBackgroundColor = .clear
 			webView.alphaValue = 0

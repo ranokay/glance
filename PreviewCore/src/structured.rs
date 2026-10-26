@@ -651,18 +651,23 @@ impl Renderer {
                 self.render_container(label, ContainerKind::Array, entries, depth);
             }
             Node::String(value) => {
-                self.render_scalar(label, "string", &format!("\"{value}\""));
+                self.render_scalar(label, "string", &format!("\"{value}\""), depth);
             }
-            Node::Number(value) => self.render_scalar(label, "number", value),
+            Node::Number(value) => self.render_scalar(label, "number", value, depth),
             Node::Boolean(value) => {
-                self.render_scalar(label, "boolean", if *value { "true" } else { "false" });
+                self.render_scalar(
+                    label,
+                    "boolean",
+                    if *value { "true" } else { "false" },
+                    depth,
+                );
             }
-            Node::Null => self.render_scalar(label, "null", "null"),
-            Node::Date(value) => self.render_scalar(label, "date", value),
+            Node::Null => self.render_scalar(label, "null", "null", depth),
+            Node::Date(value) => self.render_scalar(label, "date", value, depth),
             Node::Data(bytes) => {
-                self.render_scalar(label, "data", &format!("{bytes} bytes of data"));
+                self.render_scalar(label, "data", &format!("{bytes} bytes of data"), depth);
             }
-            Node::Uid(value) => self.render_scalar(label, "number", &format!("#{value}")),
+            Node::Uid(value) => self.render_scalar(label, "number", &format!("#{value}"), depth),
             Node::Element {
                 name,
                 attributes,
@@ -680,19 +685,24 @@ impl Renderer {
             Node::Text(value) => {
                 self.html
                     .push_str("<div class=\"structured-node structured-text\">");
+                write_indent(&mut self.html, depth);
                 push_escaped(&mut self.html, value);
                 self.html.push_str("</div>");
             }
             Node::Comment(value) => {
                 self.html
-                    .push_str("<div class=\"structured-node structured-comment\">&lt;!--");
+                    .push_str("<div class=\"structured-node structured-comment\">");
+                write_indent(&mut self.html, depth);
+                self.html.push_str("&lt;!--");
                 push_escaped(&mut self.html, value);
                 self.html.push_str("--&gt;</div>");
             }
             Node::Ellipsis => {
                 self.truncated = true;
                 self.html
-                    .push_str("<div class=\"structured-node structured-ellipsis\">…</div>");
+                    .push_str("<div class=\"structured-node structured-ellipsis\">");
+                write_indent(&mut self.html, depth);
+                self.html.push_str("…</div>");
             }
         }
     }
@@ -708,6 +718,7 @@ impl Renderer {
         if entries.is_empty() {
             self.html
                 .push_str("<div class=\"structured-node structured-row\">");
+            write_indent(&mut self.html, depth);
             render_label(&mut self.html, label);
             write!(
                 self.html,
@@ -724,6 +735,7 @@ impl Renderer {
         }
         self.html
             .push_str("><summary class=\"structured-summary\">");
+        write_indent(&mut self.html, depth);
         render_label(&mut self.html, label);
         let plural = if entries.len() == 1 {
             unit.to_owned()
@@ -742,17 +754,20 @@ impl Renderer {
                 break;
             }
         }
-        self.html.push_str("</div>");
+        self.html
+            .push_str("</div><div class=\"structured-closing\">");
+        write_indent(&mut self.html, depth);
         write!(
             self.html,
-            "<div class=\"structured-closing\"><span class=\"structured-punct\">{close}</span></div></details>"
+            "<span class=\"structured-punct\">{close}</span></div></details>"
         )
         .expect("writing to a string cannot fail");
     }
 
-    fn render_scalar(&mut self, label: &Label, class: &str, value: &str) {
+    fn render_scalar(&mut self, label: &Label, class: &str, value: &str, depth: usize) {
         self.html
             .push_str("<div class=\"structured-node structured-row\">");
+        write_indent(&mut self.html, depth);
         render_label(&mut self.html, label);
         write!(
             self.html,
@@ -773,6 +788,7 @@ impl Renderer {
         if self_closing || children.is_empty() {
             self.html
                 .push_str("<div class=\"structured-node structured-row\">");
+            write_indent(&mut self.html, depth);
             self.write_open_tag(name, attributes);
             self.html
                 .push_str("<span class=\"structured-punct\"> /&gt;</span></div>");
@@ -786,6 +802,7 @@ impl Renderer {
         }
         self.html
             .push_str("><summary class=\"structured-summary\">");
+        write_indent(&mut self.html, depth);
         let truncated = self.write_open_tag(name, attributes);
         self.html
             .push_str("<span class=\"structured-punct\">&gt;</span></summary><div class=\"structured-children\">");
@@ -797,7 +814,12 @@ impl Renderer {
                 }
             }
         }
-        self.html.push_str("</div><div class=\"structured-closing\"><span class=\"structured-punct\">&lt;/</span><span class=\"structured-tag\">");
+        self.html
+            .push_str("</div><div class=\"structured-closing\">");
+        write_indent(&mut self.html, depth);
+        self.html.push_str(
+            "<span class=\"structured-punct\">&lt;/</span><span class=\"structured-tag\">",
+        );
         push_escaped(&mut self.html, name);
         self.html
             .push_str("</span><span class=\"structured-punct\">&gt;</span></div></details>");
@@ -848,6 +870,21 @@ impl ContainerKind {
             Self::Array => ("[", "]", "item"),
         }
     }
+}
+
+/// Adds copyable indentation without changing the visual layout, which uses CSS padding.
+///
+/// The span is zero-width on screen but its spaces stay in the selected text, so copied
+/// trees keep the indentation a reader sees.
+fn write_indent(html: &mut String, depth: usize) {
+    if depth == 0 {
+        return;
+    }
+    html.push_str("<span class=\"structured-indent\">");
+    for _ in 0..depth * 2 {
+        html.push(' ');
+    }
+    html.push_str("</span>");
 }
 
 fn render_label(html: &mut String, label: &Label) {
@@ -1195,6 +1232,39 @@ mod tests {
                 r#"<span class="structured-index">0</span><span class="structured-punct">:</span> "#
             ),
             "array indices are followed by a space"
+        );
+    }
+
+    #[test]
+    fn preserves_copy_indentation_for_json_rows_and_closings() {
+        let html = render_json(r#"{"key":{"nested":1}}"#);
+
+        assert!(
+            html.contains(r#"<summary class="structured-summary"><span class="structured-indent">  </span><span class="structured-key">"key""#),
+            "nested summaries carry their depth"
+        );
+        assert!(
+            html.contains(r#"<div class="structured-node structured-row"><span class="structured-indent">    </span><span class="structured-key">"nested""#),
+            "nested values carry their depth"
+        );
+        assert!(
+            html.contains(r#"<div class="structured-closing"><span class="structured-indent">  </span><span class="structured-punct">}</span></div>"#),
+            "nested closings carry their parent's depth"
+        );
+        assert!(
+            html.contains(r#"<div class="structured-closing"><span class="structured-punct">}</span></div></details>"#),
+            "the root closing stays unindented"
+        );
+    }
+
+    #[test]
+    fn preserves_copy_indentation_for_xml_text() {
+        let html =
+            render_structured(b"<root><child>text</child></root>", StructuredFormat::Xml).unwrap();
+
+        assert!(
+            html.contains(r#"<div class="structured-node structured-text"><span class="structured-indent">    </span>text</div>"#),
+            "XML text keeps its depth when copied"
         );
     }
 }

@@ -79,6 +79,12 @@
 	color: var(--structured-punct);
 }
 
+/* Copyable indent: zero-width on screen, but its spaces survive a copy. */
+.structured-preview .structured-indent {
+	font-size: 0;
+	white-space: pre;
+}
+
 .structured-preview .structured-meta {
 	margin-left: 0.5em;
 	color: var(--structured-punct);
