@@ -56,8 +56,16 @@ if ! gh api "repos/$REPO/branches/$BRANCH" > /dev/null 2>"$work_dir/branch-error
 		exit 1
 	fi
 	SHA="$(gh api "repos/$REPO/branches/develop" --jq .commit.sha)"
-	gh api --method POST "repos/$REPO/git/refs" -f ref="refs/heads/$BRANCH" -f sha="$SHA" >/dev/null
-	echo "created branch $BRANCH from develop"
+	if gh api --method POST "repos/$REPO/git/refs" -f ref="refs/heads/$BRANCH" -f sha="$SHA" \
+		> /dev/null 2>"$work_dir/branch-create-error"; then
+		echo "created branch $BRANCH from develop"
+	elif ! gh api "repos/$REPO/branches/$BRANCH" \
+		> /dev/null 2>"$work_dir/branch-recheck-error"; then
+		# Another upload may have created the branch since our first read.
+		# Continue only when a fresh read confirms it exists.
+		cat "$work_dir/branch-create-error" "$work_dir/branch-recheck-error" >&2
+		exit 1
+	fi
 fi
 
 # Pass the encoded content through a file: a normal screenshot can exceed the

@@ -62,6 +62,16 @@ if [ "$#" -eq 2 ] && [ "$1" = api ] &&
 	case "$GH_MODE" in
 		branch-auth) echo 'HTTP 403: access denied' >&2; exit 21 ;;
 		branch-missing) echo 'HTTP 404: not found' >&2; exit 22 ;;
+		branch-race|branch-create-error|branch-recheck-auth)
+			if ! grep -q '^branch-create$' "$TEST_TRACE"; then
+				echo 'HTTP 404: not found' >&2
+				exit 22
+			fi
+			case "$GH_MODE" in
+				branch-create-error) echo 'HTTP 404: not found' >&2; exit 22 ;;
+				branch-recheck-auth) echo 'HTTP 403: access denied' >&2; exit 21 ;;
+			esac
+			;;
 	esac
 	printf '{}\n'
 	exit 0
@@ -78,6 +88,10 @@ if [ "$#" -eq 8 ] && [ "$1" = api ] && [ "$2" = --method ] &&
 	[ "$5" = -f ] && [ "$6" = ref=refs/heads/verification-captures ] &&
 	[ "$7" = -f ] && [ "$8" = "sha=$TEST_SHA" ]; then
 	printf 'branch-create\n' >> "$TEST_TRACE"
+	case "$GH_MODE" in
+		branch-race) echo 'HTTP 422: Reference already exists' >&2; exit 25 ;;
+		branch-create-error|branch-recheck-auth) echo 'HTTP 403: cannot create reference' >&2; exit 25 ;;
+	esac
 	printf '{}\n'
 	exit 0
 fi
@@ -228,6 +242,23 @@ grep -Fq "https://raw.githubusercontent.com/ranokay/glance/$TEST_SHA/" "$TEST_CO
 	|| fail 'comment did not pin upload commit'
 if grep -Fq '/verification-captures/' "$TEST_COMMENT"; then fail 'comment links a mutable branch'; fi
 grep -Fxq 'Preview capture' "$TEST_COMMENT" || fail 'caption lost'
+
+start_case 'capture continues when another upload created the branch'
+GH_MODE=branch-race
+expect_success sh "$capture_script" 42 "$work_dir/capture.png" 'Preview capture'
+[ "$(grep -c '^branch-read$' "$TEST_TRACE")" -eq 2 ] || fail 'missing branch recheck'
+grep -q '^upload-file$' "$TEST_TRACE" || fail 'racing capture was not uploaded'
+grep -q '^comment$' "$TEST_TRACE" || fail 'racing capture was not attached'
+
+for gh_mode in branch-create-error branch-recheck-auth; do
+	start_case "capture $gh_mode"
+	GH_MODE="$gh_mode"
+	expect_failure sh "$capture_script" 42 "$work_dir/capture.png"
+	[ "$(grep -c '^branch-read$' "$TEST_TRACE")" -eq 2 ] || fail 'missing failed branch recheck'
+	grep -q 'HTTP 403: cannot create reference' "$case_dir/output" || fail 'creation error lost'
+	expect_no_call upload-file
+	expect_no_call comment
+done
 
 start_case 'capture larger than ARG_MAX uses a content file'
 arg_max="$(getconf ARG_MAX)"
