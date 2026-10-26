@@ -174,6 +174,72 @@ final class WindowAppearanceTests: XCTestCase {
 		XCTAssertEqual(controller.fontFamilyPopUpButton.titleOfSelectedItem, "Menlo")
 	}
 
+	func testSettingsControlsRemainReachableAtMinimumWindowSize() throws {
+		let (store, suiteName) = try makeSettingsStore()
+		defer { UserDefaults.standard.removePersistentDomain(forName: suiteName) }
+		let loginItem = StubLoginItem()
+		let controller = SettingsWC(
+			settingsStore: store,
+			fontFamilies: ["Menlo"],
+			loginItem: loginItem,
+		)
+		let window = try XCTUnwrap(controller.window)
+		window.setFrame(NSRect(origin: window.frame.origin, size: window.minSize), display: false)
+		loginItem.status = .requiresApproval
+		controller.syncState()
+		NotificationCenter.default.post(
+			name: SparkleUpdateCenter.statusDidChangeNotification,
+			object: nil,
+			userInfo: ["statusText": "An update is ready to install.", "installReady": true],
+		)
+		let content = try XCTUnwrap(window.contentView)
+		content.layoutSubtreeIfNeeded()
+		let scrollView = content.subviews.compactMap { $0 as? NSScrollView }.first
+		let viewport = scrollView.map { $0.contentView.convert($0.contentView.bounds, to: nil) }
+			?? window.contentLayoutRect
+		XCTAssertTrue(window.contentLayoutRect.insetBy(dx: -1, dy: -1).contains(viewport))
+		let controls: [NSControl] = [
+			controller.startAtLoginCheckbox,
+			controller.openLoginItemsButton,
+			controller.fontFamilyPopUpButton,
+			controller.fontSizeField,
+			controller.lineWrappingCheckbox,
+			controller.resetAppearanceButton,
+			controller.flacWaveformCheckbox,
+			controller.checkForUpdatesButton,
+			controller.installUpdateButton,
+			controller.autoUpdateCheckbox,
+		]
+		for control in controls {
+			XCTAssertFalse(control.isHidden)
+			control.scrollToVisible(control.bounds)
+			content.layoutSubtreeIfNeeded()
+			let frame = control.convert(control.bounds, to: nil)
+			XCTAssertTrue(
+				viewport.insetBy(dx: -1, dy: -1).contains(frame),
+				"Unreachable control: \(control)",
+			)
+			XCTAssertGreaterThanOrEqual(
+				control.frame.height,
+				control.intrinsicContentSize.height - 1,
+			)
+		}
+		let expandedHeight = scrollView?.documentView?.frame.height
+		loginItem.status = .notRegistered
+		controller.syncState()
+		NotificationCenter.default.post(
+			name: SparkleUpdateCenter.statusDidChangeNotification,
+			object: nil,
+			userInfo: ["statusText": "No update available.", "installReady": false],
+		)
+		content.layoutSubtreeIfNeeded()
+		XCTAssertTrue(controller.openLoginItemsButton.isHidden)
+		XCTAssertTrue(controller.installUpdateButton.isHidden)
+		if let expandedHeight, let documentView = scrollView?.documentView {
+			XCTAssertLessThan(documentView.frame.height, expandedHeight)
+		}
+	}
+
 	func testStartAtLoginRegistersAndUnregistersTheMainApp() throws {
 		let (store, suiteName) = try makeSettingsStore()
 		defer { UserDefaults.standard.removePersistentDomain(forName: suiteName) }

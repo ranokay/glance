@@ -4,6 +4,15 @@ Append-only. Newest entry first.
 
 # Unreleased
 
+- 7z previews bound decoded metadata, allocation-driving counts, and decoder
+  memory before parsing or extraction, while retaining compressed-header and
+  supported-codec compatibility. Validated metadata is reused from a snapshot.
+- Settings scroll vertically at the minimum window size so approval and update
+  controls remain reachable when their sections expand.
+- Removed obsolete per-preview statistics writes and unused screenshot assets
+  from the retired main window. Existing stored preferences remain untouched.
+- Verification now checks actual Xcode test-target membership and covers real
+  cross-process bookmark transfer and minimum-size Settings layout.
 - Verification now proves the app actually launches: a launch gate
   (`scripts/check-app-launch.sh`, wired into `verify:app`) launches the built
   Release app as an isolated instance and requires a fresh receipt confirming

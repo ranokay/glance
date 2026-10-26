@@ -175,9 +175,6 @@ extension MainVC {
 			try Task.checkCancellation()
 
 			installTopLevelPreview(previewVC, file: file)
-
-			// Update stats
-			stats.increaseStatsCounts(fileExtension: file.url.pathExtension)
 		} else {
 			Log.general.info(
 				"Skipping preview for file \(file.path, privacy: .private): File type not supported",

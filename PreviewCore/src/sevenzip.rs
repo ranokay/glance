@@ -1,13 +1,13 @@
 use crate::error::CoreError;
 use crate::model::{ArchiveEntry, ArchiveEntryType, ArchivePayload};
-use sevenz_rust2::{
-    Archive, ArchiveReader, BlockDecoder, EncoderMethod, Error as SevenZipError, Password,
-};
+use sevenz_rust2::{BlockDecoder, EncoderMethod, Error as SevenZipError, Password};
 use std::fs::File;
-use std::io::{Read, Seek, SeekFrom};
+use std::io::Read;
 use std::path::Path;
 use std::sync::OnceLock;
 use std::time::{SystemTime, UNIX_EPOCH};
+
+mod metadata;
 
 const SIGNATURE: &[u8; 6] = b"7z\xBC\xAF\x27\x1C";
 const SIGNATURE_HEADER_SIZE: u64 = 32;
@@ -28,12 +28,7 @@ pub(crate) fn scan_seven_zip(path: &Path) -> Result<ArchivePayload, CoreError> {
             "7z archive exceeds the {MAX_ARCHIVE_SIZE} byte preview limit"
         )));
     }
-    preflight_header(&mut file, file_size)?;
-    file.seek(SeekFrom::Start(0))
-        .map_err(|error| CoreError::io(format!("Could not seek 7z archive: {error}")))?;
-
-    let reader = ArchiveReader::new(file, Password::empty()).map_err(map_seven_zip_error)?;
-    let archive = reader.archive();
+    let archive = metadata::read_archive(&mut file, file_size)?;
     if archive.files.len() > MAX_ENTRY_COUNT {
         return Err(CoreError::limit(format!(
             "7z archive metadata exceeds the {MAX_ENTRY_COUNT} entry preview limit"
@@ -79,56 +74,6 @@ pub(crate) fn scan_seven_zip(path: &Path) -> Result<ArchivePayload, CoreError> {
         scanned_uncompressed_size: None,
         truncated: false,
     })
-}
-
-fn preflight_header(file: &mut File, file_size: u64) -> Result<(), CoreError> {
-    if file_size < SIGNATURE_HEADER_SIZE {
-        return Err(CoreError::parse(
-            "7z archive is too small to contain a signature header",
-        ));
-    }
-    let mut signature_header = [0_u8; SIGNATURE_HEADER_SIZE as usize];
-    file.read_exact(&mut signature_header)
-        .map_err(|error| CoreError::io(format!("Could not read 7z signature header: {error}")))?;
-    if &signature_header[..6] != SIGNATURE {
-        return Err(CoreError::parse("7z archive has an invalid signature"));
-    }
-    let expected_start_crc = read_u32(&signature_header, 8).unwrap();
-    if crc32(&signature_header[12..32]) != expected_start_crc {
-        return Err(CoreError::parse(
-            "7z signature header checksum does not match",
-        ));
-    }
-    let next_header_offset = read_u64(&signature_header, 12).unwrap();
-    let next_header_size = read_u64(&signature_header, 20).unwrap();
-    let expected_next_crc = read_u32(&signature_header, 28).unwrap();
-    if next_header_size > MAX_HEADER_SIZE {
-        return Err(CoreError::limit(format!(
-            "7z archive metadata exceeds the {MAX_HEADER_SIZE} byte preview limit"
-        )));
-    }
-    let next_header_start = SIGNATURE_HEADER_SIZE
-        .checked_add(next_header_offset)
-        .ok_or_else(|| CoreError::limit("7z metadata offset overflow"))?;
-    let next_header_end = next_header_start
-        .checked_add(next_header_size)
-        .ok_or_else(|| CoreError::limit("7z metadata size overflow"))?;
-    if next_header_end > file_size {
-        return Err(CoreError::parse(
-            "7z metadata header lies outside the archive",
-        ));
-    }
-    file.seek(SeekFrom::Start(next_header_start))
-        .map_err(|error| CoreError::io(format!("Could not seek 7z metadata header: {error}")))?;
-    let mut next_header = vec![0_u8; next_header_size as usize];
-    file.read_exact(&mut next_header)
-        .map_err(|error| CoreError::io(format!("Could not read 7z metadata header: {error}")))?;
-    if crc32(&next_header) != expected_next_crc {
-        return Err(CoreError::parse(
-            "7z metadata header checksum does not match",
-        ));
-    }
-    Ok(())
 }
 
 fn map_seven_zip_error(error: SevenZipError) -> CoreError {
@@ -235,11 +180,8 @@ fn extract_entry_with_scan_limit(
             "7z archive exceeds the {MAX_ARCHIVE_SIZE} byte preview limit"
         )));
     }
-    preflight_header(&mut file, file_size)?;
-    file.seek(SeekFrom::Start(0))
-        .map_err(|error| CoreError::io(format!("Could not seek 7z archive: {error}")))?;
+    let archive = metadata::read_archive(&mut file, file_size)?;
     let password = Password::empty();
-    let archive = Archive::read(&mut file, &password).map_err(map_seven_zip_error)?;
     let entry_index = archive
         .files
         .iter()
@@ -264,6 +206,7 @@ fn extract_entry_with_scan_limit(
     }
     let block_index = archive.stream_map.file_block_index[entry_index]
         .ok_or_else(|| CoreError::parse("7z file has no compression block"))?;
+    metadata::validate_decoder_budget(&archive, block_index, None)?;
     let decoder = BlockDecoder::new(1, block_index, &archive, &password, &mut file);
     let mut scan_bytes = 0_u64;
     for entry in decoder
@@ -320,6 +263,7 @@ fn extract_entry_with_scan_limit(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use sevenz_rust2::ArchiveReader;
     use std::fs;
     use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -350,6 +294,59 @@ mod tests {
                 .iter()
                 .any(|entry| entry.path.contains("unicode-ș.txt"))
         );
+    }
+
+    #[test]
+    fn rejects_oversized_decoded_header_on_scan_and_extraction() {
+        let path = temporary_path();
+        let mut encoded = vec![
+            0x17, 0x06, 0, 1, 0x09, 0, 0, 0x07, 0x0b, 1, 0, 1, 1, 0, 0x0c,
+        ];
+        encoded.push(0xff);
+        encoded.extend((MAX_HEADER_SIZE + 1).to_le_bytes());
+        encoded.extend([0, 0x08, 0, 0]);
+        fs::write(&path, archive_with_header(&[], &encoded)).unwrap();
+        let scan = scan_seven_zip(&path);
+        let extraction = extract_entry(&path, "missing.txt", 1_024);
+        fs::remove_file(path).unwrap();
+
+        assert!(matches!(scan, Err(CoreError::ResourceLimit(_))), "{scan:?}");
+        assert!(
+            matches!(extraction, Err(CoreError::ResourceLimit(_))),
+            "{extraction:?}"
+        );
+    }
+
+    #[test]
+    fn rejects_file_count_before_dependency_allocation_on_both_routes() {
+        let path = temporary_path();
+        let mut header = vec![0x01, 0x05, 0xff];
+        header.extend((MAX_ENTRY_COUNT as u64 + 1).to_le_bytes());
+        header.resize(MAX_ENTRY_COUNT + 32, 0);
+        fs::write(&path, archive_with_header(&[], &header)).unwrap();
+        let scan = scan_seven_zip(&path);
+        let extraction = extract_entry(&path, "missing.txt", 1_024);
+        fs::remove_file(path).unwrap();
+
+        assert!(matches!(scan, Err(CoreError::ResourceLimit(_))), "{scan:?}");
+        assert!(
+            matches!(extraction, Err(CoreError::ResourceLimit(_))),
+            "{extraction:?}"
+        );
+    }
+
+    pub(super) fn archive_with_header(content: &[u8], header: &[u8]) -> Vec<u8> {
+        let mut start_header = Vec::new();
+        start_header.extend((content.len() as u64).to_le_bytes());
+        start_header.extend((header.len() as u64).to_le_bytes());
+        start_header.extend(crc32(header).to_le_bytes());
+        let mut bytes = SIGNATURE.to_vec();
+        bytes.extend([0, 4]);
+        bytes.extend(crc32(&start_header).to_le_bytes());
+        bytes.extend(start_header);
+        bytes.extend(content);
+        bytes.extend(header);
+        bytes
     }
 
     #[test]
@@ -398,6 +395,45 @@ mod tests {
     }
 
     #[test]
+    fn preserves_supported_codecs_with_plain_and_encoded_headers() {
+        use sevenz_rust2::{ArchiveWriter, EncoderConfiguration};
+        use std::io::Cursor;
+
+        for method in [
+            EncoderMethod::COPY,
+            EncoderMethod::LZMA,
+            EncoderMethod::LZMA2,
+            EncoderMethod::PPMD,
+            EncoderMethod::BZIP2,
+        ] {
+            for encoded in [false, true] {
+                let path = temporary_path();
+                let content = b"bounded preview with ordinary compression\n";
+                let mut writer = ArchiveWriter::new(Cursor::new(Vec::new())).unwrap();
+                writer.set_encrypt_header(encoded);
+                writer.set_content_methods(vec![EncoderConfiguration::new(method)]);
+                writer
+                    .push_archive_entry(
+                        sevenz_rust2::ArchiveEntry::new_file("hello.txt"),
+                        Some(content.as_slice()),
+                    )
+                    .unwrap();
+                fs::write(&path, writer.finish().unwrap().into_inner()).unwrap();
+                let scanned = scan_seven_zip(&path);
+                let extracted = extract_entry(&path, "hello.txt", 1_024);
+                fs::remove_file(path).unwrap();
+
+                assert_eq!(
+                    scanned.unwrap().entries[0].path,
+                    "hello.txt",
+                    "{method:?}, encoded={encoded}"
+                );
+                assert_eq!(extracted.unwrap(), content, "{method:?}, encoded={encoded}");
+            }
+        }
+    }
+
+    #[test]
     fn limits_the_preceding_data_decoded_for_a_solid_entry() {
         let path = temporary_path();
         fs::write(&path, solid_copy_archive()).unwrap();
@@ -409,7 +445,7 @@ mod tests {
         assert_eq!(within_budget.unwrap(), b"second payload\n");
     }
 
-    fn solid_copy_archive() -> Vec<u8> {
+    pub(super) fn solid_copy_archive() -> Vec<u8> {
         let first = b"first\n";
         let second = b"second payload\n";
         let content_size = (first.len() + second.len()) as u8;
@@ -492,7 +528,7 @@ mod tests {
         assert_eq!(crc32(b"123456789"), 0xcbf4_3926);
     }
 
-    fn temporary_path() -> std::path::PathBuf {
+    pub(super) fn temporary_path() -> std::path::PathBuf {
         std::env::temp_dir().join(format!(
             "glance-sevenzip-test-{}-{}.7z",
             std::process::id(),

@@ -35,7 +35,6 @@ class MainVC: NSViewController, QLPreviewingController {
 	/// declines to preview and lets macOS fall back to the system handler.
 	private static let containingAppBundleID = "com.chamburr.Glance"
 
-	let stats = Stats()
 	var nestedPreviewProvider: NestedPreviewProviding = DefaultNestedPreviewProvider()
 	var openWithService = OpenWithService()
 	var containingAppIsRunning = {

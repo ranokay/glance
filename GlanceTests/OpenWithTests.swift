@@ -99,6 +99,58 @@ final class OpenWithTests: XCTestCase {
 		}
 	}
 
+	func testNamedRequestTransfersARealBookmarkToAnotherProcess() async throws {
+		let fileURL = try writeFile(named: "cross-process.txt")
+		let contents = Data("Bookmark transfer survives another process.\n".utf8)
+		try contents.write(to: fileURL)
+		let request = OpenWithBridgeRequest(
+			version: OpenWithBridgeConstants.currentVersion,
+			requestID: UUID(),
+			fileBookmark: try fileURL.bookmarkData(
+				options: .minimalBookmark,
+				includingResourceValuesForKeys: nil,
+				relativeTo: nil,
+			),
+			applicationPath: "/System/Applications/TextEdit.app",
+		)
+		let requestString = try OpenWithBridgeCodec.requestURL(for: request).absoluteString
+		let store = SystemOpenWithBridgeRequestStore()
+		let name = try store.store(requestString)
+		defer { store.remove(named: name) }
+
+		let result = try await resolveBookmarkInAnotherProcess(pasteboardName: name)
+
+		XCTAssertEqual(result.status, 0, result.error)
+		let resolved = try JSONDecoder().decode(RemoteBookmarkResult.self, from: result.output)
+		XCTAssertNotEqual(resolved.processID, ProcessInfo.processInfo.processIdentifier)
+		XCTAssertFalse(resolved.stale)
+		XCTAssertEqual(
+			URL(fileURLWithPath: resolved.path).resolvingSymlinksInPath().standardizedFileURL,
+			fileURL.resolvingSymlinksInPath().standardizedFileURL,
+		)
+		XCTAssertEqual(resolved.contents, contents)
+		XCTAssertEqual(try store.take(named: name), requestString)
+		XCTAssertThrowsError(try store.take(named: name))
+	}
+
+	func testCrossProcessBookmarkResolutionRejectsInvalidBookmarkData() async throws {
+		let request = OpenWithBridgeRequest(
+			version: OpenWithBridgeConstants.currentVersion,
+			requestID: UUID(),
+			fileBookmark: Data([0, 1, 2, 3]),
+			applicationPath: "/System/Applications/TextEdit.app",
+		)
+		let store = SystemOpenWithBridgeRequestStore()
+		let name = try store.store(OpenWithBridgeCodec.requestURL(for: request).absoluteString)
+		defer { store.remove(named: name) }
+
+		let result = try await resolveBookmarkInAnotherProcess(pasteboardName: name)
+
+		XCTAssertNotEqual(result.status, 0)
+		XCTAssertTrue(result.output.isEmpty)
+		XCTAssertTrue(result.error.contains("Bookmark resolution failed"), result.error)
+	}
+
 	func testTopLevelFilesRelyOnFinderOpenWithAndCollapseTheEmptyUtilityBar() throws {
 		let fileURL = try writeFile(named: "notes.txt")
 		let firstAppURL = URL(fileURLWithPath: "/Applications/First.app")
@@ -760,6 +812,54 @@ final class OpenWithTests: XCTestCase {
 
 		XCTAssertEqual(workspace.openCalls.count, 1)
 		XCTAssertEqual(mainVC.statusLabel.stringValue, "Couldn’t open with Editor")
+	}
+
+	private struct RemoteBookmarkResult: Decodable {
+		let processID: Int32
+		let path: String
+		let stale: Bool
+		let contents: Data
+	}
+
+	private func resolveBookmarkInAnotherProcess(
+		pasteboardName: String,
+	) async throws -> (status: Int32, output: Data, error: String) {
+		let scriptURL = URL(fileURLWithPath: #filePath)
+			.deletingLastPathComponent()
+			.deletingLastPathComponent()
+			.appendingPathComponent("scripts/tests/resolve-bookmark.js")
+		let output = Pipe()
+		let error = Pipe()
+		let process = Process()
+		process.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
+		process.arguments = ["-l", "JavaScript", scriptURL.path, pasteboardName]
+		process.standardOutput = output
+		process.standardError = error
+		let terminated = expectation(description: "bookmark resolver exited")
+		process.terminationHandler = { _ in terminated.fulfill() }
+		defer {
+			process.terminationHandler = nil
+			if process.isRunning {
+				process.terminate()
+			}
+		}
+		try process.run()
+		await fulfillment(of: [terminated], timeout: 10)
+		guard !process.isRunning else {
+			throw NSError(
+				domain: "GlanceTests.BookmarkResolver",
+				code: 1,
+				userInfo: [
+					NSLocalizedDescriptionKey: "Bookmark resolver did not exit within 10 seconds",
+				],
+			)
+		}
+		return (
+			process.terminationStatus,
+			output.fileHandleForReading.readDataToEndOfFile(),
+			String(data: error.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8)
+				?? "Bookmark resolver returned non-UTF-8 diagnostics",
+		)
 	}
 
 	private func makeMainVC(workspace: StubWorkspaceApplicationProvider) -> MainVC {

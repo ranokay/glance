@@ -10,6 +10,10 @@ confirm only what automation cannot.
   never in unit tests.
 - Script regressions (`mise run test:scripts`): exercise launch receipts,
   timeouts, capture uploads, and failures through isolated command stubs.
+- Test registration (`mise run test:registration`): every Swift source under
+  `GlanceTests`, excluding preview fixtures, must resolve to the actual macOS
+  Sources phase of `GlanceTests`. The check also runs in hk; synthetic project
+  regressions cover missing membership and path/target confusion.
 - Launch gate (`scripts/check-app-launch.sh`, run by `verify:app`): the built
   Release app launches as a separate instance through LaunchServices with a
   unique verification token. After one second in the run loop it reports that

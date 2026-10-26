@@ -2,6 +2,12 @@ import Cocoa
 import GlanceKit
 import ServiceManagement
 
+private final class SettingsDocumentView: NSView {
+	override var isFlipped: Bool {
+		true
+	}
+}
+
 @MainActor
 protocol LoginItemManaging {
 	var status: SMAppService.Status { get }
@@ -240,19 +246,39 @@ final class SettingsWC: NSWindowController {
 		stackView.setCustomSpacing(12, after: appearanceDescriptionLabel)
 		stackView.setCustomSpacing(16, after: resetAppearanceButton)
 		stackView.translatesAutoresizingMaskIntoConstraints = false
-		contentView.addSubview(stackView)
+		let scrollView = NSScrollView()
+		scrollView.drawsBackground = false
+		scrollView.hasVerticalScroller = true
+		scrollView.autohidesScrollers = true
+		scrollView.translatesAutoresizingMaskIntoConstraints = false
+		let documentView = SettingsDocumentView()
+		documentView.translatesAutoresizingMaskIntoConstraints = false
+		documentView.addSubview(stackView)
+		scrollView.documentView = documentView
+		contentView.addSubview(scrollView)
+		for arrangedView in stackView.arrangedSubviews {
+			arrangedView.widthAnchor.constraint(lessThanOrEqualTo: stackView.widthAnchor)
+				.isActive = true
+			if arrangedView is NSBox {
+				arrangedView.widthAnchor.constraint(equalTo: stackView.widthAnchor).isActive = true
+			}
+		}
 
 		NSLayoutConstraint.activate([
-			stackView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 24),
-			stackView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -24),
-			stackView.topAnchor.constraint(
-				equalTo: contentView.safeAreaLayoutGuide.topAnchor,
-				constant: 20,
+			scrollView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+			scrollView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+			scrollView.topAnchor.constraint(equalTo: contentView.safeAreaLayoutGuide.topAnchor),
+			scrollView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
+			documentView.leadingAnchor.constraint(equalTo: scrollView.contentView.leadingAnchor),
+			documentView.topAnchor.constraint(equalTo: scrollView.contentView.topAnchor),
+			documentView.widthAnchor.constraint(equalTo: scrollView.contentView.widthAnchor),
+			stackView.leadingAnchor.constraint(equalTo: documentView.leadingAnchor, constant: 24),
+			stackView.trailingAnchor.constraint(
+				equalTo: documentView.trailingAnchor,
+				constant: -24,
 			),
-			stackView.bottomAnchor.constraint(
-				lessThanOrEqualTo: contentView.bottomAnchor,
-				constant: -20,
-			),
+			stackView.topAnchor.constraint(equalTo: documentView.topAnchor, constant: 20),
+			stackView.bottomAnchor.constraint(equalTo: documentView.bottomAnchor, constant: -20),
 			appearanceGrid.widthAnchor.constraint(equalTo: stackView.widthAnchor),
 		])
 	}
@@ -412,7 +438,6 @@ final class SettingsWC: NSWindowController {
 	private func separator() -> NSBox {
 		let separator = NSBox()
 		separator.boxType = .separator
-		separator.widthAnchor.constraint(equalToConstant: 392).isActive = true
 		return separator
 	}
 }
