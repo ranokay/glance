@@ -1,6 +1,8 @@
 use crate::error::CoreError;
 use crate::model::{ArchiveEntry, ArchiveEntryType, ArchivePayload};
-use sevenz_rust2::{ArchiveReader, EncoderMethod, Error as SevenZipError, Password};
+use sevenz_rust2::{
+    Archive, ArchiveReader, BlockDecoder, EncoderMethod, Error as SevenZipError, Password,
+};
 use std::fs::File;
 use std::io::{Read, Seek, SeekFrom};
 use std::path::Path;
@@ -12,6 +14,7 @@ const SIGNATURE_HEADER_SIZE: u64 = 32;
 const MAX_ARCHIVE_SIZE: u64 = 200 * 1_024 * 1_024;
 const MAX_HEADER_SIZE: u64 = 8 * 1_024 * 1_024;
 const MAX_ENTRY_COUNT: usize = 50_000;
+const MAX_SOLID_SCAN_SIZE: u64 = 200 * 1_024 * 1_024;
 
 pub(crate) fn scan_seven_zip(path: &Path) -> Result<ArchivePayload, CoreError> {
     let mut file = File::open(path)
@@ -212,31 +215,80 @@ pub(crate) fn extract_entry(
     entry_name: &str,
     max_bytes: usize,
 ) -> Result<Vec<u8>, CoreError> {
-    let file = File::open(path)
+    extract_entry_with_scan_limit(path, entry_name, max_bytes, MAX_SOLID_SCAN_SIZE)
+}
+
+fn extract_entry_with_scan_limit(
+    path: &Path,
+    entry_name: &str,
+    max_bytes: usize,
+    max_scan_bytes: u64,
+) -> Result<Vec<u8>, CoreError> {
+    let mut file = File::open(path)
         .map_err(|error| CoreError::io(format!("Could not open 7z archive: {error}")))?;
-    let mut reader = ArchiveReader::new(file, Password::empty()).map_err(map_seven_zip_error)?;
+    let file_size = file
+        .metadata()
+        .map_err(|error| CoreError::io(format!("Could not inspect 7z archive: {error}")))?
+        .len();
+    if file_size > MAX_ARCHIVE_SIZE {
+        return Err(CoreError::limit(format!(
+            "7z archive exceeds the {MAX_ARCHIVE_SIZE} byte preview limit"
+        )));
+    }
+    preflight_header(&mut file, file_size)?;
+    file.seek(SeekFrom::Start(0))
+        .map_err(|error| CoreError::io(format!("Could not seek 7z archive: {error}")))?;
+    let password = Password::empty();
+    let archive = Archive::read(&mut file, &password).map_err(map_seven_zip_error)?;
+    let entry_index = archive
+        .files
+        .iter()
+        .position(|entry| entry.name == entry_name)
+        .ok_or_else(|| CoreError::invalid(format!("7z entry \"{entry_name}\" was not found")))?;
+    let target_entry = &archive.files[entry_index];
+    if target_entry.is_directory {
+        return Err(CoreError::invalid(
+            "7z directory entries cannot be previewed",
+        ));
+    }
+    if is_seven_zip_symlink(target_entry) {
+        return Err(CoreError::invalid("7z links cannot be previewed"));
+    }
+    if target_entry.size > max_bytes as u64 {
+        return Err(CoreError::limit(
+            "7z entry exceeds the extracted preview size limit",
+        ));
+    }
+    if !target_entry.has_stream {
+        return Ok(Vec::new());
+    }
+    let block_index = archive.stream_map.file_block_index[entry_index]
+        .ok_or_else(|| CoreError::parse("7z file has no compression block"))?;
+    let decoder = BlockDecoder::new(1, block_index, &archive, &password, &mut file);
+    let mut scan_bytes = 0_u64;
+    for entry in decoder
+        .entries()
+        .iter()
+        .take_while(|entry| !std::ptr::eq(*entry, target_entry))
+    {
+        scan_bytes = scan_bytes
+            .checked_add(entry.size)
+            .ok_or_else(|| CoreError::limit("7z solid block scan size overflow"))?;
+        if scan_bytes > max_scan_bytes {
+            return Err(CoreError::limit(format!(
+                "7z solid entry requires scanning more than {max_scan_bytes} bytes"
+            )));
+        }
+    }
     let mut selected: Option<Result<Vec<u8>, CoreError>> = None;
 
-    reader
-        .for_each_entries(|entry, reader| {
-            if entry.name != entry_name {
+    decoder
+        .for_each_entries(&mut |entry, reader| {
+            if !std::ptr::eq(entry, target_entry) {
+                // Solid files share one decoder; discarding a reader without consuming it
+                // leaves the next entry positioned at the previous file's bytes.
+                std::io::copy(reader, &mut std::io::sink())?;
                 return Ok(true);
-            }
-            if entry.is_directory {
-                selected = Some(Err(CoreError::invalid(
-                    "7z directory entries cannot be previewed",
-                )));
-                return Ok(false);
-            }
-            if is_seven_zip_symlink(entry) {
-                selected = Some(Err(CoreError::invalid("7z links cannot be previewed")));
-                return Ok(false);
-            }
-            if entry.size > max_bytes as u64 {
-                selected = Some(Err(CoreError::limit(
-                    "7z entry exceeds the extracted preview size limit",
-                )));
-                return Ok(false);
             }
             let mut data = Vec::with_capacity(entry.size as usize);
             selected = Some(
@@ -309,6 +361,107 @@ mod tests {
 
         entry.windows_attributes = 0x8000 | (0o100644 << 16);
         assert!(!is_seven_zip_symlink(&entry));
+    }
+
+    #[test]
+    fn extracts_later_file_from_solid_archive() {
+        let path = temporary_path();
+        fs::write(&path, solid_copy_archive()).unwrap();
+        let reference = ArchiveReader::open(&path, Password::empty()).unwrap();
+        assert!(reference.archive().is_solid);
+        let result = extract_entry(&path, "second.txt", 1_024);
+        fs::remove_file(path).unwrap();
+
+        assert_eq!(result.unwrap(), b"second payload\n");
+    }
+
+    #[test]
+    fn extracts_each_file_from_a_non_solid_archive() {
+        let path = fixture("example.7z");
+        let mut reference = ArchiveReader::open(&path, Password::empty()).unwrap();
+        assert!(!reference.archive().is_solid);
+        let names: Vec<String> = reference
+            .archive()
+            .files
+            .iter()
+            .filter(|entry| !entry.is_directory)
+            .map(|entry| entry.name.clone())
+            .collect();
+
+        for name in names {
+            assert_eq!(
+                extract_entry(&path, &name, 1_024).unwrap(),
+                reference.read_file(&name).unwrap(),
+                "entry {name} was read from the wrong compression block"
+            );
+        }
+    }
+
+    #[test]
+    fn limits_the_preceding_data_decoded_for_a_solid_entry() {
+        let path = temporary_path();
+        fs::write(&path, solid_copy_archive()).unwrap();
+        let over_budget = extract_entry_with_scan_limit(&path, "second.txt", 1_024, 5);
+        let within_budget = extract_entry_with_scan_limit(&path, "second.txt", 1_024, 6);
+        fs::remove_file(path).unwrap();
+
+        assert!(matches!(over_budget, Err(CoreError::ResourceLimit(_))));
+        assert_eq!(within_budget.unwrap(), b"second payload\n");
+    }
+
+    fn solid_copy_archive() -> Vec<u8> {
+        let first = b"first\n";
+        let second = b"second payload\n";
+        let content_size = (first.len() + second.len()) as u8;
+        let mut header = vec![
+            0x01, // Header
+            0x04, // MainStreamsInfo
+            0x06,
+            0,
+            1,
+            0x09,
+            content_size,
+            0, // PackInfo: one stream at offset zero
+            0x07,
+            0x0b,
+            1,
+            0,
+            1,
+            1,
+            0, // UnpackInfo: one block using the COPY coder
+            0x0c,
+            content_size,
+            0, // CodersUnpackSize
+            0x08,
+            0x0d,
+            2,
+            0x09,
+            first.len() as u8,
+            0, // Two solid substreams
+            0, // End MainStreamsInfo
+            0x05,
+            2, // FilesInfo
+        ];
+        let names: Vec<u8> = "first.txt\0second.txt\0"
+            .encode_utf16()
+            .flat_map(u16::to_le_bytes)
+            .collect();
+        header.extend([0x11, (names.len() + 1) as u8, 0]);
+        header.extend(names);
+        header.extend([0, 0]);
+
+        let mut start_header = Vec::new();
+        start_header.extend(u64::from(content_size).to_le_bytes());
+        start_header.extend((header.len() as u64).to_le_bytes());
+        start_header.extend(crc32(&header).to_le_bytes());
+        let mut bytes = SIGNATURE.to_vec();
+        bytes.extend([0, 4]);
+        bytes.extend(crc32(&start_header).to_le_bytes());
+        bytes.extend(start_header);
+        bytes.extend(first);
+        bytes.extend(second);
+        bytes.extend(header);
+        bytes
     }
 
     #[test]

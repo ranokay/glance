@@ -124,6 +124,7 @@ extension MainVC {
 	}
 
 	func preparePreview(at fileURL: URL) async throws {
+		try Task.checkCancellation()
 		guard containingAppIsRunning() else {
 			Log.general.info("Glance app is not running, declining preview")
 			throw NSError(

@@ -140,19 +140,31 @@ echo "Remaining:"
 pluginkit -m -A -D -v | grep "com.chamburr.Glance.QLPlugin" || true
 '''
 
+[tasks."test:launch"]
+description = "Launch the Release artifact and verify its delegate, menu, and registered status item"
+run = '''
+set -e
+sh scripts/check-app-launch.sh
+'''
+
 [tasks."test:xcode"]
 description = "Run Xcode tests (Debug, isolated dir, retained result bundle)"
 run = '''
 set -e
 APP_NAME="${APP_NAME:-Glance}"
-rm -rf build/TestResults/Glance.xcresult
-xcodebuild test -scheme "$APP_NAME" -configuration Debug -derivedDataPath build/test -resultBundlePath build/TestResults/Glance.xcresult -quiet
+RESULT_PATH="build/TestResults/Glance-$(date +%Y%m%d-%H%M%S)-$(uuidgen).xcresult"
+xcodebuild test -scheme "$APP_NAME" -configuration Debug -destination 'platform=macOS,arch=arm64' -derivedDataPath build/test -resultBundlePath "$RESULT_PATH" -quiet
 '''
+
+[tasks."test:scripts"]
+description = "Test verification scripts without launching apps or writing to GitHub"
+run = "sh scripts/test-verification.sh"
 
 [tasks.test]
 description = "Run all tests"
 run = '''
 set -e
+mise run test:scripts
 mise run test:rust
 mise run test:xcode
 '''
@@ -231,6 +243,9 @@ if find "$APP_PATH" -type d \( -name SwiftCSV.framework -o -name ZIPFoundation.f
 fi
 
 codesign --verify --deep --strict --verbose=2 "$APP_PATH"
+
+echo "--- launch gate: delegate, menu, and registered status item ---"
+sh scripts/check-app-launch.sh "$APP_PATH"
 
 echo "--- pin cadence ---"
 grep -E '^(rust|hk|jactionlint|shellcheck|swiftformat|swiftlint|"cargo:cargo-audit")' mise.toml || true

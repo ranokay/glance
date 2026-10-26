@@ -24,6 +24,17 @@ When set to `yes`, PRs run through the same labels and states as issues, using t
 
 GitHub shares one number space across issues and PRs, so a bare `#42` may be either: resolve with `gh pr view 42 --repo ranokay/glance` and fall back to `gh issue view 42 --repo ranokay/glance`.
 
+## Merging a ticket's PR
+
+PRs here squash-merge into `develop`, not the default branch (`main`), so
+`Closes #N` keywords do not close issues on that merge. Reconcile the ticket
+as part of the merge step:
+
+- **Merge**: `gh pr merge <n> --repo ranokay/glance --squash` (human-authorized).
+- **Close fully resolved tickets after merge**: `gh issue close <issue> --repo ranokay/glance --comment "Merged via #<pr>."`. Check the ticket's full acceptance criteria first. For a partial implementation or outstanding required evidence, keep it open and record what remains.
+- **Record judgment-call dispositions on the ticket**: when a review finding is resolved by decision rather than code, comment what was decided, why, and the evidence. An open issue that silently disagrees with its merged PR dangles for everyone who reads it later.
+- **Attach captures with the script**: `sh scripts/attach-capture.sh <issue> <image> [caption]`.
+
 ## When a skill says "publish to the issue tracker"
 
 Create a GitHub issue in `ranokay/glance`.

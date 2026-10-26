@@ -8,6 +8,17 @@ confirm only what automation cannot.
 - Unit tests (`mise run test:xcode`, GlanceTests target): behavior asserts only.
   Version/build/platform/pin strings live in `scripts/check-release-metadata.sh`,
   never in unit tests.
+- Script regressions (`mise run test:scripts`): exercise launch receipts,
+  timeouts, capture uploads, and failures through isolated command stubs.
+- Launch gate (`scripts/check-app-launch.sh`, run by `verify:app`): the built
+  Release app launches as a separate instance through LaunchServices with a
+  unique verification token. After one second in the run loop it reports that
+  its delegate, main menu, and registered status item with an image and menu
+  exist, then exits. The probe instance starts no IPC server or update check
+  and changes no preferences. Missing receipts, launch failures, and timeouts
+  fail the gate. No Accessibility permission is needed. `AppLaunchTests` also
+  assert the hosted app's actual delegate and status item in the unit suite.
+  These checks establish registration, not pixel visibility or menu interaction.
 - Corpus sweep (`CorpusSweepTests`): every renderable fixture under
   `GlanceTests/TestFiles` must resolve through `PreviewVCFactory` and
   construct. Only the encryption-gated archives in its allowlist may throw.
@@ -40,9 +51,21 @@ Settings → Login Items gains one "Glance — Quick Look" row per build directo
 
 ## Manual capture (per UI ticket, alongside automated evidence)
 
-Each UI-affecting ticket adds one manual Quick Look capture: Spacebar-preview
-the affected file type in Finder, screenshot the result, attach it to the
-ticket. One capture per ticket, not per commit.
+Each UI-affecting ticket adds one Quick Look capture: Spacebar-preview the
+affected file type in Finder, screenshot the result, attach it to the ticket.
+One capture per ticket, not per commit.
+
+The agent fulfills this end to end: a capture produced through desktop
+automation (cua-driver screenshot saved under `build/verification/`) counts as
+the capture, and the agent attaches it to the ticket itself with
+`scripts/attach-capture.sh <issue> <image>` — a ticket that names a capture is
+not done until the image is on the ticket. Only where a ticket explicitly says
+the capture is human-gated (e.g. asset changes) does the step wait for a human.
+The script validates the issue before uploading and links the image at its
+immutable commit. Capture files must contain only the intended preview.
+Record an explicit user waiver on the ticket instead of requesting the same
+capture again. If desktop capture is unavailable, record the missing evidence
+and continue independent work; local file existence alone is not an attachment.
 
 ## Exploratory automation (never gating)
 

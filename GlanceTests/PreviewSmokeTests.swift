@@ -958,6 +958,26 @@ final class PreviewSmokeTests: XCTestCase {
 		XCTAssertTrue(mainVC.currentPreviewController is WebPreviewVC)
 	}
 
+	func testDismissingQuickLookCancelsPendingPreparationWithoutInstallingAPreview() async throws {
+		let fileURL = try writeFile(named: "dismissed.swift", contents: "let dismissed = true\n")
+		let mainVC = MainVC()
+		mainVC.containingAppIsRunning = { true }
+		mainVC.loadViewIfNeeded()
+		let completion = expectation(description: "dismissed preparation completed")
+		completion.assertForOverFulfill = true
+
+		mainVC.startPreviewPreparation(at: fileURL) { error in
+			XCTAssertNil(error)
+			completion.fulfill()
+		}
+		mainVC.viewWillDisappear()
+
+		await fulfillment(of: [completion], timeout: 15)
+		XCTAssertNil(mainVC.currentPreviewController)
+		XCTAssertNil(mainVC.fileChangeMonitor)
+		XCTAssertNil(mainVC.previewPreparationTask)
+	}
+
 	func testWebPreviewRefreshesChangedMarkdownContentAndKeepsScrollPosition() async throws {
 		let source = "# First heading\n\n"
 			+ (1 ... 120).map { "Paragraph \($0)." }.joined(separator: "\n\n")

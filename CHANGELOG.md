@@ -4,6 +4,27 @@ Append-only. Newest entry first.
 
 # Unreleased
 
+- Verification now proves the app actually launches: a launch gate
+  (`scripts/check-app-launch.sh`, wired into `verify:app`) launches the built
+  Release app as an isolated instance and requires a fresh receipt confirming
+  its live delegate, menu, and registered status item after one second.
+  `AppLaunchTests` also verifies the real status item inside the test host.
+  Missing permissions and menu-bar overflow cannot silently skip the check.
+- Verification captures can now be attached to tickets by the agent itself:
+  `scripts/attach-capture.sh <issue> <image>` commits the capture to the
+  `verification-captures` branch and posts it on the ticket, and the
+  manual-capture convention in `docs/agents/verification.md` accepts
+  agent-produced captures. Uploads accept normal screenshot sizes without
+  exceeding command-line limits and link to immutable image commits.
+- Dismissing Quick Look cancels an unfinished preview instead of installing it
+  and restarting its file watcher after the window closes.
+- Spreadsheet previews apply the expanded-byte budget to every ZIP part,
+  including styles and relationships, and check ZIP metadata limits first.
+- Open With keeps distinct applications separate on case-sensitive volumes
+  while recognizing filesystem and symlink aliases.
+- Extracting a later file from a solid 7z archive consumes preceding entries
+  correctly instead of returning their bytes as the selected file.
+- Test runs retain separate result bundles so later runs do not erase evidence.
 - Quick Look previews for SQLite databases: `.sqlite`, `.sqlite3`, and `.db` files list their tables
   and show 50-row pages with declared column types, distinct `NULL` and empty values, and BLOB sizes
   instead of inline bytes. Tables, columns, cells, and rendered output are capped with explicit

@@ -11,6 +11,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		let application = NSApplication.shared
 		let delegate = AppDelegate()
 		application.delegate = delegate
+		if let token = delegate.launchVerificationToken {
+			let pid = ProcessInfo.processInfo.processIdentifier
+			FileHandle.standardOutput.write(Data("GLANCE_LAUNCH_STARTED \(token) \(pid)\n".utf8))
+		}
 		// `NSApplication.delegate` is weak, so the local would be released at its
 		// last use and launch callbacks would reach nil. Hold it for the process.
 		withExtendedLifetime(delegate) {
@@ -18,18 +22,43 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		}
 	}
 
-	private var statusItem: NSStatusItem?
+	private(set) var statusItem: NSStatusItem?
 	private let openWithBridgeServer = OpenWithBridgeServer()
 	private let previewSettingsServer = PreviewSettingsServer()
+	private let launchVerificationToken: String? = {
+		let arguments = CommandLine.arguments
+		guard arguments.count == 3, arguments[1] == "--verify-launch",
+		      UUID(uuidString: arguments[2]) != nil
+		else {
+			return nil
+		}
+		return arguments[2]
+	}()
 
 	func applicationWillFinishLaunching(_: Notification) {
 		NSApp.mainMenu = makeMainMenu()
+		guard launchVerificationToken == nil else {
+			return
+		}
 		openWithBridgeServer.start()
 		previewSettingsServer.start()
 	}
 
 	func applicationDidFinishLaunching(_: Notification) {
 		setUpStatusItem()
+		if let token = launchVerificationToken {
+			// Let the run loop remain alive without starting another IPC server,
+			// changing preferences, or checking for updates in the probe instance.
+			DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [self] in
+				let ready = NSApp.delegate === self && NSApp.mainMenu != nil
+					&& statusItem?.isVisible == true && statusItem?.button?.image != nil
+					&& statusItem?.menu != nil
+				let verdict = ready ? "OK" : "FAILED"
+				FileHandle.standardOutput.write(Data("GLANCE_LAUNCH_\(verdict) \(token)\n".utf8))
+				NSApp.terminate(nil)
+			}
+			return
+		}
 		AppSettingsStore.shared.migrateStandardDefaultsIfNeeded()
 		SparkleUpdateCenter.shared.start(
 			autoChecksEnabled: AppSettingsStore.shared.autoUpdateCheckEnabled,
@@ -171,21 +200,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 	@objc
 	func openWebsite(_: Any?) {
 		AppLinks.website.open()
-	}
-
-	@objc
-	func openLicense(_: Any?) {
-		AppLinks.license.open()
-	}
-
-	@objc
-	func openPrivacyPolicy(_: Any?) {
-		AppLinks.privacyPolicy.open()
-	}
-
-	@objc
-	func openFeedback(_: Any?) {
-		AppLinks.feedback.open()
 	}
 
 	@objc
