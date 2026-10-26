@@ -3,7 +3,7 @@
 **Status:** accepted
 
 Glance renders Mermaid syntax in Markdown fences, and previously bundled
-Mermaid.js 11.17.2 (3.57 MB). We replaced it with Pele 1.9.0 (706 KB), which
+Mermaid.js 11.17.2 (3.57 MB). We replaced it with Pele 1.10.0 (709 KB), which
 supports every diagram type built into Mermaid 12.1.0 and renders synchronously
 to SVG with no dependencies. The trade-off is that Pele uses its own layout
 engine: node spacing, edge paths, and visual style differ from Mermaid, Mermaid
