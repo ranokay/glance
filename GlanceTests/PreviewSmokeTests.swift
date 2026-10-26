@@ -270,7 +270,7 @@ final class PreviewSmokeTests: XCTestCase {
 	func testDrawIORuntimeAndLicenseAreBundled() throws {
 		let bundle = WebPreviewVC.resourceBundle
 		let runtimeURL = try XCTUnwrap(
-			bundle.url(forResource: "drawio-viewer-31.4.6.min", withExtension: "js"),
+			bundle.url(forResource: "drawio-viewer-32.6.1.min", withExtension: "js"),
 		)
 		let licenseURL = try XCTUnwrap(
 			bundle.url(forResource: "DRAWIO_LICENSE", withExtension: "txt"),
@@ -608,7 +608,7 @@ final class PreviewSmokeTests: XCTestCase {
 	func testPeleRuntimeAndLicenseAreBundled() throws {
 		let bundle = WebPreviewVC.resourceBundle
 		let runtimeURL = try XCTUnwrap(
-			bundle.url(forResource: "markdown-pele-1.9.0.global", withExtension: "js"),
+			bundle.url(forResource: "markdown-pele-1.10.0.global", withExtension: "js"),
 		)
 		let licenseURL = try XCTUnwrap(
 			bundle.url(forResource: "PELE_LICENSE", withExtension: "txt"),

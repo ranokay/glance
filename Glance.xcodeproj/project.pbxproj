@@ -8,11 +8,11 @@
 
 /* Begin PBXBuildFile section */
 		A1C0DE0000000000000000E1 /* AppLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C0DE0000000000000000E2 /* AppLaunchTests.swift */; };
-		20A000000000000000000003 /* markdown-pele-1.9.0.global.js in Resources */ = {isa = PBXBuildFile; fileRef = 20A000000000000000000001 /* markdown-pele-1.9.0.global.js */; };
+		20A000000000000000000003 /* markdown-pele-1.10.0.global.js in Resources */ = {isa = PBXBuildFile; fileRef = 20A000000000000000000001 /* markdown-pele-1.10.0.global.js */; };
 		20A000000000000000000004 /* PELE_LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = 20A000000000000000000002 /* PELE_LICENSE.txt */; };
 		21A000000000000000000011 /* DrawIOPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21A000000000000000000001 /* DrawIOPreview.swift */; };
 		21A000000000000000000012 /* DrawIOPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21A000000000000000000001 /* DrawIOPreview.swift */; };
-		21A000000000000000000013 /* drawio-viewer-31.4.6.min.js in Resources */ = {isa = PBXBuildFile; fileRef = 21A000000000000000000002 /* drawio-viewer-31.4.6.min.js */; };
+		21A000000000000000000013 /* drawio-viewer-32.6.1.min.js in Resources */ = {isa = PBXBuildFile; fileRef = 21A000000000000000000002 /* drawio-viewer-32.6.1.min.js */; };
 		21A000000000000000000014 /* DRAWIO_LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = 21A000000000000000000003 /* DRAWIO_LICENSE.txt */; };
 		21A000000000000000000015 /* drawio-main.css in Resources */ = {isa = PBXBuildFile; fileRef = 21A000000000000000000004 /* drawio-main.css */; };
 		22A000000000000000000011 /* RARPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22A000000000000000000001 /* RARPreview.swift */; };
@@ -268,10 +268,10 @@
 
 /* Begin PBXFileReference section */
 		A1C0DE0000000000000000E2 /* AppLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLaunchTests.swift; sourceTree = "<group>"; };
-		20A000000000000000000001 /* markdown-pele-1.9.0.global.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = "markdown-pele-1.9.0.global.js"; sourceTree = "<group>"; };
+		20A000000000000000000001 /* markdown-pele-1.10.0.global.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = "markdown-pele-1.10.0.global.js"; sourceTree = "<group>"; };
 		20A000000000000000000002 /* PELE_LICENSE.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = PELE_LICENSE.txt; sourceTree = "<group>"; };
 		21A000000000000000000001 /* DrawIOPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrawIOPreview.swift; sourceTree = "<group>"; };
-		21A000000000000000000002 /* drawio-viewer-31.4.6.min.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = "drawio-viewer-31.4.6.min.js"; sourceTree = "<group>"; };
+		21A000000000000000000002 /* drawio-viewer-32.6.1.min.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = "drawio-viewer-32.6.1.min.js"; sourceTree = "<group>"; };
 		21A000000000000000000003 /* DRAWIO_LICENSE.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = DRAWIO_LICENSE.txt; sourceTree = "<group>"; };
 		21A000000000000000000004 /* drawio-main.css */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.css; path = "drawio-main.css"; sourceTree = "<group>"; };
 		22A000000000000000000001 /* RARPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RARPreview.swift; sourceTree = "<group>"; };
@@ -547,7 +547,7 @@
 			children = (
 				21A000000000000000000003 /* DRAWIO_LICENSE.txt */,
 				21A000000000000000000004 /* drawio-main.css */,
-				21A000000000000000000002 /* drawio-viewer-31.4.6.min.js */,
+				21A000000000000000000002 /* drawio-viewer-32.6.1.min.js */,
 			);
 			path = drawio;
 			sourceTree = "<group>";
@@ -706,7 +706,7 @@
 			isa = PBXGroup;
 			children = (
 				20A000000000000000000002 /* PELE_LICENSE.txt */,
-				20A000000000000000000001 /* markdown-pele-1.9.0.global.js */,
+				20A000000000000000000001 /* markdown-pele-1.10.0.global.js */,
 				7EB3643D244B03CC00D7F96F /* markdown-main.css */,
 			);
 			path = markdown;
@@ -920,9 +920,9 @@
 				21A000000000000000000014 /* DRAWIO_LICENSE.txt in Resources */,
 				23A000000000000000000013 /* epub-main.css in Resources */,
 				21A000000000000000000015 /* drawio-main.css in Resources */,
-				21A000000000000000000013 /* drawio-viewer-31.4.6.min.js in Resources */,
+				21A000000000000000000013 /* drawio-viewer-32.6.1.min.js in Resources */,
 				20A000000000000000000004 /* PELE_LICENSE.txt in Resources */,
-				20A000000000000000000003 /* markdown-pele-1.9.0.global.js in Resources */,
+				20A000000000000000000003 /* markdown-pele-1.10.0.global.js in Resources */,
 				7EB36448244B03CC00D7F96F /* KaTeX_Main-Regular.woff2 in Resources */,
 				7EB36460244B03CC00D7F96F /* KaTeX_Fraktur-Regular.woff2 in Resources */,
 				7EB36441244B03CC00D7F96F /* jupyter-katex.min.css in Resources */,
@@ -1631,7 +1631,7 @@
 			repositoryURL = "https://github.com/sparkle-project/Sparkle";
 			requirement = {
 				kind = exactVersion;
-				version = 2.10.0;
+				version = 2.10.1;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */

@@ -11,7 +11,7 @@ class MarkdownPreview: Preview {
 		withExtension: "css",
 	)
 	private let mermaidScriptURL = WebPreviewVC.resourceBundle.url(
-		forResource: "markdown-pele-1.9.0.global",
+		forResource: "markdown-pele-1.10.0.global",
 		withExtension: "js",
 	)
 	private let katexScriptURL = WebPreviewVC.resourceBundle.url(
