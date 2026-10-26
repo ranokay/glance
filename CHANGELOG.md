@@ -48,7 +48,9 @@ Append-only. Newest entry first.
   render as collapsible trees with distinct string, number, boolean, null, date, data, key, and
   array-index presentation. Object keys keep their authored order. Malformed input falls back to
   syntax-highlighted text, and input, node, depth, and output caps show an explicit truncation
-  notice instead of failing. XML entity declarations are never resolved.
+  notice instead of failing. XML entity declarations are never resolved. The tree uses the same
+  Xcode-derived palette as the code previews, separates labels from values with a space, and
+  keeps key-count hints out of copied text.
 
 - Quick Look previews of Markdown, source code, and Jupyter notebooks now
   re-render when the file changes on disk, including atomic editor saves, and

@@ -861,12 +861,12 @@ fn render_label(html: &mut String, label: &Label) {
             if *quoted {
                 html.push('"');
             }
-            html.push_str("</span><span class=\"structured-punct\">:</span>");
+            html.push_str("</span><span class=\"structured-punct\">:</span> ");
         }
         Label::Index(index) => {
             write!(
                 html,
-                "<span class=\"structured-index\">{index}</span><span class=\"structured-punct\">:</span>"
+                "<span class=\"structured-index\">{index}</span><span class=\"structured-punct\">:</span> "
             )
             .expect("writing to a string cannot fail");
         }
@@ -1180,5 +1180,21 @@ mod tests {
         assert!(html.contains("{}"));
         assert!(html.contains("[]"));
         assert!(!html.contains("<details class=\"structured-node structured-container\"><summary"));
+    }
+
+    #[test]
+    fn separates_labels_from_values_with_a_space() {
+        let html = render_json(r#"{"key":"value","list":[0]}"#);
+
+        assert!(
+            html.contains(r#""key"</span><span class="structured-punct">:</span> "#),
+            "object labels are followed by a space"
+        );
+        assert!(
+            html.contains(
+                r#"<span class="structured-index">0</span><span class="structured-punct">:</span> "#
+            ),
+            "array indices are followed by a space"
+        );
     }
 }
