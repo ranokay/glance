@@ -349,23 +349,11 @@ fn parse_package(xml: &[u8], package_path: &str) -> Result<Package, CoreError> {
             }
             Ok(Event::Text(text)) => {
                 let value = decoded_text(&text)?;
-                if inside_metadata_field(&stack, "title") {
-                    title.push_str(&value);
-                } else if inside_metadata_field(&stack, "creator") {
-                    creator.push_str(&value);
-                } else if inside_metadata_field(&stack, "language") {
-                    language.push_str(&value);
-                }
+                push_metadata_text(&stack, &value, &mut title, &mut creator, &mut language);
             }
             Ok(Event::GeneralRef(reference)) => {
                 let value = predefined_entity(reference.as_ref())?;
-                if inside_metadata_field(&stack, "title") {
-                    title.push_str(value);
-                } else if inside_metadata_field(&stack, "creator") {
-                    creator.push_str(value);
-                } else if inside_metadata_field(&stack, "language") {
-                    language.push_str(value);
-                }
+                push_metadata_text(&stack, value, &mut title, &mut creator, &mut language);
             }
             Ok(Event::End(_)) => {
                 stack.pop();
@@ -457,7 +445,7 @@ fn render_chapter<R: Read + Seek>(
     let mut reader = Reader::from_reader(xml);
     reader.config_mut().trim_text(false);
     let mut output = String::new();
-    let mut stack = Vec::<String>::new();
+    let mut depth = 0_usize;
     let mut in_body = false;
     let mut body_seen = false;
     let mut suppressed_depth = 0_usize;
@@ -466,10 +454,10 @@ fn render_chapter<R: Read + Seek>(
         match reader.read_event() {
             Ok(Event::Start(element)) => {
                 let name = local_name(element.name().as_ref()).to_ascii_lowercase();
-                if stack.len() >= MAX_ELEMENT_DEPTH {
+                if depth >= MAX_ELEMENT_DEPTH {
                     return Err(CoreError::limit("EPUB chapter XML is nested too deeply"));
                 }
-                stack.push(name.clone());
+                depth += 1;
                 if name == "body" {
                     in_body = true;
                     body_seen = true;
@@ -528,7 +516,7 @@ fn render_chapter<R: Read + Seek>(
                     output.push_str(&name);
                     output.push('>');
                 }
-                stack.pop();
+                depth = depth.saturating_sub(1);
             }
             Ok(Event::Text(text)) if in_body && suppressed_depth == 0 => {
                 escape_html_into(&decoded_text(&text)?, &mut output);
@@ -913,6 +901,22 @@ fn inside_metadata_field(stack: &[String], field: &str) -> bool {
     stack.last().is_some_and(|name| name == field) && stack.iter().any(|name| name == "metadata")
 }
 
+fn push_metadata_text(
+    stack: &[String],
+    value: &str,
+    title: &mut String,
+    creator: &mut String,
+    language: &mut String,
+) {
+    if inside_metadata_field(stack, "title") {
+        title.push_str(value);
+    } else if inside_metadata_field(stack, "creator") {
+        creator.push_str(value);
+    } else if inside_metadata_field(stack, "language") {
+        language.push_str(value);
+    }
+}
+
 fn local_name(name: &str) -> &str {
     name.rsplit_once(':').map_or(name, |(_, local)| local)
 }
@@ -942,7 +946,7 @@ fn attribute(element: &BytesStart<'_>, key: &str) -> Result<Option<String>, Core
 fn decoded_text(text: &quick_xml::events::BytesText<'_>) -> Result<String, CoreError> {
     quick_xml::escape::unescape(text.as_ref())
         .map(|value| value.into_owned())
-        .map_err(|error| CoreError::parse(format!("Could not decode EPUB XML text: {error}")))
+        .map_err(|error| CoreError::parse(format!("Could not decode EPUB XML entity: {error}")))
 }
 
 fn predefined_entity(name: &str) -> Result<&'static str, CoreError> {

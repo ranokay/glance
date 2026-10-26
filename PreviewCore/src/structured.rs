@@ -378,7 +378,7 @@ fn xml_tree(data: &[u8], budget: &mut Budget) -> Result<Node, CoreError> {
                     },
                 );
             }
-            Event::Text(text) => pending_text.push_str(&xml_text(&text)?),
+            Event::Text(text) => pending_text.push_str(&xml_text(&text)),
             Event::CData(text) => {
                 pending_text.push_str(text.as_ref());
             }
@@ -509,10 +509,10 @@ fn xml_frame(start: &BytesStart<'_>, budget: &mut Budget) -> Result<XmlFrame, Co
     })
 }
 
-fn xml_text(text: &quick_xml::events::BytesText<'_>) -> Result<String, CoreError> {
-    Ok(quick_xml::escape::unescape(text.as_ref())
+fn xml_text(text: &quick_xml::events::BytesText<'_>) -> String {
+    quick_xml::escape::unescape(text.as_ref())
         .map(|value| value.into_owned())
-        .unwrap_or_else(|_| text.as_ref().to_owned()))
+        .unwrap_or_else(|_| text.as_ref().to_owned())
 }
 
 fn push_xml_node(stack: &mut [XmlFrame], roots: &mut Vec<Node>, node: Node) {

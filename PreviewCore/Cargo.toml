@@ -24,8 +24,8 @@ plist = { version = "=1.10.3", features = [
 	# pinned exactly so this deliberately unstable API cannot move without a deliberate bump.
 	"enable_unstable_features_that_may_break_with_minor_version_bumps",
 ] }
-# Parsers follow quick-xml's str-based event API; the exact pin keeps a breaking parser migration
-# an explicit edit rather than an incidental lockfile refresh.
+# calamine and plist already resolve quick-xml 0.42; following them removes the duplicate parser.
+# The exact pin keeps the shared str-based event API an explicit migration, not a lockfile refresh.
 quick-xml = "=0.42.0"
 rars = "=0.12.2"
 serde = { version = "1.0.229", features = ["derive"] }

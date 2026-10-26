@@ -203,8 +203,10 @@ fn relationship_target(xml: &[u8]) -> Result<Option<String>, CoreError> {
             Ok(Event::Start(element) | Event::Empty(element))
                 if local_name(element.name().as_ref()) == "Relationship" =>
             {
-                if attribute(&element, "Type")?.as_deref() == Some(MODEL_RELATIONSHIP_TYPE) {
-                    return attribute(&element, "Target");
+                if attribute_by_qualified_name(&element, "Type")?.as_deref()
+                    == Some(MODEL_RELATIONSHIP_TYPE)
+                {
+                    return attribute_by_qualified_name(&element, "Target");
                 }
             }
             Ok(Event::Eof) => return Ok(None),
@@ -330,7 +332,7 @@ fn handle_start(
     let depth = stack.len();
     match name {
         "model" if is_root && stack.len() == 1 && stack[0].is_core => {
-            if let Some(unit) = attribute(element, "unit")? {
+            if let Some(unit) = attribute_by_qualified_name(element, "unit")? {
                 model.unit_millimeters = unit_scale(&unit);
             }
         }
@@ -339,8 +341,9 @@ fn handle_start(
                 return Err(CoreError::parse("3MF objects must not be nested"));
             }
             let id = required_attribute(element, "id", "object")?;
-            let group = attribute(element, "pid")?.map(|id| object_key(part_path, &id));
-            let property_index = attribute(element, "pindex")?
+            let group =
+                attribute_by_qualified_name(element, "pid")?.map(|id| object_key(part_path, &id));
+            let property_index = attribute_by_qualified_name(element, "pindex")?
                 .map(|value| parse_usize(&value, "object property index"))
                 .transpose()?;
             *current_object = Some((
@@ -430,7 +433,7 @@ fn handle_start(
                 .components
                 .push(Component {
                     object_key: object_key(&target_path, &id),
-                    transform: parse_transform(attribute(element, "transform")?)?,
+                    transform: parse_transform(attribute_by_qualified_name(element, "transform")?)?,
                 });
         }
         "item" if is_root && path_ends_with(stack, &["model", "build", "item"]) => {
@@ -439,7 +442,7 @@ fn handle_start(
             enqueue_part(&target_path, pending, parsed)?;
             model.build_items.push(Component {
                 object_key: object_key(&target_path, &id),
-                transform: parse_transform(attribute(element, "transform")?)?,
+                transform: parse_transform(attribute_by_qualified_name(element, "transform")?)?,
             });
         }
         "basematerials" | "colorgroup"
@@ -454,7 +457,7 @@ fn handle_start(
                 .is_some_and(|(group_depth, _, _)| depth == group_depth + 1)
                 && path_ends_with(stack, &["basematerials", "base"]) =>
         {
-            let color = attribute(element, "displaycolor")?
+            let color = attribute_by_qualified_name(element, "displaycolor")?
                 .as_deref()
                 .and_then(parse_color)
                 .unwrap_or(DEFAULT_COLOR);
@@ -470,7 +473,7 @@ fn handle_start(
                 .is_some_and(|(group_depth, _, _)| depth == group_depth + 1)
                 && path_ends_with(stack, &["colorgroup", "color"]) =>
         {
-            let color = attribute(element, "color")?
+            let color = attribute_by_qualified_name(element, "color")?
                 .as_deref()
                 .and_then(parse_color)
                 .unwrap_or(DEFAULT_COLOR);
@@ -732,7 +735,10 @@ fn enqueue_part(
     Ok(())
 }
 
-fn attribute(element: &BytesStart<'_>, expected: &str) -> Result<Option<String>, CoreError> {
+fn attribute_by_qualified_name(
+    element: &BytesStart<'_>,
+    expected: &str,
+) -> Result<Option<String>, CoreError> {
     for attribute in element.attributes() {
         let attribute = attribute
             .map_err(|error| CoreError::parse(format!("Invalid 3MF XML attribute: {error}")))?;
@@ -772,7 +778,7 @@ fn required_attribute(
     name: &str,
     context: &str,
 ) -> Result<String, CoreError> {
-    attribute(element, name)?
+    attribute_by_qualified_name(element, name)?
         .ok_or_else(|| CoreError::parse(format!("3MF {context} is missing {name}")))
 }
 
