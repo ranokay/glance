@@ -4,6 +4,8 @@ Append-only. Newest entry first.
 
 # Unreleased
 
+- EPUB previews render books whose package metadata omits `dc:title` and whose chapters use a
+  bare HTML doctype, instead of falling back to the generic file icon.
 - 7z previews bound decoded metadata, allocation-driving counts, and decoder
   memory before parsing or extraction, while retaining compressed-header and
   supported-codec compatibility. Validated metadata is reused from a snapshot.

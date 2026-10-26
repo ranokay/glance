@@ -338,14 +338,14 @@ fn xml_tree(data: &[u8], budget: &mut Budget) -> Result<Node, CoreError> {
                 if budget.exhausted || !budget.take(stack.len()) {
                     break;
                 }
-                stack.push(xml_frame(&start, &reader, budget)?);
+                stack.push(xml_frame(&start, budget)?);
             }
             Event::Empty(start) => {
                 flush_xml_text(&mut pending_text, &mut stack, &mut roots, budget)?;
                 if budget.exhausted || !budget.take(stack.len()) {
                     break;
                 }
-                let frame = xml_frame(&start, &reader, budget)?;
+                let frame = xml_frame(&start, budget)?;
                 push_xml_node(
                     &mut stack,
                     &mut roots,
@@ -378,23 +378,20 @@ fn xml_tree(data: &[u8], budget: &mut Budget) -> Result<Node, CoreError> {
                     },
                 );
             }
-            Event::Text(text) => pending_text.push_str(&xml_text(&text)?),
+            Event::Text(text) => pending_text.push_str(&xml_text(&text)),
             Event::CData(text) => {
-                pending_text.push_str(&String::from_utf8_lossy(text.as_ref()));
+                pending_text.push_str(text.as_ref());
             }
             Event::Comment(comment) => {
                 flush_xml_text(&mut pending_text, &mut stack, &mut roots, budget)?;
                 if budget.exhausted || !budget.take(stack.len()) {
                     break;
                 }
-                let value = String::from_utf8_lossy(comment.as_ref()).into_owned();
+                let value = comment.as_ref().to_owned();
                 push_xml_node(&mut stack, &mut roots, Node::Comment(budget.text(&value)));
             }
             Event::GeneralRef(reference) => {
-                let name = reference.decode().map_err(|error| {
-                    CoreError::parse(format!("Could not decode XML entity: {error}"))
-                })?;
-                pending_text.push_str(&reference_text(&name));
+                pending_text.push_str(&reference_text(reference.as_ref()));
             }
             Event::Eof => {
                 flush_xml_text(&mut pending_text, &mut stack, &mut roots, budget)?;
@@ -493,36 +490,29 @@ struct XmlFrame {
     children: Vec<Node>,
 }
 
-fn xml_frame(
-    start: &BytesStart<'_>,
-    reader: &Reader<Cursor<&[u8]>>,
-    budget: &mut Budget,
-) -> Result<XmlFrame, CoreError> {
+fn xml_frame(start: &BytesStart<'_>, budget: &mut Budget) -> Result<XmlFrame, CoreError> {
     let mut attributes = Vec::new();
     for attribute in start.attributes() {
         let attribute = attribute
             .map_err(|error| CoreError::parse(format!("Could not parse XML attribute: {error}")))?;
-        let name = budget.text(&String::from_utf8_lossy(attribute.key.as_ref()));
+        let name = budget.text(attribute.key.as_ref());
         let value = attribute
-            .decoded_and_normalized_value(quick_xml::XmlVersion::Implicit1_0, reader.decoder())
+            .normalized_value(quick_xml::XmlVersion::Implicit1_0)
             .map(|value| value.into_owned())
-            .unwrap_or_else(|_| String::from_utf8_lossy(&attribute.value).into_owned());
+            .unwrap_or_else(|_| attribute.value.as_ref().to_owned());
         attributes.push((name, budget.text(&value)));
     }
     Ok(XmlFrame {
-        name: budget.text(&String::from_utf8_lossy(start.name().as_ref())),
+        name: budget.text(start.name().as_ref()),
         attributes,
         children: Vec::new(),
     })
 }
 
-fn xml_text(text: &quick_xml::events::BytesText<'_>) -> Result<String, CoreError> {
-    let decoded = text
-        .decode()
-        .map_err(|error| CoreError::parse(format!("Could not decode XML text: {error}")))?;
-    Ok(quick_xml::escape::unescape(&decoded)
+fn xml_text(text: &quick_xml::events::BytesText<'_>) -> String {
+    quick_xml::escape::unescape(text.as_ref())
         .map(|value| value.into_owned())
-        .unwrap_or_else(|_| decoded.into_owned()))
+        .unwrap_or_else(|_| text.as_ref().to_owned())
 }
 
 fn push_xml_node(stack: &mut [XmlFrame], roots: &mut Vec<Node>, node: Node) {
@@ -1161,6 +1151,14 @@ mod tests {
         assert!(render_structured(b"", StructuredFormat::Xml).is_err());
         assert!(render_structured(b"<?xml version=\"1.0\"?>", StructuredFormat::Xml).is_err());
         assert!(render_structured(b"<first/><second/>", StructuredFormat::Xml).is_err());
+    }
+
+    #[test]
+    fn rejects_non_utf8_xml_with_a_contextual_error() {
+        let error = render_structured(b"<root>\xff</root>", StructuredFormat::Xml).unwrap_err();
+
+        assert!(matches!(error, CoreError::Parse(_)), "{error}");
+        assert!(error.to_string().contains("Could not parse XML"), "{error}");
     }
 
     #[test]
