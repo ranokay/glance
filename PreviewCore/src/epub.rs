@@ -34,7 +34,7 @@ struct ManifestItem {
 }
 
 struct Package {
-    title: String,
+    title: Option<String>,
     creator: Option<String>,
     language: Option<String>,
     manifest: HashMap<String, ManifestItem>,
@@ -165,7 +165,10 @@ fn render_epub_with_output_limit(path: &Path, output_limit: usize) -> Result<Str
     let mut html = String::new();
     html.push_str("<article class=\"epub-book\"><header class=\"epub-metadata\">");
     html.push_str("<h1>");
-    escape_html_into(&package.title, &mut html);
+    // Generated books routinely omit the spec-required dc:title; the file name keeps the preview
+    // useful instead of rejecting the whole book.
+    let title = package.title.as_deref().unwrap_or_else(|| file_stem(path));
+    escape_html_into(title, &mut html);
     html.push_str("</h1>");
     if let Some(creator) = &package.creator {
         html.push_str("<p class=\"epub-creator\">");
@@ -292,11 +295,7 @@ fn parse_container(xml: &[u8]) -> Result<String, CoreError> {
                 return canonical_path(&percent_decode(&path)?);
             }
             Ok(Event::End(_)) => depth = depth.saturating_sub(1),
-            Ok(Event::DocType(_)) => {
-                return Err(CoreError::unsupported(
-                    "EPUB XML document types are not supported",
-                ));
-            }
+            Ok(Event::DocType(doctype)) => check_doctype(&doctype)?,
             Ok(Event::Eof) => return Err(CoreError::parse("EPUB container has no rootfile")),
             Ok(_) => {}
             Err(error) => {
@@ -358,11 +357,7 @@ fn parse_package(xml: &[u8], package_path: &str) -> Result<Package, CoreError> {
             Ok(Event::End(_)) => {
                 stack.pop();
             }
-            Ok(Event::DocType(_)) => {
-                return Err(CoreError::unsupported(
-                    "EPUB XML document types are not supported",
-                ));
-            }
+            Ok(Event::DocType(doctype)) => check_doctype(&doctype)?,
             Ok(Event::Eof) => break,
             Ok(_) => {}
             Err(error) => {
@@ -379,10 +374,7 @@ fn parse_package(xml: &[u8], package_path: &str) -> Result<Package, CoreError> {
             "EPUB package version {version} is not supported"
         )));
     }
-    let title = title.trim().to_owned();
-    if title.is_empty() {
-        return Err(CoreError::parse("EPUB package title is missing"));
-    }
+    let title = nonempty(title);
     if manifest.is_empty() {
         return Err(CoreError::parse("EPUB manifest is empty"));
     }
@@ -527,11 +519,7 @@ fn render_chapter<R: Read + Seek>(
             Ok(Event::GeneralRef(reference)) if in_body && suppressed_depth == 0 => {
                 escape_html_into(predefined_entity(reference.as_ref())?, &mut output);
             }
-            Ok(Event::DocType(_)) => {
-                return Err(CoreError::unsupported(
-                    "EPUB XML document types are not supported",
-                ));
-            }
+            Ok(Event::DocType(doctype)) => check_doctype(&doctype)?,
             Ok(Event::Eof) => break,
             Ok(_) => {}
             Err(error) => {
@@ -962,6 +950,22 @@ fn predefined_entity(name: &str) -> Result<&'static str, CoreError> {
     }
 }
 
+/// HTML5 chapters commonly declare a doctype but carry no entities. Allow only a bare name so
+/// internal subsets and external identifiers cannot introduce entity expansion or fetching.
+fn check_doctype(doctype: &quick_xml::events::BytesText<'_>) -> Result<(), CoreError> {
+    let name = doctype.as_ref().trim();
+    if !name.is_empty()
+        && name.chars().all(|character| {
+            character.is_alphanumeric() || matches!(character, '.' | '-' | '_' | ':')
+        })
+    {
+        return Ok(());
+    }
+    Err(CoreError::unsupported(
+        "EPUB XML document types are not supported",
+    ))
+}
+
 fn check_depth(depth: usize) -> Result<(), CoreError> {
     if depth > MAX_ELEMENT_DEPTH {
         Err(CoreError::limit("EPUB XML is nested too deeply"))
@@ -973,6 +977,13 @@ fn check_depth(depth: usize) -> Result<(), CoreError> {
 fn nonempty(value: String) -> Option<String> {
     let value = value.trim().to_owned();
     (!value.is_empty()).then_some(value)
+}
+
+fn file_stem(path: &Path) -> &str {
+    path.file_stem()
+        .and_then(|stem| stem.to_str())
+        .filter(|stem| !stem.is_empty())
+        .unwrap_or("Untitled")
 }
 
 fn escape_html_into(value: &str, output: &mut String) {
@@ -1090,6 +1101,40 @@ mod tests {
         let html = render_epub(&fixture.0).unwrap();
         assert!(html.contains("Main"));
         assert!(!html.contains("Notes"));
+    }
+
+    #[test]
+    fn falls_back_to_the_file_name_when_package_title_is_missing() {
+        let package = br#"<package version="3.0"><metadata><dc:language>en</dc:language></metadata><manifest><item id="main" href="main.xhtml" media-type="application/xhtml+xml"/></manifest><spine><itemref idref="main"/></spine></package>"#;
+        let fixture = epub(
+            package,
+            &[("OPS/main.xhtml", b"<html><body><p>Book</p></body></html>")],
+        );
+        let stem = fixture.0.file_stem().unwrap().to_str().unwrap();
+
+        let html = render_epub(&fixture.0).unwrap();
+
+        assert!(html.contains(&format!("<h1>{stem}</h1>")), "{html}");
+    }
+
+    #[test]
+    fn accepts_bare_doctypes_and_rejects_dtd_subsets() {
+        let package = br#"<package version="3.0"><metadata><dc:title>Book</dc:title></metadata><manifest><item id="main" href="main.xhtml" media-type="application/xhtml+xml"/></manifest><spine><itemref idref="main"/></spine></package>"#;
+        let doctype = br#"<!DOCTYPE html><html><body><p>Book</p></body></html>"#;
+        let fixture = epub(package, &[("OPS/main.xhtml", doctype)]);
+        assert!(render_epub(&fixture.0).unwrap().contains("<p>Book</p>"));
+
+        let rejected: [&[u8]; 2] = [
+            br#"<!DOCTYPE html [<!ENTITY custom "x">]><html><body>&custom;</body></html>"#,
+            br#"<!DOCTYPE html SYSTEM "https://example.com/book.dtd"><html><body>Book</body></html>"#,
+        ];
+        for chapter in rejected {
+            let fixture = epub(package, &[("OPS/main.xhtml", chapter)]);
+            assert!(matches!(
+                render_epub(&fixture.0),
+                Err(CoreError::Unsupported(_))
+            ));
+        }
     }
 
     #[test]
