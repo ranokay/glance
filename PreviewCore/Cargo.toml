@@ -38,6 +38,10 @@ two-face = { version = "=0.5.2", default-features = false, features = [
 ] }
 zip = { version = "=9.0.5", default-features = false, features = ["deflate-flate2", "time"] }
 
+[dev-dependencies]
+# Generate codec compatibility controls without enabling encoders in shipped builds.
+sevenz-rust2 = { version = "=0.24.1", default-features = false, features = ["compress", "bzip2", "ppmd"] }
+
 [profile.release]
 codegen-units = 1
 lto = "thin"
