@@ -901,7 +901,6 @@ final class PreviewSmokeTests: XCTestCase {
 	func testMainVCAsyncPreparationCompletesExactlyOnce() async throws {
 		let fileURL = try writeFile(named: "prepared.swift", contents: "let prepared = true\n")
 		let mainVC = MainVC()
-		mainVC.containingAppIsRunning = { true }
 		mainVC.loadViewIfNeeded()
 		let completion = expectation(description: "preview preparation completed")
 		completion.assertForOverFulfill = true
@@ -937,7 +936,6 @@ final class PreviewSmokeTests: XCTestCase {
 		let firstURL = try writeFile(named: "first.swift", contents: "let first = true\n")
 		let latestURL = try writeFile(named: "latest.swift", contents: "let latest = true\n")
 		let mainVC = MainVC()
-		mainVC.containingAppIsRunning = { true }
 		mainVC.loadViewIfNeeded()
 		let firstCompletion = expectation(description: "superseded preparation completed")
 		let latestCompletion = expectation(description: "latest preparation completed")
@@ -961,7 +959,6 @@ final class PreviewSmokeTests: XCTestCase {
 	func testDismissingQuickLookCancelsPendingPreparationWithoutInstallingAPreview() async throws {
 		let fileURL = try writeFile(named: "dismissed.swift", contents: "let dismissed = true\n")
 		let mainVC = MainVC()
-		mainVC.containingAppIsRunning = { true }
 		mainVC.loadViewIfNeeded()
 		let completion = expectation(description: "dismissed preparation completed")
 		completion.assertForOverFulfill = true

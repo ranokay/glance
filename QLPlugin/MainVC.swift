@@ -37,17 +37,8 @@ final class PreviewBackgroundView: NSView {
 }
 
 class MainVC: NSViewController, QLPreviewingController {
-	/// Bundle ID of the containing app. When the app isn't running, the QL extension
-	/// declines to preview and lets macOS fall back to the system handler.
-	private static let containingAppBundleID = "com.chamburr.Glance"
-
 	var nestedPreviewProvider: NestedPreviewProviding = DefaultNestedPreviewProvider()
 	var openWithService = OpenWithService()
-	var containingAppIsRunning = {
-		!NSRunningApplication.runningApplications(
-			withBundleIdentifier: MainVC.containingAppBundleID,
-		).isEmpty
-	}
 
 	var currentPreviewController: PreviewVC? {
 		previewNavigationStack.last

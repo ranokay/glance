@@ -15,13 +15,6 @@ private final class PreviewWebView: WKWebView {
 	override func acceptsFirstMouse(for _: NSEvent?) -> Bool {
 		true
 	}
-
-	/// Quick Look rejects previews whose views claim first responder; doing so also
-	/// swallows the first click while the panel takes focus. Mouse handling does not
-	/// need responder status.
-	override var acceptsFirstResponder: Bool {
-		false
-	}
 }
 
 class WebPreviewVC: NSViewController, PreviewVC, WKNavigationDelegate {
@@ -146,6 +139,16 @@ class WebPreviewVC: NSViewController, PreviewVC, WKNavigationDelegate {
 	override func viewDidLoad() {
 		super.viewDidLoad()
 		loadPreview()
+	}
+
+	/// Give the page keyboard focus before the first click so select-all and copy
+	/// work, and the first disclosure click is not spent focusing the panel.
+	override func viewDidAppear() {
+		super.viewDidAppear()
+		guard let webView else {
+			return
+		}
+		view.window?.makeFirstResponder(webView)
 	}
 
 	private func loadPreview() {

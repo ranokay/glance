@@ -52,9 +52,11 @@ Append-only. Newest entry first.
   Xcode-derived palette as the code previews, separates labels from values with a space, and
   keeps key-count hints out of copied text while preserving indentation.
 
-- Quick Look web previews accept the first click and no longer claim first-responder status,
-  so disclosure controls and other page interactions respond immediately instead of only
-  focusing the panel.
+- Quick Look web previews accept the first click and give the page keyboard focus on
+  appearance, so disclosure controls, select-all, and copy respond immediately instead of
+  only focusing the panel. Rapidly switching files no longer shows a spurious “Glance app is
+  not running” page; previews always render with default appearance settings when the app is
+  unavailable.
 
 - Quick Look previews of Markdown, source code, and Jupyter notebooks now
   re-render when the file changes on disk, including atomic editor saves, and
