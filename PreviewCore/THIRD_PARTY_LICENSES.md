@@ -35,7 +35,7 @@ License texts are available from the linked standard licenses and each crate's s
 | onig, onig_sys | 6.5.3, 69.9.3 | MIT |
 | plist | 1.10.3 | MIT |
 | ppmd-rust | 1.5.2 | CC0-1.0 OR MIT-0 |
-| quick-xml | 0.41.0, 0.42.0 | MIT |
+| quick-xml | 0.42.0 | MIT |
 | rars | 0.12.2 | MIT OR Apache-2.0 |
 | ryu | 1.0.23 | Apache-2.0 OR BSL-1.0 |
 | serde, serde_core, serde_derive | 1.0.229 | MIT OR Apache-2.0 |

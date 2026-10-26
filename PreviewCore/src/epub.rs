@@ -282,13 +282,13 @@ fn parse_container(xml: &[u8]) -> Result<String, CoreError> {
             Ok(Event::Start(element)) => {
                 depth += 1;
                 check_depth(depth)?;
-                if local_name(element.name().as_ref()) == b"rootfile" {
-                    let path = required_attribute(reader.decoder(), &element, b"full-path")?;
+                if local_name(element.name().as_ref()) == "rootfile" {
+                    let path = required_attribute(&element, "full-path")?;
                     return canonical_path(&percent_decode(&path)?);
                 }
             }
-            Ok(Event::Empty(element)) if local_name(element.name().as_ref()) == b"rootfile" => {
-                let path = required_attribute(reader.decoder(), &element, b"full-path")?;
+            Ok(Event::Empty(element)) if local_name(element.name().as_ref()) == "rootfile" => {
+                let path = required_attribute(&element, "full-path")?;
                 return canonical_path(&percent_decode(&path)?);
             }
             Ok(Event::End(_)) => depth = depth.saturating_sub(1),
@@ -311,7 +311,7 @@ fn parse_container(xml: &[u8]) -> Result<String, CoreError> {
 fn parse_package(xml: &[u8], package_path: &str) -> Result<Package, CoreError> {
     let mut reader = Reader::from_reader(xml);
     reader.config_mut().trim_text(false);
-    let mut stack = Vec::<Vec<u8>>::new();
+    let mut stack = Vec::<String>::new();
     let mut version = None;
     let mut title = String::new();
     let mut creator = String::new();
@@ -322,51 +322,48 @@ fn parse_package(xml: &[u8], package_path: &str) -> Result<Package, CoreError> {
     loop {
         match reader.read_event() {
             Ok(Event::Start(element)) => {
-                let name = local_name(element.name().as_ref()).to_vec();
+                let name = local_name(element.name().as_ref()).to_owned();
                 if stack.len() >= MAX_ELEMENT_DEPTH {
                     return Err(CoreError::limit("EPUB package XML is nested too deeply"));
                 }
-                if stack.is_empty() && name == b"package" {
-                    version = Some(required_attribute(reader.decoder(), &element, b"version")?);
-                } else if stack.last().is_some_and(|parent| parent == b"manifest")
-                    && name == b"item"
+                if stack.is_empty() && name == "package" {
+                    version = Some(required_attribute(&element, "version")?);
+                } else if stack.last().is_some_and(|parent| parent == "manifest") && name == "item"
                 {
-                    parse_manifest_item(reader.decoder(), &element, package_path, &mut manifest)?;
-                } else if stack.last().is_some_and(|parent| parent == b"spine")
-                    && name == b"itemref"
+                    parse_manifest_item(&element, package_path, &mut manifest)?;
+                } else if stack.last().is_some_and(|parent| parent == "spine") && name == "itemref"
                 {
-                    parse_spine_item(reader.decoder(), &element, &mut spine)?;
+                    parse_spine_item(&element, &mut spine)?;
                 }
                 stack.push(name);
             }
             Ok(Event::Empty(element)) => {
                 let qualified_name = element.name();
                 let name = local_name(qualified_name.as_ref());
-                if stack.last().is_some_and(|parent| parent == b"manifest") && name == b"item" {
-                    parse_manifest_item(reader.decoder(), &element, package_path, &mut manifest)?;
-                } else if stack.last().is_some_and(|parent| parent == b"spine")
-                    && name == b"itemref"
+                if stack.last().is_some_and(|parent| parent == "manifest") && name == "item" {
+                    parse_manifest_item(&element, package_path, &mut manifest)?;
+                } else if stack.last().is_some_and(|parent| parent == "spine") && name == "itemref"
                 {
-                    parse_spine_item(reader.decoder(), &element, &mut spine)?;
+                    parse_spine_item(&element, &mut spine)?;
                 }
             }
             Ok(Event::Text(text)) => {
                 let value = decoded_text(&text)?;
-                if inside_metadata_field(&stack, b"title") {
+                if inside_metadata_field(&stack, "title") {
                     title.push_str(&value);
-                } else if inside_metadata_field(&stack, b"creator") {
+                } else if inside_metadata_field(&stack, "creator") {
                     creator.push_str(&value);
-                } else if inside_metadata_field(&stack, b"language") {
+                } else if inside_metadata_field(&stack, "language") {
                     language.push_str(&value);
                 }
             }
             Ok(Event::GeneralRef(reference)) => {
                 let value = predefined_entity(reference.as_ref())?;
-                if inside_metadata_field(&stack, b"title") {
+                if inside_metadata_field(&stack, "title") {
                     title.push_str(value);
-                } else if inside_metadata_field(&stack, b"creator") {
+                } else if inside_metadata_field(&stack, "creator") {
                     creator.push_str(value);
-                } else if inside_metadata_field(&stack, b"language") {
+                } else if inside_metadata_field(&stack, "language") {
                     language.push_str(value);
                 }
             }
@@ -414,14 +411,13 @@ fn parse_package(xml: &[u8], package_path: &str) -> Result<Package, CoreError> {
 }
 
 fn parse_manifest_item(
-    decoder: quick_xml::encoding::Decoder,
     element: &BytesStart<'_>,
     package_path: &str,
     manifest: &mut HashMap<String, ManifestItem>,
 ) -> Result<(), CoreError> {
-    let id = required_attribute(decoder, element, b"id")?;
-    let href = required_attribute(decoder, element, b"href")?;
-    let media_type = required_attribute(decoder, element, b"media-type")?;
+    let id = required_attribute(element, "id")?;
+    let href = required_attribute(element, "href")?;
+    let media_type = required_attribute(element, "media-type")?;
     let path = resolve_path(package_path, &href)?;
     if manifest
         .insert(id, ManifestItem { path, media_type })
@@ -432,15 +428,11 @@ fn parse_manifest_item(
     Ok(())
 }
 
-fn parse_spine_item(
-    decoder: quick_xml::encoding::Decoder,
-    element: &BytesStart<'_>,
-    spine: &mut Vec<String>,
-) -> Result<(), CoreError> {
-    if attribute(decoder, element, b"linear")?.as_deref() == Some("no") {
+fn parse_spine_item(element: &BytesStart<'_>, spine: &mut Vec<String>) -> Result<(), CoreError> {
+    if attribute(element, "linear")?.as_deref() == Some("no") {
         return Ok(());
     }
-    spine.push(required_attribute(decoder, element, b"idref")?);
+    spine.push(required_attribute(element, "idref")?);
     if spine.len() > MAX_CHAPTER_COUNT {
         return Err(CoreError::limit(format!(
             "EPUB spine contains more than {MAX_CHAPTER_COUNT} chapters"
@@ -465,7 +457,7 @@ fn render_chapter<R: Read + Seek>(
     let mut reader = Reader::from_reader(xml);
     reader.config_mut().trim_text(false);
     let mut output = String::new();
-    let mut stack = Vec::<Vec<u8>>::new();
+    let mut stack = Vec::<String>::new();
     let mut in_body = false;
     let mut body_seen = false;
     let mut suppressed_depth = 0_usize;
@@ -478,14 +470,13 @@ fn render_chapter<R: Read + Seek>(
                     return Err(CoreError::limit("EPUB chapter XML is nested too deeply"));
                 }
                 stack.push(name.clone());
-                if name == b"body" {
+                if name == "body" {
                     in_body = true;
                     body_seen = true;
-                } else if in_body && (name == b"script" || name == b"style") {
+                } else if in_body && (name == "script" || name == "style") {
                     suppressed_depth += 1;
                 } else if in_body && suppressed_depth == 0 && allowed_tag(&name) {
                     write_start_tag(
-                        reader.decoder(),
                         &element,
                         &name,
                         chapter_path,
@@ -505,7 +496,6 @@ fn render_chapter<R: Read + Seek>(
                 let name = local_name(element.name().as_ref()).to_ascii_lowercase();
                 if in_body && suppressed_depth == 0 && allowed_tag(&name) {
                     write_start_tag(
-                        reader.decoder(),
                         &element,
                         &name,
                         chapter_path,
@@ -521,21 +511,21 @@ fn render_chapter<R: Read + Seek>(
                     )?;
                     if !void_tag(&name) {
                         output.push_str("</");
-                        output.push_str(std::str::from_utf8(&name).unwrap_or("span"));
+                        output.push_str(&name);
                         output.push('>');
                     }
                 }
             }
             Ok(Event::End(element)) => {
                 let name = local_name(element.name().as_ref()).to_ascii_lowercase();
-                if name == b"body" {
+                if name == "body" {
                     in_body = false;
-                } else if in_body && (name == b"script" || name == b"style") {
+                } else if in_body && (name == "script" || name == "style") {
                     suppressed_depth = suppressed_depth.saturating_sub(1);
                 } else if in_body && suppressed_depth == 0 && allowed_tag(&name) && !void_tag(&name)
                 {
                     output.push_str("</");
-                    output.push_str(std::str::from_utf8(&name).unwrap_or("span"));
+                    output.push_str(&name);
                     output.push('>');
                 }
                 stack.pop();
@@ -544,10 +534,7 @@ fn render_chapter<R: Read + Seek>(
                 escape_html_into(&decoded_text(&text)?, &mut output);
             }
             Ok(Event::CData(text)) if in_body && suppressed_depth == 0 => {
-                let decoded = text.decode().map_err(|error| {
-                    CoreError::parse(format!("Could not decode EPUB chapter text: {error}"))
-                })?;
-                escape_html_into(&decoded, &mut output);
+                escape_html_into(text.as_ref(), &mut output);
             }
             Ok(Event::GeneralRef(reference)) if in_body && suppressed_depth == 0 => {
                 escape_html_into(predefined_entity(reference.as_ref())?, &mut output);
@@ -582,9 +569,8 @@ fn render_chapter<R: Read + Seek>(
 
 #[allow(clippy::too_many_arguments)]
 fn write_start_tag<R: Read + Seek>(
-    decoder: quick_xml::encoding::Decoder,
     element: &BytesStart<'_>,
-    name: &[u8],
+    name: &str,
     chapter_path: &str,
     chapter_index: usize,
     chapter_paths: &HashMap<String, usize>,
@@ -597,14 +583,14 @@ fn write_start_tag<R: Read + Seek>(
     output: &mut String,
 ) -> Result<(), CoreError> {
     output.push('<');
-    output.push_str(std::str::from_utf8(name).unwrap_or("span"));
-    if let Some(id) = attribute(decoder, element, b"id")? {
+    output.push_str(name);
+    if let Some(id) = attribute(element, "id")? {
         output.push_str(" id=\"");
         escape_attribute_into(&format!("glance-c{}-{id}", chapter_index + 1), output);
         output.push('"');
     }
-    if name == b"a" {
-        if let Some(href) = attribute(decoder, element, b"href")?
+    if name == "a" {
+        if let Some(href) = attribute(element, "href")?
             && let Some(rewritten) =
                 rewrite_href(chapter_path, chapter_index, &href, chapter_paths)?
         {
@@ -612,13 +598,13 @@ fn write_start_tag<R: Read + Seek>(
             escape_attribute_into(&rewritten, output);
             output.push('"');
         }
-    } else if name == b"img" {
-        if let Some(alt) = attribute(decoder, element, b"alt")? {
+    } else if name == "img" {
+        if let Some(alt) = attribute(element, "alt")? {
             output.push_str(" alt=\"");
             escape_attribute_into(&alt, output);
             output.push('"');
         }
-        if let Some(src) = attribute(decoder, element, b"src")?
+        if let Some(src) = attribute(element, "src")?
             && let Some(data_url) = image_data_url(
                 chapter_path,
                 &src,
@@ -639,13 +625,13 @@ fn write_start_tag<R: Read + Seek>(
             output.push_str(data_url.as_ref());
             output.push('"');
         }
-    } else if name == b"td" || name == b"th" {
-        for key in [b"colspan".as_slice(), b"rowspan".as_slice()] {
-            if let Some(value) = attribute(decoder, element, key)?
+    } else if name == "td" || name == "th" {
+        for key in ["colspan", "rowspan"] {
+            if let Some(value) = attribute(element, key)?
                 && value.parse::<u8>().is_ok_and(|number| number > 0)
             {
                 output.push(' ');
-                output.push_str(std::str::from_utf8(key).unwrap());
+                output.push_str(key);
                 output.push_str("=\"");
                 output.push_str(&value);
                 output.push('"');
@@ -858,104 +844,92 @@ fn is_external_reference(value: &str) -> bool {
     })
 }
 
-fn allowed_tag(name: &[u8]) -> bool {
+fn allowed_tag(name: &str) -> bool {
     matches!(
         name,
-        b"a" | b"abbr"
-            | b"article"
-            | b"aside"
-            | b"b"
-            | b"blockquote"
-            | b"br"
-            | b"caption"
-            | b"cite"
-            | b"code"
-            | b"dd"
-            | b"del"
-            | b"div"
-            | b"dl"
-            | b"dt"
-            | b"em"
-            | b"figcaption"
-            | b"figure"
-            | b"footer"
-            | b"h1"
-            | b"h2"
-            | b"h3"
-            | b"h4"
-            | b"h5"
-            | b"h6"
-            | b"header"
-            | b"hr"
-            | b"i"
-            | b"img"
-            | b"li"
-            | b"main"
-            | b"mark"
-            | b"nav"
-            | b"ol"
-            | b"p"
-            | b"pre"
-            | b"q"
-            | b"rp"
-            | b"rt"
-            | b"ruby"
-            | b"s"
-            | b"section"
-            | b"small"
-            | b"span"
-            | b"strong"
-            | b"sub"
-            | b"sup"
-            | b"table"
-            | b"tbody"
-            | b"td"
-            | b"tfoot"
-            | b"th"
-            | b"thead"
-            | b"tr"
-            | b"u"
-            | b"ul"
+        "a" | "abbr"
+            | "article"
+            | "aside"
+            | "b"
+            | "blockquote"
+            | "br"
+            | "caption"
+            | "cite"
+            | "code"
+            | "dd"
+            | "del"
+            | "div"
+            | "dl"
+            | "dt"
+            | "em"
+            | "figcaption"
+            | "figure"
+            | "footer"
+            | "h1"
+            | "h2"
+            | "h3"
+            | "h4"
+            | "h5"
+            | "h6"
+            | "header"
+            | "hr"
+            | "i"
+            | "img"
+            | "li"
+            | "main"
+            | "mark"
+            | "nav"
+            | "ol"
+            | "p"
+            | "pre"
+            | "q"
+            | "rp"
+            | "rt"
+            | "ruby"
+            | "s"
+            | "section"
+            | "small"
+            | "span"
+            | "strong"
+            | "sub"
+            | "sup"
+            | "table"
+            | "tbody"
+            | "td"
+            | "tfoot"
+            | "th"
+            | "thead"
+            | "tr"
+            | "u"
+            | "ul"
     )
 }
 
-fn void_tag(name: &[u8]) -> bool {
-    matches!(name, b"br" | b"hr" | b"img")
+fn void_tag(name: &str) -> bool {
+    matches!(name, "br" | "hr" | "img")
 }
 
-fn inside_metadata_field(stack: &[Vec<u8>], field: &[u8]) -> bool {
-    stack.last().is_some_and(|name| name == field) && stack.iter().any(|name| name == b"metadata")
+fn inside_metadata_field(stack: &[String], field: &str) -> bool {
+    stack.last().is_some_and(|name| name == field) && stack.iter().any(|name| name == "metadata")
 }
 
-fn local_name(name: &[u8]) -> &[u8] {
-    name.rsplit(|byte| *byte == b':').next().unwrap_or(name)
+fn local_name(name: &str) -> &str {
+    name.rsplit_once(':').map_or(name, |(_, local)| local)
 }
 
-fn required_attribute(
-    decoder: quick_xml::encoding::Decoder,
-    element: &BytesStart<'_>,
-    key: &[u8],
-) -> Result<String, CoreError> {
-    attribute(decoder, element, key)?.ok_or_else(|| {
-        CoreError::parse(format!(
-            "EPUB XML element is missing {}",
-            String::from_utf8_lossy(key)
-        ))
-    })
+fn required_attribute(element: &BytesStart<'_>, key: &str) -> Result<String, CoreError> {
+    attribute(element, key)?
+        .ok_or_else(|| CoreError::parse(format!("EPUB XML element is missing {key}")))
 }
 
-fn attribute(
-    decoder: quick_xml::encoding::Decoder,
-    element: &BytesStart<'_>,
-    key: &[u8],
-) -> Result<Option<String>, CoreError> {
+fn attribute(element: &BytesStart<'_>, key: &str) -> Result<Option<String>, CoreError> {
     for attribute in element.attributes().with_checks(true) {
         let attribute = attribute.map_err(|error| {
             CoreError::parse(format!("Could not parse EPUB XML attribute: {error}"))
         })?;
         if local_name(attribute.key.as_ref()) == key {
             return attribute
-                .decoded_and_normalized_value(XmlVersion::Implicit1_0, decoder)
+                .normalized_value(XmlVersion::Implicit1_0)
                 .map(|value| Some(value.into_owned()))
                 .map_err(|error| {
                     CoreError::parse(format!("Could not decode EPUB XML attribute: {error}"))
@@ -966,21 +940,18 @@ fn attribute(
 }
 
 fn decoded_text(text: &quick_xml::events::BytesText<'_>) -> Result<String, CoreError> {
-    let decoded = text
-        .decode()
-        .map_err(|error| CoreError::parse(format!("Could not decode EPUB XML text: {error}")))?;
-    quick_xml::escape::unescape(&decoded)
+    quick_xml::escape::unescape(text.as_ref())
         .map(|value| value.into_owned())
-        .map_err(|error| CoreError::parse(format!("Could not decode EPUB XML entity: {error}")))
+        .map_err(|error| CoreError::parse(format!("Could not decode EPUB XML text: {error}")))
 }
 
-fn predefined_entity(name: &[u8]) -> Result<&'static str, CoreError> {
+fn predefined_entity(name: &str) -> Result<&'static str, CoreError> {
     match name {
-        b"amp" => Ok("&"),
-        b"lt" => Ok("<"),
-        b"gt" => Ok(">"),
-        b"quot" => Ok("\""),
-        b"apos" => Ok("'"),
+        "amp" => Ok("&"),
+        "lt" => Ok("<"),
+        "gt" => Ok(">"),
+        "quot" => Ok("\""),
+        "apos" => Ok("'"),
         _ => Err(CoreError::unsupported(
             "EPUB contains an unsupported custom XML entity",
         )),
@@ -1127,6 +1098,19 @@ mod tests {
 
         let traversal = br#"<container><rootfiles><rootfile full-path="OPS/%2e%2e/%2e%2e/package.opf"/></rootfiles></container>"#;
         assert!(parse_container(traversal).is_err());
+    }
+
+    #[test]
+    fn rejects_non_utf8_xml_with_a_contextual_error() {
+        let error = parse_container(b"<container>\xff</container>").unwrap_err();
+
+        assert!(matches!(error, CoreError::Parse(_)), "{error}");
+        assert!(
+            error
+                .to_string()
+                .contains("Could not parse EPUB container XML"),
+            "{error}"
+        );
     }
 
     #[test]

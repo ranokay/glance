@@ -1,6 +1,5 @@
 use crate::error::CoreError;
 use crate::model::{ThreeMfInstance, ThreeMfMesh, ThreeMfPayload};
-use quick_xml::encoding::Decoder;
 use quick_xml::events::{BytesStart, Event};
 use quick_xml::name::{Namespace, ResolveResult};
 use quick_xml::reader::NsReader;
@@ -14,7 +13,7 @@ const MODEL_RELATIONSHIP_TYPE: &str =
     "http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel";
 const DEFAULT_MODEL_PATH: &str = "3D/3dmodel.model";
 const RELATIONSHIPS_PATH: &str = "_rels/.rels";
-const CORE_NAMESPACE: &[u8] = b"http://schemas.microsoft.com/3dmanufacturing/core/2015/02";
+const CORE_NAMESPACE: &str = "http://schemas.microsoft.com/3dmanufacturing/core/2015/02";
 
 pub(crate) const MAX_FILE_SIZE: u64 = 200_000_000;
 const MAX_ENTRY_COUNT: usize = 4_096;
@@ -71,7 +70,7 @@ struct EntryIndex {
 
 #[derive(Clone, PartialEq, Eq)]
 struct ElementName {
-    local: Vec<u8>,
+    local: String,
     is_core: bool,
 }
 
@@ -200,15 +199,12 @@ fn relationship_target(xml: &[u8]) -> Result<Option<String>, CoreError> {
     let mut reader = Reader::from_reader(xml);
     reader.config_mut().trim_text(true);
     loop {
-        let decoder = reader.decoder();
         match reader.read_event() {
             Ok(Event::Start(element) | Event::Empty(element))
-                if local_name(element.name().as_ref()) == b"Relationship" =>
+                if local_name(element.name().as_ref()) == "Relationship" =>
             {
-                if attribute(decoder, &element, b"Type")?.as_deref()
-                    == Some(MODEL_RELATIONSHIP_TYPE)
-                {
-                    return attribute(decoder, &element, b"Target");
+                if attribute(&element, "Type")?.as_deref() == Some(MODEL_RELATIONSHIP_TYPE) {
+                    return attribute(&element, "Target");
                 }
             }
             Ok(Event::Eof) => return Ok(None),
@@ -238,7 +234,6 @@ fn parse_model_part(
     let mut current_colors: Option<(usize, String, Vec<[f32; 4]>)> = None;
 
     loop {
-        let decoder = reader.decoder();
         let (namespace, event) = reader
             .read_resolved_event()
             .map_err(|error| CoreError::parse(format!("Could not parse 3MF model XML: {error}")))?;
@@ -250,7 +245,6 @@ fn parse_model_part(
                 let name = element_name(namespace, element.local_name().as_ref())?;
                 stack.push(name.clone());
                 handle_start(
-                    decoder,
                     &element,
                     &name.local,
                     &stack,
@@ -271,7 +265,6 @@ fn parse_model_part(
                 let name = element_name(namespace, element.local_name().as_ref())?;
                 stack.push(name.clone());
                 handle_start(
-                    decoder,
                     &element,
                     &name.local,
                     &stack,
@@ -322,9 +315,8 @@ fn parse_model_part(
 
 #[allow(clippy::too_many_arguments)]
 fn handle_start(
-    decoder: Decoder,
     element: &BytesStart<'_>,
-    name: &[u8],
+    name: &str,
     stack: &[ElementName],
     part_path: &str,
     is_root: bool,
@@ -337,18 +329,18 @@ fn handle_start(
 ) -> Result<(), CoreError> {
     let depth = stack.len();
     match name {
-        b"model" if is_root && stack.len() == 1 && stack[0].is_core => {
-            if let Some(unit) = attribute(decoder, element, b"unit")? {
+        "model" if is_root && stack.len() == 1 && stack[0].is_core => {
+            if let Some(unit) = attribute(element, "unit")? {
                 model.unit_millimeters = unit_scale(&unit);
             }
         }
-        b"object" if path_ends_with(stack, &[b"resources", b"object"]) => {
+        "object" if path_ends_with(stack, &["resources", "object"]) => {
             if current_object.is_some() {
                 return Err(CoreError::parse("3MF objects must not be nested"));
             }
-            let id = required_attribute(decoder, element, b"id", "object")?;
-            let group = attribute(decoder, element, b"pid")?.map(|id| object_key(part_path, &id));
-            let property_index = attribute(decoder, element, b"pindex")?
+            let id = required_attribute(element, "id", "object")?;
+            let group = attribute(element, "pid")?.map(|id| object_key(part_path, &id));
+            let property_index = attribute(element, "pindex")?
                 .map(|value| parse_usize(&value, "object property index"))
                 .transpose()?;
             *current_object = Some((
@@ -360,18 +352,18 @@ fn handle_start(
                 },
             ));
         }
-        b"mesh"
+        "mesh"
             if current_object.is_some()
                 && current_mesh.is_none()
-                && path_ends_with(stack, &[b"object", b"mesh"]) =>
+                && path_ends_with(stack, &["object", "mesh"]) =>
         {
             *current_mesh = Some((depth, Mesh::default()));
         }
-        b"vertex"
+        "vertex"
             if current_mesh
                 .as_ref()
                 .is_some_and(|(mesh_depth, _)| depth == mesh_depth + 2)
-                && path_ends_with(stack, &[b"mesh", b"vertices", b"vertex"]) =>
+                && path_ends_with(stack, &["mesh", "vertices", "vertex"]) =>
         {
             model.vertex_count += 1;
             if model.vertex_count > MAX_VERTICES {
@@ -380,9 +372,9 @@ fn handle_start(
                 )));
             }
             let vertex = [
-                coordinate(&required_attribute(decoder, element, b"x", "vertex")?)?,
-                coordinate(&required_attribute(decoder, element, b"y", "vertex")?)?,
-                coordinate(&required_attribute(decoder, element, b"z", "vertex")?)?,
+                coordinate(&required_attribute(element, "x", "vertex")?)?,
+                coordinate(&required_attribute(element, "y", "vertex")?)?,
+                coordinate(&required_attribute(element, "z", "vertex")?)?,
             ];
             current_mesh
                 .as_mut()
@@ -391,11 +383,11 @@ fn handle_start(
                 .vertices
                 .push(vertex);
         }
-        b"triangle"
+        "triangle"
             if current_mesh
                 .as_ref()
                 .is_some_and(|(mesh_depth, _)| depth == mesh_depth + 2)
-                && path_ends_with(stack, &[b"mesh", b"triangles", b"triangle"]) =>
+                && path_ends_with(stack, &["mesh", "triangles", "triangle"]) =>
         {
             model.triangle_count += 1;
             if model.triangle_count > MAX_TRIANGLES {
@@ -405,15 +397,15 @@ fn handle_start(
             }
             let triangle = [
                 parse_u32(
-                    &required_attribute(decoder, element, b"v1", "triangle")?,
+                    &required_attribute(element, "v1", "triangle")?,
                     "triangle index",
                 )?,
                 parse_u32(
-                    &required_attribute(decoder, element, b"v2", "triangle")?,
+                    &required_attribute(element, "v2", "triangle")?,
                     "triangle index",
                 )?,
                 parse_u32(
-                    &required_attribute(decoder, element, b"v3", "triangle")?,
+                    &required_attribute(element, "v3", "triangle")?,
                     "triangle index",
                 )?,
             ];
@@ -424,12 +416,12 @@ fn handle_start(
                 .triangles
                 .push(triangle);
         }
-        b"component"
+        "component"
             if current_object.is_some()
-                && path_ends_with(stack, &[b"object", b"components", b"component"]) =>
+                && path_ends_with(stack, &["object", "components", "component"]) =>
         {
-            let id = required_attribute(decoder, element, b"objectid", "component")?;
-            let target_path = target_part_path(decoder, element, part_path)?;
+            let id = required_attribute(element, "objectid", "component")?;
+            let target_path = target_part_path(element, part_path)?;
             enqueue_part(&target_path, pending, parsed)?;
             current_object
                 .as_mut()
@@ -438,31 +430,31 @@ fn handle_start(
                 .components
                 .push(Component {
                     object_key: object_key(&target_path, &id),
-                    transform: parse_transform(attribute(decoder, element, b"transform")?)?,
+                    transform: parse_transform(attribute(element, "transform")?)?,
                 });
         }
-        b"item" if is_root && path_ends_with(stack, &[b"model", b"build", b"item"]) => {
-            let id = required_attribute(decoder, element, b"objectid", "build item")?;
-            let target_path = target_part_path(decoder, element, part_path)?;
+        "item" if is_root && path_ends_with(stack, &["model", "build", "item"]) => {
+            let id = required_attribute(element, "objectid", "build item")?;
+            let target_path = target_part_path(element, part_path)?;
             enqueue_part(&target_path, pending, parsed)?;
             model.build_items.push(Component {
                 object_key: object_key(&target_path, &id),
-                transform: parse_transform(attribute(decoder, element, b"transform")?)?,
+                transform: parse_transform(attribute(element, "transform")?)?,
             });
         }
-        b"basematerials" | b"colorgroup"
-            if current_colors.is_none() && path_ends_with(stack, &[b"resources", name]) =>
+        "basematerials" | "colorgroup"
+            if current_colors.is_none() && path_ends_with(stack, &["resources", name]) =>
         {
-            let id = required_attribute(decoder, element, b"id", "color group")?;
+            let id = required_attribute(element, "id", "color group")?;
             *current_colors = Some((depth, object_key(part_path, &id), Vec::new()));
         }
-        b"base"
+        "base"
             if current_colors
                 .as_ref()
                 .is_some_and(|(group_depth, _, _)| depth == group_depth + 1)
-                && path_ends_with(stack, &[b"basematerials", b"base"]) =>
+                && path_ends_with(stack, &["basematerials", "base"]) =>
         {
-            let color = attribute(decoder, element, b"displaycolor")?
+            let color = attribute(element, "displaycolor")?
                 .as_deref()
                 .and_then(parse_color)
                 .unwrap_or(DEFAULT_COLOR);
@@ -472,13 +464,13 @@ fn handle_start(
                 .2
                 .push(color);
         }
-        b"color"
+        "color"
             if current_colors
                 .as_ref()
                 .is_some_and(|(group_depth, _, _)| depth == group_depth + 1)
-                && path_ends_with(stack, &[b"colorgroup", b"color"]) =>
+                && path_ends_with(stack, &["colorgroup", "color"]) =>
         {
-            let color = attribute(decoder, element, b"color")?
+            let color = attribute(element, "color")?
                 .as_deref()
                 .and_then(parse_color)
                 .unwrap_or(DEFAULT_COLOR);
@@ -494,7 +486,7 @@ fn handle_start(
 }
 
 fn handle_end(
-    name: &[u8],
+    name: &str,
     stack: &[ElementName],
     depth: usize,
     model: &mut ParsedModel,
@@ -502,7 +494,7 @@ fn handle_end(
     current_mesh: &mut Option<(usize, Mesh)>,
     current_colors: &mut Option<(usize, String, Vec<[f32; 4]>)>,
 ) -> Result<(), CoreError> {
-    if name == b"mesh" && current_mesh.as_ref().is_some_and(|(d, _)| *d == depth) {
+    if name == "mesh" && current_mesh.as_ref().is_some_and(|(d, _)| *d == depth) {
         let (_, mesh) = current_mesh
             .take()
             .ok_or_else(|| CoreError::parse("3MF mesh end is unmatched"))?;
@@ -511,7 +503,7 @@ fn handle_end(
             .ok_or_else(|| CoreError::parse("3MF mesh is outside an object"))?
             .1
             .mesh = Some(mesh);
-    } else if name == b"object" && path_ends_with(stack, &[b"resources", b"object"]) {
+    } else if name == "object" && path_ends_with(stack, &["resources", "object"]) {
         let (key, object) = current_object
             .take()
             .ok_or_else(|| CoreError::parse("3MF object end is unmatched"))?;
@@ -519,7 +511,7 @@ fn handle_end(
             return Err(CoreError::parse("3MF model contains duplicate object IDs"));
         }
         *current_mesh = None;
-    } else if matches!(name, b"basematerials" | b"colorgroup")
+    } else if matches!(name, "basematerials" | "colorgroup")
         && current_colors.as_ref().is_some_and(|(d, _, _)| *d == depth)
     {
         let (_, key, colors) = current_colors
@@ -717,12 +709,8 @@ fn transform_point(point: [f32; 3], matrix: Matrix) -> Result<[f32; 3], CoreErro
     Ok(result)
 }
 
-fn target_part_path(
-    decoder: Decoder,
-    element: &BytesStart<'_>,
-    current_path: &str,
-) -> Result<String, CoreError> {
-    match attribute_by_local_name(decoder, element, b"path")? {
+fn target_part_path(element: &BytesStart<'_>, current_path: &str) -> Result<String, CoreError> {
+    match attribute_by_local_name(element, "path")? {
         Some(path) => canonical_path(&path),
         None => Ok(current_path.to_owned()),
     }
@@ -744,17 +732,13 @@ fn enqueue_part(
     Ok(())
 }
 
-fn attribute(
-    decoder: Decoder,
-    element: &BytesStart<'_>,
-    expected: &[u8],
-) -> Result<Option<String>, CoreError> {
+fn attribute(element: &BytesStart<'_>, expected: &str) -> Result<Option<String>, CoreError> {
     for attribute in element.attributes() {
         let attribute = attribute
             .map_err(|error| CoreError::parse(format!("Invalid 3MF XML attribute: {error}")))?;
         if attribute.key.as_ref() == expected {
             return attribute
-                .decoded_and_normalized_value(XmlVersion::Implicit1_0, decoder)
+                .normalized_value(XmlVersion::Implicit1_0)
                 .map(|value| Some(value.into_owned()))
                 .map_err(|error| {
                     CoreError::parse(format!("Invalid 3MF XML attribute value: {error}"))
@@ -765,16 +749,15 @@ fn attribute(
 }
 
 fn attribute_by_local_name(
-    decoder: Decoder,
     element: &BytesStart<'_>,
-    expected: &[u8],
+    expected: &str,
 ) -> Result<Option<String>, CoreError> {
     for attribute in element.attributes() {
         let attribute = attribute
             .map_err(|error| CoreError::parse(format!("Invalid 3MF XML attribute: {error}")))?;
         if local_name(attribute.key.as_ref()) == expected {
             return attribute
-                .decoded_and_normalized_value(XmlVersion::Implicit1_0, decoder)
+                .normalized_value(XmlVersion::Implicit1_0)
                 .map(|value| Some(value.into_owned()))
                 .map_err(|error| {
                     CoreError::parse(format!("Invalid 3MF XML attribute value: {error}"))
@@ -785,44 +768,38 @@ fn attribute_by_local_name(
 }
 
 fn required_attribute(
-    decoder: Decoder,
     element: &BytesStart<'_>,
-    name: &[u8],
+    name: &str,
     context: &str,
 ) -> Result<String, CoreError> {
-    attribute(decoder, element, name)?.ok_or_else(|| {
-        CoreError::parse(format!(
-            "3MF {context} is missing {}",
-            String::from_utf8_lossy(name)
-        ))
-    })
+    attribute(element, name)?
+        .ok_or_else(|| CoreError::parse(format!("3MF {context} is missing {name}")))
 }
 
-fn local_name(name: &[u8]) -> &[u8] {
-    name.rsplit(|byte| *byte == b':').next().unwrap_or(name)
+fn local_name(name: &str) -> &str {
+    name.rsplit_once(':').map_or(name, |(_, local)| local)
 }
 
-fn path_ends_with(stack: &[ElementName], expected: &[&[u8]]) -> bool {
+fn path_ends_with(stack: &[ElementName], expected: &[&str]) -> bool {
     stack.len() >= expected.len()
         && stack[stack.len() - expected.len()..]
             .iter()
             .zip(expected)
-            .all(|(actual, expected)| actual.is_core && actual.local.as_slice() == *expected)
+            .all(|(actual, expected)| actual.is_core && actual.local == *expected)
 }
 
-fn element_name(namespace: ResolveResult<'_>, local: &[u8]) -> Result<ElementName, CoreError> {
+fn element_name(namespace: ResolveResult<'_>, local: &str) -> Result<ElementName, CoreError> {
     let is_core = match namespace {
         ResolveResult::Unbound => true,
         ResolveResult::Bound(Namespace(namespace)) => namespace == CORE_NAMESPACE,
         ResolveResult::Unknown(prefix) => {
             return Err(CoreError::parse(format!(
-                "3MF XML contains an unknown namespace prefix: {}",
-                String::from_utf8_lossy(&prefix)
+                "3MF XML contains an unknown namespace prefix: {prefix}"
             )));
         }
     };
     Ok(ElementName {
-        local: local.to_vec(),
+        local: local.to_owned(),
         is_core,
     })
 }
@@ -1057,6 +1034,25 @@ mod tests {
         let path = write_archive(&[(RELATIONSHIPS_PATH, &relationships)]);
         assert!(parse_three_mf(&path).is_err());
         fs::remove_file(path).unwrap();
+    }
+
+    #[test]
+    fn rejects_non_utf8_model_xml_with_a_contextual_error() {
+        let error = parse_model_part(
+            b"<model>\xff</model>",
+            "3D/3dmodel.model",
+            true,
+            &mut ParsedModel::default(),
+            &mut VecDeque::new(),
+            &HashSet::new(),
+        )
+        .unwrap_err();
+
+        assert!(matches!(error, CoreError::Parse(_)), "{error}");
+        assert!(
+            error.to_string().contains("Could not parse 3MF model XML"),
+            "{error}"
+        );
     }
 
     fn write_archive(entries: &[(&str, &str)]) -> std::path::PathBuf {
