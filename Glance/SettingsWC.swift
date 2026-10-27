@@ -138,6 +138,7 @@ final class SettingsWC: NSWindowController {
 	)
 	let sidebarTableView = NSTableView(frame: .zero)
 	let settingsSearchField = NSSearchField(frame: .zero)
+	let noResultsLabel = NSTextField(wrappingLabelWithString: "No settings match your search.")
 
 	private let settingsStore: AppSettingsStore
 	private let loginItem: any LoginItemManaging
@@ -228,6 +229,7 @@ final class SettingsWC: NSWindowController {
 			sidebarTableView.reloadData()
 		}
 		selectedPane = pane
+		noResultsLabel.isHidden = true
 		for (pane, view) in paneViews {
 			view.isHidden = pane != selectedPane
 		}
@@ -290,6 +292,24 @@ final class SettingsWC: NSWindowController {
 		addPane(.audio, content: audioPaneContent())
 		addPane(.updates, content: updatesPaneContent())
 		addPane(.about, content: aboutPaneContent())
+
+		noResultsLabel.font = .systemFont(ofSize: 13)
+		noResultsLabel.textColor = .secondaryLabelColor
+		noResultsLabel.alignment = .center
+		noResultsLabel.maximumNumberOfLines = 0
+		noResultsLabel.isHidden = true
+		noResultsLabel.setAccessibilityLabel("No settings match your search.")
+		noResultsLabel.translatesAutoresizingMaskIntoConstraints = false
+		contentContainer.addSubview(noResultsLabel)
+		NSLayoutConstraint.activate([
+			noResultsLabel.centerXAnchor.constraint(equalTo: contentContainer.centerXAnchor),
+			noResultsLabel.centerYAnchor.constraint(equalTo: contentContainer.centerYAnchor),
+			noResultsLabel.widthAnchor.constraint(
+				lessThanOrEqualTo: contentContainer.widthAnchor,
+				constant: -60,
+			),
+		])
+
 		selectPane(.general)
 	}
 
@@ -808,23 +828,51 @@ final class SettingsWC: NSWindowController {
 			visiblePanes = SettingsPane.allCases
 		} else {
 			visiblePanes = SettingsPane.allCases.filter { pane in
-				"\(pane.title) \(pane.subtitle) \(pane.keywords)"
-					.localizedLowercase
-					.contains(query)
+				searchableText(for: pane).contains(query)
 			}
 		}
+		let paneToRestore = selectedPane
 		sidebarTableView.reloadData()
 
-		if let row = visiblePanes.firstIndex(of: selectedPane) {
-			sidebarTableView.selectRowIndexes(
-				IndexSet(integer: row),
-				byExtendingSelection: false,
-			)
+		if visiblePanes.contains(paneToRestore) {
+			selectPane(paneToRestore)
 		} else if let first = visiblePanes.first {
 			selectPane(first)
 		} else {
-			sidebarTableView.deselectAll(nil)
+			showNoResults()
 		}
+	}
+
+	/// Search the actual labels and controls shown on each page so the index
+	/// cannot drift from the UI. Page subtitles and keywords add synonyms.
+	private func searchableText(for pane: SettingsPane) -> String {
+		var parts = [pane.title, pane.subtitle, pane.keywords]
+		if let view = paneViews[pane] {
+			parts.append(contentsOf: textValues(in: view))
+		}
+		return parts.joined(separator: " ").localizedLowercase
+	}
+
+	private func textValues(in view: NSView) -> [String] {
+		var values: [String] = []
+		if let textField = view as? NSTextField, !textField.stringValue.isEmpty {
+			values.append(textField.stringValue)
+		}
+		if let button = view as? NSButton, !button.title.isEmpty {
+			values.append(button.title)
+		}
+		for subview in view.subviews {
+			values.append(contentsOf: textValues(in: subview))
+		}
+		return values
+	}
+
+	private func showNoResults() {
+		for view in paneViews.values {
+			view.isHidden = true
+		}
+		noResultsLabel.isHidden = false
+		sidebarTableView.deselectAll(nil)
 	}
 
 	// MARK: - State

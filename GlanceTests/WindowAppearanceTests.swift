@@ -490,29 +490,45 @@ final class WindowAppearanceTests: XCTestCase {
 		}
 	}
 
-	func testSettingsSearchFiltersPanes() throws {
+	func testSettingsSearchMatchesVisibleLabelsAndShowsNoResults() throws {
 		let store = try makeSettingsStore().0
 		let controller = SettingsWC(settingsStore: store, fontFamilies: [])
 		controller.loadWindow()
 
-		controller.settingsSearchField.stringValue = "audio"
-		controller.settingsSearchField.sendAction(
-			controller.settingsSearchField.action,
-			to: controller.settingsSearchField.target,
-		)
+		search(controller, "Start at Login")
 		XCTAssertEqual(controller.sidebarTableView.numberOfRows, 1)
-		controller.sidebarTableView.selectRowIndexes(
-			IndexSet(integer: 0),
-			byExtendingSelection: false,
-		)
-		XCTAssertEqual(controller.selectedPane, .audio)
+		XCTAssertEqual(controller.selectedPane, .general)
 
-		controller.settingsSearchField.stringValue = ""
+		search(controller, "Wrap long lines")
+		XCTAssertEqual(controller.sidebarTableView.numberOfRows, 1)
+		XCTAssertEqual(controller.selectedPane, .appearance)
+
+		search(controller, "Automatically check")
+		XCTAssertEqual(controller.sidebarTableView.numberOfRows, 1)
+		XCTAssertEqual(controller.selectedPane, .updates)
+
+		search(controller, "Acknowledgements")
+		XCTAssertEqual(controller.sidebarTableView.numberOfRows, 1)
+		XCTAssertEqual(controller.selectedPane, .about)
+
+		search(controller, "does-not-exist")
+		XCTAssertEqual(controller.sidebarTableView.numberOfRows, 0)
+		XCTAssertFalse(controller.noResultsLabel.isHidden)
+		XCTAssertEqual(controller.selectedPane, .about)
+
+		search(controller, "")
+		XCTAssertEqual(controller.sidebarTableView.numberOfRows, SettingsPane.allCases.count)
+		XCTAssertTrue(controller.noResultsLabel.isHidden)
+		XCTAssertEqual(controller.selectedPane, .about)
+		XCTAssertFalse(controller.activePaneScrollView?.isHidden ?? true)
+	}
+
+	private func search(_ controller: SettingsWC, _ query: String) {
+		controller.settingsSearchField.stringValue = query
 		controller.settingsSearchField.sendAction(
 			controller.settingsSearchField.action,
 			to: controller.settingsSearchField.target,
 		)
-		XCTAssertEqual(controller.sidebarTableView.numberOfRows, SettingsPane.allCases.count)
 	}
 
 	private func toggle(_ control: NSSwitch) {
