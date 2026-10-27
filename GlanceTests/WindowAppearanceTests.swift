@@ -57,11 +57,11 @@ final class WindowAppearanceTests: XCTestCase {
 		XCTAssertTrue(store.flacWaveformEnabled)
 
 		let controller = SettingsWC(settingsStore: store, fontFamilies: [])
-		XCTAssertEqual(controller.flacWaveformCheckbox.state, .on)
-		controller.flacWaveformCheckbox.performClick(nil)
+		XCTAssertEqual(controller.flacWaveformSwitch.state, .on)
+		toggle(controller.flacWaveformSwitch)
 		XCTAssertFalse(store.flacWaveformEnabled)
 		controller.syncState()
-		XCTAssertEqual(controller.flacWaveformCheckbox.state, .off)
+		XCTAssertEqual(controller.flacWaveformSwitch.state, .off)
 	}
 
 	func testSettingsShowsSoftwareUpdateSection() throws {
@@ -69,8 +69,11 @@ final class WindowAppearanceTests: XCTestCase {
 		defer { UserDefaults.standard.removePersistentDomain(forName: suiteName) }
 		let controller = SettingsWC(settingsStore: store, fontFamilies: [])
 		controller.loadWindow()
+		controller.selectPane(.updates)
 		let labels = allTextFields(in: try XCTUnwrap(controller.window?.contentView))
-		XCTAssertTrue(labels.contains { $0.stringValue == "Software Update" })
+		XCTAssertEqual(controller.selectedPane, .updates)
+		XCTAssertTrue(labels.contains { $0.stringValue == "Updates" })
+		XCTAssertTrue(labels.contains { $0.stringValue == "Automatically check" })
 		XCTAssertNotNil(controller.checkForUpdatesButton)
 		XCTAssertNotNil(controller.updateStatusLabel)
 	}
@@ -134,7 +137,7 @@ final class WindowAppearanceTests: XCTestCase {
 
 		XCTAssertEqual(controller.fontFamilyPopUpButton.titleOfSelectedItem, "Menlo")
 		XCTAssertEqual(controller.fontSizeField.doubleValue, 16)
-		XCTAssertEqual(controller.lineWrappingCheckbox.state, .on)
+		XCTAssertEqual(controller.lineWrappingSwitch.state, .on)
 
 		controller.fontFamilyPopUpButton.selectItem(withTitle: "Helvetica")
 		controller.fontFamilyPopUpButton.sendAction(
@@ -146,7 +149,7 @@ final class WindowAppearanceTests: XCTestCase {
 			controller.fontSizeField.action,
 			to: controller.fontSizeField.target,
 		)
-		controller.lineWrappingCheckbox.performClick(nil)
+		toggle(controller.lineWrappingSwitch)
 
 		XCTAssertEqual(store.previewFontFamily, "Helvetica")
 		XCTAssertEqual(store.previewFontSize, 19)
@@ -160,7 +163,7 @@ final class WindowAppearanceTests: XCTestCase {
 			controller.fontSizeField.doubleValue,
 			PreviewAppearancePreferences.defaultFontSize,
 		)
-		XCTAssertEqual(controller.lineWrappingCheckbox.state, .off)
+		XCTAssertEqual(controller.lineWrappingSwitch.state, .off)
 	}
 
 	func testSettingsWindowCanonicalizesPersistedFontFamilyCasing() throws {
@@ -194,50 +197,65 @@ final class WindowAppearanceTests: XCTestCase {
 		)
 		let content = try XCTUnwrap(window.contentView)
 		content.layoutSubtreeIfNeeded()
-		let scrollView = content.subviews.compactMap { $0 as? NSScrollView }.first
-		let viewport = scrollView.map { $0.contentView.convert($0.contentView.bounds, to: nil) }
-			?? window.contentLayoutRect
-		XCTAssertTrue(window.contentLayoutRect.insetBy(dx: -1, dy: -1).contains(viewport))
-		let controls: [NSControl] = [
-			controller.startAtLoginCheckbox,
-			controller.openLoginItemsButton,
-			controller.fontFamilyPopUpButton,
-			controller.fontSizeField,
-			controller.lineWrappingCheckbox,
-			controller.resetAppearanceButton,
-			controller.flacWaveformCheckbox,
-			controller.checkForUpdatesButton,
-			controller.installUpdateButton,
-			controller.autoUpdateCheckbox,
+
+		let controlsByPane: [SettingsPane: [NSControl]] = [
+			.general: [
+				controller.startAtLoginSwitch,
+				controller.loginItemStatusLabel,
+				controller.openLoginItemsButton,
+			],
+			.appearance: [
+				controller.fontFamilyPopUpButton,
+				controller.fontSizeField,
+				controller.lineWrappingSwitch,
+				controller.resetAppearanceButton,
+			],
+			.audio: [controller.flacWaveformSwitch],
+			.updates: [
+				controller.checkForUpdatesButton,
+				controller.installUpdateButton,
+				controller.autoUpdateSwitch,
+			],
 		]
-		for control in controls {
-			XCTAssertFalse(control.isHidden)
-			control.scrollToVisible(control.bounds)
+
+		for pane in SettingsPane.allCases {
+			controller.selectPane(pane)
 			content.layoutSubtreeIfNeeded()
-			let frame = control.convert(control.bounds, to: nil)
-			XCTAssertTrue(
-				viewport.insetBy(dx: -1, dy: -1).contains(frame),
-				"Unreachable control: \(control)",
-			)
-			XCTAssertGreaterThanOrEqual(
-				control.frame.height,
-				control.intrinsicContentSize.height - 1,
-			)
+			let scrollView = try XCTUnwrap(controller.activePaneScrollView)
+			XCTAssertFalse(scrollView.isHidden)
+			let viewport = scrollView.contentView.convert(scrollView.contentView.bounds, to: nil)
+			XCTAssertGreaterThan(viewport.width, 0)
+			XCTAssertGreaterThan(viewport.height, 0)
+			for control in controlsByPane[pane] ?? [] {
+				XCTAssertFalse(control.isHidden, "Hidden control: \(control) in \(pane)")
+				control.scrollToVisible(control.bounds)
+				content.layoutSubtreeIfNeeded()
+				let frame = control.convert(control.bounds, to: nil)
+				XCTAssertTrue(
+					viewport.insetBy(dx: -1, dy: -1).contains(frame),
+					"Unreachable control: \(control) in \(pane)",
+				)
+				XCTAssertGreaterThanOrEqual(
+					control.frame.height,
+					control.intrinsicContentSize.height - 1,
+				)
+			}
 		}
-		let expandedHeight = scrollView?.documentView?.frame.height
+
+		controller.selectPane(.general)
 		loginItem.status = .notRegistered
 		controller.syncState()
 		NotificationCenter.default.post(
 			name: SparkleUpdateCenter.statusDidChangeNotification,
 			object: nil,
-			userInfo: ["statusText": "No update available.", "installReady": false],
+			userInfo: ["statusText": "You’re up to date.", "installReady": false],
 		)
 		content.layoutSubtreeIfNeeded()
+		XCTAssertTrue(controller.loginItemStatusLabel.isHidden)
 		XCTAssertTrue(controller.openLoginItemsButton.isHidden)
+		controller.selectPane(.updates)
+		content.layoutSubtreeIfNeeded()
 		XCTAssertTrue(controller.installUpdateButton.isHidden)
-		if let expandedHeight, let documentView = scrollView?.documentView {
-			XCTAssertLessThan(documentView.frame.height, expandedHeight)
-		}
 	}
 
 	func testStartAtLoginRegistersAndUnregistersTheMainApp() throws {
@@ -250,14 +268,14 @@ final class WindowAppearanceTests: XCTestCase {
 			loginItem: loginItem,
 		)
 
-		XCTAssertEqual(controller.startAtLoginCheckbox.state, .off)
-		controller.startAtLoginCheckbox.performClick(nil)
+		XCTAssertEqual(controller.startAtLoginSwitch.state, .off)
+		toggle(controller.startAtLoginSwitch)
 		XCTAssertEqual(loginItem.registerCount, 1)
-		XCTAssertEqual(controller.startAtLoginCheckbox.state, .on)
+		XCTAssertEqual(controller.startAtLoginSwitch.state, .on)
 
-		controller.startAtLoginCheckbox.performClick(nil)
+		toggle(controller.startAtLoginSwitch)
 		XCTAssertEqual(loginItem.unregisterCount, 1)
-		XCTAssertEqual(controller.startAtLoginCheckbox.state, .off)
+		XCTAssertEqual(controller.startAtLoginSwitch.state, .off)
 	}
 
 	func testStartAtLoginReflectsSystemApprovalAndExternalChanges() throws {
@@ -272,7 +290,7 @@ final class WindowAppearanceTests: XCTestCase {
 
 		loginItem.status = .requiresApproval
 		controller.syncState()
-		XCTAssertEqual(controller.startAtLoginCheckbox.state, .on)
+		XCTAssertEqual(controller.startAtLoginSwitch.state, .on)
 		XCTAssertFalse(controller.loginItemStatusLabel.isHidden)
 		XCTAssertFalse(controller.openLoginItemsButton.isHidden)
 		controller.openLoginItemsButton.performClick(nil)
@@ -280,7 +298,7 @@ final class WindowAppearanceTests: XCTestCase {
 
 		loginItem.status = .notRegistered
 		controller.syncState()
-		XCTAssertEqual(controller.startAtLoginCheckbox.state, .off)
+		XCTAssertEqual(controller.startAtLoginSwitch.state, .off)
 		XCTAssertTrue(controller.loginItemStatusLabel.isHidden)
 		XCTAssertTrue(controller.openLoginItemsButton.isHidden)
 	}
@@ -295,8 +313,8 @@ final class WindowAppearanceTests: XCTestCase {
 			loginItem: loginItem,
 		)
 		loginItem.registrationError = NSError(domain: "GlanceTests", code: 1)
-		controller.startAtLoginCheckbox.performClick(nil)
-		XCTAssertEqual(controller.startAtLoginCheckbox.state, .off)
+		toggle(controller.startAtLoginSwitch)
+		XCTAssertEqual(controller.startAtLoginSwitch.state, .off)
 		XCTAssertFalse(controller.loginItemStatusLabel.isHidden)
 		XCTAssertFalse(controller.openLoginItemsButton.isHidden)
 
@@ -304,8 +322,8 @@ final class WindowAppearanceTests: XCTestCase {
 		loginItem.status = .enabled
 		loginItem.unregistrationError = NSError(domain: "GlanceTests", code: 2)
 		controller.syncState()
-		controller.startAtLoginCheckbox.performClick(nil)
-		XCTAssertEqual(controller.startAtLoginCheckbox.state, .on)
+		toggle(controller.startAtLoginSwitch)
+		XCTAssertEqual(controller.startAtLoginSwitch.state, .on)
 		XCTAssertFalse(controller.loginItemStatusLabel.isHidden)
 	}
 
@@ -339,10 +357,10 @@ final class WindowAppearanceTests: XCTestCase {
 		let window = try XCTUnwrap(controller.window)
 
 		XCTAssertTrue(window.styleMask.contains(.resizable))
-		XCTAssertGreaterThanOrEqual(window.minSize.width, 420)
-		XCTAssertGreaterThanOrEqual(window.minSize.height, 300)
+		XCTAssertGreaterThanOrEqual(window.minSize.width, 560)
+		XCTAssertGreaterThanOrEqual(window.minSize.height, 380)
 		XCTAssertEqual(
-			controller.sectionsStackView.arrangedSubviews.count,
+			controller.categoryTableView.numberOfRows,
 			SupportedFilesWC.sections.count,
 		)
 		XCTAssertEqual(
@@ -384,17 +402,138 @@ final class WindowAppearanceTests: XCTestCase {
 		)
 	}
 
-	func testSupportedFileDetailsWrapAndExposeAccessibilityLabels() throws {
+	func testSupportedFilesDetailFollowsSelectionAndSearch() {
 		let controller = SupportedFilesWC()
-		let labels = controller.sectionsStackView.arrangedSubviews
-			.flatMap(allTextFields(in:))
-		let sourceDetails = try XCTUnwrap(labels.first {
-			$0.identifier?.rawValue == "SupportedFiles.Source Code.Details"
-		})
+		controller.loadWindow()
 
-		XCTAssertEqual(sourceDetails.maximumNumberOfLines, 0)
-		XCTAssertEqual(sourceDetails.alignment, .center)
-		XCTAssertEqual(sourceDetails.accessibilityLabel(), sourceDetails.stringValue)
+		controller.selectSection(at: 1)
+		XCTAssertEqual(controller.selectedSectionIndex, 1)
+		XCTAssertEqual(controller.detailTitleLabel.stringValue, "Source Code")
+		XCTAssertEqual(
+			controller.detailSummaryLabel.stringValue,
+			"Syntax highlighting for these and many more.",
+		)
+		XCTAssertEqual(controller.detailSummaryLabel.maximumNumberOfLines, 0)
+		XCTAssertTrue(controller.formatsValueLabel.stringValue.contains(".swift"))
+		XCTAssertEqual(controller.detailTitleLabel.accessibilityLabel(), "Source Code")
+		XCTAssertEqual(
+			controller.formatsValueLabel.accessibilityLabel(),
+			SupportedFilesWC.sections[1].formats.joined(separator: ", "),
+		)
+
+		controller.selectSection(at: 11)
+		XCTAssertEqual(controller.detailTitleLabel.stringValue, "Folders")
+		XCTAssertTrue(controller.formatsValueLabel.stringValue.isEmpty)
+		XCTAssertFalse(controller.isFormatsSectionVisible)
+
+		controller.searchField.stringValue = "sql"
+		controller.searchField.sendAction(
+			controller.searchField.action,
+			to: controller.searchField.target,
+		)
+		XCTAssertEqual(controller.categoryTableView.numberOfRows, 1)
+		XCTAssertEqual(controller.selectedSectionIndex, 9)
+		XCTAssertEqual(controller.detailTitleLabel.stringValue, "Database")
+
+		controller.searchField.stringValue = "zzzz"
+		controller.searchField.sendAction(
+			controller.searchField.action,
+			to: controller.searchField.target,
+		)
+		XCTAssertEqual(controller.categoryTableView.numberOfRows, 0)
+		XCTAssertNil(controller.selectedSectionIndex)
+		XCTAssertFalse(controller.emptyStateLabel.isHidden)
+		XCTAssertFalse(controller.isDetailVisible)
+
+		controller.searchField.stringValue = ""
+		controller.searchField.sendAction(
+			controller.searchField.action,
+			to: controller.searchField.target,
+		)
+		XCTAssertEqual(controller.categoryTableView.numberOfRows, 12)
+		XCTAssertEqual(controller.selectedSectionIndex, 0)
+		XCTAssertTrue(controller.emptyStateLabel.isHidden)
+		XCTAssertTrue(controller.isDetailVisible)
+	}
+
+	func testSettingsAboutPaneShowsIdentityAndLinks() throws {
+		let store = try makeSettingsStore().0
+		let controller = SettingsWC(settingsStore: store, fontFamilies: [])
+		controller.loadWindow()
+		controller.selectPane(.about)
+
+		XCTAssertEqual(controller.selectedPane, .about)
+		let contentView = try XCTUnwrap(controller.window?.contentView)
+		let labels = allTextFields(in: contentView).map(\.stringValue)
+		XCTAssertTrue(labels.contains("Glance"))
+		XCTAssertTrue(labels.contains { $0.contains(AppMetadata.version) })
+		XCTAssertEqual(
+			controller.aboutLinkButtons.map(\.title),
+			["GitHub", "License", "Acknowledgements", "Privacy"],
+		)
+	}
+
+	func testUtilityWindowsShowOnlyCloseButton() throws {
+		let store = try makeSettingsStore().0
+		let windows = [
+			try XCTUnwrap(SettingsWC(settingsStore: store, fontFamilies: []).window),
+			try XCTUnwrap(SupportedFilesWC().window),
+		]
+		for window in windows {
+			XCTAssertFalse(window.standardWindowButton(.closeButton)?.isHidden ?? true)
+			if let minimizeButton = window.standardWindowButton(.miniaturizeButton) {
+				XCTAssertTrue(minimizeButton.isHidden)
+			}
+			if let zoomButton = window.standardWindowButton(.zoomButton) {
+				XCTAssertTrue(zoomButton.isHidden)
+			}
+		}
+	}
+
+	func testSettingsSearchMatchesVisibleLabelsAndShowsNoResults() throws {
+		let store = try makeSettingsStore().0
+		let controller = SettingsWC(settingsStore: store, fontFamilies: [])
+		controller.loadWindow()
+
+		search(controller, "Start at Login")
+		XCTAssertEqual(controller.sidebarTableView.numberOfRows, 1)
+		XCTAssertEqual(controller.selectedPane, .general)
+
+		search(controller, "Wrap long lines")
+		XCTAssertEqual(controller.sidebarTableView.numberOfRows, 1)
+		XCTAssertEqual(controller.selectedPane, .appearance)
+
+		search(controller, "Automatically check")
+		XCTAssertEqual(controller.sidebarTableView.numberOfRows, 1)
+		XCTAssertEqual(controller.selectedPane, .updates)
+
+		search(controller, "Acknowledgements")
+		XCTAssertEqual(controller.sidebarTableView.numberOfRows, 1)
+		XCTAssertEqual(controller.selectedPane, .about)
+
+		search(controller, "does-not-exist")
+		XCTAssertEqual(controller.sidebarTableView.numberOfRows, 0)
+		XCTAssertFalse(controller.noResultsLabel.isHidden)
+		XCTAssertEqual(controller.selectedPane, .about)
+
+		search(controller, "")
+		XCTAssertEqual(controller.sidebarTableView.numberOfRows, SettingsPane.allCases.count)
+		XCTAssertTrue(controller.noResultsLabel.isHidden)
+		XCTAssertEqual(controller.selectedPane, .about)
+		XCTAssertFalse(controller.activePaneScrollView?.isHidden ?? true)
+	}
+
+	private func search(_ controller: SettingsWC, _ query: String) {
+		controller.settingsSearchField.stringValue = query
+		controller.settingsSearchField.sendAction(
+			controller.settingsSearchField.action,
+			to: controller.settingsSearchField.target,
+		)
+	}
+
+	private func toggle(_ control: NSSwitch) {
+		control.state = control.state == .on ? .off : .on
+		control.sendAction(control.action, to: control.target)
 	}
 
 	private func allTextFields(in view: NSView) -> [NSTextField] {
@@ -422,7 +561,7 @@ final class WindowAppearanceTests: XCTestCase {
 		let labels = allTextFields(in: contentView).map(\.stringValue)
 		let buttons = allButtons(in: contentView).map(\.title)
 
-		XCTAssertFalse(labels.contains { $0.localizedCaseInsensitiveContains("Dock icon") })
+		XCTAssertFalse(labels.contains { $0.localizedCaseInsensitiveContains("Show Dock") })
 		XCTAssertFalse(buttons.contains { $0.localizedCaseInsensitiveContains("Dock icon") })
 	}
 
@@ -432,6 +571,24 @@ final class WindowAppearanceTests: XCTestCase {
 		let window = try XCTUnwrap(controller.window)
 
 		XCTAssertTrue(window.styleMask.contains(.resizable))
-		XCTAssertEqual(window.minSize, NSSize(width: 440, height: 490))
+		XCTAssertEqual(window.minSize, NSSize(width: 560, height: 480))
+	}
+
+	func testSettingsSidebarNavigatesEveryPane() throws {
+		let store = try makeSettingsStore().0
+		let controller = SettingsWC(settingsStore: store, fontFamilies: [])
+		controller.loadWindow()
+
+		XCTAssertEqual(controller.selectedPane, .general)
+		XCTAssertEqual(controller.sidebarTableView.numberOfRows, SettingsPane.allCases.count)
+
+		for pane in SettingsPane.allCases {
+			controller.sidebarTableView.selectRowIndexes(
+				IndexSet(integer: pane.rawValue),
+				byExtendingSelection: false,
+			)
+			XCTAssertEqual(controller.selectedPane, pane)
+			XCTAssertFalse(controller.activePaneScrollView?.isHidden ?? true)
+		}
 	}
 }

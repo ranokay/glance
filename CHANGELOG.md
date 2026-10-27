@@ -4,6 +4,10 @@ Append-only. Newest entry first.
 
 # Unreleased
 
+- Settings and Supported Files use a sidebar layout with search, an integrated
+  About page, close-only window controls, and a Dock/Cmd-Tab presence that
+  appears only while one of their windows is open. Update actions and legal
+  links are owned by their respective pages instead of being repeated.
 - EPUB previews render books whose package metadata omits `dc:title` and whose chapters use a
   bare HTML doctype, instead of falling back to the generic file icon.
 - 7z previews bound decoded metadata, allocation-driving counts, and decoder

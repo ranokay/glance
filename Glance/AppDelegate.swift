@@ -96,7 +96,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		))
 		appMenu.addItem(.separator())
 		appMenu.addItem(NSMenuItem(
-			title: "Settings\u{2026}",
+			title: "Settings",
 			action: #selector(openSettingsWindow(_:)),
 			keyEquivalent: ",",
 		))
@@ -162,12 +162,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 			keyEquivalent: "",
 		))
 		menu.addItem(NSMenuItem(
-			title: "Settings\u{2026}",
+			title: "Settings",
 			action: #selector(openSettingsWindow(_:)),
 			keyEquivalent: "",
 		))
 		menu.addItem(NSMenuItem(
-			title: "Check for Updates…",
+			title: "Check for Updates",
 			action: #selector(checkForUpdates(_:)),
 			keyEquivalent: "",
 		))
@@ -187,13 +187,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
 	@objc
 	private func openAbout(_: Any?) {
-		NSApp.activate()
-		NSApp.orderFrontStandardAboutPanel(nil)
+		SettingsWC.shared.showAboutPane()
 	}
 
 	@objc
 	func openSupportedFilesWindow(_: Any?) {
-		NSApp.activate()
 		SupportedFilesWC.shared.showSupportedFilesWindow()
 	}
 
