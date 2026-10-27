@@ -2,7 +2,44 @@ import Cocoa
 
 struct SupportedFileSection: Equatable {
 	let title: String
-	let details: String
+	let formats: [String]
+	let summary: String
+	let blurb: String
+	let example: String
+	let symbolName: String
+	let formatNote: String?
+
+	init(
+		title: String,
+		formats: [String],
+		summary: String = "",
+		blurb: String,
+		example: String,
+		symbolName: String,
+		formatNote: String? = nil,
+	) {
+		self.title = title
+		self.formats = formats
+		self.summary = summary
+		self.blurb = blurb
+		self.example = example
+		self.symbolName = symbolName
+		self.formatNote = formatNote
+	}
+
+	var details: String {
+		guard !formats.isEmpty else {
+			return summary
+		}
+		var line = formats.joined(separator: ", ")
+		if let formatNote {
+			line += " \(formatNote)"
+		}
+		if !summary.isEmpty {
+			line += " • \(summary)"
+		}
+		return line
+	}
 }
 
 @MainActor
@@ -12,65 +49,154 @@ final class SupportedFilesWC: NSWindowController {
 	static let sections = [
 		SupportedFileSection(
 			title: "Audio",
-			details: ".flac • Native playback with waveform overview",
+			formats: [".flac"],
+			summary: "Native playback with waveform overview",
+			blurb: "Native playback with a waveform overview.",
+			example: "field-recording.flac",
+			symbolName: "waveform",
 		),
 		SupportedFileSection(
 			title: "Source Code",
-			details: ".cpp, .elrc, .ini, .js, .jsonl, .py, .swift, .tmpl, .toml, .ts, .ttml, .yml and many more",
+			formats: [
+				".cpp", ".elrc", ".ini", ".js", ".jsonl", ".py",
+				".swift", ".tmpl", ".toml", ".ts", ".ttml", ".yml",
+			],
+			blurb: "Syntax highlighting for these and many more.",
+			example: "main.swift",
+			symbolName: "chevron.left.forwardslash.chevron.right",
+			formatNote: "and many more",
 		),
 		SupportedFileSection(
 			title: "Markdown",
-			details: ".md, .markdown, .mdown, .mkdn, .mkd, .Rmd, .qmd • Mermaid diagrams",
+			formats: [".md", ".markdown", ".mdown", ".mkdn", ".mkd", ".Rmd", ".qmd"],
+			summary: "Mermaid diagrams",
+			blurb: "Rendered locally, with Mermaid diagrams.",
+			example: "notes.md",
+			symbolName: "doc.text",
 		),
 		SupportedFileSection(
 			title: "Diagrams",
-			details: ".drawio • Uncompressed diagrams.net files",
+			formats: [".drawio"],
+			summary: "Uncompressed diagrams.net files",
+			blurb: "Uncompressed diagrams.net files.",
+			example: "architecture.drawio",
+			symbolName: "flowchart",
 		),
 		SupportedFileSection(
 			title: "Archive",
-			details: ".7z, .ear, .jar, .rar, .tar, .tar.gz, .tgz, .war, .zip",
+			formats: [".7z", ".ear", ".jar", ".rar", ".tar", ".tar.gz", ".tgz", ".war", ".zip"],
+			blurb: "Browse entries without extracting the archive.",
+			example: "release.zip",
+			symbolName: "archivebox",
 		),
 		SupportedFileSection(
 			title: "E-books",
-			details: ".epub • DRM-free EPUB 2 and EPUB 3 books",
+			formats: [".epub"],
+			summary: "DRM-free EPUB 2 and EPUB 3 books",
+			blurb: "DRM-free EPUB 2 and EPUB 3 books.",
+			example: "designing-data.epub",
+			symbolName: "book",
 		),
-		SupportedFileSection(title: "Jupyter Notebook", details: ".ipynb"),
-		SupportedFileSection(title: "Tab-separated Values", details: ".tab, .tsv"),
+		SupportedFileSection(
+			title: "Jupyter Notebook",
+			formats: [".ipynb"],
+			blurb: "Cells, outputs, and embedded images.",
+			example: "analysis.ipynb",
+			symbolName: "book.closed",
+		),
+		SupportedFileSection(
+			title: "Tab-separated Values",
+			formats: [".tab", ".tsv"],
+			blurb: "Rows and columns, typed and aligned.",
+			example: "measurements.tsv",
+			symbolName: "tablecells",
+		),
 		SupportedFileSection(
 			title: "Spreadsheet",
-			details: ".xlsx • Values, dates, and every worksheet",
+			formats: [".xlsx"],
+			summary: "Values, dates, and every worksheet",
+			blurb: "Values, dates, and every worksheet.",
+			example: "budget.xlsx",
+			symbolName: "tablecells.badge.ellipsis",
 		),
 		SupportedFileSection(
 			title: "Database",
-			details: ".sqlite, .sqlite3, .db • Read-only tables with typed columns",
+			formats: [".sqlite", ".sqlite3", ".db"],
+			summary: "Read-only tables with typed columns",
+			blurb: "Read-only tables with typed columns.",
+			example: "library.sqlite",
+			symbolName: "cylinder.split.1x2",
 		),
 		SupportedFileSection(
 			title: "Structured Data",
-			details: ".json, .plist, .xml • Collapsible trees, typed values, and truncation notices",
+			formats: [".json", ".plist", ".xml"],
+			summary: "Collapsible trees, typed values, and truncation notices",
+			blurb: "Collapsible trees, typed values, and truncation notices.",
+			example: "settings.plist",
+			symbolName: "curlybraces",
 		),
 		SupportedFileSection(
 			title: "Folders",
-			details: "Lazy trees with icons, thumbnails, 500-item pages, and Back navigation",
+			formats: [],
+			summary: "Lazy trees with icons, thumbnails, 500-item pages, and Back navigation",
+			blurb: "Lazy trees with icons, thumbnails, and pages of 500.",
+			example: "Projects",
+			symbolName: "folder",
 		),
 	]
 
-	let sectionsStackView = NSStackView()
+	let categoryTableView = NSTableView(frame: .zero)
+	let searchField = NSSearchField(frame: .zero)
+	let detailTitleLabel = NSTextField(labelWithString: "")
+	let detailSummaryLabel = NSTextField(wrappingLabelWithString: "")
+	let formatsHeadingLabel = NSTextField(labelWithString: "Formats")
+	let formatsValueLabel = NSTextField(wrappingLabelWithString: "")
+	let exampleValueLabel = NSTextField(wrappingLabelWithString: "")
+	let emptyStateLabel =
+		NSTextField(wrappingLabelWithString: "No supported files match that search.")
+
+	private let sidebarView = NSVisualEffectView()
+	private let detailScrollView = NSScrollView()
+	private let detailContentStack = NSStackView()
+	private let symbolBadge = SymbolBadgeView()
+	private let formatsSection = NSStackView()
+	private var visibleSectionIndices = Array(SupportedFilesWC.sections.indices)
+	private(set) var selectedSectionIndex: Int? = 0
+
+	var isFormatsSectionVisible: Bool {
+		!formatsSection.isHidden
+	}
+
+	var isDetailVisible: Bool {
+		!detailScrollView.isHidden
+	}
 
 	init() {
 		let window = NSWindow(
-			contentRect: NSRect(x: 0, y: 0, width: 560, height: 460),
+			contentRect: NSRect(x: 0, y: 0, width: 680, height: 500),
 			styleMask: [.titled, .closable, .resizable],
 			backing: .buffered,
 			defer: false,
 		)
 		window.title = "Supported Files"
+		window.titleVisibility = .hidden
 		window.isReleasedWhenClosed = false
-		window.minSize = NSSize(width: 420, height: 300)
+		window.minSize = NSSize(width: 560, height: 380)
 		window.center()
 		WindowAppearance.apply(to: window)
+		WindowAppearance.hideMinimizeAndZoomButtons(on: window)
+		WindowAppearance.track(window)
 
 		super.init(window: window)
+		NotificationCenter.default.addObserver(
+			self,
+			selector: #selector(windowWillClose),
+			name: NSWindow.willCloseNotification,
+			object: window,
+		)
 		setUpContent()
+		categoryTableView.selectRowIndexes(IndexSet(integer: 0), byExtendingSelection: false)
+		showSection(at: 0)
 	}
 
 	@available(*, unavailable)
@@ -79,82 +205,509 @@ final class SupportedFilesWC: NSWindowController {
 	}
 
 	func showSupportedFilesWindow() {
-		NSApp.activate()
 		showWindow(nil)
-		window?.makeKeyAndOrderFront(nil)
+		if let index = selectedSectionIndex,
+		   let row = visibleSectionIndices.firstIndex(of: index)
+		{
+			categoryTableView.selectRowIndexes(
+				IndexSet(integer: row),
+				byExtendingSelection: false,
+			)
+			window?.makeFirstResponder(categoryTableView)
+		}
+		if let window {
+			WindowAppearance.bringToFront(window)
+		}
 	}
+
+	@objc
+	private func windowWillClose(_: Notification) {
+		DispatchQueue.main.async {
+			WindowAppearance.refreshActivationPolicy()
+		}
+	}
+
+	func selectSection(at index: Int) {
+		guard Self.sections.indices.contains(index),
+		      let row = visibleSectionIndices.firstIndex(of: index)
+		else {
+			return
+		}
+		categoryTableView.selectRowIndexes(
+			IndexSet(integer: row),
+			byExtendingSelection: false,
+		)
+		showSection(at: index)
+	}
+
+	// MARK: - Content Setup
 
 	private func setUpContent() {
 		guard let contentView = window?.contentView else {
 			return
 		}
 
-		sectionsStackView.orientation = .vertical
-		sectionsStackView.alignment = .centerX
-		sectionsStackView.spacing = 22
-		sectionsStackView.edgeInsets = NSEdgeInsets(top: 28, left: 28, bottom: 28, right: 28)
-		sectionsStackView.translatesAutoresizingMaskIntoConstraints = false
+		sidebarView.material = .sidebar
+		sidebarView.blendingMode = .behindWindow
+		sidebarView.state = .followsWindowActiveState
+		sidebarView.translatesAutoresizingMaskIntoConstraints = false
 
-		for section in Self.sections {
-			let sectionView = makeSectionView(section)
-			sectionsStackView.addArrangedSubview(sectionView)
-			sectionView.widthAnchor.constraint(
-				equalTo: sectionsStackView.widthAnchor,
-				constant: -56,
-			).isActive = true
-		}
+		let divider = NSBox()
+		divider.boxType = .custom
+		divider.titlePosition = .noTitle
+		divider.borderWidth = 0
+		divider.cornerRadius = 0
+		divider.fillColor = .separatorColor
+		divider.translatesAutoresizingMaskIntoConstraints = false
+
+		contentView.addSubview(sidebarView)
+		contentView.addSubview(divider)
+		contentView.addSubview(detailScrollView)
+		contentView.addSubview(emptyStateLabel)
+
+		NSLayoutConstraint.activate([
+			sidebarView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+			sidebarView.topAnchor.constraint(equalTo: contentView.topAnchor),
+			sidebarView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
+			sidebarView.widthAnchor.constraint(equalToConstant: 210),
+			divider.leadingAnchor.constraint(equalTo: sidebarView.trailingAnchor),
+			divider.topAnchor.constraint(equalTo: contentView.topAnchor),
+			divider.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
+			divider.widthAnchor.constraint(equalToConstant: 1),
+			detailScrollView.leadingAnchor.constraint(equalTo: divider.trailingAnchor),
+			detailScrollView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+			detailScrollView.topAnchor.constraint(
+				equalTo: contentView.safeAreaLayoutGuide.topAnchor,
+			),
+			detailScrollView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
+			emptyStateLabel.centerXAnchor.constraint(equalTo: detailScrollView.centerXAnchor),
+			emptyStateLabel.centerYAnchor.constraint(equalTo: detailScrollView.centerYAnchor),
+			emptyStateLabel.widthAnchor.constraint(
+				lessThanOrEqualTo: detailScrollView.widthAnchor,
+				constant: -60,
+			),
+		])
+
+		setUpSidebar()
+		setUpDetail()
+	}
+
+	private func setUpSidebar() {
+		searchField.placeholderString = "Search"
+		searchField.controlSize = .regular
+		searchField.sendsSearchStringImmediately = true
+		searchField.target = self
+		searchField.action = #selector(searchChanged)
+		searchField.setAccessibilityLabel("Search supported files")
+		searchField.translatesAutoresizingMaskIntoConstraints = false
+
+		categoryTableView.identifier = NSUserInterfaceItemIdentifier("SupportedFiles.Categories")
+		categoryTableView.dataSource = self
+		categoryTableView.delegate = self
+		categoryTableView.headerView = nil
+		categoryTableView.rowHeight = 30
+		categoryTableView.intercellSpacing = NSSize(width: 0, height: 2)
+		categoryTableView.backgroundColor = .clear
+		categoryTableView.style = .plain
+		categoryTableView.selectionHighlightStyle = .none
+		categoryTableView.allowsEmptySelection = true
+		categoryTableView.allowsMultipleSelection = false
+		categoryTableView.focusRingType = .none
+		categoryTableView.columnAutoresizingStyle = .lastColumnOnlyAutoresizingStyle
+		categoryTableView.addTableColumn(
+			NSTableColumn(identifier: NSUserInterfaceItemIdentifier("SupportedFiles.Category")),
+		)
+		categoryTableView.tableColumns[0].width = 190
+		categoryTableView.setAccessibilityLabel("Supported file categories")
+		categoryTableView.reloadData()
 
 		let scrollView = NSScrollView()
-		scrollView.identifier = NSUserInterfaceItemIdentifier("SupportedFiles.ScrollView")
-		scrollView.borderType = .noBorder
 		scrollView.drawsBackground = false
-		scrollView.hasHorizontalScroller = false
 		scrollView.hasVerticalScroller = true
 		scrollView.autohidesScrollers = true
+		scrollView.borderType = .noBorder
+		scrollView.documentView = categoryTableView
 		scrollView.translatesAutoresizingMaskIntoConstraints = false
-		scrollView.documentView = sectionsStackView
-		contentView.addSubview(scrollView)
 
-		let clipView = scrollView.contentView
+		sidebarView.addSubview(searchField)
+		sidebarView.addSubview(scrollView)
+
 		NSLayoutConstraint.activate([
-			scrollView.topAnchor.constraint(equalTo: contentView.safeAreaLayoutGuide.topAnchor),
-			scrollView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-			scrollView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-			scrollView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
-			sectionsStackView.topAnchor.constraint(equalTo: clipView.topAnchor),
-			sectionsStackView.leadingAnchor.constraint(equalTo: clipView.leadingAnchor),
-			sectionsStackView.trailingAnchor.constraint(equalTo: clipView.trailingAnchor),
-			sectionsStackView.widthAnchor.constraint(equalTo: clipView.widthAnchor),
+			searchField.leadingAnchor.constraint(equalTo: sidebarView.leadingAnchor, constant: 10),
+			searchField.trailingAnchor.constraint(
+				equalTo: sidebarView.trailingAnchor,
+				constant: -10,
+			),
+			searchField.topAnchor.constraint(
+				equalTo: sidebarView.safeAreaLayoutGuide.topAnchor,
+				constant: 10,
+			),
+			scrollView.leadingAnchor.constraint(equalTo: sidebarView.leadingAnchor, constant: 10),
+			scrollView.trailingAnchor.constraint(
+				equalTo: sidebarView.trailingAnchor,
+				constant: -10,
+			),
+			scrollView.topAnchor.constraint(equalTo: searchField.bottomAnchor, constant: 8),
+			scrollView.bottomAnchor.constraint(
+				equalTo: sidebarView.safeAreaLayoutGuide.bottomAnchor,
+				constant: -10,
+			),
 		])
 	}
 
-	private func makeSectionView(_ section: SupportedFileSection) -> NSStackView {
-		let titleLabel = NSTextField(labelWithString: section.title)
-		titleLabel.identifier = NSUserInterfaceItemIdentifier(
-			"SupportedFiles.\(section.title).Title",
-		)
-		titleLabel.font = .boldSystemFont(ofSize: NSFont.systemFontSize)
-		titleLabel.alignment = .center
-		titleLabel.setAccessibilityLabel(section.title)
+	private func setUpDetail() {
+		detailScrollView.drawsBackground = false
+		detailScrollView.hasVerticalScroller = true
+		detailScrollView.autohidesScrollers = true
+		detailScrollView.borderType = .noBorder
+		detailScrollView.translatesAutoresizingMaskIntoConstraints = false
 
-		let detailsLabel = NSTextField(wrappingLabelWithString: section.details)
-		detailsLabel.identifier = NSUserInterfaceItemIdentifier(
-			"SupportedFiles.\(section.title).Details",
-		)
-		detailsLabel.alignment = .center
-		detailsLabel.maximumNumberOfLines = 0
-		detailsLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-		detailsLabel.setAccessibilityLabel(section.details)
+		detailTitleLabel.font = .systemFont(ofSize: 20, weight: .semibold)
+		detailTitleLabel.maximumNumberOfLines = 1
+		detailSummaryLabel.font = .systemFont(ofSize: 12)
+		detailSummaryLabel.textColor = .secondaryLabelColor
+		detailSummaryLabel.maximumNumberOfLines = 0
 
-		let sectionView = NSStackView(views: [titleLabel, detailsLabel])
-		sectionView.orientation = .vertical
-		sectionView.alignment = .centerX
-		sectionView.spacing = 5
-		sectionView.translatesAutoresizingMaskIntoConstraints = false
+		let titleStack = NSStackView(views: [detailTitleLabel, detailSummaryLabel])
+		titleStack.orientation = .vertical
+		titleStack.alignment = .leading
+		titleStack.spacing = 3
+		let header = NSStackView(views: [symbolBadge, titleStack])
+		header.orientation = .horizontal
+		header.alignment = .centerY
+		header.spacing = 14
+		detailSummaryLabel.widthAnchor.constraint(equalTo: titleStack.widthAnchor).isActive = true
+		titleStack.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+
+		formatsHeadingLabel.font = .systemFont(ofSize: 10, weight: .semibold)
+		formatsHeadingLabel.textColor = .secondaryLabelColor
+		formatsValueLabel.font = .monospacedSystemFont(ofSize: 11, weight: .regular)
+		formatsValueLabel.textColor = .secondaryLabelColor
+		formatsValueLabel.maximumNumberOfLines = 0
+		let formatsWell = WellView(content: formatsValueLabel)
+		let formatsContent = NSStackView(views: [formatsHeadingLabel, formatsWell])
+		formatsContent.orientation = .vertical
+		formatsContent.alignment = .leading
+		formatsContent.spacing = 6
+		formatsWell.widthAnchor.constraint(lessThanOrEqualTo: formatsContent.widthAnchor)
+			.isActive = true
+		formatsSection.addArrangedSubview(formatsContent)
+		formatsSection.orientation = .vertical
+		formatsSection.alignment = .leading
+		formatsSection.spacing = 0
+		formatsContent.widthAnchor.constraint(equalTo: formatsSection.widthAnchor).isActive = true
+
+		exampleValueLabel.font = .monospacedSystemFont(ofSize: 11, weight: .regular)
+		exampleValueLabel.textColor = .secondaryLabelColor
+		exampleValueLabel.maximumNumberOfLines = 0
+		let exampleWell = WellView(content: exampleValueLabel)
+
+		let localLabel = NSTextField(
+			labelWithString: "Previews are generated locally. Nothing is uploaded.",
+		)
+		localLabel.font = .systemFont(ofSize: 10)
+		localLabel.textColor = .secondaryLabelColor
+
+		detailContentStack.orientation = .vertical
+		detailContentStack.alignment = .leading
+		detailContentStack.spacing = 10
+		for view in [header, formatsSection, exampleWell, localLabel] {
+			detailContentStack.addArrangedSubview(view)
+		}
+		header.widthAnchor.constraint(equalTo: detailContentStack.widthAnchor).isActive = true
+		formatsSection.widthAnchor.constraint(equalTo: detailContentStack.widthAnchor)
+			.isActive = true
+		exampleWell.widthAnchor.constraint(lessThanOrEqualTo: detailContentStack.widthAnchor)
+			.isActive = true
+		localLabel.widthAnchor.constraint(equalTo: detailContentStack.widthAnchor).isActive = true
+		detailContentStack.setCustomSpacing(18, after: header)
+		detailContentStack.setCustomSpacing(18, after: formatsSection)
+		detailContentStack.setCustomSpacing(18, after: exampleWell)
+		formatsSection.setContentHuggingPriority(.required, for: .vertical)
+
+		let documentView = FlippedDocumentView()
+		documentView.translatesAutoresizingMaskIntoConstraints = false
+		detailContentStack.translatesAutoresizingMaskIntoConstraints = false
+		documentView.addSubview(detailContentStack)
+		detailScrollView.documentView = documentView
+
 		NSLayoutConstraint.activate([
-			titleLabel.widthAnchor.constraint(lessThanOrEqualTo: sectionView.widthAnchor),
-			detailsLabel.widthAnchor.constraint(lessThanOrEqualTo: sectionView.widthAnchor),
+			documentView.leadingAnchor
+				.constraint(equalTo: detailScrollView.contentView.leadingAnchor),
+			documentView.trailingAnchor
+				.constraint(equalTo: detailScrollView.contentView.trailingAnchor),
+			documentView.topAnchor.constraint(equalTo: detailScrollView.contentView.topAnchor),
+			documentView.widthAnchor.constraint(equalTo: detailScrollView.contentView.widthAnchor),
+			detailContentStack.leadingAnchor.constraint(
+				equalTo: documentView.leadingAnchor,
+				constant: 28,
+			),
+			detailContentStack.trailingAnchor.constraint(
+				equalTo: documentView.trailingAnchor,
+				constant: -28,
+			),
+			detailContentStack.topAnchor.constraint(equalTo: documentView.topAnchor, constant: 26),
+			detailContentStack.bottomAnchor.constraint(
+				equalTo: documentView.bottomAnchor,
+				constant: -26,
+			),
 		])
-		return sectionView
+
+		emptyStateLabel.font = .systemFont(ofSize: 12)
+		emptyStateLabel.textColor = .secondaryLabelColor
+		emptyStateLabel.alignment = .center
+		emptyStateLabel.maximumNumberOfLines = 0
+		emptyStateLabel.isHidden = true
+		emptyStateLabel.translatesAutoresizingMaskIntoConstraints = false
+	}
+
+	private func showSection(at index: Int) {
+		guard Self.sections.indices.contains(index) else {
+			showEmptyState()
+			return
+		}
+		selectedSectionIndex = index
+		let section = Self.sections[index]
+		detailTitleLabel.stringValue = section.title
+		detailTitleLabel.setAccessibilityLabel(section.title)
+		detailSummaryLabel.stringValue = section.blurb
+		detailSummaryLabel.setAccessibilityLabel(section.blurb)
+		symbolBadge.update(
+			symbolName: section.symbolName,
+			accessibilityDescription: section.title,
+		)
+		formatsHeadingLabel.stringValue = section.formats.isEmpty ? "" : "Formats"
+		formatsValueLabel.stringValue = section.formats.joined(separator: ", ")
+		formatsValueLabel.setAccessibilityLabel(section.formats.joined(separator: ", "))
+		formatsSection.isHidden = section.formats.isEmpty
+		exampleValueLabel.stringValue = "Example · \(section.example)"
+		exampleValueLabel.setAccessibilityLabel("Example \(section.example)")
+		emptyStateLabel.isHidden = true
+		detailScrollView.isHidden = false
+		detailScrollView.contentView.scroll(to: .zero)
+		detailScrollView.reflectScrolledClipView(detailScrollView.contentView)
+	}
+
+	private func showEmptyState() {
+		selectedSectionIndex = nil
+		emptyStateLabel.isHidden = false
+		detailScrollView.isHidden = true
+	}
+
+	@objc
+	private func searchChanged(_ sender: NSSearchField) {
+		let query = sender.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+			.localizedLowercase
+		if query.isEmpty {
+			visibleSectionIndices = Array(Self.sections.indices)
+		} else {
+			visibleSectionIndices = Self.sections.indices.filter { index in
+				let section = Self.sections[index]
+				let haystack = [
+					section.title,
+					section.details,
+					section.blurb,
+					section.example,
+					section.formats.joined(separator: " "),
+				].joined(separator: " ").localizedLowercase
+				return haystack.contains(query)
+			}
+		}
+		categoryTableView.reloadData()
+
+		let targetIndex: Int? = if
+			let selectedSectionIndex,
+			visibleSectionIndices.contains(selectedSectionIndex)
+		{
+			selectedSectionIndex
+		} else {
+			visibleSectionIndices.first
+		}
+
+		if let targetIndex, let row = visibleSectionIndices.firstIndex(of: targetIndex) {
+			categoryTableView.selectRowIndexes(
+				IndexSet(integer: row),
+				byExtendingSelection: false,
+			)
+			showSection(at: targetIndex)
+		} else {
+			categoryTableView.deselectAll(nil)
+			showEmptyState()
+		}
+	}
+}
+
+extension SupportedFilesWC: NSTableViewDataSource, NSTableViewDelegate {
+	func numberOfRows(in _: NSTableView) -> Int {
+		visibleSectionIndices.count
+	}
+
+	func tableView(
+		_ tableView: NSTableView,
+		viewFor _: NSTableColumn?,
+		row: Int,
+	) -> NSView? {
+		let identifier = NSUserInterfaceItemIdentifier("SupportedFiles.Category.Cell")
+		let cell = tableView.makeView(withIdentifier: identifier, owner: self)
+			as? SupportedFilesSidebarCell ?? SupportedFilesSidebarCell()
+		cell.identifier = identifier
+		cell.configure(section: Self.sections[visibleSectionIndices[row]])
+		return cell
+	}
+
+	func tableView(_: NSTableView, rowViewForRow _: Int) -> NSTableRowView? {
+		SidebarSelectionRowView(frame: .zero)
+	}
+
+	func tableViewSelectionDidChange(_: Notification) {
+		guard visibleSectionIndices.indices.contains(categoryTableView.selectedRow) else {
+			return
+		}
+		showSection(at: visibleSectionIndices[categoryTableView.selectedRow])
+	}
+}
+
+private final class SupportedFilesSidebarCell: NSTableCellView {
+	private let iconView = NSImageView()
+	private let titleLabel = NSTextField(labelWithString: "")
+
+	init() {
+		super.init(frame: .zero)
+		iconView.translatesAutoresizingMaskIntoConstraints = false
+		iconView.imageScaling = .scaleProportionallyDown
+		iconView.contentTintColor = .secondaryLabelColor
+		titleLabel.font = .systemFont(ofSize: NSFont.systemFontSize)
+		titleLabel.lineBreakMode = .byTruncatingTail
+		titleLabel.translatesAutoresizingMaskIntoConstraints = false
+		addSubview(iconView)
+		addSubview(titleLabel)
+		imageView = iconView
+		textField = titleLabel
+		NSLayoutConstraint.activate([
+			iconView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8),
+			iconView.centerYAnchor.constraint(equalTo: centerYAnchor),
+			iconView.widthAnchor.constraint(equalToConstant: 15),
+			iconView.heightAnchor.constraint(equalToConstant: 15),
+			titleLabel.leadingAnchor.constraint(equalTo: iconView.trailingAnchor, constant: 8),
+			titleLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -6),
+			titleLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
+		])
+	}
+
+	@available(*, unavailable)
+	required init?(coder _: NSCoder) {
+		fatalError("init(coder:) has not been implemented")
+	}
+
+	func configure(section: SupportedFileSection) {
+		titleLabel.stringValue = section.title
+		iconView.image = NSImage(
+			systemSymbolName: section.symbolName,
+			accessibilityDescription: section.title,
+		) ?? NSImage(systemSymbolName: "doc", accessibilityDescription: section.title)
+		setAccessibilityLabel(section.title)
+	}
+
+	override var backgroundStyle: NSView.BackgroundStyle {
+		didSet {
+			let isSelected = backgroundStyle == .emphasized
+			titleLabel.textColor = isSelected ? .alternateSelectedControlTextColor : .labelColor
+			iconView.contentTintColor = isSelected
+				? .alternateSelectedControlTextColor
+				: .secondaryLabelColor
+		}
+	}
+}
+
+private final class SymbolBadgeView: NSView {
+	private let iconView = NSImageView()
+
+	init() {
+		super.init(frame: .zero)
+		translatesAutoresizingMaskIntoConstraints = false
+		widthAnchor.constraint(equalToConstant: 44).isActive = true
+		heightAnchor.constraint(equalToConstant: 44).isActive = true
+		iconView.imageScaling = .scaleProportionallyDown
+		iconView.contentTintColor = .controlAccentColor
+		iconView.translatesAutoresizingMaskIntoConstraints = false
+		addSubview(iconView)
+		NSLayoutConstraint.activate([
+			iconView.centerXAnchor.constraint(equalTo: centerXAnchor),
+			iconView.centerYAnchor.constraint(equalTo: centerYAnchor),
+			iconView.widthAnchor.constraint(equalToConstant: 22),
+			iconView.heightAnchor.constraint(equalToConstant: 22),
+		])
+	}
+
+	@available(*, unavailable)
+	required init?(coder _: NSCoder) {
+		fatalError("init(coder:) has not been implemented")
+	}
+
+	func update(symbolName: String, accessibilityDescription: String) {
+		iconView.image = NSImage(
+			systemSymbolName: symbolName,
+			accessibilityDescription: accessibilityDescription,
+		) ?? NSImage(systemSymbolName: "doc", accessibilityDescription: accessibilityDescription)
+		setAccessibilityLabel(accessibilityDescription)
+	}
+
+	override func viewDidChangeEffectiveAppearance() {
+		super.viewDidChangeEffectiveAppearance()
+		needsDisplay = true
+	}
+
+	override func draw(_: NSRect) {
+		let path = NSBezierPath(
+			roundedRect: bounds.insetBy(dx: 0.5, dy: 0.5),
+			xRadius: 11,
+			yRadius: 11,
+		)
+		NSColor.controlAccentColor.withAlphaComponent(0.12).setFill()
+		path.fill()
+		NSColor.controlAccentColor.withAlphaComponent(0.16).setStroke()
+		path.lineWidth = 1
+		path.stroke()
+	}
+}
+
+private final class WellView: NSView {
+	init(content: NSView) {
+		super.init(frame: .zero)
+		translatesAutoresizingMaskIntoConstraints = false
+		content.translatesAutoresizingMaskIntoConstraints = false
+		addSubview(content)
+		NSLayoutConstraint.activate([
+			content.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10),
+			content.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -10),
+			content.topAnchor.constraint(equalTo: topAnchor, constant: 8),
+			content.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -8),
+		])
+	}
+
+	@available(*, unavailable)
+	required init?(coder _: NSCoder) {
+		fatalError("init(coder:) has not been implemented")
+	}
+
+	override func viewDidChangeEffectiveAppearance() {
+		super.viewDidChangeEffectiveAppearance()
+		needsDisplay = true
+	}
+
+	override func draw(_: NSRect) {
+		let path = NSBezierPath(
+			roundedRect: bounds,
+			xRadius: 8,
+			yRadius: 8,
+		)
+		NSColor.textBackgroundColor.withAlphaComponent(0.5).setFill()
+		path.fill()
+	}
+}
+
+private final class FlippedDocumentView: NSView {
+	override var isFlipped: Bool {
+		true
 	}
 }
