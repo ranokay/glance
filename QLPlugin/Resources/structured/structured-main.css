@@ -1,7 +1,7 @@
 /* Structured data (JSON, property lists, XML) */
 
-/* Token colors mirror shared-chroma.css (Xcode's Default theme) so structured
-   values read like the code previews. */
+/* Token colors follow shared-chroma.css (Xcode's Default theme). Secondary
+   text is lightened for the preview's smaller size. */
 .structured-preview {
 	--structured-punct: #5d6c79;
 	--structured-key: #1c464a;
@@ -23,13 +23,13 @@
 
 @media (prefers-color-scheme: dark) {
 	.structured-preview {
-		--structured-punct: #6c7986;
+		--structured-punct: #8b98a5;
 		--structured-key: #9ef1dd;
-		--structured-index: #6c7986;
+		--structured-index: #8b98a5;
 		--structured-string: #fc6a5d;
 		--structured-number: #d0bf69;
 		--structured-boolean: #fc5fa3;
-		--structured-null: #6c7986;
+		--structured-null: #8b98a5;
 		--structured-date: #67b7a4;
 		--structured-data: #bf8555;
 		--structured-tag: #9ef1dd;
