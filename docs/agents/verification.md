@@ -46,6 +46,14 @@ change dependencies or tooling refresh the shared cache, and
 `gh workflow run verify.yaml --ref develop` seeds it manually. Release builds
 use the local store only, never a remote cache.
 
+The action caches the Cargo target tree, so `mbx` object-cache counters can
+report zero hits while Cargo still reuses the restored artifacts. Judge the
+cache by the step time, not by those counters.
+
+`test:rust` builds for `aarch64-apple-darwin` with
+`MACOSX_DEPLOYMENT_TARGET=26.0`, matching `PreviewCore/build-xcode.sh`, so the
+Xcode Debug build reuses its dependency artifacts.
+
 ## Local Quick Look registrations
 
 Every local build registers its `QLPlugin.appex` with `pluginkit`, so System
