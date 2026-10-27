@@ -1,17 +1,19 @@
 /* Structured data (JSON, property lists, XML) */
 
+/* Token colors follow shared-chroma.css (Xcode's Default theme). Secondary
+   text is lightened for the preview's smaller size. */
 .structured-preview {
-	--structured-punct: #6a737d;
-	--structured-key: #005cc5;
-	--structured-index: #6a737d;
-	--structured-string: #032f62;
-	--structured-number: #b31d28;
-	--structured-boolean: #6f42c1;
-	--structured-null: #6a737d;
-	--structured-date: #22863a;
-	--structured-data: #b7791f;
-	--structured-tag: #22863a;
-	--structured-attribute: #6f42c1;
+	--structured-punct: #5d6c79;
+	--structured-key: #1c464a;
+	--structured-index: #5d6c79;
+	--structured-string: #c41a16;
+	--structured-number: #1c00cf;
+	--structured-boolean: #9b2393;
+	--structured-null: #5d6c79;
+	--structured-date: #326d74;
+	--structured-data: #815f03;
+	--structured-tag: #1c464a;
+	--structured-attribute: #815f03;
 	--structured-notice-background: #fff8c5;
 	--structured-notice-border: #d4a72c;
 	font-family: var(--font-family-monospace);
@@ -21,17 +23,17 @@
 
 @media (prefers-color-scheme: dark) {
 	.structured-preview {
-		--structured-punct: #9b9b9b;
-		--structured-key: #79b8ff;
-		--structured-index: #9b9b9b;
-		--structured-string: #9ecbff;
-		--structured-number: #ffab70;
-		--structured-boolean: #d2a8ff;
-		--structured-null: #9b9b9b;
-		--structured-date: #85e89d;
-		--structured-data: #ffd33d;
-		--structured-tag: #85e89d;
-		--structured-attribute: #d2a8ff;
+		--structured-punct: #8b98a5;
+		--structured-key: #9ef1dd;
+		--structured-index: #8b98a5;
+		--structured-string: #fc6a5d;
+		--structured-number: #d0bf69;
+		--structured-boolean: #fc5fa3;
+		--structured-null: #8b98a5;
+		--structured-date: #67b7a4;
+		--structured-data: #bf8555;
+		--structured-tag: #9ef1dd;
+		--structured-attribute: #bf8555;
 		--structured-notice-background: #3a2d00;
 		--structured-notice-border: #9e6a03;
 	}
@@ -77,10 +79,20 @@
 	color: var(--structured-punct);
 }
 
+/* Copyable indent: zero-width on screen, but its spaces survive a copy. */
+.structured-preview .structured-indent {
+	font-size: 0;
+	white-space: pre;
+}
+
 .structured-preview .structured-meta {
 	margin-left: 0.5em;
 	color: var(--structured-punct);
 	font-style: italic;
+	/* The count is an affordance, not content: keep it out of copied text. */
+	pointer-events: none;
+	-webkit-user-select: none;
+	user-select: none;
 }
 
 .structured-preview .structured-string {
