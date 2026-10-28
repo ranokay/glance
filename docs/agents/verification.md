@@ -9,7 +9,7 @@ confirm only what automation cannot.
   Version/build/platform/pin strings live in `scripts/check-release-metadata.sh`,
   never in unit tests.
 - Script regressions (`mise run test:scripts`): exercise launch receipts,
-  timeouts, capture uploads, and failures through isolated command stubs.
+  timeouts, and failures through isolated command stubs.
 - Test registration (`mise run test:registration`): every Swift source under
   `GlanceTests`, excluding preview fixtures, must resolve to the actual macOS
   Sources phase of `GlanceTests`. The check also runs in hk; synthetic project
@@ -69,12 +69,12 @@ One capture per ticket, not per commit.
 
 The agent fulfills this end to end: a capture produced through desktop
 automation (cua-driver screenshot saved under `build/verification/`) counts as
-the capture, and the agent attaches it to the ticket itself with
-`scripts/attach-capture.sh <issue> <image>` — a ticket that names a capture is
-not done until the image is on the ticket. Only where a ticket explicitly says
-the capture is human-gated (e.g. asset changes) does the step wait for a human.
-The script validates the issue before uploading and links the image at its
-immutable commit. Capture files must contain only the intended preview.
+the capture, and the agent uploads it through the GitHub web UI — a ticket that
+names a capture is not done until the image is on the ticket. Only where a
+ticket explicitly says the capture is human-gated (e.g. asset changes) does the
+step wait for a human. Never commit captures or create a repository branch for
+them; GitHub issue attachments are the only home for evidence images. Capture
+files must contain only the intended preview.
 Record an explicit user waiver on the ticket instead of requesting the same
 capture again. If desktop capture is unavailable, record the missing evidence
 and continue independent work; local file existence alone is not an attachment.

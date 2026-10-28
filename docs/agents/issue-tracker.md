@@ -33,7 +33,7 @@ as part of the merge step:
 - **Merge**: `gh pr merge <n> --repo ranokay/glance --squash` (human-authorized).
 - **Close fully resolved tickets after merge**: `gh issue close <issue> --repo ranokay/glance --comment "Merged via #<pr>."`. Check the ticket's full acceptance criteria first. For a partial implementation or outstanding required evidence, keep it open and record what remains.
 - **Record judgment-call dispositions on the ticket**: when a review finding is resolved by decision rather than code, comment what was decided, why, and the evidence. An open issue that silently disagrees with its merged PR dangles for everyone who reads it later.
-- **Attach captures with the script**: `sh scripts/attach-capture.sh <issue> <image> [caption]`.
+- **Attach captures**: upload the image through the GitHub web UI. Never commit captures to a repository branch.
 
 ## When a skill says "publish to the issue tracker"
 
