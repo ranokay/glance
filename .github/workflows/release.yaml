@@ -120,13 +120,12 @@ jobs:
           perl -0pi -e 's/^\n+//; s/\n+\z/\n/' dist/release-notes.md
           test -s dist/release-notes.md
 
-          PREVIOUS_TAG="$(gh release list \
+          RELEASE_TAGS="$(gh release list \
             --repo "$GITHUB_REPOSITORY" \
             --limit 30 \
             --json tagName \
-            --jq '.[].tagName' \
-            | grep -vx "$TAG_NAME" \
-            | head -n 1 || true)"
+            --jq '.[].tagName')"
+          PREVIOUS_TAG="$(printf '%s\n' "$RELEASE_TAGS" | grep -vx "$TAG_NAME" | head -n 1 || true)"
           if [ -n "$PREVIOUS_TAG" ]; then
             printf '\n**Full Changelog**: https://github.com/%s/compare/%s...%s\n' \
               "$GITHUB_REPOSITORY" "$PREVIOUS_TAG" "$TAG_NAME" >> dist/release-notes.md
