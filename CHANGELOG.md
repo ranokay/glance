@@ -2,102 +2,105 @@
 
 Append-only. Newest entry first.
 
-# Unreleased
+# Glance 1.9.0
 
+Glance 1.9.0 adds SQLite, structured-data, and spreadsheet previews, opens
+archive entries in place, rebuilds Settings and Supported Files around a
+sidebar, and shows release notes before installing an update.
+
+## New previews
+
+- SQLite databases: `.sqlite`, `.sqlite3`, and `.db` files list their tables and show 50-row pages
+  with declared column types, distinct `NULL` and empty values, and BLOB sizes instead of inline
+  bytes. Tables, columns, cells, and rendered output are capped with explicit notices. Previews open
+  immutable when no `-wal` sidecar exists and otherwise read a temporary copy, so the database file
+  and its directory are never modified. Virtual generated columns are omitted, individual cells
+  above the per-value safety limit are reported in place while the table list stays usable, and
+  encrypted, truncated, or non-SQLite files show a clear message.
+- Structured data: `.json`, `.plist` (XML and binary), and `.xml` render as collapsible trees with
+  distinct string, number, boolean, null, date, data, key, and array-index presentation. Object keys
+  keep their authored order. Malformed input falls back to syntax-highlighted text, and input, node,
+  depth, and output caps show an explicit truncation notice instead of failing. XML entity
+  declarations are never resolved. The tree uses the same Xcode-derived palette as the code
+  previews, separates labels from values with a space, and keeps key-count hints out of copied text
+  while preserving indentation.
+- Spreadsheets: values-only `.xlsx` previews with every worksheet, dates, booleans, cached formula
+  values, and column letters. Styles, charts, `.xls`, and `.numbers` are out of scope.
+
+## Preview improvements
+
+- Archive previews now open files in place: double-click an entry in a ZIP, TAR, TAR.GZ, 7z, or RAR
+  tree. Extracted entries are temporary, capped at 25 MB, and deleted on Back; nested archives are
+  allowed to depth 3.
+- Markdown, source code, and Jupyter previews re-render when the file changes on disk, including
+  atomic editor saves, and keep their scroll position. Deleting the file leaves the last good
+  preview with a notice instead of an error page.
+- Markdown previews render inline and display TeX math with the bundled KaTeX, fully offline.
+  Dollars inside code spans and fences stay literal, and invalid TeX shows its escaped source
+  instead of failing the preview.
+- Markdown diagrams render with Pele 1.10.0 instead of Mermaid.js, shrinking the bundled runtime by
+  about 2.87 MB while keeping offline rendering and the existing Mermaid fence syntax.
+- 7z previews bound decoded metadata, allocation-driving counts, and decoder memory before parsing
+  or extraction, while retaining compressed-header and supported-codec compatibility. Validated
+  metadata is reused from a snapshot.
+- Extracting a later file from a solid 7z archive consumes preceding entries correctly instead of
+  returning their bytes as the selected file.
+- Spreadsheet previews apply the expanded-byte budget to every ZIP part, including styles and
+  relationships, and check ZIP metadata limits first.
+- EPUB previews render books whose package metadata omits `dc:title` and whose chapters use a bare
+  HTML doctype, instead of falling back to the generic file icon.
+- Web previews accept the first click and give the page keyboard focus on appearance, so disclosure
+  controls, select-all, and copy respond immediately instead of only focusing the panel. Rapidly
+  switching files no longer shows a spurious “Glance app is not running” page; previews always
+  render with default appearance settings when the app is unavailable.
+- Dismissing Quick Look cancels an unfinished preview instead of installing it and restarting its
+  file watcher after the window closes.
+- Open With keeps distinct applications separate on case-sensitive volumes while recognizing
+  filesystem and symlink aliases.
+
+## Settings, menu bar, and updates
+
+- Glance is now a true menu-bar-only app: no Dock icon, no main window, and no “Hide Dock icon”
+  preference. Settings and Supported Files remain available from the status menu.
+- Settings and Supported Files use a sidebar layout with search, an integrated About page,
+  close-only window controls, and a Dock/Cmd-Tab presence that appears only while one of their
+  windows is open. Update actions and legal links are owned by their respective pages instead of
+  being repeated.
 - Updates now show a window with the release notes and install only after the user chooses Install,
   instead of downloading and installing silently.
-- Settings and Supported Files use a sidebar layout with search, an integrated
-  About page, close-only window controls, and a Dock/Cmd-Tab presence that
-  appears only while one of their windows is open. Update actions and legal
-  links are owned by their respective pages instead of being repeated.
-- EPUB previews render books whose package metadata omits `dc:title` and whose chapters use a
-  bare HTML doctype, instead of falling back to the generic file icon.
-- 7z previews bound decoded metadata, allocation-driving counts, and decoder
-  memory before parsing or extraction, while retaining compressed-header and
-  supported-codec compatibility. Validated metadata is reused from a snapshot.
-- Settings scroll vertically at the minimum window size so approval and update
-  controls remain reachable when their sections expand.
-- Removed obsolete per-preview statistics writes and unused screenshot assets
-  from the retired main window. Existing stored preferences remain untouched.
-- Verification now checks actual Xcode test-target membership and covers real
-  cross-process bookmark transfer and minimum-size Settings layout.
+- Settings scroll vertically at the minimum window size so approval and update controls remain
+  reachable when their sections expand.
+
+## Verification and tooling
+
 - Verification now proves the app actually launches: a launch gate
-  (`scripts/check-app-launch.sh`, wired into `verify:app`) launches the built
-  Release app as an isolated instance and requires a fresh receipt confirming
-  its live delegate, menu, and registered status item after one second.
-  `AppLaunchTests` also verifies the real status item inside the test host.
-  Missing permissions and menu-bar overflow cannot silently skip the check.
+  (`scripts/check-app-launch.sh`, wired into `verify:app`) launches the built Release app as an
+  isolated instance and requires a fresh receipt confirming its live delegate, menu, and registered
+  status item after one second. `AppLaunchTests` also verifies the real status item inside the test
+  host. Missing permissions and menu-bar overflow cannot silently skip the check.
+- Verification now checks actual Xcode test-target membership and covers real cross-process
+  bookmark transfer and minimum-size Settings layout.
 - Verification captures can now be attached to tickets by the agent itself:
-  `scripts/attach-capture.sh <issue> <image>` commits the capture to the
-  `verification-captures` branch and posts it on the ticket, and the
-  manual-capture convention in `docs/agents/verification.md` accepts
-  agent-produced captures. Uploads accept normal screenshot sizes without
-  exceeding command-line limits and link to immutable image commits.
-- Dismissing Quick Look cancels an unfinished preview instead of installing it
-  and restarting its file watcher after the window closes.
-- Spreadsheet previews apply the expanded-byte budget to every ZIP part,
-  including styles and relationships, and check ZIP metadata limits first.
-- Open With keeps distinct applications separate on case-sensitive volumes
-  while recognizing filesystem and symlink aliases.
-- Extracting a later file from a solid 7z archive consumes preceding entries
-  correctly instead of returning their bytes as the selected file.
+  `scripts/attach-capture.sh <issue> <image>` commits the capture to the `verification-captures`
+  branch and posts it on the ticket, and the manual-capture convention in
+  `docs/agents/verification.md` accepts agent-produced captures. Uploads accept normal screenshot
+  sizes without exceeding command-line limits and link to immutable image commits.
 - Test runs retain separate result bundles so later runs do not erase evidence.
-- Quick Look previews for SQLite databases: `.sqlite`, `.sqlite3`, and `.db` files list their tables
-  and show 50-row pages with declared column types, distinct `NULL` and empty values, and BLOB sizes
-  instead of inline bytes. Tables, columns, cells, and rendered output are capped with explicit
-  notices. Previews open immutable when no `-wal` sidecar exists and otherwise read a temporary
-  copy, so the database file and its directory are never modified. Virtual generated columns are
-  omitted, individual cells above the per-value safety limit are reported in place while the table
-  list stays usable, and encrypted, truncated, or non-SQLite files show a clear message.
+- Lint and hooks now run through hk, with jactionlint checking GitHub Actions workflows. The release
+  workflow drops its caches and pins every action to a commit SHA.
+- CI no longer runs the 30-minute exploratory Quick Look corpus on every pull request; the gating
+  corpus sweep remains in the unit suite. Workflow files and the SwiftLint configuration now use the
+  `.yaml` extension, and actions, toolchains, and Rust dependencies were refreshed.
+- Cargo builds now share compiler outputs through Mr Boxington (`mbx`) locally and in CI. A clean
+  release build of the Rust core dropped from 60 s to 4.6 s with a warm cache, and a fresh worktree
+  reuses the same cache instead of recompiling every dependency.
 
-- Quick Look previews for structured data: `.json`, `.plist` (XML and binary), and `.xml` now
-  render as collapsible trees with distinct string, number, boolean, null, date, data, key, and
-  array-index presentation. Object keys keep their authored order. Malformed input falls back to
-  syntax-highlighted text, and input, node, depth, and output caps show an explicit truncation
-  notice instead of failing. XML entity declarations are never resolved. The tree uses the same
-  Xcode-derived palette as the code previews, separates labels from values with a space, and
-  keeps key-count hints out of copied text while preserving indentation.
+## Removals
 
-- Quick Look web previews accept the first click and give the page keyboard focus on
-  appearance, so disclosure controls, select-all, and copy respond immediately instead of
-  only focusing the panel. Rapidly switching files no longer shows a spurious “Glance app is
-  not running” page; previews always render with default appearance settings when the app is
-  unavailable.
-
-- Quick Look previews of Markdown, source code, and Jupyter notebooks now
-  re-render when the file changes on disk, including atomic editor saves, and
-  keep their scroll position. Deleting the file leaves the last good preview
-  with a notice instead of an error page.
-
-- Markdown previews now render inline and display TeX math with the bundled
-  KaTeX, fully offline. Dollars inside code spans and fences stay literal, and
-  invalid TeX shows its escaped source instead of failing the preview.
-- Glance is now a true menu-bar-only app: no Dock icon, no main window, and no
-  “Hide Dock icon” preference. Settings and Supported Files remain available
-  from the status menu.
-- Added values-only `.xlsx` previews with every worksheet, dates, booleans,
-  cached formula values, and column letters. Styles, charts, `.xls`, and
-  `.numbers` are out of scope.
-- Archive previews now open files in place: double-click an entry in a ZIP,
-  TAR, TAR.GZ, 7z, or RAR tree. Extracted entries are temporary, capped at
-  25 MB, and deleted on Back; nested archives are allowed to depth 3.
-- Markdown diagrams now render with Pele 1.9.0 instead of Mermaid.js, shrinking
-  the bundled runtime by about 2.87 MB while keeping offline rendering and the
-  existing Mermaid fence syntax.
-- Lint and hooks now run through hk, with jactionlint checking GitHub Actions
-  workflows. The release workflow drops its caches and pins every action to a
-  commit SHA.
-- CI no longer runs the 30-minute exploratory Quick Look corpus on every pull
-  request; the gating corpus sweep remains in the unit suite. Workflow files and
-  the SwiftLint configuration now use the `.yaml` extension, and actions,
-  toolchains, and Rust dependencies were refreshed.
-- Removed the obsolete macOS UI-test target (and its Automation permission
-  prompt), main storyboard, main window controller, and unused icon/XIB code.
-  The app menu is built in code.
-- Cargo builds now share compiler outputs through Mr Boxington (`mbx`) locally
-  and in CI. A clean release build of the Rust core dropped from 60 s to 4.6 s
-  with a warm cache, and a fresh worktree reuses the same cache instead of
-  recompiling every dependency.
+- Removed the obsolete macOS UI-test target (and its Automation permission prompt), main storyboard,
+  main window controller, and unused icon/XIB code. The app menu is built in code.
+- Removed obsolete per-preview statistics writes and unused screenshot assets from the retired main
+  window. Existing stored preferences remain untouched.
 
 # Glance 1.8.2
 
@@ -122,8 +125,6 @@ keeps overflow information honest.
   after crates.io yanked the pinned 8.6.0); CI restores the pinned-mise tool
   cache before installing tools.
 
-This release remains Apple-silicon-only for macOS 26 or later. The app is ad hoc signed; its DMG is not Developer ID-signed or notarized, so verify the published SHA-256 checksum before installation.
-
 # Glance 1.8.1
 
 Glance 1.8.1 fixes the in-app updater's feed URL so those installs can discover
@@ -134,8 +135,6 @@ future releases automatically.
   always serves the current release's signed feed.
 - The update pipeline itself is unchanged from 1.8.0: Sparkle checks, verifies
   EdDSA signatures, downloads, and installs inside the app.
-
-This release remains Apple-silicon-only for macOS 26 or later. The app is ad hoc signed; its DMG is not Developer ID-signed or notarized, so verify the published SHA-256 checksum before installation.
 
 # Glance 1.8.0
 
@@ -153,8 +152,6 @@ browser.
 - The 1.7.0 check-only path is removed along with its Notification Center
   alerts, release-page redirect button, and GitHub Releases API polling.
 
-This release remains Apple-silicon-only for macOS 26 or later. The app is ad hoc signed; its DMG is not Developer ID-signed or notarized, so verify the published SHA-256 checksum before installation.
-
 # Glance 1.7.0
 
 Glance 1.7.0 adds software-update checks based on GitHub Releases.
@@ -166,8 +163,6 @@ Glance 1.7.0 adds software-update checks based on GitHub Releases.
 - Unparseable version data and failed checks stay silent and retry later instead of
   notifying.
 
-This release remains Apple-silicon-only for macOS 26 or later. The app is ad hoc signed; its DMG is not Developer ID-signed or notarized, so verify the published SHA-256 checksum before installation.
-
 # Glance 1.6.2
 
 Glance 1.6.2 adds new preview kinds, appearance preferences, and reliability fixes.
@@ -176,8 +171,6 @@ Glance 1.6.2 adds new preview kinds, appearance preferences, and reliability fix
 - Preview appearance preferences for font family, font size, and line wrapping, plus a Start at Login option.
 - Fixes: FLAC audio stops when Quick Look closes, the app no longer quits silently in the background while previews need it running, archives reject oversized entries in every format, and folder navigation keeps cursor continuity.
 - Shared Swift code now lives in the GlanceKit framework, and rendering, parsing, and directory enumeration run off the main thread with cancelled work discarded.
-
-This release remains Apple-silicon-only for macOS 26 or later. The app is ad hoc signed; its DMG is not Developer ID-signed or notarized, so verify the published SHA-256 checksum before installation.
 
 # Glance 1.6.1
 
@@ -194,9 +187,6 @@ Glance 1.6.1 improves folder browsing, preview transitions, media playback, and 
 - Preview chrome now has one contextual utility bar, compact single-line archive statistics, and
   appearance-aware surfaces that respect Finder's rounded clipping.
 
-This release remains Apple-silicon-only for macOS 26 or later. The app is ad hoc signed; its DMG
-is not Developer ID-signed or notarized, so verify the published SHA-256 checksum before installation.
-
 # Glance 1.6.0
 
 Glance 1.6.0 replaces its HTML renderer and untrusted file-format parsers with a bounded Rust
@@ -210,6 +200,3 @@ preview core while preserving the native Swift/AppKit Quick Look experience.
   thread and discard cancelled results.
 - The Go runtime and the SwiftCSV, ZIPFoundation, SWCompression, and BitByteData packages have been
   removed from the shipping app.
-
-This release remains Apple-silicon-only for macOS 26 or later. Its DMG is unsigned and
-unnotarized; verify the published SHA-256 checksum before installation.

@@ -21,19 +21,25 @@ same commit as any intentional bump, then run it.
    `chamburr/glance` and is never written to at all; `develop` is the only
    working branch. Verify the new release's appcast asset looks sane.
 
-## Version bump (1.6.2 build 22 → next)
+## Version bump (1.9.0 build 27 → next)
 
 1. `Glance.xcodeproj/project.pbxproj`: `MARKETING_VERSION` (×4: app + plugin ×
    Debug/Release) and `CURRENT_PROJECT_VERSION` (×4, same scopes). The app
    `Info.plist` follows via `$(MARKETING_VERSION)` / `$(CURRENT_PROJECT_VERSION)`.
 2. `README.md`: hero line and requirements line (`Version X.Y.Z (build N)`).
 3. `AppStore/Listing/Description.txt`: version line.
-4. `CHANGELOG.md`: new entry on top, append-only, never rewrite history.
+4. `CHANGELOG.md`: new entry on top, append-only, never rewrite history. Shape
+   it like the published notes: `# Glance X.Y.Z`, a one-sentence intro, then
+   `## New previews`, `## Preview improvements`, `## Settings, menu bar, and
+   updates`, `## Verification and tooling`, and `## Removals` as they apply.
+   Do not add a signing, notarization, or platform footer — that caveat lives
+   in `README.md`.
 5. `scripts/check-release-metadata.sh`: version/build literals and occurrence
    counts; run the script.
 6. Tag `vX.Y.Z` and push the tag — `release.yaml` extracts that version's
-   section from `CHANGELOG.md`, builds the DMG, and creates the GitHub
-   release with the section as its notes.
+   section from `CHANGELOG.md`, appends a `**Full Changelog**` compare link to
+   the previous release, builds the DMG, and creates the GitHub release with
+   the result as its notes.
 
 ## Type add (new extension or new preview kind)
 
