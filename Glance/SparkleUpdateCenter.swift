@@ -138,6 +138,26 @@ extension SparkleUpdateCenter: SPUUpdaterDelegate, SPUStandardUserDriverDelegate
 		setStatus("You’re up to date.", installReady: false)
 	}
 
+	/// Scheduled update windows are ordered behind other apps because Glance
+	/// has no Dock presence. Bring the release-notes window forward; manual
+	/// checks already activate the app.
+	nonisolated var supportsGentleScheduledUpdateReminders: Bool {
+		true
+	}
+
+	nonisolated func standardUserDriverWillHandleShowingUpdate(
+		_ handleShowingUpdate: Bool,
+		forUpdate _: SUAppcastItem,
+		state: SPUUserUpdateState,
+	) {
+		MainActor.assumeIsolated {
+			guard handleShowingUpdate, !state.userInitiated, !NSApp.isActive else {
+				return
+			}
+			NSApp.activate()
+		}
+	}
+
 	func updater(_: SPUUpdater, willDownloadUpdate _: SUAppcastItem, with _: NSMutableURLRequest) {
 		setStatus("Downloading update…", installReady: false)
 	}

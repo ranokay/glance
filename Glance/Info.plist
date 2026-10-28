@@ -52,7 +52,8 @@
 	<key>SUEnableInstallerLauncherService</key>
 	<true/>
 	<key>SUAutomaticallyUpdate</key>
-	<true/>	<key>SUFeedURL</key>
+	<false/>
+	<key>SUFeedURL</key>
 	<string>https://github.com/ranokay/glance/releases/latest/download/appcast.xml</string>
 	<key>SUPublicEDKey</key>
 	<string>MmsAc4O1AWyHC3H2PBwaRfC3A1o6+WNg2nwfRAgJeNk=</string>
