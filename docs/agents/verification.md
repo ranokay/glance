@@ -8,6 +8,9 @@ confirm only what automation cannot.
 - Unit tests (`mise run test:xcode`, GlanceTests target): behavior asserts only.
   Version/build/platform/pin strings live in `scripts/check-release-metadata.sh`,
   never in unit tests.
+- Rust tests (`mise run test:rust`): parser unit tests, plus property checks that
+  arbitrary TSV, Markdown, and structured input stays escaped, bounded, and
+  panic-free.
 - Script regressions (`mise run test:scripts`): exercise launch receipts,
   timeouts, and failures through isolated command stubs.
 - Test registration (`mise run test:registration`): every Swift source under

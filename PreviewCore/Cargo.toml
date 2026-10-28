@@ -43,6 +43,8 @@ zip = { version = "=9.1.1", default-features = false, features = ["deflate-flate
 [dev-dependencies]
 # Generate codec compatibility controls without enabling encoders in shipped builds.
 sevenz-rust2 = { version = "=0.24.1", default-features = false, features = ["compress", "bzip2", "ppmd"] }
+# Property checks for parser and escaping invariants; never linked into the shipped static library.
+proptest = "=1.12.0"
 
 [profile.release]
 codegen-units = 1

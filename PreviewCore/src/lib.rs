@@ -6,6 +6,8 @@ mod highlight;
 mod markdown;
 mod model;
 mod notebook;
+#[cfg(test)]
+mod properties;
 mod rar;
 mod sevenzip;
 mod sqlite;
