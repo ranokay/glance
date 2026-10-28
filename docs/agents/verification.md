@@ -87,8 +87,8 @@ No new screenshot or automation dependencies without a ticket.
 
 ## Human gates
 
-Canonical list lives in `STATE.md` and is enforced by blocking checklist, not
-by convention alone: destructive (reset/uninstall/shared-DerivedData clean),
+Canonical list, enforced by blocking checklist, not by convention alone:
+destructive (reset/uninstall/shared-DerivedData clean),
 publishing (releases, App Store), credentials (Apple ID, notarization,
 keychain, VM secrets), and signing/entitlement/deployment-target changes.
 Agents act alone on code, verify, and issue edits; anything on the gate list

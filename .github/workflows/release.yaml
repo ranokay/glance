@@ -108,6 +108,7 @@ jobs:
       - name: Extract current version release notes
         env:
           TAG_NAME: ${{ github.ref_name }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
 
@@ -116,7 +117,19 @@ jobs:
             /^# Glance / { if (found) exit; if ($0 == "# Glance " version) found=1; next }
             found { print }
           ' CHANGELOG.md > dist/release-notes.md
+          perl -0pi -e 's/^\n+//; s/\n+\z/\n/' dist/release-notes.md
           test -s dist/release-notes.md
+
+          RELEASE_TAGS="$(gh release list \
+            --repo "$GITHUB_REPOSITORY" \
+            --limit 30 \
+            --json tagName \
+            --jq '.[].tagName')"
+          PREVIOUS_TAG="$(printf '%s\n' "$RELEASE_TAGS" | grep -vx "$TAG_NAME" | head -n 1 || true)"
+          if [ -n "$PREVIOUS_TAG" ]; then
+            printf '\n**Full Changelog**: https://github.com/%s/compare/%s...%s\n' \
+              "$GITHUB_REPOSITORY" "$PREVIOUS_TAG" "$TAG_NAME" >> dist/release-notes.md
+          fi
 
       - name: Package Sparkle update
         env:

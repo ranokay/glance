@@ -37,9 +37,9 @@ check "pinned shellcheck" grep -q -F 'shellcheck = "0.11.0"' mise.toml
 check "pinned swiftformat" grep -q -F 'swiftformat = "0.64.1"' mise.toml
 check "pinned swiftlint" grep -q -F 'swiftlint = "0.65.1"' mise.toml
 check "no latest pins" sh -c "! grep -q -F '= \"latest\"' mise.toml"
-count "$PBX" "MARKETING_VERSION = 1.8.2;" 4 "marketing version occurrences"
-count "$PBX" "CURRENT_PROJECT_VERSION = 26;" 4 "build version occurrences"
-check "README version line" grep -q -F "Version 1.8.2 (build 26)" README.md
-check "README bold version line" grep -q -F "Version **1.8.2** (build **26**)" README.md
-check "listing version" grep -q -F "Version 1.8.2" AppStore/Listing/Description.txt
+count "$PBX" "MARKETING_VERSION = 1.9.0;" 4 "marketing version occurrences"
+count "$PBX" "CURRENT_PROJECT_VERSION = 27;" 4 "build version occurrences"
+check "README version line" grep -q -F "Version 1.9.0 (build 27)" README.md
+check "README bold version line" grep -q -F "Version **1.9.0** (build **27**)" README.md
+check "listing version" grep -q -F "Version 1.9.0" AppStore/Listing/Description.txt
 exit $fail
