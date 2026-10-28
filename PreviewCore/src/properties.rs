@@ -16,6 +16,18 @@ fn text(max_chars: usize) -> impl Strategy<Value = String> {
         .prop_map(|chars| chars.into_iter().collect())
 }
 
+/// Cell text. A leading U+FEFF is a byte-order mark rather than data, so cells
+/// deliberately exclude it; `tsv` pins that normalization with an example test.
+fn cell_text(max_chars: usize) -> impl Strategy<Value = String> {
+    proptest::collection::vec(
+        any::<char>().prop_filter("U+FEFF marks the encoding", |character| {
+            *character != '\u{feff}'
+        }),
+        0..max_chars,
+    )
+    .prop_map(|chars| chars.into_iter().collect())
+}
+
 /// Bounded recursive JSON, including strings and keys that look like markup.
 fn json_value() -> impl Strategy<Value = JsonValue> {
     let leaf = prop_oneof![
@@ -49,8 +61,8 @@ fn encode_tsv(headers: &[String], rows: &[Vec<String>]) -> Vec<u8> {
 fn table() -> impl Strategy<Value = (Vec<String>, Vec<Vec<String>>)> {
     (1usize..6).prop_flat_map(|width| {
         (
-            proptest::collection::vec(text(12), width),
-            proptest::collection::vec(proptest::collection::vec(text(12), width), 0..6),
+            proptest::collection::vec(cell_text(12), width),
+            proptest::collection::vec(proptest::collection::vec(cell_text(12), width), 0..6),
         )
     })
 }

@@ -153,6 +153,16 @@ mod tests {
     }
 
     #[test]
+    fn strips_a_leading_utf8_bom_from_the_header() {
+        // Excel writes a UTF-8 BOM before the first header. It marks the
+        // encoding, not the first column name.
+        let payload = parse_tsv(b"\xef\xbb\xbfname\tdescription\nvalue\ttext\n").unwrap();
+
+        assert_eq!(payload.headers, ["name", "description"]);
+        assert_eq!(payload.rows[0]["name"], "value");
+    }
+
+    #[test]
     fn rejects_malformed_data_and_limits() {
         assert!(matches!(
             parse_tsv_with_limits(b"a\tb\n1\n", 32, 5, 2),
