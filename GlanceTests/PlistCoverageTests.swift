@@ -101,6 +101,25 @@ final class PlistCoverageTests: XCTestCase {
 		XCTAssertTrue(urlSchemes.contains(OpenWithBridgeConstants.requestScheme))
 	}
 
+	func testAppDefaultsToVisibleUpdateAlerts() throws {
+		let plistURL = repositoryRoot()
+			.appendingPathComponent("Glance", isDirectory: true)
+			.appendingPathComponent("Info.plist")
+		let data = try Data(contentsOf: plistURL)
+		let plist = try XCTUnwrap(
+			try PropertyListSerialization.propertyList(
+				from: data,
+				options: [],
+				format: nil,
+			) as? [String: Any],
+		)
+
+		// Silent background installs hide the release notes; updates must
+		// surface Sparkle's update window instead.
+		XCTAssertEqual(plist["SUEnableAutomaticChecks"] as? Bool, true)
+		XCTAssertEqual(plist["SUAutomaticallyUpdate"] as? Bool, false)
+	}
+
 	func testAppDisablesAutomaticAndSuddenTermination() throws {
 		let plistURL = repositoryRoot()
 			.appendingPathComponent("Glance", isDirectory: true)

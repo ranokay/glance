@@ -4,6 +4,8 @@ Append-only. Newest entry first.
 
 # Unreleased
 
+- Updates now show a window with the release notes and install only after the user chooses Install,
+  instead of downloading and installing silently.
 - Settings and Supported Files use a sidebar layout with search, an integrated
   About page, close-only window controls, and a Dock/Cmd-Tab presence that
   appears only while one of their windows is open. Update actions and legal

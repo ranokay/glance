@@ -59,7 +59,7 @@ Release DMGs are currently unsigned and unnotarized. To install Glance:
 5. Keep Glance running while using its previews. Glance runs from the menu bar only, with no Dock
    icon or main window. Settings can start Glance at login, customize the font, size, and line
    wrapping used by new code, Markdown, and notebook previews, and manage update checking. Later
-   Glance releases download and install inside the app ("Install and Relaunch" in Settings) without
+   Glance releases show an update window with the release notes and install inside the app without
    opening a browser; update integrity is enforced with EdDSA signatures via
    [Sparkle](https://sparkle-project.org). The macOS quarantine step above is a one-time hurdle for
    this first DMG install only — in-app updates are not quarantined.
