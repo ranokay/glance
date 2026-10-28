@@ -28,12 +28,11 @@ same commit as any intentional bump, then run it.
    `Info.plist` follows via `$(MARKETING_VERSION)` / `$(CURRENT_PROJECT_VERSION)`.
 2. `README.md`: hero line and requirements line (`Version X.Y.Z (build N)`).
 3. `AppStore/Listing/Description.txt`: version line.
-4. `CHANGELOG.md`: new entry on top, append-only, never rewrite history. Shape
-   it like the published notes: `# Glance X.Y.Z`, a one-sentence intro, then
-   `## New previews`, `## Preview improvements`, `## Settings, menu bar, and
-   updates`, `## Verification and tooling`, and `## Removals` as they apply.
-   Do not add a signing, notarization, or platform footer — that caveat lives
-   in `README.md`.
+4. `CHANGELOG.md`: new entry on top, append-only, never rewrite history. Keep
+   it short: `# Glance X.Y.Z`, a one-sentence intro, then at most a handful of
+   bullets covering the user-visible changes. Add `##` group headings only when
+   a release spans several unrelated areas. Do not add a signing,
+   notarization, or platform footer — that caveat lives in `README.md`.
 5. `scripts/check-release-metadata.sh`: version/build literals and occurrence
    counts; run the script.
 6. Tag `vX.Y.Z` and push the tag — `release.yaml` extracts that version's
