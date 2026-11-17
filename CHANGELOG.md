@@ -7,8 +7,7 @@ Append-only. Newest entry first.
 Glance 1.9.1 restores 3MF previews when Bambu Studio is installed and refreshes the bundled preview runtimes and Rust dependencies.
 
 - `.3mf` files resolve through Bambu Studio's `com.bambulab.3mf` UTI again, so Quick Look keeps using Glance's 3D preview.
-- Draw.io, Pele, and KaTeX are updated to their current releases; the Rust preview core is updated with security fixes for spreadsheet and archive parsers.
-- Thanks to @JulienDeveaux for the detailed Bambu Studio report and UTI evidence.
+- Draw.io, Pele, and KaTeX are updated to their current releases; the Rust preview core is updated, including security fixes for HTML sanitization and spreadsheet parsing.
 
 # Glance 1.9.0
 

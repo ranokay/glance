@@ -21,15 +21,16 @@ fences. Swift loads the runtime only when that trusted marker is present. The
 render script calls `pele.render` with `links: false`, `images: false`, a
 unique `idPrefix`, and the preview width as `maxWidth`. Colors and fonts come
 from `--pele-*` CSS variables in `markdown-main.css`. The preview content
-security policy sets `connect-src 'none'`. If rendering fails, the escaped
-source block remains visible.
+security policy sets `connect-src 'none'`; this bump did not change it. If
+rendering fails, the escaped source block remains visible.
 
 ## Release-size impact
 
 Measured Release bundles on Apple silicon. The historical Mermaid 11.17.2
 measurement was `Glance.app` 13,205,504 bytes and `QLPlugin.appex` 11,423,744
-bytes. The current branch, which also adds XLSX and archive-entry preview code,
-measures `Glance.app` 15,297,314 bytes and `QLPlugin.appex` 11,710,231 bytes.
+bytes. The 1.9.1 Release build, which also includes the Draw.io, KaTeX, and Rust
+dependency updates, measures `Glance.app` 21,298,757 bytes and `QLPlugin.appex`
+16,990,461 bytes.
 The runtime swap's direct contribution is the 2,838,991-byte resource reduction
 above, isolated from those other branch changes. The 1.13.0 bump adds 24,318
 bytes to the bundled runtime (733,670 vs 709,352).

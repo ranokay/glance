@@ -21,7 +21,7 @@ same commit as any intentional bump, then run it.
    `chamburr/glance` and is never written to at all; `develop` is the only
    working branch. Verify the new release's appcast asset looks sane.
 
-## Version bump (1.9.0 build 27 → next)
+## Version bump (1.9.1 build 28 → next)
 
 1. `Glance.xcodeproj/project.pbxproj`: `MARKETING_VERSION` (×4: app + plugin ×
    Debug/Release) and `CURRENT_PROJECT_VERSION` (×4, same scopes). The app

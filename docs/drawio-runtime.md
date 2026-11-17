@@ -17,13 +17,14 @@ bootstrap script decodes the bytes and creates the viewer configuration with `JS
 file content is never interpolated into executable JavaScript or live HTML. The WebKit content
 security policy uses `default-src 'none'` and `connect-src 'none'`; the viewer's optional network
 paths are also redirected to `about:blank`. Rendering therefore uses only the bundled runtime and
-the selected file.
+the selected file. This bump did not change the content security policy.
 
 ## Release-size impact
 
 Measured from Release builds on Apple silicon before and after the 32.6.10 bump. The totals also
 include the same-commit Rust dependency and Pele/KaTeX runtime changes; the viewer line isolates
-the runtime.
+the runtime. The 1.9.0 documentation recorded 20,735,403 bytes from a different clean build; this
+table uses the actual e01d60f Release build for the before column.
 
 | Artifact | 32.6.1 | 32.6.10 | Change |
 | --- | ---: | ---: | ---: |
