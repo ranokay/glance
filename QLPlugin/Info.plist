@@ -47,6 +47,7 @@
 
 				<!-- Archive -->
 				<string>dyn.ah62d4rv4ge8xg5pg</string> <!-- .3mf -->
+				<string>com.bambulab.3mf</string> <!-- .3mf (Bambu Studio) -->
 				<string>org.7-zip.7-zip-archive</string> <!-- .7z -->
 				<string>com.sun.java-archive</string> <!-- .jar (Java) -->
 				<string>com.sun.web-application-archive</string> <!-- .war (Java) -->
