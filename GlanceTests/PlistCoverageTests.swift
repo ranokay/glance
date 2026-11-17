@@ -8,6 +8,7 @@ final class PlistCoverageTests: XCTestCase {
 			"public.folder",
 			"dyn.ah62d4rv4ge80k6xbs7y08", // .drawio
 			"dyn.ah62d4rv4ge8xg5pg", // .3mf
+			"com.bambulab.3mf", // .3mf (Bambu Studio)
 			"org.7-zip.7-zip-archive",
 			"com.sun.java-archive",
 			"com.sun.web-application-archive",
