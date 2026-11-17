@@ -253,29 +253,27 @@ class FileTree {
 						contentTypeIdentifier: contentTypeIdentifier,
 					)
 				}
-			} else {
-				if let currentNode {
-					guard currentNode.isDirectory else {
-						throw FileTreeError.notADirectoryError(
-							pathParts: pathParts,
-							pathPartIndex: pathPartIndex,
-						)
-					}
-					parentNode = currentNode
-				} else {
-					parentNode = try createNode(
-						parentNode: parentNode,
-						name: name,
-						size: 0,
-						isDirectory: true,
-						dateModified: nil,
-						fileURL: nil,
-						archiveEntryPath: nil,
-						isPackage: false,
-						isSymbolicLink: false,
-						contentTypeIdentifier: nil,
+			} else if let currentNode {
+				guard currentNode.isDirectory else {
+					throw FileTreeError.notADirectoryError(
+						pathParts: pathParts,
+						pathPartIndex: pathPartIndex,
 					)
 				}
+				parentNode = currentNode
+			} else {
+				parentNode = try createNode(
+					parentNode: parentNode,
+					name: name,
+					size: 0,
+					isDirectory: true,
+					dateModified: nil,
+					fileURL: nil,
+					archiveEntryPath: nil,
+					isPackage: false,
+					isSymbolicLink: false,
+					contentTypeIdentifier: nil,
+				)
 			}
 		}
 	}

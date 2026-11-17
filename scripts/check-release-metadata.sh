@@ -29,17 +29,17 @@ check "rust build script defaults to macOS 26" grep -q -F "MACOSX_DEPLOYMENT_TAR
 check "release runs on macos-26" grep -q -F "runs-on: macos-26" .github/workflows/release.yaml
 check "release uses shared setup" grep -q -F "./.github/actions/setup" .github/workflows/release.yaml
 check "setup asserts Xcode 26" grep -q -F "Release builds require Xcode 26" .github/actions/setup/action.yaml
-check "pinned rust" grep -q -F 'rust = { version = "1.99.1", profile = "minimal", components = "clippy,rustfmt", mr_boxington = true }' mise.toml
-check "pinned mr-boxington" grep -q -F 'mr-boxington = "1.27.0"' mise.toml
-check "pinned hk" grep -q -F 'hk = "2.8.1"' mise.toml
-check "pinned jactionlint" grep -q -F 'jactionlint = "2.3.0"' mise.toml
+check "pinned rust" grep -q -F 'rust = { version = "1.100.0", profile = "minimal", components = "clippy,rustfmt", mr_boxington = true }' mise.toml
+check "pinned mr-boxington" grep -q -F 'mr-boxington = "1.30.0"' mise.toml
+check "pinned hk" grep -q -F 'hk = "2.13.0"' mise.toml
+check "pinned jactionlint" grep -q -F 'jactionlint = "2.6.0"' mise.toml
 check "pinned shellcheck" grep -q -F 'shellcheck = "0.11.0"' mise.toml
-check "pinned swiftformat" grep -q -F 'swiftformat = "0.64.1"' mise.toml
+check "pinned swiftformat" grep -q -F 'swiftformat = "0.64.7"' mise.toml
 check "pinned swiftlint" grep -q -F 'swiftlint = "0.65.1"' mise.toml
 check "no latest pins" sh -c "! grep -q -F '= \"latest\"' mise.toml"
-count "$PBX" "MARKETING_VERSION = 1.9.0;" 4 "marketing version occurrences"
-count "$PBX" "CURRENT_PROJECT_VERSION = 27;" 4 "build version occurrences"
-check "README version line" grep -q -F "Version 1.9.0 (build 27)" README.md
-check "README bold version line" grep -q -F "Version **1.9.0** (build **27**)" README.md
-check "listing version" grep -q -F "Version 1.9.0" AppStore/Listing/Description.txt
+count "$PBX" "MARKETING_VERSION = 1.9.1;" 4 "marketing version occurrences"
+count "$PBX" "CURRENT_PROJECT_VERSION = 28;" 4 "build version occurrences"
+check "README version line" grep -q -F "Version 1.9.1 (build 28)" README.md
+check "README bold version line" grep -q -F "Version **1.9.1** (build **28**)" README.md
+check "listing version" grep -q -F "Version 1.9.1" AppStore/Listing/Description.txt
 exit $fail

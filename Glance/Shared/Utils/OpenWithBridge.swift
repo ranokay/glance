@@ -225,9 +225,9 @@ public struct OpenWithBridgeResponse: Codable {
 	public func validatedError() throws -> Error? {
 		switch (errorDomain, errorCode, errorMessage) {
 			case (nil, nil, nil):
-				return nil
+				nil
 			case let (errorDomain?, errorCode?, errorMessage?) where !errorMessage.isEmpty:
-				return OpenWithBridgeRemoteError(
+				OpenWithBridgeRemoteError(
 					domain: errorDomain,
 					code: errorCode,
 					message: errorMessage,
