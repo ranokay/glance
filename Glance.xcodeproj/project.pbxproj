@@ -8,11 +8,11 @@
 
 /* Begin PBXBuildFile section */
 		A1C0DE0000000000000000E1 /* AppLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C0DE0000000000000000E2 /* AppLaunchTests.swift */; };
-		20A000000000000000000003 /* markdown-pele-1.10.0.global.js in Resources */ = {isa = PBXBuildFile; fileRef = 20A000000000000000000001 /* markdown-pele-1.10.0.global.js */; };
+		20A000000000000000000003 /* markdown-pele-1.13.0.global.js in Resources */ = {isa = PBXBuildFile; fileRef = 20A000000000000000000001 /* markdown-pele-1.13.0.global.js */; };
 		20A000000000000000000004 /* PELE_LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = 20A000000000000000000002 /* PELE_LICENSE.txt */; };
 		21A000000000000000000011 /* DrawIOPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21A000000000000000000001 /* DrawIOPreview.swift */; };
 		21A000000000000000000012 /* DrawIOPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21A000000000000000000001 /* DrawIOPreview.swift */; };
-		21A000000000000000000013 /* drawio-viewer-32.6.1.min.js in Resources */ = {isa = PBXBuildFile; fileRef = 21A000000000000000000002 /* drawio-viewer-32.6.1.min.js */; };
+		21A000000000000000000013 /* drawio-viewer-32.6.10.min.js in Resources */ = {isa = PBXBuildFile; fileRef = 21A000000000000000000002 /* drawio-viewer-32.6.10.min.js */; };
 		21A000000000000000000014 /* DRAWIO_LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = 21A000000000000000000003 /* DRAWIO_LICENSE.txt */; };
 		21A000000000000000000015 /* drawio-main.css in Resources */ = {isa = PBXBuildFile; fileRef = 21A000000000000000000004 /* drawio-main.css */; };
 		22A000000000000000000011 /* RARPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22A000000000000000000001 /* RARPreview.swift */; };
@@ -145,6 +145,7 @@
 		7EB3643F244B03CC00D7F96F /* jupyter-katex.min.js in Resources */ = {isa = PBXBuildFile; fileRef = 7EB363F7244B03CC00D7F96F /* jupyter-katex.min.js */; };
 		7EB36440244B03CC00D7F96F /* jupyter-katex-auto-render.min.js in Resources */ = {isa = PBXBuildFile; fileRef = 7EB363F8244B03CC00D7F96F /* jupyter-katex-auto-render.min.js */; };
 		7EB36441244B03CC00D7F96F /* jupyter-katex.min.css in Resources */ = {isa = PBXBuildFile; fileRef = 7EB363F9244B03CC00D7F96F /* jupyter-katex.min.css */; };
+		7EB36490244B03CC00D7F96F /* KATEX_LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = 7EB36491244B03CC00D7F96F /* KATEX_LICENSE.txt */; };
 		7EB36442244B03CC00D7F96F /* KaTeX_Typewriter-Regular.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 7EB363FB244B03CC00D7F96F /* KaTeX_Typewriter-Regular.woff2 */; };
 		7EB36446244B03CC00D7F96F /* KaTeX_AMS-Regular.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 7EB363FF244B03CC00D7F96F /* KaTeX_AMS-Regular.woff2 */; };
 		7EB36447244B03CC00D7F96F /* KaTeX_Size3-Regular.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 7EB36400244B03CC00D7F96F /* KaTeX_Size3-Regular.woff2 */; };
@@ -268,10 +269,10 @@
 
 /* Begin PBXFileReference section */
 		A1C0DE0000000000000000E2 /* AppLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLaunchTests.swift; sourceTree = "<group>"; };
-		20A000000000000000000001 /* markdown-pele-1.10.0.global.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = "markdown-pele-1.10.0.global.js"; sourceTree = "<group>"; };
+		20A000000000000000000001 /* markdown-pele-1.13.0.global.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = "markdown-pele-1.13.0.global.js"; sourceTree = "<group>"; };
 		20A000000000000000000002 /* PELE_LICENSE.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = PELE_LICENSE.txt; sourceTree = "<group>"; };
 		21A000000000000000000001 /* DrawIOPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrawIOPreview.swift; sourceTree = "<group>"; };
-		21A000000000000000000002 /* drawio-viewer-32.6.1.min.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = "drawio-viewer-32.6.1.min.js"; sourceTree = "<group>"; };
+		21A000000000000000000002 /* drawio-viewer-32.6.10.min.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = "drawio-viewer-32.6.10.min.js"; sourceTree = "<group>"; };
 		21A000000000000000000003 /* DRAWIO_LICENSE.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = DRAWIO_LICENSE.txt; sourceTree = "<group>"; };
 		21A000000000000000000004 /* drawio-main.css */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.css; path = "drawio-main.css"; sourceTree = "<group>"; };
 		22A000000000000000000001 /* RARPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RARPreview.swift; sourceTree = "<group>"; };
@@ -358,6 +359,7 @@
 		7EB363F7244B03CC00D7F96F /* jupyter-katex.min.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = "jupyter-katex.min.js"; sourceTree = "<group>"; };
 		7EB363F8244B03CC00D7F96F /* jupyter-katex-auto-render.min.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = "jupyter-katex-auto-render.min.js"; sourceTree = "<group>"; };
 		7EB363F9244B03CC00D7F96F /* jupyter-katex.min.css */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.css; path = "jupyter-katex.min.css"; sourceTree = "<group>"; };
+		7EB36491244B03CC00D7F96F /* KATEX_LICENSE.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = KATEX_LICENSE.txt; sourceTree = "<group>"; };
 		7EB363FB244B03CC00D7F96F /* KaTeX_Typewriter-Regular.woff2 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_Typewriter-Regular.woff2"; sourceTree = "<group>"; };
 		7EB363FF244B03CC00D7F96F /* KaTeX_AMS-Regular.woff2 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_AMS-Regular.woff2"; sourceTree = "<group>"; };
 		7EB36400244B03CC00D7F96F /* KaTeX_Size3-Regular.woff2 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_Size3-Regular.woff2"; sourceTree = "<group>"; };
@@ -547,7 +549,7 @@
 			children = (
 				21A000000000000000000003 /* DRAWIO_LICENSE.txt */,
 				21A000000000000000000004 /* drawio-main.css */,
-				21A000000000000000000002 /* drawio-viewer-32.6.1.min.js */,
+				21A000000000000000000002 /* drawio-viewer-32.6.10.min.js */,
 			);
 			path = drawio;
 			sourceTree = "<group>";
@@ -661,6 +663,7 @@
 				7EB363F7244B03CC00D7F96F /* jupyter-katex.min.js */,
 				7EB363F8244B03CC00D7F96F /* jupyter-katex-auto-render.min.js */,
 				7EB363F9244B03CC00D7F96F /* jupyter-katex.min.css */,
+				7EB36491244B03CC00D7F96F /* KATEX_LICENSE.txt */,
 				7EB36437244B03CC00D7F96F /* jupyter-main.css */,
 			);
 			path = jupyter;
@@ -706,7 +709,7 @@
 			isa = PBXGroup;
 			children = (
 				20A000000000000000000002 /* PELE_LICENSE.txt */,
-				20A000000000000000000001 /* markdown-pele-1.10.0.global.js */,
+				20A000000000000000000001 /* markdown-pele-1.13.0.global.js */,
 				7EB3643D244B03CC00D7F96F /* markdown-main.css */,
 			);
 			path = markdown;
@@ -920,12 +923,13 @@
 				21A000000000000000000014 /* DRAWIO_LICENSE.txt in Resources */,
 				23A000000000000000000013 /* epub-main.css in Resources */,
 				21A000000000000000000015 /* drawio-main.css in Resources */,
-				21A000000000000000000013 /* drawio-viewer-32.6.1.min.js in Resources */,
+				21A000000000000000000013 /* drawio-viewer-32.6.10.min.js in Resources */,
 				20A000000000000000000004 /* PELE_LICENSE.txt in Resources */,
-				20A000000000000000000003 /* markdown-pele-1.10.0.global.js in Resources */,
+				20A000000000000000000003 /* markdown-pele-1.13.0.global.js in Resources */,
 				7EB36448244B03CC00D7F96F /* KaTeX_Main-Regular.woff2 in Resources */,
 				7EB36460244B03CC00D7F96F /* KaTeX_Fraktur-Regular.woff2 in Resources */,
 				7EB36441244B03CC00D7F96F /* jupyter-katex.min.css in Resources */,
+				7EB36490244B03CC00D7F96F /* KATEX_LICENSE.txt in Resources */,
 				7E022BE62452181F000EFCD3 /* WebPreviewVC.xib in Resources */,
 				7EB36471244B03CC00D7F96F /* KaTeX_Size1-Regular.woff2 in Resources */,
 				7EB36459244B03CC00D7F96F /* KaTeX_SansSerif-Italic.woff2 in Resources */,
