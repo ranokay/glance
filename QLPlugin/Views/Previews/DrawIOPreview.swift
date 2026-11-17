@@ -29,7 +29,7 @@ final class DrawIOPreview: Preview {
 		withExtension: "css",
 	)
 	private let viewerScriptURL = WebPreviewVC.resourceBundle.url(
-		forResource: "drawio-viewer-32.6.1.min",
+		forResource: "drawio-viewer-32.6.10.min",
 		withExtension: "js",
 	)
 

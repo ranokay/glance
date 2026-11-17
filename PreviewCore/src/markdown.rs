@@ -1,7 +1,6 @@
 use crate::error::RenderError;
 use crate::highlight::MarkdownHighlighter;
-use comrak::adapters::CodefenceRendererAdapter;
-use comrak::nodes::Sourcepos;
+use comrak::adapters::{CodefenceMeta, CodefenceRendererAdapter};
 use comrak::options::Plugins;
 use comrak::{Options, markdown_to_html_with_plugins};
 use std::borrow::Cow;
@@ -12,17 +11,10 @@ const MERMAID_SENTINEL: &str = "<!--glance-renderer-mermaid-v1-->";
 struct MermaidRenderer;
 
 impl CodefenceRendererAdapter for MermaidRenderer {
-    fn write(
-        &self,
-        output: &mut dyn fmt::Write,
-        _lang: &str,
-        _meta: &str,
-        code: &str,
-        _sourcepos: Option<Sourcepos>,
-    ) -> fmt::Result {
+    fn write(&self, output: &mut dyn fmt::Write, codefence: &CodefenceMeta<'_>) -> fmt::Result {
         output.write_str(MERMAID_SENTINEL)?;
         output.write_str("<pre class=\"mermaid-source\" data-glance-mermaid=\"1\"><code>")?;
-        comrak::html::escape(output, code)?;
+        comrak::html::escape(output, codefence.code)?;
         output.write_str("</code></pre>\n")
     }
 }

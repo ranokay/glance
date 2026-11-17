@@ -11,15 +11,15 @@ crate-type = ["staticlib", "rlib"]
 [dependencies]
 # These migration-critical renderer/parser versions are exact by design; Cargo.lock pins the
 # complete transitive graph used by all locked production builds.
-ammonia = "4.2.4"
+ammonia = "4.2.5"
 ansi-to-html = "0.2.4"
 base64 = "0.23.1"
-calamine = "=0.37.0"
-comrak = { version = "0.58.0", default-features = false }
+calamine = "=0.38.0"
+comrak = { version = "1.0.0", default-features = false }
 csv = "=1.4.0"
-flate2 = { version = "=1.1.10", default-features = false, features = ["rust_backend"] }
+flate2 = { version = "=1.1.11", default-features = false, features = ["rust_backend"] }
 libc = "=0.2.191"
-plist = { version = "=1.10.3", features = [
+plist = { version = "=1.10.4", features = [
 	# Streaming keeps crafted binary plists from expanding past the preview budget. The crate is
 	# pinned exactly so this deliberately unstable API cannot move without a deliberate bump.
 	"enable_unstable_features_that_may_break_with_minor_version_bumps",
@@ -27,22 +27,22 @@ plist = { version = "=1.10.3", features = [
 # calamine and plist already resolve quick-xml 0.42; following them removes the duplicate parser.
 # The exact pin keeps the shared str-based event API an explicit migration, not a lockfile refresh.
 quick-xml = "=0.42.0"
-rars = "=0.12.2"
+rars = "=0.12.4"
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = { version = "1.0.154", features = ["preserve_order"] }
 tar = "=0.4.46"
-sevenz-rust2 = { version = "=0.24.1", default-features = false, features = [
+sevenz-rust2 = { version = "=0.25.0", default-features = false, features = [
 	"bzip2",
 	"ppmd",
 ] }
 two-face = { version = "=0.5.2", default-features = false, features = [
 	"syntect-default-onig",
 ] }
-zip = { version = "=9.1.1", default-features = false, features = ["deflate-flate2", "time"] }
+zip = { version = "=9.6.1", default-features = false, features = ["deflate-flate2", "time"] }
 
 [dev-dependencies]
 # Generate codec compatibility controls without enabling encoders in shipped builds.
-sevenz-rust2 = { version = "=0.24.1", default-features = false, features = ["compress", "bzip2", "ppmd"] }
+sevenz-rust2 = { version = "=0.25.0", default-features = false, features = ["compress", "bzip2", "ppmd"] }
 # Property checks for parser and escaping invariants; never linked into the shipped static library.
 proptest = "=1.12.0"
 

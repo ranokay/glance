@@ -270,7 +270,7 @@ final class PreviewSmokeTests: XCTestCase {
 	func testDrawIORuntimeAndLicenseAreBundled() throws {
 		let bundle = WebPreviewVC.resourceBundle
 		let runtimeURL = try XCTUnwrap(
-			bundle.url(forResource: "drawio-viewer-32.6.1.min", withExtension: "js"),
+			bundle.url(forResource: "drawio-viewer-32.6.10.min", withExtension: "js"),
 		)
 		let licenseURL = try XCTUnwrap(
 			bundle.url(forResource: "DRAWIO_LICENSE", withExtension: "txt"),
@@ -608,7 +608,7 @@ final class PreviewSmokeTests: XCTestCase {
 	func testPeleRuntimeAndLicenseAreBundled() throws {
 		let bundle = WebPreviewVC.resourceBundle
 		let runtimeURL = try XCTUnwrap(
-			bundle.url(forResource: "markdown-pele-1.10.0.global", withExtension: "js"),
+			bundle.url(forResource: "markdown-pele-1.13.0.global", withExtension: "js"),
 		)
 		let licenseURL = try XCTUnwrap(
 			bundle.url(forResource: "PELE_LICENSE", withExtension: "txt"),
@@ -690,6 +690,17 @@ final class PreviewSmokeTests: XCTestCase {
 			bundledFallbackFonts.isEmpty,
 			"Unexpected KaTeX fallback fonts: \(bundledFallbackFonts.map(\.lastPathComponent))",
 		)
+	}
+
+	func testJupyterKaTeXLicenseIsBundled() throws {
+		let bundle = WebPreviewVC.resourceBundle
+		let licenseURL = try XCTUnwrap(
+			bundle.url(forResource: "KATEX_LICENSE", withExtension: "txt"),
+		)
+		let license = try String(contentsOf: licenseURL, encoding: .utf8)
+
+		XCTAssertTrue(license.contains("The MIT License"))
+		XCTAssertTrue(license.contains("Khan Academy"))
 	}
 
 	func testWebPreviewViewBecomesVisibleAfterLoading() throws {

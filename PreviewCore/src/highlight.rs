@@ -108,26 +108,31 @@ impl comrak::adapters::SyntaxHighlighterAdapter for MarkdownHighlighter {
     fn write_highlighted(
         &self,
         output: &mut dyn fmt::Write,
-        language: Option<&str>,
-        code: &str,
+        highlight: &comrak::adapters::SyntaxHighlightMeta<'_>,
     ) -> fmt::Result {
-        let highlighted =
-            render_code_body(code, language.unwrap_or("autodetect")).map_err(|_| fmt::Error)?;
+        let language = if highlight.lang.is_empty() {
+            "autodetect"
+        } else {
+            highlight.lang
+        };
+        let highlighted = render_code_body(highlight.code, language).map_err(|_| fmt::Error)?;
         output.write_str(&highlighted)
     }
 
-    fn write_pre_tag<'a>(
+    fn write_pre_tag(
         &self,
         output: &mut dyn fmt::Write,
-        _attributes: std::collections::HashMap<&'static str, std::borrow::Cow<'a, str>>,
+        _highlight: &comrak::adapters::SyntaxHighlightMeta<'_>,
+        _attributes: std::collections::BTreeMap<&str, std::borrow::Cow<'_, str>>,
     ) -> fmt::Result {
         output.write_str("<pre class=\"chroma\">")
     }
 
-    fn write_code_tag<'a>(
+    fn write_code_tag(
         &self,
         output: &mut dyn fmt::Write,
-        _attributes: std::collections::HashMap<&'static str, std::borrow::Cow<'a, str>>,
+        _highlight: &comrak::adapters::SyntaxHighlightMeta<'_>,
+        _attributes: std::collections::BTreeMap<&str, std::borrow::Cow<'_, str>>,
     ) -> fmt::Result {
         output.write_str("<code>")
     }
