@@ -1,64 +1,116 @@
 import Foundation
-import HTMLConverter
-
-extension String {
-	/// Converts the Swift string to a C string.
-	func toCString() -> UnsafeMutablePointer<Int8> {
-		UnsafeMutablePointer<Int8>(mutating: (self as NSString).utf8String!)
-	}
-}
+import GlancePreviewCore
 
 enum HTMLRendererError {
 	case rendererError(fileType: String, errorMessage: String)
+}
+
+/// Selects the PreviewCore parser for a structured preview.
+enum StructuredPreviewFormat: UInt8 {
+	case json
+	case plist
+	case xml
 }
 
 extension HTMLRendererError: LocalizedError {
 	var errorDescription: String? {
 		switch self {
 			case let .rendererError(fileType, errorMessage):
-				return NSLocalizedString(
+				NSLocalizedString(
 					"Could not convert \(fileType) to HTML: \(errorMessage)",
-					comment: ""
+					comment: "",
 				)
 		}
 	}
 }
 
 enum HTMLRenderer {
-	/// Throws an error if the return value indicates one. Because all `HTMLConverter` return values
-	/// are C strings, errors are implemented as return values starting with "error: ".
-	static func throwIfErrored(fileType: String, returnValue: String) throws {
-		if returnValue.hasPrefix("error :") {
-			let startIndex = returnValue.index(returnValue.startIndex, offsetBy: 7)
-			let errorMessage = returnValue[startIndex ..< returnValue.endIndex]
-			throw HTMLRendererError.rendererError(
-				fileType: fileType,
-				errorMessage: String(errorMessage)
-			)
-		}
+	/// One byte over the core's structured cap tells the renderer the file is truncated without
+	/// reading the whole file.
+	static var structuredMaximumReadBytes: Int {
+		Int(glance_structured_max_input_bytes()) + 1
 	}
 
 	/// Converts a code string to HTML with support for syntax highlighting.
 	static func renderCode(_ source: String, lexer: String) throws -> String {
-		let htmlCString = convertCodeToHTML(source.toCString(), lexer.toCString())
-		let htmlString = String(cString: htmlCString!)
-		try throwIfErrored(fileType: "code", returnValue: htmlString)
-		return htmlString
+		let result = withUTF8Buffer(source) { sourcePointer, sourceLength in
+			withUTF8Buffer(lexer) { lexerPointer, lexerLength in
+				glance_render_code(
+					sourcePointer,
+					sourceLength,
+					lexerPointer,
+					lexerLength,
+				)
+			}
+		}
+		return try makeHTMLString(fileType: "code", result: result)
 	}
 
 	/// Converts a Markdown string to HTML.
 	static func renderMarkdown(_ source: String) throws -> String {
-		let htmlCString = convertMarkdownToHTML(source.toCString())
-		let htmlString = String(cString: htmlCString!)
-		try throwIfErrored(fileType: "Markdown", returnValue: htmlString)
-		return htmlString
+		let result = withUTF8Buffer(source) { sourcePointer, sourceLength in
+			glance_render_markdown(sourcePointer, sourceLength)
+		}
+		return try makeHTMLString(fileType: "Markdown", result: result)
+	}
+
+	/// Converts a JSON document, property list, or XML document to a collapsible, escaped tree.
+	static func renderStructured(_ data: Data, format: StructuredPreviewFormat) throws -> String {
+		let result = data.withUnsafeBytes { buffer in
+			glance_render_structured(
+				buffer.bindMemory(to: UInt8.self).baseAddress,
+				buffer.count,
+				format.rawValue,
+			)
+		}
+		return try makeHTMLString(fileType: "structured data", result: result)
 	}
 
 	/// Converts a Jupyter Notebook JSON file to HTML.
 	static func renderNotebook(_ source: String) throws -> String {
-		let htmlCString = convertNotebookToHTML(source.toCString())
-		let htmlString = String(cString: htmlCString!)
-		try throwIfErrored(fileType: "Jupyter Notebook", returnValue: htmlString)
-		return htmlString
+		let result = withUTF8Buffer(source) { sourcePointer, sourceLength in
+			glance_render_notebook(sourcePointer, sourceLength)
+		}
+		return try makeHTMLString(fileType: "Jupyter Notebook", result: result)
+	}
+
+	private static func makeHTMLString(
+		fileType: String,
+		result: GlanceRenderResult,
+	) throws -> String {
+		defer { glance_render_buffer_free(result.data, result.length) }
+
+		guard result.length == 0 || result.data != nil else {
+			throw HTMLRendererError.rendererError(
+				fileType: fileType,
+				errorMessage: "renderer returned an invalid buffer",
+			)
+		}
+
+		let data = result.data.map { Data(bytes: $0, count: result.length) } ?? Data()
+		guard let output = String(data: data, encoding: .utf8) else {
+			throw HTMLRendererError.rendererError(
+				fileType: fileType,
+				errorMessage: "renderer returned invalid UTF-8",
+			)
+		}
+
+		guard result.status == GLANCE_STATUS_OK else {
+			throw HTMLRendererError.rendererError(
+				fileType: fileType,
+				errorMessage: output.isEmpty ? "renderer failed without details" : output,
+			)
+		}
+		return output
+	}
+
+	private static func withUTF8Buffer<Result>(
+		_ string: String,
+		body: (UnsafePointer<UInt8>?, Int) -> Result,
+	) -> Result {
+		let bytes = Array(string.utf8)
+		return bytes.withUnsafeBufferPointer { buffer in
+			body(buffer.baseAddress, buffer.count)
+		}
 	}
 }

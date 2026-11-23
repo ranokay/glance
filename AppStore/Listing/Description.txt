@@ -2,14 +2,30 @@ See what's in your files without opening them!
 
 Glance boosts your productivity by providing Quick Look previews for files that macOS doesn't support out of the box.
 
+Version 1.9.1 is built for Apple silicon Macs running macOS 26 or later.
+
 Features:
 • Beautiful file previews for various file types
 • Previews visible in Quick Look, Finder and Spotlight
-• Full compatibility with Dark Mode
+• Native macOS 26 controls and adaptive window materials
+• Lazy, expandable folder trees with Finder-style icons, pagination, and progressive media thumbnails
+• In-place previews and multi-level Back navigation for nested folder items
+• A compatible-app Open With chooser that never changes default file associations
+• Local preview processing with no telemetry or file-content uploads
+• Menu-bar-only app with no Dock icon or main window
+• Light and dark appearance, Reduce Transparency and Increase Contrast support
 
 Supported file types:
-• Source code (.cpp, .js, .json, .py, .swift, .yml and many more)
-• Markdown (.md, .markdown, .mdown, .mkdn, .mkd, .Rmd, .qmd)
-• Archive (.tar, .tar.gz, .zip)
+• Lossless audio with native playback and a waveform overview (.flac)
+• Folders (lazy trees with icons, thumbnails, 500-item pages, and Back navigation)
+• Source code (.cpp, .elrc, .ini, .js, .jsonl, .py, .swift, .tmpl, .toml, .ts, .ttml, .yml and many more)
+• Structured data (.json, .plist, .xml) with collapsible trees, typed values, and truncation notices
+• Markdown and offline Mermaid diagrams (.md, .markdown, .mdown, .mkdn, .mkd, .Rmd, .qmd)
+• Uncompressed Draw.io diagrams (.drawio)
+• Archive (.7z, .ear, .jar, .rar, .tar, .tar.gz, .tgz, .war, .zip) with in-place previews of nested files
+• Spreadsheets (.xlsx) with every worksheet, dates, and cached formula values
+• SQLite databases (.sqlite, .sqlite3, .db) with read-only tables and typed, paged rows
+• DRM-free EPUB 2 and EPUB 3 books (.epub)
+• Interactive 3D models (.3mf)
 • Jupyter Notebook (.ipynb)
 • Tab-separated values (.tab, .tsv)

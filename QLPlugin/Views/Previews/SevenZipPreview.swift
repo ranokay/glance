@@ -1,47 +1,30 @@
 import Foundation
-import os.log
-import SWCompression
+import GlanceKit
 
 class SevenZipPreview: Preview {
-	let byteCountFormatter = ByteCountFormatter()
-
 	required init() {}
 
-	func createPreviewVC(file: File) throws -> PreviewVC {
-		let archiveURL = URL(fileURLWithPath: file.path)
-		let fileData = try Data(contentsOf: archiveURL, options: .mappedIfSafe)
-		let entries = try SevenZipContainer.info(container: fileData)
+	@MainActor
+	static func makePreview(file: File, depth: Int) async throws -> PreviewVC {
+		let fileURL = file.url
+		return try await ArchivePreview.makePreview(
+			file: file,
+			format: .sevenZip,
+			depth: depth,
+			scan: { try PreviewCoreBridge.scanSevenZip(at: fileURL) },
+			policy: .sevenZip,
+		)
+	}
 
-		let fileTree = FileTree()
-		var totalUncompressed = 0
+	func createPreviewVC(file: File) async throws -> PreviewVC {
+		try await Self.makePreview(file: file, depth: 0)
+	}
+}
 
-		for entry in entries {
-			let size = entry.size ?? 0
-			totalUncompressed += size
-			let isDirectory = entry.type == .directory
-			do {
-				try fileTree.addNode(
-					path: entry.name,
-					isDirectory: isDirectory,
-					size: size,
-					dateModified: entry.modificationTime
-				)
-			} catch {
-				os_log("%{public}s", log: Log.parse, type: .error, error.localizedDescription)
-			}
-		}
+enum SevenZipPreviewError: LocalizedError {
+	case metadataSizeLimitExceeded
 
-		let compressed = file.size
-		let compressionRatio = totalUncompressed == 0
-			? 0.0
-			: 100.0 - Double(compressed) / Double(totalUncompressed) * 100.0
-
-		let labelText = """
-		Compressed: \(byteCountFormatter.string(for: compressed) ?? "--")
-		Uncompressed: \(byteCountFormatter.string(for: totalUncompressed) ?? "--")
-		Compression ratio: \(String(compressionRatio)) %
-		"""
-
-		return OutlinePreviewVC(rootNodes: fileTree.root.childrenList, labelText: labelText)
+	var errorDescription: String? {
+		NSLocalizedString("7z archive metadata is too large to preview safely", comment: "")
 	}
 }

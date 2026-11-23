@@ -1,63 +1,34 @@
 import Cocoa
-import Foundation
 
-let feedbackURL = URL(string: "https://github.com/chamburr/glance/issues")!
-let licenseURL = URL(string: "https://github.com/chamburr/glance/blob/main/LICENSE.md")!
-let privacyPolicyURL = URL(string: "https://github.com/chamburr/glance/blob/main/PRIVACY.md")!
-let websiteURL = URL(string: "https://github.com/chamburr/glance")!
+enum AppMetadata {
+	static var version: String {
+		Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—"
+	}
 
-/// Used as a subclass for the menu item in Interface Builder
-final class SupportedFilesMenuItem: NSMenuItem {
-	required init(coder decoder: NSCoder) {
-		super.init(coder: decoder)
+	static var build: String {
+		Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "—"
+	}
 
-		onAction = { _ in
-			let supportedFilesWC = SupportedFilesWC(windowNibName: NSNib.Name("SupportedFilesWC"))
-			supportedFilesWC.showWindow(nil)
-		}
+	static var versionLine: String {
+		"\(version) (\(build))"
+	}
+
+	static var copyright: String {
+		Bundle.main.object(forInfoDictionaryKey: "NSHumanReadableCopyright") as? String
+			?? "Copyright © 2020–2026 Glance contributors."
 	}
 }
 
-/// Used as a subclass for the menu item in Interface Builder
-final class FeedbackMenuItem: NSMenuItem {
-	required init(coder decoder: NSCoder) {
-		super.init(coder: decoder)
-
-		onAction = { _ in
-			feedbackURL.open()
-		}
-	}
-}
-
-/// Used as a subclass for the menu item in Interface Builder
-final class LicenseMenuItem: NSMenuItem {
-	required init(coder decoder: NSCoder) {
-		super.init(coder: decoder)
-
-		onAction = { _ in
-			licenseURL.open()
-		}
-	}
-}
-
-/// Used as a subclass for the menu item in Interface Builder
-final class PrivacyPolicyMenuItem: NSMenuItem {
-	required init(coder decoder: NSCoder) {
-		super.init(coder: decoder)
-
-		onAction = { _ in
-			privacyPolicyURL.open()
-		}
-	}
-}
-
-/// Used as a subclass for the menu item in Interface Builder
-final class WebsiteMenuItem: NSMenuItem {
-	required init(coder decoder: NSCoder) {
-		super.init(coder: decoder)
-
-		onAction = { _ in
-			websiteURL.open()
-		}
-	}
+enum AppLinks {
+	static let website = URL(string: "https://github.com/ranokay/glance")!
+	static let releases = website.appendingPathComponent("releases")
+	static let credits = URL(
+		string: "https://github.com/ranokay/glance/blob/develop/Glance/Credits.rtf",
+	)!
+	static let license = URL(
+		string: "https://github.com/ranokay/glance/blob/develop/LICENSE.md",
+	)!
+	static let privacy = URL(
+		string: "https://github.com/ranokay/glance/blob/develop/PRIVACY.md",
+	)!
 }

@@ -1,12 +1,12 @@
 import Foundation
-import os.log
+import OSLog
 
-enum Log {
-	// Subsystems
-	static let subsystem = Bundle.main.bundleIdentifier!
+public enum Log {
+	/// Subsystems
+	public static let subsystem = Bundle.main.bundleIdentifier ?? "com.chamburr.Glance"
 
 	// Categories
-	static let general = OSLog(subsystem: subsystem, category: "general")
-	static let parse = OSLog(subsystem: subsystem, category: "parse")
-	static let render = OSLog(subsystem: subsystem, category: "render")
+	public static let general = Logger(subsystem: subsystem, category: "general")
+	public static let parse = Logger(subsystem: subsystem, category: "parse")
+	public static let render = Logger(subsystem: subsystem, category: "render")
 }

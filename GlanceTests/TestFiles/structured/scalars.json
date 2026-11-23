@@ -1,0 +1,16 @@
+{
+  "string": "Glance & <preview>",
+  "emptyString": "",
+  "unicode": "café ☕ 漢字 😀",
+  "escaped": "line one\nline two\t\"quoted\"",
+  "integer": 42,
+  "negative": -17,
+  "fraction": 3.25,
+  "exponent": 1.5e10,
+  "true": true,
+  "false": false,
+  "nothing": null,
+  "nested": {
+    "array": [1, "two", false, null, {"deep": []}]
+  }
+}

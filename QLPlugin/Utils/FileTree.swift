@@ -1,16 +1,42 @@
-import Foundation
+import Cocoa
+
+enum FileTreeNodeRole: Equatable {
+	case item
+	case loading
+	case loadMore(offset: Int)
+	case retry(offset: Int)
+}
+
+enum DirectoryChildrenState: Equatable {
+	case notLoaded
+	case loading
+	case loaded(nextOffset: Int?)
+	case failed
+}
 
 enum FileTreeError {
 	case notADirectoryError(pathParts: [String.SubSequence], pathPartIndex: Int)
+	case pathDepthLimitExceeded(path: String, maxDepth: Int)
+	case nodeCountLimitExceeded(maxNodeCount: Int)
 }
 
 extension FileTreeError: LocalizedError {
 	var errorDescription: String? {
 		switch self {
 			case let .notADirectoryError(pathParts, pathPartIndex):
-				return NSLocalizedString(
+				NSLocalizedString(
 					"Cannot create file tree node with path \"\(pathParts.joined())\": \"\(pathParts[pathPartIndex])\" is not a directory",
-					comment: ""
+					comment: "",
+				)
+			case let .pathDepthLimitExceeded(path, maxDepth):
+				NSLocalizedString(
+					"Cannot create file tree node with path \"\(path)\": maximum path depth of \(maxDepth) exceeded",
+					comment: "",
+				)
+			case let .nodeCountLimitExceeded(maxNodeCount):
+				NSLocalizedString(
+					"Cannot create file tree node: maximum node count of \(maxNodeCount) exceeded",
+					comment: "",
 				)
 		}
 	}
@@ -25,108 +51,261 @@ class FileTreeNode: NSObject {
 	@objc let size: Int
 	@objc let isDirectory: Bool
 	@objc var dateModified: Date?
+	@objc var fileURL: URL?
+	/// Path of this node inside its containing archive, when the node is an archive entry.
+	@objc var archiveEntryPath: String?
+	@objc var isPackage: Bool
+	@objc var isSymbolicLink: Bool
+	@objc var contentTypeIdentifier: String?
+	@objc dynamic var icon: NSImage?
+	let role: FileTreeNodeRole
+	var directoryChildrenState: DirectoryChildrenState
+	weak var parentNode: FileTreeNode?
 	/// Child nodes of a directory
 	@objc var children = [String: FileTreeNode]()
 
 	/// Number of child nodes (required for rendering the tree in an `NSOutlineView`)
-	@objc var childrenCount: Int { children.values.count }
-	/// List of child nodes (required for rendering the tree in an `NSOutlineView`)
+	@objc var childrenCount: Int {
+		children.values.count
+	}
+
+	/// List of child nodes (required for rendering the tree in an `NSOutlineView`).
+	/// Display order only; page cursors resolve names in the scanner's ordering.
 	@objc var childrenList: [FileTreeNode] {
 		children.values.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
 	}
 
 	/// Whether the node has any children (required for rendering the tree in an `NSOutlineView`)
-	@objc var hasChildren: Bool { children.isEmpty }
+	@objc var hasChildren: Bool {
+		!children.isEmpty
+	}
+
+	/// Whether the node is a leaf (has no children) — used by `NSTreeController`'s `leafKeyPath`
+	@objc var isLeaf: Bool {
+		guard role == .item else {
+			return true
+		}
+		guard isDirectory, !isPackage, !isSymbolicLink else {
+			return !hasChildren
+		}
+		switch directoryChildrenState {
+			case .notLoaded, .loading, .failed:
+				return false
+			case .loaded:
+				return children.isEmpty
+		}
+	}
+
+	/// Keeps loading, retry, and pagination actions after real entries for every sort direction.
+	@objc var auxiliarySortRank: Int {
+		role == .item ? 0 : 1
+	}
+
+	/// Whether the node is a loading, pagination, or retry row rather than a real entry.
+	var isAuxiliary: Bool {
+		role != .item
+	}
 
 	convenience init(name: String, size: Int, isDirectory: Bool) {
 		self.init(name: name, size: size, isDirectory: isDirectory, dateModified: nil)
 	}
 
-	init(name: String, size: Int, isDirectory: Bool, dateModified: Date?) {
+	init(
+		name: String,
+		size: Int,
+		isDirectory: Bool,
+		dateModified: Date?,
+		fileURL: URL? = nil,
+		archiveEntryPath: String? = nil,
+		isPackage: Bool = false,
+		isSymbolicLink: Bool = false,
+		contentTypeIdentifier: String? = nil,
+		icon: NSImage? = nil,
+		role: FileTreeNodeRole = .item,
+		directoryChildrenState: DirectoryChildrenState = .loaded(nextOffset: nil),
+	) {
 		self.name = name
 		self.size = size
 		self.isDirectory = isDirectory
 		self.dateModified = dateModified
+		self.fileURL = fileURL
+		self.archiveEntryPath = archiveEntryPath
+		self.isPackage = isPackage
+		self.isSymbolicLink = isSymbolicLink
+		self.contentTypeIdentifier = contentTypeIdentifier
+		self.icon = icon
+		self.role = role
+		self.directoryChildrenState = directoryChildrenState
+	}
+
+	static func loadingNode(parent: FileTreeNode? = nil) -> FileTreeNode {
+		let node = FileTreeNode(
+			name: "Loading…",
+			size: 0,
+			isDirectory: false,
+			dateModified: nil,
+			icon: NSImage(systemSymbolName: "progress.indicator", accessibilityDescription: nil),
+			role: .loading,
+		)
+		node.parentNode = parent
+		return node
+	}
+
+	static func loadMoreNode(offset: Int, parent: FileTreeNode? = nil) -> FileTreeNode {
+		let node = FileTreeNode(
+			name: "Load More…",
+			size: 0,
+			isDirectory: false,
+			dateModified: nil,
+			icon: NSImage(systemSymbolName: "arrow.down.circle", accessibilityDescription: nil),
+			role: .loadMore(offset: offset),
+		)
+		node.parentNode = parent
+		return node
+	}
+
+	static func retryNode(offset: Int, parent: FileTreeNode? = nil) -> FileTreeNode {
+		let node = FileTreeNode(
+			name: "Couldn’t load this folder — Retry",
+			size: 0,
+			isDirectory: false,
+			dateModified: nil,
+			icon: NSImage(
+				systemSymbolName: "arrow.clockwise.circle",
+				accessibilityDescription: nil,
+			),
+			role: .retry(offset: offset),
+		)
+		node.parentNode = parent
+		return node
 	}
 }
 
 /// Data structure for representing a tree of files and directories. This class stores the root node
 /// and provides functionality to insert new nodes.
 class FileTree {
+	static let defaultMaxPathDepth = 128
+	static let defaultMaxNodeCount = 50000
+
 	var root = FileTreeNode(name: "Root", size: 0, isDirectory: true, dateModified: Date())
+	private let maxPathDepth: Int
+	private let maxNodeCount: Int
+	private var nodeCount = 1
+
+	init(
+		maxPathDepth: Int = FileTree.defaultMaxPathDepth,
+		maxNodeCount: Int = FileTree.defaultMaxNodeCount,
+	) {
+		self.maxPathDepth = max(1, maxPathDepth)
+		self.maxNodeCount = max(1, maxNodeCount)
+	}
 
 	/// Parses the provided file/directory's path and creates a new `FileTreeNode` at the correct
 	/// position in the tree. If a file/directory's parent directory doesn't exist yet, it will
 	/// be created (with `dateModified` set to `nil`).
-	func addNode(path: String, isDirectory: Bool, size: Int, dateModified: Date?) throws {
-		try addNode(
-			parentNode: root,
-			pathParts: path.split(separator: "/", omittingEmptySubsequences: true),
-			pathPartIndex: 0,
-			isDirectory: isDirectory,
-			size: size,
-			dateModified: dateModified
-		)
-	}
-
-	/// Parses the provided file/directory's path and creates a new `FileTreeNode` at the correct
-	/// position in the tree. This is a helper function for the `addNode` function. It performs a
-	/// recursive tree traversal to find the node's location.
-	private func addNode(
-		parentNode: FileTreeNode,
-		pathParts: [String.SubSequence],
-		pathPartIndex: Int,
+	func addNode(
+		path: String,
 		isDirectory: Bool,
 		size: Int,
-		dateModified: Date?
+		dateModified: Date?,
+		fileURL: URL? = nil,
+		archiveEntryPath: String? = nil,
+		isPackage: Bool = false,
+		isSymbolicLink: Bool = false,
+		contentTypeIdentifier: String? = nil,
 	) throws {
-		let isLastPathPart = pathPartIndex == pathParts.count - 1
-		let name = String(pathParts[pathPartIndex])
-		var currentNode = parentNode.children[name]
+		let pathParts = path.split(separator: "/", omittingEmptySubsequences: true)
+		guard !pathParts.isEmpty else {
+			return
+		}
+		guard pathParts.count <= maxPathDepth else {
+			throw FileTreeError.pathDepthLimitExceeded(path: path, maxDepth: maxPathDepth)
+		}
 
-		if isLastPathPart {
-			// Reached end of path: Add to tree
-			if currentNode == nil {
-				// Node doesn't exist yet: Create it
-				parentNode.children[name] = FileTreeNode(
-					name: name,
-					size: size,
-					isDirectory: isDirectory,
-					dateModified: dateModified
-				)
-			} else {
-				// Node already exists (i.e. directory has been created implicitly in a previous
-				// function call): Update the directory node with the missing `dateModified` info
-				currentNode!.dateModified = dateModified
-			}
-		} else {
-			// Not yet at end of path: Recurse into subdirectory
-			if currentNode == nil {
-				// Directory that doesn't exist yet: Create it
-				currentNode = FileTreeNode(
-					name: name,
-					size: 0,
-					isDirectory: true
-				)
-				parentNode.children[name] = currentNode
-			} else {
-				// Directory exists: Make sure it's not a file
-				if !currentNode!.isDirectory {
-					throw FileTreeError.notADirectoryError(
-						pathParts: pathParts,
-						pathPartIndex: pathPartIndex
+		var parentNode = root
+		for (pathPartIndex, pathPart) in pathParts.enumerated() {
+			let isLastPathPart = pathPartIndex == pathParts.count - 1
+			let name = String(pathPart)
+			let currentNode = parentNode.children[name]
+
+			if isLastPathPart {
+				if let currentNode {
+					// Node already exists (i.e. directory has been created implicitly in a previous
+					// function call): Update the directory node with the missing `dateModified`
+					// info
+					currentNode.dateModified = dateModified
+					currentNode.fileURL = fileURL
+					currentNode.archiveEntryPath = archiveEntryPath
+					currentNode.isPackage = isPackage
+					currentNode.isSymbolicLink = isSymbolicLink
+					currentNode.contentTypeIdentifier = contentTypeIdentifier
+				} else {
+					_ = try createNode(
+						parentNode: parentNode,
+						name: name,
+						size: size,
+						isDirectory: isDirectory,
+						dateModified: dateModified,
+						fileURL: fileURL,
+						archiveEntryPath: archiveEntryPath,
+						isPackage: isPackage,
+						isSymbolicLink: isSymbolicLink,
+						contentTypeIdentifier: contentTypeIdentifier,
 					)
 				}
+			} else if let currentNode {
+				guard currentNode.isDirectory else {
+					throw FileTreeError.notADirectoryError(
+						pathParts: pathParts,
+						pathPartIndex: pathPartIndex,
+					)
+				}
+				parentNode = currentNode
+			} else {
+				parentNode = try createNode(
+					parentNode: parentNode,
+					name: name,
+					size: 0,
+					isDirectory: true,
+					dateModified: nil,
+					fileURL: nil,
+					archiveEntryPath: nil,
+					isPackage: false,
+					isSymbolicLink: false,
+					contentTypeIdentifier: nil,
+				)
 			}
-			// Recurse: Execute function again for next path part
-			try addNode(
-				parentNode: currentNode!,
-				pathParts: pathParts,
-				pathPartIndex: pathPartIndex + 1,
-				isDirectory: isDirectory,
-				size: size,
-				dateModified: dateModified
-			)
 		}
+	}
+
+	private func createNode(
+		parentNode: FileTreeNode,
+		name: String,
+		size: Int,
+		isDirectory: Bool,
+		dateModified: Date?,
+		fileURL: URL?,
+		archiveEntryPath: String?,
+		isPackage: Bool,
+		isSymbolicLink: Bool,
+		contentTypeIdentifier: String?,
+	) throws -> FileTreeNode {
+		guard nodeCount < maxNodeCount else {
+			throw FileTreeError.nodeCountLimitExceeded(maxNodeCount: maxNodeCount)
+		}
+		let node = FileTreeNode(
+			name: name,
+			size: size,
+			isDirectory: isDirectory,
+			dateModified: dateModified,
+			fileURL: fileURL,
+			archiveEntryPath: archiveEntryPath,
+			isPackage: isPackage,
+			isSymbolicLink: isSymbolicLink,
+			contentTypeIdentifier: contentTypeIdentifier,
+		)
+		parentNode.children[name] = node
+		nodeCount += 1
+		return node
 	}
 }

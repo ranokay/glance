@@ -1,0 +1,63 @@
+import XCTest
+
+final class PreviewFactoryTests: XCTestCase {
+	func testFactoryReturnsPreviewForEveryPreviewFamilyAlias() {
+		let cases: [(path: String, expected: Preview.Type?)] = [
+			("/tmp/source.swift", CodePreview.self),
+			("/tmp/book.epub", EPUBPreview.self),
+			("/tmp/track.flac", FLACPreview.self),
+			("/tmp/config.ini", CodePreview.self),
+			("/tmp/.elrc", CodePreview.self),
+			("/tmp/config.elrc", CodePreview.self),
+			("/tmp/readme.md", MarkdownPreview.self),
+			("/tmp/readme.markdown", MarkdownPreview.self),
+			("/tmp/readme.mdown", MarkdownPreview.self),
+			("/tmp/readme.mkdn", MarkdownPreview.self),
+			("/tmp/readme.mkd", MarkdownPreview.self),
+			("/tmp/readme.rmd", MarkdownPreview.self),
+			("/tmp/readme.qmd", MarkdownPreview.self),
+			("/tmp/notebook.ipynb", JupyterPreview.self),
+			("/tmp/archive.tar", TARPreview.self),
+			("/tmp/archive.tgz", TARPreview.self),
+			("/tmp/archive.tar.gz", TARPreview.self),
+			("/tmp/model.3mf", ThreeMFPreview.self),
+			("/tmp/diagram.drawio", DrawIOPreview.self),
+			("/tmp/table.tab", TSVPreview.self),
+			("/tmp/table.tsv", TSVPreview.self),
+			("/tmp/workbook.xlsx", SpreadsheetPreview.self),
+			("/tmp/data.db", SQLitePreview.self),
+			("/tmp/data.sqlite", SQLitePreview.self),
+			("/tmp/data.sqlite3", SQLitePreview.self),
+			("/tmp/data.json", StructuredPreview.self),
+			("/tmp/config.plist", StructuredPreview.self),
+			("/tmp/document.xml", StructuredPreview.self),
+			("/tmp/archive.7z", SevenZipPreview.self),
+			("/tmp/archive.rar", RARPreview.self),
+			("/tmp/archive.ear", ZIPPreview.self),
+			("/tmp/archive.jar", ZIPPreview.self),
+			("/tmp/archive.war", ZIPPreview.self),
+			("/tmp/archive.zip", ZIPPreview.self),
+			("/tmp/plain.gz", nil),
+		]
+
+		for testCase in cases {
+			let fileURL = URL(fileURLWithPath: testCase.path)
+			// swiftlint:disable:next xct_specific_matcher
+			XCTAssertTrue(
+				PreviewVCFactory.getPreviewInitializer(fileURL: fileURL) == testCase.expected,
+				testCase.path,
+			)
+		}
+	}
+
+	func testFactoryPrioritizesDirectoriesOverFileExtensions() {
+		for path in ["/tmp/folder", "/tmp/archive.zip"] {
+			let fileURL = URL(fileURLWithPath: path, isDirectory: true)
+			XCTAssertTrue(
+				PreviewVCFactory.getPreviewInitializer(fileURL: fileURL, isDirectory: true)
+					== DirectoryPreview.self,
+				path,
+			)
+		}
+	}
+}

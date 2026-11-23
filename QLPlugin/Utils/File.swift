@@ -1,4 +1,5 @@
 import Foundation
+import GlanceKit
 
 enum FileError: Error {
 	case fileAttributeError(path: String, message: String)
@@ -10,16 +11,16 @@ extension FileError: LocalizedError {
 	var errorDescription: String? {
 		switch self {
 			case let .fileAttributeError(path, message):
-				return NSLocalizedString(
+				NSLocalizedString(
 					"Could not get attributes for file at path \(path): \(message)",
-					comment: ""
+					comment: "",
 				)
 			case let .fileNotFoundError(path):
-				return NSLocalizedString("Could not find file at path \(path)", comment: "")
+				NSLocalizedString("Could not find file at path \(path)", comment: "")
 			case let .fileReadError(path, message):
-				return NSLocalizedString(
+				NSLocalizedString(
 					"Could not read file at path \(path): \(message)",
-					comment: ""
+					comment: "",
 				)
 		}
 	}
@@ -27,7 +28,6 @@ extension FileError: LocalizedError {
 
 /// Utility class for reading the content and metadata of the corresponding file.
 class File {
-	let archiveExtensions = ["7z", "tar", "tar.gz", "tgz", "zip"]
 	let fileManager = FileManager.default
 
 	var attributes: [FileAttributeKey: Any]
@@ -35,13 +35,30 @@ class File {
 	var path: String
 	var url: URL
 
-	var isArchive: Bool { archiveExtensions.contains(url.pathExtension) }
-	var size: Int { attributes[.size] as? Int ?? 0 }
+	var isArchive: Bool {
+		guard let entry = SupportedPreviewRegistry.entry(matching: url) else {
+			return false
+		}
+		// EPUB parses as a document but is exempt from the size limit like archives.
+		return entry.group == .archive || entry.previewFileType == .epub
+	}
+
+	var isSpreadsheet: Bool {
+		SupportedPreviewRegistry.entry(matching: url)?.previewFileType == .spreadsheet
+	}
+
+	var isDatabase: Bool {
+		SupportedPreviewRegistry.entry(matching: url)?.previewFileType == .database
+	}
+
+	var size: Int {
+		attributes[.size] as? Int ?? 0
+	}
 
 	/// Looks for a file at the provided URL and saves its metadata as object properties.
 	init(url: URL) throws {
 		self.url = url
-		path = url.path
+		path = url.path(percentEncoded: false)
 
 		// Check whether the provided URL points to a directory
 		var isDirectoryObjC: ObjCBool = false

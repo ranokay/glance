@@ -1,0 +1,155 @@
+/* Structured data (JSON, property lists, XML) */
+
+/* Token colors follow shared-chroma.css (Xcode's Default theme). Secondary
+   text is lightened for the preview's smaller size. */
+.structured-preview {
+	--structured-punct: #5d6c79;
+	--structured-key: #1c464a;
+	--structured-index: #5d6c79;
+	--structured-string: #c41a16;
+	--structured-number: #1c00cf;
+	--structured-boolean: #9b2393;
+	--structured-null: #5d6c79;
+	--structured-date: #326d74;
+	--structured-data: #815f03;
+	--structured-tag: #1c464a;
+	--structured-attribute: #815f03;
+	--structured-notice-background: #fff8c5;
+	--structured-notice-border: #d4a72c;
+	font-family: var(--font-family-monospace);
+	font-size: 0.85em;
+	line-height: 1.55;
+}
+
+@media (prefers-color-scheme: dark) {
+	.structured-preview {
+		--structured-punct: #8b98a5;
+		--structured-key: #9ef1dd;
+		--structured-index: #8b98a5;
+		--structured-string: #fc6a5d;
+		--structured-number: #d0bf69;
+		--structured-boolean: #fc5fa3;
+		--structured-null: #8b98a5;
+		--structured-date: #67b7a4;
+		--structured-data: #bf8555;
+		--structured-tag: #9ef1dd;
+		--structured-attribute: #bf8555;
+		--structured-notice-background: #3a2d00;
+		--structured-notice-border: #9e6a03;
+	}
+}
+
+.structured-preview .structured-node {
+	margin: 0;
+}
+
+.structured-preview .structured-row,
+.structured-preview .structured-summary {
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+
+.structured-preview .structured-summary {
+	cursor: pointer;
+}
+
+.structured-preview .structured-summary::marker {
+	color: var(--structured-punct);
+}
+
+.structured-preview .structured-children {
+	margin-left: 0.4em;
+	padding-left: 1.35em;
+	border-left: 1px solid var(--color-border);
+}
+
+.structured-preview .structured-closing {
+	white-space: pre-wrap;
+}
+
+.structured-preview .structured-key {
+	color: var(--structured-key);
+}
+
+.structured-preview .structured-index {
+	color: var(--structured-index);
+}
+
+.structured-preview .structured-punct {
+	color: var(--structured-punct);
+}
+
+/* Copyable indent: zero-width on screen, but its spaces survive a copy. */
+.structured-preview .structured-indent {
+	font-size: 0;
+	white-space: pre;
+}
+
+.structured-preview .structured-meta {
+	margin-left: 0.5em;
+	color: var(--structured-punct);
+	font-style: italic;
+	/* The count is an affordance, not content: keep it out of copied text. */
+	pointer-events: none;
+	-webkit-user-select: none;
+	user-select: none;
+}
+
+.structured-preview .structured-string {
+	color: var(--structured-string);
+}
+
+.structured-preview .structured-number {
+	color: var(--structured-number);
+}
+
+.structured-preview .structured-boolean {
+	color: var(--structured-boolean);
+}
+
+.structured-preview .structured-null {
+	color: var(--structured-null);
+	font-style: italic;
+}
+
+.structured-preview .structured-date {
+	color: var(--structured-date);
+}
+
+.structured-preview .structured-data {
+	color: var(--structured-data);
+}
+
+.structured-preview .structured-tag {
+	color: var(--structured-tag);
+}
+
+.structured-preview .structured-attribute {
+	color: var(--structured-attribute);
+}
+
+.structured-preview .structured-text {
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+
+.structured-preview .structured-comment {
+	color: var(--structured-punct);
+	font-style: italic;
+	white-space: pre-wrap;
+}
+
+.structured-preview .structured-ellipsis {
+	color: var(--structured-punct);
+}
+
+.structured-preview .structured-truncated {
+	margin: 0 0 var(--spacing-normal);
+	padding: 8px 10px;
+	color: var(--color-text);
+	font-family: var(--font-family-sans-serif);
+	font-size: 1rem;
+	background: var(--structured-notice-background);
+	border: 1px solid var(--structured-notice-border);
+	border-radius: var(--border-radius);
+}

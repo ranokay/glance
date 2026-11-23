@@ -1,129 +1,56 @@
 /**
- * Light mode: Colors from "Default (light)" Xcode theme
+ * Semantic syntax classes emitted by syntect. The `.chroma` container name is
+ * retained so existing preview styles and DOM behavior remain unchanged.
+ *
+ * Light mode colors come from Xcode's Default (light) theme.
  */
-/* Keyword */ .chroma .k { color: #9B2393 }
-/* KeywordConstant */ .chroma .kc { color: #9B2393 }
-/* KeywordDeclaration */ .chroma .kd { color: #9B2393 }
-/* KeywordNamespace */ .chroma .kn { color: #9B2393 }
-/* KeywordPseudo */ .chroma .kp { color: #9B2393 }
-/* KeywordReserved */ .chroma .kr { color: #9B2393 }
-/* KeywordType */ .chroma .kt { color: #9B2393 }
-/* Name */ .chroma .n { color: #000000 }
-/* NameAttribute */ .chroma .na { color: #815F03 }
-/* NameBuiltin */ .chroma .nb { color: #9B2393 }
-/* NameBuiltinPseudo */ .chroma .bp { color: #9B2393 }
-/* NameClass */ .chroma .nc { color: #1C464A }
-/* NameConstant */ .chroma .no { color: #326D74 }
-/* NameDecorator */ .chroma .nd { color: #000000 }
-/* NameEntity */ .chroma .ni { color: #000000 }
-/* NameException */ .chroma .ne { color: #000000 }
-/* NameFunction */ .chroma .nf { color: #326D74 }
-/* NameFunctionMagic */ .chroma .fm { color: #326D74 }
-/* NameLabel */ .chroma .nl { color: #000000 }
-/* NameNamespace */ .chroma .nn { color: #000000 }
-/* NameOther */ .chroma .nx { color: #000000 }
-/* NameProperty */ .chroma .py { color: #000000 }
-/* NameTag */ .chroma .nt { color: #000000 }
-/* NameVariable */ .chroma .nv { color: #000000 }
-/* NameVariableClass */ .chroma .vc { color: #000000 }
-/* NameVariableGlobal */ .chroma .vg { color: #326D74 }
-/* NameVariableInstance */ .chroma .vi { color: #326D74 }
-/* NameVariableMagic */ .chroma .vm { color: #326D74 }
-/* Literal */ .chroma .l { color: #1C00CF }
-/* LiteralDate */ .chroma .ld { color: #1C00CF }
-/* LiteralString */ .chroma .s { color: #C41A16 }
-/* LiteralStringAffix */ .chroma .sa { color: #C41A16 }
-/* LiteralStringBacktick */ .chroma .sb { color: #C41A16 }
-/* LiteralStringChar */ .chroma .sc { color: #1C00CF }
-/* LiteralStringDelimiter */ .chroma .dl { color: #C41A16 }
-/* LiteralStringDoc */ .chroma .sd { color: #C41A16 }
-/* LiteralStringDouble */ .chroma .s2 { color: #C41A16 }
-/* LiteralStringEscape */ .chroma .se { color: #C41A16 }
-/* LiteralStringHeredoc */ .chroma .sh { color: #C41A16 }
-/* LiteralStringInterpol */ .chroma .si { color: #C41A16 }
-/* LiteralStringOther */ .chroma .sx { color: #C41A16 }
-/* LiteralStringRegex */ .chroma .sr { color: #C41A16 }
-/* LiteralStringSingle */ .chroma .s1 { color: #C41A16 }
-/* LiteralStringSymbol */ .chroma .ss { color: #C41A16 }
-/* LiteralNumber */ .chroma .m { color: #1C00CF }
-/* LiteralNumberBin */ .chroma .mb { color: #1C00CF }
-/* LiteralNumberFloat */ .chroma .mf { color: #1C00CF }
-/* LiteralNumberHex */ .chroma .mh { color: #1C00CF }
-/* LiteralNumberInteger */ .chroma .mi { color: #1C00CF }
-/* LiteralNumberIntegerLong */ .chroma .il { color: #1C00CF }
-/* LiteralNumberOct */ .chroma .mo { color: #1C00CF }
-/* Operator */ .chroma .o { color: #000000 }
-/* OperatorWord */ .chroma .ow { color: #000000 }
-/* Comment */ .chroma .c { color: #5D6C79 }
-/* CommentHashbang */ .chroma .ch { color: #5D6C79 }
-/* CommentMultiline */ .chroma .cm { color: #5D6C79 }
-/* CommentSingle */ .chroma .c1 { color: #5D6C79 }
-/* CommentSpecial */ .chroma .cs { color: #4A5560 }
-/* CommentPreproc */ .chroma .cp { color: #643820 }
-/* CommentPreprocFile */ .chroma .cpf { color: #643820 }
+.chroma { color: #000000 }
+.chroma .keyword,
+.chroma .storage,
+.chroma .constant.language,
+.chroma .variable.language { color: #9B2393 }
+.chroma .entity.name.type,
+.chroma .entity.name.class,
+.chroma .entity.name.struct,
+.chroma .entity.name.enum { color: #1C464A }
+.chroma .entity.name.function,
+.chroma .support.function,
+.chroma .support.type,
+.chroma .variable.other.global,
+.chroma .variable.other.member { color: #326D74 }
+.chroma .entity.other.attribute-name { color: #815F03 }
+.chroma .string { color: #C41A16 }
+.chroma .constant.numeric,
+.chroma .constant.character { color: #1C00CF }
+.chroma .comment { color: #5D6C79 }
+.chroma .comment.block.documentation { color: #4A5560 }
+.chroma .meta.preprocessor { color: #643820 }
+.chroma .keyword.operator,
+.chroma .operator { color: #000000 }
 
-/**
- * Dark mode: Colors from "Default (dark)" Xcode theme
- */
+/** Dark mode colors come from Xcode's Default (dark) theme. */
 @media (prefers-color-scheme: dark) {
-	/* Keyword */ .chroma .k { color: #FC5FA3 }
-	/* KeywordConstant */ .chroma .kc { color: #FC5FA3 }
-	/* KeywordDeclaration */ .chroma .kd { color: #FC5FA3 }
-	/* KeywordNamespace */ .chroma .kn { color: #FC5FA3 }
-	/* KeywordPseudo */ .chroma .kp { color: #FC5FA3 }
-	/* KeywordReserved */ .chroma .kr { color: #FC5FA3 }
-	/* KeywordType */ .chroma .kt { color: #FC5FA3 }
-	/* Name */ .chroma .n { color: #ffffff }
-	/* NameAttribute */ .chroma .na { color: #BF8555 }
-	/* NameBuiltin */ .chroma .nb { color: #FC5FA3 }
-	/* NameBuiltinPseudo */ .chroma .bp { color: #FC5FA3 }
-	/* NameClass */ .chroma .nc { color: #9EF1DD }
-	/* NameConstant */ .chroma .no { color: #67B7A4 }
-	/* NameDecorator */ .chroma .nd { color: #ffffff }
-	/* NameEntity */ .chroma .ni { color: #ffffff }
-	/* NameException */ .chroma .ne { color: #ffffff }
-	/* NameFunction */ .chroma .nf { color: #67B7A4 }
-	/* NameFunctionMagic */ .chroma .fm { color: #67B7A4 }
-	/* NameLabel */ .chroma .nl { color: #ffffff }
-	/* NameNamespace */ .chroma .nn { color: #ffffff }
-	/* NameOther */ .chroma .nx { color: #ffffff }
-	/* NameProperty */ .chroma .py { color: #ffffff }
-	/* NameTag */ .chroma .nt { color: #ffffff }
-	/* NameVariable */ .chroma .nv { color: #ffffff }
-	/* NameVariableClass */ .chroma .vc { color: #ffffff }
-	/* NameVariableGlobal */ .chroma .vg { color: #67B7A4 }
-	/* NameVariableInstance */ .chroma .vi { color: #67B7A4 }
-	/* NameVariableMagic */ .chroma .vm { color: #67B7A4 }
-	/* Literal */ .chroma .l { color: #D0BF69 }
-	/* LiteralDate */ .chroma .ld { color: #D0BF69 }
-	/* LiteralString */ .chroma .s { color: #FC6A5D }
-	/* LiteralStringAffix */ .chroma .sa { color: #FC6A5D }
-	/* LiteralStringBacktick */ .chroma .sb { color: #FC6A5D }
-	/* LiteralStringChar */ .chroma .sc { color: #D0BF69 }
-	/* LiteralStringDelimiter */ .chroma .dl { color: #FC6A5D }
-	/* LiteralStringDoc */ .chroma .sd { color: #FC6A5D }
-	/* LiteralStringDouble */ .chroma .s2 { color: #FC6A5D }
-	/* LiteralStringEscape */ .chroma .se { color: #FC6A5D }
-	/* LiteralStringHeredoc */ .chroma .sh { color: #FC6A5D }
-	/* LiteralStringInterpol */ .chroma .si { color: #FC6A5D }
-	/* LiteralStringOther */ .chroma .sx { color: #FC6A5D }
-	/* LiteralStringRegex */ .chroma .sr { color: #FC6A5D }
-	/* LiteralStringSingle */ .chroma .s1 { color: #FC6A5D }
-	/* LiteralStringSymbol */ .chroma .ss { color: #FC6A5D }
-	/* LiteralNumber */ .chroma .m { color: #D0BF69 }
-	/* LiteralNumberBin */ .chroma .mb { color: #D0BF69 }
-	/* LiteralNumberFloat */ .chroma .mf { color: #D0BF69 }
-	/* LiteralNumberHex */ .chroma .mh { color: #D0BF69 }
-	/* LiteralNumberInteger */ .chroma .mi { color: #D0BF69 }
-	/* LiteralNumberIntegerLong */ .chroma .il { color: #D0BF69 }
-	/* LiteralNumberOct */ .chroma .mo { color: #D0BF69 }
-	/* Operator */ .chroma .o { color: #ffffff }
-	/* OperatorWord */ .chroma .ow { color: #ffffff }
-	/* Comment */ .chroma .c { color: #6C7986 }
-	/* CommentHashbang */ .chroma .ch { color: #6C7986 }
-	/* CommentMultiline */ .chroma .cm { color: #6C7986 }
-	/* CommentSingle */ .chroma .c1 { color: #6C7986 }
-	/* CommentSpecial */ .chroma .cs { color: #92A1B1 }
-	/* CommentPreproc */ .chroma .cp { color: #FD8F3F }
-	/* CommentPreprocFile */ .chroma .cpf { color: #FD8F3F }
+	.chroma { color: #ffffff }
+	.chroma .keyword,
+	.chroma .storage,
+	.chroma .constant.language,
+	.chroma .variable.language { color: #FC5FA3 }
+	.chroma .entity.name.type,
+	.chroma .entity.name.class,
+	.chroma .entity.name.struct,
+	.chroma .entity.name.enum { color: #9EF1DD }
+	.chroma .entity.name.function,
+	.chroma .support.function,
+	.chroma .support.type,
+	.chroma .variable.other.global,
+	.chroma .variable.other.member { color: #67B7A4 }
+	.chroma .entity.other.attribute-name { color: #BF8555 }
+	.chroma .string { color: #FC6A5D }
+	.chroma .constant.numeric,
+	.chroma .constant.character { color: #D0BF69 }
+	.chroma .comment { color: #6C7986 }
+	.chroma .comment.block.documentation { color: #92A1B1 }
+	.chroma .meta.preprocessor { color: #FD8F3F }
+	.chroma .keyword.operator,
+	.chroma .operator { color: #ffffff }
 }

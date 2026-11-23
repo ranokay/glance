@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>title</key>
+	<string>Glance &amp; fixture</string>
+	<key>count</key>
+	<integer>42</integer>
+	<key>ratio</key>
+	<real>1.5</real>
+	<key>enabled</key>
+	<true/>
+	<key>disabled</key>
+	<false/>
+	<key>created</key>
+	<date>2024-05-06T07:08:09Z</date>
+	<key>payload</key>
+	<data>aGVsbG8=</data>
+	<key>items</key>
+	<array>
+		<string>one</string>
+		<integer>2</integer>
+	</array>
+	<key>nested</key>
+	<dict>
+		<key>empty</key>
+		<string></string>
+	</dict>
+</dict>
+</plist>

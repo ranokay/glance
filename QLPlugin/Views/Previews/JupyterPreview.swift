@@ -1,79 +1,52 @@
 import Foundation
-import os.log
+import GlanceKit
 
 class JupyterPreview: Preview {
-	private let chromaStylesheetURL = Bundle.main.url(
+	private let chromaStylesheetURL = WebPreviewVC.resourceBundle.url(
 		forResource: "shared-chroma",
-		withExtension: "css"
+		withExtension: "css",
 	)
-	private let katexAutoRenderScriptURL = Bundle.main.url(
+	private let katexAutoRenderScriptURL = WebPreviewVC.resourceBundle.url(
 		forResource: "jupyter-katex-auto-render.min",
-		withExtension: "js"
+		withExtension: "js",
 	)
-	private let katexScriptURL = Bundle.main.url(
+	private let katexScriptURL = WebPreviewVC.resourceBundle.url(
 		forResource: "jupyter-katex.min",
-		withExtension: "js"
+		withExtension: "js",
 	)
-	private let katexStylesheetURL = Bundle.main.url(
+	private let katexStylesheetURL = WebPreviewVC.resourceBundle.url(
 		forResource: "jupyter-katex.min",
-		withExtension: "css"
+		withExtension: "css",
 	)
-	private let mainStylesheetURL = Bundle.main.url(
+	private let mainStylesheetURL = WebPreviewVC.resourceBundle.url(
 		forResource: "jupyter-main",
-		withExtension: "css"
+		withExtension: "css",
 	)
 
 	required init() {}
 
-	private func getHTML(file: File) throws -> String {
-		var source: String
-		do {
-			source = try file.read()
-		} catch {
-			os_log(
-				"Could not read Jupyter Notebook file: %{public}s",
-				log: Log.parse,
-				type: .error,
-				error.localizedDescription
-			)
-			throw error
-		}
-
-		do {
-			return try HTMLRenderer.renderNotebook(source)
-		} catch {
-			os_log(
-				"Could not generate Jupyter Notebook HTML: %{public}s",
-				log: Log.render,
-				type: .error,
-				error.localizedDescription
-			)
-			throw error
-		}
-	}
-
 	private func getStylesheets() -> [Stylesheet] {
 		var stylesheets = [Stylesheet]()
 
-		// Main Jupyter stylesheet (overrides and additions for nbtohtml stylesheet)
-		if let mainStylesheetURL = mainStylesheetURL {
+		// Main Jupyter stylesheet
+		if let mainStylesheetURL {
 			stylesheets.append(Stylesheet(url: mainStylesheetURL))
 		} else {
-			os_log("Could not find main Jupyter stylesheet", log: Log.render, type: .error)
+			Log.render.error("Could not find main Jupyter stylesheet")
 		}
 
-		// Chroma stylesheet (for code syntax highlighting)
-		if let chromaStylesheetURL = chromaStylesheetURL {
+		// Semantic syntax-highlighting stylesheet
+		if let chromaStylesheetURL {
 			stylesheets.append(Stylesheet(url: chromaStylesheetURL))
 		} else {
-			os_log("Could not find Chroma stylesheet", log: Log.render, type: .error)
+			Log.render.error("Could not find syntax-highlighting stylesheet")
 		}
 
 		// KaTeX stylesheet (for rendering LaTeX math)
-		if let katexStylesheetURL = katexStylesheetURL {
+		if let katexStylesheetURL {
 			stylesheets.append(Stylesheet(url: katexStylesheetURL))
 		} else {
-			os_log("Could not find KaTeX stylesheet", log: Log.render, type: .error)
+			Log.render.error("Could not find KaTeX stylesheet")
 		}
 
 		return stylesheets
@@ -83,30 +56,73 @@ class JupyterPreview: Preview {
 		var scripts = [Script]()
 
 		// KaTeX library (for rendering LaTeX math)
-		if let katexScriptURL = katexScriptURL {
+		if let katexScriptURL {
 			scripts.append(Script(url: katexScriptURL))
 		} else {
-			os_log("Could not find KaTeX script", log: Log.render, type: .error)
+			Log.render.error("Could not find KaTeX script")
 		}
 
 		// KaTeX auto-renderer (finds LaTeX math ond the page and calls KaTeX on it)
-		if let katexAutoRenderScriptURL = katexAutoRenderScriptURL {
+		if let katexAutoRenderScriptURL {
 			scripts.append(Script(url: katexAutoRenderScriptURL))
 		} else {
-			os_log("Could not find KaTeX auto-render script", log: Log.render, type: .error)
+			Log.render.error("Could not find KaTeX auto-render script")
 		}
 
-		// Main script (calls the KaTeX auto-renderer)
-		scripts.append(Script(content: "renderMathInElement(document.body);"))
+		// Markdown cells use KaTeX's delimiter-based auto-renderer. MIME `text/latex`
+		// outputs carry a renderer-owned marker and are rendered directly from textContent,
+		// which keeps notebook data out of HTML and JavaScript source.
+		let renderScript = """
+		(function() {
+			renderMathInElement(document.body, {
+				ignoredClasses: ['latex-output', 'no-katex']
+			});
+
+			document.querySelectorAll('[data-glance-latex-output="1"]')
+				.forEach(function(element) {
+					katex.render(element.textContent || '', element, {
+						displayMode: true,
+						throwOnError: false,
+						trust: false,
+						strict: 'warn'
+					});
+				});
+		})();
+		"""
+		scripts.append(Script(content: renderScript))
 
 		return scripts
 	}
 
-	func createPreviewVC(file: File) throws -> PreviewVC {
-		WebPreviewVC(
-			html: try getHTML(file: file),
+	func createPreviewVC(file: File) async throws -> PreviewVC {
+		let fileURL = file.url
+		do {
+			let content = try await makeContent(fileURL: fileURL)
+			return await WebPreviewVC(
+				content: content,
+				appearancePreferences: PreviewSettingsClient.shared.appearancePreferences(),
+				contentLoader: { try await self.makeContent(fileURL: fileURL) },
+			)
+		} catch let error as CancellationError {
+			throw error
+		} catch {
+			Log.render.error(
+				"Could not generate Jupyter Notebook HTML: \(error.localizedDescription, privacy: .private)",
+			)
+			throw error
+		}
+	}
+
+	@MainActor
+	private func makeContent(fileURL: URL) async throws -> WebPreviewContent {
+		let html = try await PreviewExecutor.run {
+			let source = try String(contentsOf: fileURL, encoding: .utf8)
+			return try HTMLRenderer.renderNotebook(source)
+		}
+		return WebPreviewContent(
+			html: html,
 			stylesheets: getStylesheets(),
-			scripts: getScripts()
+			scripts: getScripts(),
 		)
 	}
 }

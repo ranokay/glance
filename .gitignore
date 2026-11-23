@@ -1,7 +1,12 @@
 # Xcode
 project.xcworkspace/
 xcuserdata/
+build/
+.DS_Store
 
-# `go build` output
-HTMLConverter/htmlconverter*.a
-HTMLConverter/htmlconverter*.h
+# Rust build output
+PreviewCore/build/
+PreviewCore/target/
+
+# Release artifacts (never committed; attached to GitHub releases)
+dist/

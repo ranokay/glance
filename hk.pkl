@@ -1,0 +1,25 @@
+amends "package://github.com/jdx/hk/releases/download/v2.13.0/hk@2.13.0#/Config.pkl"
+import "package://github.com/jdx/hk/releases/download/v2.13.0/hk@2.13.0#/Builtins.pkl"
+
+steps {
+	["swiftformat"] {
+		glob = List("**/*.swift")
+		check = "swiftformat --lint {{files}}"
+		fix = "swiftformat {{files}}"
+	}
+	["swiftlint"] = (Builtins.swiftlint) {
+		check = "swiftlint lint --strict --config .swiftlint.yaml {{files}}"
+		// SwiftLint only auto-detects `.swiftlint.yml`, so the fixer needs the extension
+		// spelled out or it falls back to default rules that fight SwiftFormat.
+		fix = "swiftlint --fix --quiet --config .swiftlint.yaml {{files}}"
+	}
+	["cargo-fmt"] = Builtins.cargo_fmt
+	["jactionlint"] = Builtins.jactionlint
+	["shellcheck"] = Builtins.shellcheck
+	["release-metadata"] {
+		check = "sh scripts/check-release-metadata.sh"
+	}
+	["test-registration"] {
+		check = "xcrun swift scripts/check-test-registration.swift"
+	}
+}

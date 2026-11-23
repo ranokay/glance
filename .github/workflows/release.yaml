@@ -1,0 +1,332 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions: {}
+
+concurrency:
+  group: release-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build and publish DMG
+    runs-on: macos-26
+    timeout-minutes: 60
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Shared toolchain and pinned tools
+        uses: ./.github/actions/setup
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Run production verification
+        run: |
+          set -euo pipefail
+          mise run verify
+
+      - name: Verify release app
+        run: |
+          set -euo pipefail
+          mise run verify:app 2>&1 | tee build/verify-app.log
+
+      - name: Package DMG
+        env:
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          VERSION="${TAG_NAME#v}"
+          APP_NAME="Glance"
+          APP_PATH="build/Build/Products/Release/${APP_NAME}.app"
+          DIST_DIR="dist"
+          STAGING_DIR="${DIST_DIR}/dmg-root"
+          DMG_PATH="${DIST_DIR}/${APP_NAME}-${VERSION}.dmg"
+
+          test -d "$APP_PATH"
+
+          rm -rf "$DIST_DIR"
+          mkdir -p "$STAGING_DIR"
+          cp -R "$APP_PATH" "$STAGING_DIR/"
+          ln -s /Applications "$STAGING_DIR/Applications"
+
+          hdiutil create \
+            -volname "$APP_NAME" \
+            -srcfolder "$STAGING_DIR" \
+            -ov \
+            -format UDZO \
+            "$DMG_PATH"
+
+          (
+            cd "$DIST_DIR"
+            shasum -a 256 "$(basename "$DMG_PATH")" | tee "$(basename "$DMG_PATH").sha256"
+          )
+
+      - name: Verify DMG contents
+        env:
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          VERSION="${TAG_NAME#v}"
+          DMG_PATH="dist/Glance-${VERSION}.dmg"
+          MOUNT_DIR="$(mktemp -d)"
+
+          (cd dist && shasum -a 256 -c "Glance-${VERSION}.dmg.sha256")
+          hdiutil attach "$DMG_PATH" -mountpoint "$MOUNT_DIR" -nobrowse -quiet
+          trap 'hdiutil detach "$MOUNT_DIR" -quiet || true; rmdir "$MOUNT_DIR" || true' EXIT
+
+          test -d "$MOUNT_DIR/Glance.app"
+          test -d "$MOUNT_DIR/Glance.app/Contents/PlugIns/QLPlugin.appex"
+          test "$(plutil -extract CFBundleShortVersionString raw -o - "$MOUNT_DIR/Glance.app/Contents/Info.plist")" = "$VERSION"
+          codesign --verify --deep --strict --verbose=2 "$MOUNT_DIR/Glance.app"
+          QL_EXECUTABLE="$MOUNT_DIR/Glance.app/Contents/PlugIns/QLPlugin.appex/Contents/MacOS/QLPlugin"
+          lipo -info "$QL_EXECUTABLE" | grep -q "arm64"
+          if lipo -info "$QL_EXECUTABLE" | grep -q "x86_64"; then
+            echo "Published Quick Look executable contains x86_64" >&2
+            exit 1
+          fi
+          if strings "$QL_EXECUTABLE" | grep -Eq 'go\.buildid|runtime\.morestack|github\.com/alecthomas/chroma|github\.com/yuin/goldmark'; then
+            echo "Published Quick Look executable contains the removed Go runtime" >&2
+            exit 1
+          fi
+
+          hdiutil detach "$MOUNT_DIR" -quiet
+          trap - EXIT
+          rmdir "$MOUNT_DIR"
+
+      - name: Extract current version release notes
+        env:
+          TAG_NAME: ${{ github.ref_name }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          VERSION="${TAG_NAME#v}"
+          awk -v version="$VERSION" '
+            /^# Glance / { if (found) exit; if ($0 == "# Glance " version) found=1; next }
+            found { print }
+          ' CHANGELOG.md > dist/release-notes.md
+          perl -0pi -e 's/^\n+//; s/\n+\z/\n/' dist/release-notes.md
+          test -s dist/release-notes.md
+
+          RELEASE_TAGS="$(gh release list \
+            --repo "$GITHUB_REPOSITORY" \
+            --limit 30 \
+            --json tagName \
+            --jq '.[].tagName')"
+          PREVIOUS_TAG="$(printf '%s\n' "$RELEASE_TAGS" | grep -vx "$TAG_NAME" | head -n 1 || true)"
+          if [ -n "$PREVIOUS_TAG" ]; then
+            printf '\n**Full Changelog**: https://github.com/%s/compare/%s...%s\n' \
+              "$GITHUB_REPOSITORY" "$PREVIOUS_TAG" "$TAG_NAME" >> dist/release-notes.md
+          fi
+
+      - name: Package Sparkle update
+        env:
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          VERSION="${TAG_NAME#v}"
+          APP_PATH="build/Build/Products/Release/Glance.app"
+          SPARKLE_DIR="dist/sparkle"
+
+          test -d "$APP_PATH"
+
+          mkdir -p "$SPARKLE_DIR"
+          ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "$SPARKLE_DIR/Glance-${VERSION}.zip"
+          (
+            cd "$SPARKLE_DIR"
+            shasum -a 256 "Glance-${VERSION}.zip" | tee "Glance-${VERSION}.zip.sha256"
+          )
+          cp dist/release-notes.md "$SPARKLE_DIR/Glance-${VERSION}.md"
+
+      - name: Create GitHub release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          VERSION="${TAG_NAME#v}"
+          ASSETS=(
+            "dist/Glance-${VERSION}.dmg"
+            "dist/Glance-${VERSION}.dmg.sha256"
+            "dist/sparkle/Glance-${VERSION}.zip"
+            "dist/sparkle/Glance-${VERSION}.zip.sha256"
+            "dist/sparkle/Glance-${VERSION}.md"
+          )
+          RELEASE_EXISTS=false
+          EXISTING=""
+
+          if gh release view "$TAG_NAME" \
+            --repo "$GITHUB_REPOSITORY" \
+            >/dev/null 2>&1; then
+            # Rerun or interrupted-draft recovery: the release object exists
+            # even when its asset list is empty, so track both separately.
+            RELEASE_EXISTS=true
+            EXISTING="$(gh release view "$TAG_NAME" \
+              --repo "$GITHUB_REPOSITORY" \
+              --json assets \
+              --jq '[.assets[].name] | join("\n")')"
+            # Retained published artifacts win over fresh ones: a binary kept
+            # from the original run is re-referenced by its own checksum.
+            for pair in \
+              "Glance-${VERSION}.zip|dist/sparkle/Glance-${VERSION}.zip" \
+              "Glance-${VERSION}.dmg|dist/Glance-${VERSION}.dmg" \
+              "Glance-${VERSION}.md|dist/sparkle/Glance-${VERSION}.md"; do
+              name="${pair%%|*}"
+              path="${pair#*|}"
+              if printf '%s' "$EXISTING" | grep -Fxq "$name"; then
+                gh release download "$TAG_NAME" \
+                  --repo "$GITHUB_REPOSITORY" \
+                  --pattern "$name" \
+                  --output "$path" \
+                  --clobber
+              fi
+            done
+          else
+            gh release create "$TAG_NAME" \
+              "${ASSETS[@]}" \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "Glance ${VERSION}" \
+              --draft \
+              --notes-file dist/release-notes.md
+          fi
+
+          # Checksums always describe the artifacts actually attached (which
+          # the appcast validator and users' shasum both consume).
+          shasum -a 256 "dist/Glance-${VERSION}.dmg" \
+            | tee "dist/Glance-${VERSION}.dmg.sha256"
+          (
+            cd "dist/sparkle"
+            shasum -a 256 "Glance-${VERSION}.zip" \
+              | tee "Glance-${VERSION}.zip.sha256"
+          )
+
+          if [ "$RELEASE_EXISTS" = "true" ]; then
+            index=0
+            for asset in "${ASSETS[@]}"; do
+              name="$(basename "$asset")"
+              if ! printf '%s' "$EXISTING" | grep -Fxq "$name"; then
+                gh release upload "$TAG_NAME" \
+                  --repo "$GITHUB_REPOSITORY" \
+                  --clobber \
+                  "$asset"
+              fi
+              index=$((index + 1))
+            done
+            # The two checksums are always re-uploaded over whatever is on the
+            # release: their bytes were just recomputed from the artifacts
+            # that actually ship.
+            gh release upload "$TAG_NAME" \
+              --repo "$GITHUB_REPOSITORY" \
+              --clobber \
+              "dist/Glance-${VERSION}.dmg.sha256" \
+              "dist/sparkle/Glance-${VERSION}.zip.sha256"
+          fi
+
+      - name: Generate Sparkle appcast
+        env:
+          TAG_NAME: ${{ github.ref_name }}
+          SPARKLE_EDDSA_PRIVATE_KEY: ${{ secrets.SPARKLE_EDDSA_PRIVATE_KEY }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          VERSION="${TAG_NAME#v}"
+          SPARKLE_DIR="dist/sparkle"
+          RELEASE_PREFIX="https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG_NAME}"
+          SPARKLE_VERSION="2.10.1"
+          SPARKLE_SHA256="1a856d2a9edb8e628de88121d7be04cf0e2167f8641650b78fca00b14244cf27"
+
+          # The feed is a release asset: clients read
+          # releases/latest/download/appcast.xml, which always serves the
+          # newest release's feed, so no branch is ever written during a
+          # release (main mirrors upstream; develop carries the app source).
+
+          if [ -z "${SPARKLE_EDDSA_PRIVATE_KEY:-}" ]; then
+            echo "SPARKLE_EDDSA_PRIVATE_KEY unset; publishing without an appcast asset — the feed redirect stays 404 until one is attached."
+            gh release edit "$TAG_NAME" \
+              --repo "$GITHUB_REPOSITORY" \
+              --draft=false
+            exit 0
+          fi
+
+          # On a rerun the attachment set is already public; the appcast must
+          # describe exactly those bytes, so sign the released archive, not a
+          # freshly rebuilt local one.
+          if gh release view "$TAG_NAME" --repo "$GITHUB_REPOSITORY" \
+            --json assets \
+            --jq '[.assets[].name] | join("\n")' | grep -Fxq "Glance-${VERSION}.zip"; then
+            gh release download "$TAG_NAME" \
+              --repo "$GITHUB_REPOSITORY" \
+              --pattern "Glance-${VERSION}.zip" \
+              --output "$SPARKLE_DIR/Glance-${VERSION}.zip" \
+              --clobber
+            gh release download "$TAG_NAME" \
+              --repo "$GITHUB_REPOSITORY" \
+              --pattern "Glance-${VERSION}.md" \
+              --output "$SPARKLE_DIR/Glance-${VERSION}.md" \
+              --clobber
+          fi
+
+          curl -fsSL -o /tmp/sparkle.tar.xz \
+            "https://github.com/sparkle-project/Sparkle/releases/download/${SPARKLE_VERSION}/Sparkle-${SPARKLE_VERSION}.tar.xz"
+          echo "${SPARKLE_SHA256}  /tmp/sparkle.tar.xz" | shasum -a 256 -c -
+          mkdir -p /tmp/sparkle-tools
+          tar -xf /tmp/sparkle.tar.xz -C /tmp/sparkle-tools
+
+          echo "$SPARKLE_EDDSA_PRIVATE_KEY" | /tmp/sparkle-tools/bin/generate_appcast \
+            --ed-key-file - \
+            --download-url-prefix "$RELEASE_PREFIX/" \
+            --release-notes-url-prefix "$RELEASE_PREFIX/" \
+            --link "https://github.com/${GITHUB_REPOSITORY}/releases/tag/${TAG_NAME}" \
+            -o "$SPARKLE_DIR/appcast.xml" \
+            "$SPARKLE_DIR"
+
+          test -s "$SPARKLE_DIR/appcast.xml"
+          grep -q "releases/download/${TAG_NAME}/Glance-${VERSION}.zip" "$SPARKLE_DIR/appcast.xml"
+          grep -q "edSignature" "$SPARKLE_DIR/appcast.xml"
+
+          # Replace a live appcast only when its content actually changed:
+          # deleting the asset and stale-uploading identical bytes otherwise
+          # risks a feed-404 window on every rerun.
+          if gh release view "$TAG_NAME" \
+            --repo "$GITHUB_REPOSITORY" \
+            --json assets \
+            --jq '[.assets[].name] | join("\n")' | grep -Fxq "appcast.xml"; then
+            gh release download "$TAG_NAME" \
+              --repo "$GITHUB_REPOSITORY" \
+              --pattern "appcast.xml" \
+              --output /tmp/existing-appcast.xml \
+              --clobber
+            if cmp -s /tmp/existing-appcast.xml "$SPARKLE_DIR/appcast.xml"; then
+              echo "Published appcast is already current; leaving the live asset in place."
+            else
+              gh release upload "$TAG_NAME" \
+                --repo "$GITHUB_REPOSITORY" \
+                --clobber \
+                "$SPARKLE_DIR/appcast.xml"
+            fi
+          else
+            gh release upload "$TAG_NAME" \
+              --repo "$GITHUB_REPOSITORY" \
+              "$SPARKLE_DIR/appcast.xml"
+          fi
+
+          # Published only now, with the appcast asset attached: the redirect
+          # never serves a release whose feed is incomplete.
+          gh release edit "$TAG_NAME" \
+            --repo "$GITHUB_REPOSITORY" \
+            --draft=false

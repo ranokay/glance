@@ -1,5 +1,5 @@
-module HTMLConverter {
-	header "HTMLConverter/htmlconverter.h"
-	link "htmlconverter"
+module GlancePreviewCore {
+	header "PreviewCore/include/glance_preview_core.h"
+	link "glance_preview_core"
 	export *
 }

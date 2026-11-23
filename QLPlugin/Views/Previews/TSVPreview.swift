@@ -1,24 +1,18 @@
-import os.log
-import SwiftCSV
+import Foundation
 
 class TSVPreview: Preview {
 	required init() {}
 
-	func createPreviewVC(file: File) throws -> PreviewVC {
-		// Read and parse TSV file
-		var csv: CSV
-		do {
-			csv = try CSV(url: file.url, delimiter: "\t")
-		} catch {
-			os_log(
-				"Could not parse TSV file: %{public}s",
-				log: Log.parse,
-				type: .error,
-				error.localizedDescription
-			)
-			throw error
+	func createPreviewVC(file: File) async throws -> PreviewVC {
+		let fileURL = file.url
+		let payload = try await PreviewExecutor.run {
+			let data = try Data(contentsOf: fileURL)
+			return try PreviewCoreBridge.parseTSV(data)
 		}
-
-		return TablePreviewVC(headers: csv.header, cells: csv.namedRows)
+		return TablePreviewVC(
+			headers: payload.headers,
+			cells: payload.rows,
+			truncated: payload.truncated,
+		)
 	}
 }

@@ -31,20 +31,35 @@
 				<!--
 					File types that Glance cannot provide previews for:
 					- Files that are already supported by macOS (e.g. .csv)
-					- com.apple.property-list (.plist)
-					- public.mpeg-2-transport-stream (.ts)
-					- public.xml (.xml)
+
+					Note: .ts is claimed as TypeScript source even though the extension
+					is also used by MPEG-2 transport stream video.
 				-->
 
+				<!-- Directory -->
+				<string>public.folder</string>
+
+				<!-- Lossless audio -->
+				<string>org.xiph.flac</string> <!-- .flac -->
+
+				<!-- Draw.io -->
+				<string>dyn.ah62d4rv4ge80k6xbs7y08</string> <!-- .drawio -->
+
 				<!-- Archive -->
+				<string>dyn.ah62d4rv4ge8xg5pg</string> <!-- .3mf -->
+				<string>com.bambulab.3mf</string> <!-- .3mf (Bambu Studio) -->
 				<string>org.7-zip.7-zip-archive</string> <!-- .7z -->
 				<string>com.sun.java-archive</string> <!-- .jar (Java) -->
 				<string>com.sun.web-application-archive</string> <!-- .war (Java) -->
 				<string>dyn.ah62d4rv4ge80n2pw</string> <!-- .ear (Java) -->
-				<string>org.gnu.gnu-zip-archive</string> <!-- .gz -->
+				<string>com.rarlab.rar-archive</string> <!-- .rar -->
+				<string>org.gnu.gnu-zip-archive</string> <!-- .tar.gz on recent macOS releases -->
 				<string>org.gnu.gnu-zip-tar-archive</string> <!-- .tgz -->
 				<string>public.tar-archive</string> <!-- .tar -->
 				<string>public.zip-archive</string> <!-- .zip -->
+
+				<!-- E-book -->
+				<string>org.idpf.epub-container</string> <!-- .epub -->
 
 				<!-- Jupyter Notebook -->
 				<string>dyn.ah62d4rv4ge80w6d3r3va</string> <!-- .ipynb -->
@@ -71,6 +86,19 @@
 				<string>dyn.ah62d4rv4ge81k2pc</string> <!-- .tab -->
 				<string>public.tab-separated-values-text</string> <!-- .tsv -->
 
+				<!-- Spreadsheet -->
+				<string>org.openxmlformats.spreadsheetml.sheet</string> <!-- .xlsx -->
+
+				<!-- Database -->
+				<string>dyn.ah62d4rv4ge81g6pqrf4gn</string> <!-- .sqlite -->
+				<string>dyn.ah62d4rv4ge81g6pqrf4gnq2</string> <!-- .sqlite3 -->
+				<string>dyn.ah62d4rv4ge80k2u</string> <!-- .db -->
+
+				<!-- Structured data -->
+				<string>com.apple.property-list</string> <!-- .plist -->
+				<string>public.json</string> <!-- .json -->
+				<string>public.xml</string> <!-- .xml -->
+
 				<!-- Code / plain text -->
 				<string>com.adobe.jsx</string> <!-- .jsx (used for React instead of ExtendScript) -->
 				<string>com.apple.applescript.script-bundle</string> <!-- .scptd (AppleScript bundle) -->
@@ -83,7 +111,6 @@
 				<string>com.apple.dt.interfacebuilder.document.storyboard</string> <!-- .storyboard (Xcode Storyboard) -->
 				<string>com.apple.interfacebuilder.document.cocoa</string> <!-- .xib (Xcode XIB) -->
 				<string>com.apple.mobileconfig</string> <!-- .mobileconfig -->
-				<string>com.apple.rez-source</string> <!-- .r -->
 				<string>com.apple.rez-source</string> <!-- .r (used for R instead of Apple's Rez) -->
 				<string>com.apple.xcode.entitlements-property-list</string> <!-- .entitlements -->
 				<string>com.apple.xcode.projectdata</string> <!-- .pbxproj (Xcode project data) -->
@@ -100,8 +127,9 @@
 				<string>com.microsoft.csharp-source</string> <!-- .cs -->
 				<string>com.microsoft.f-sharp</string> <!-- .fsx (F Sharp) -->
 				<string>dyn.ah62d4rv4ge80q652</string> <!-- .fsx -->
-				<string>com.microsoft.ini</string> <!-- .ini (used by Xcode) -->
 				<string>com.netscape.javascript-source</string> <!-- .js, .mjs -->
+				<string>public.mpeg-2-transport-stream</string> <!-- .ts (TypeScript source; also MPEG-2 video) -->
+				<string>dyn.ah62d4rv4ge81k5puru</string> <!-- .tmpl -->
 				<string>com.runningwithcrayons.alfred.appearance</string> <!-- Alfred theme (.alfredappearance) -->
 				<string>dyn.ah62d4rv4ge80c5dgsmw0k2pusbw0c6xbr3v0n</string> <!-- .alfredappearance -->
 				<string>com.sequelpro.sequelpro.spf</string> <!-- .spf (Sequel Pro query favorites file) -->
@@ -137,6 +165,7 @@
 				<string>dyn.ah62d4rv4ge80g65usm10y</string> <!-- .csproj -->
 				<string>dyn.ah62d4rv4ge80g6pq</string> <!-- .cql (Cassandra) -->
 				<string>dyn.ah62d4rv4ge80k4pxsu</string> <!-- .dist -->
+				<string>dyn.ah62d4rv4ge80n5dwqq</string> <!-- .elrc -->
 				<string>dyn.ah62d4rv4ge80n5dr</string> <!-- .elm -->
 				<string>dyn.ah62d4rv4ge80n65dsmy1a7a</string> <!-- .escript (Erlang) -->
 				<string>dyn.ah62d4rv4ge80n8a</string> <!-- .ex (Elixir) -->
@@ -177,6 +206,7 @@
 				<string>dyn.ah62d4rv4ge81k2pwq7w1k62</string> <!-- .targets -->
 				<string>dyn.ah62d4rv4ge81k55d</string> <!-- .toc (LaTeX) -->
 				<string>dyn.ah62d4rv4ge81k55rru</string> <!-- .toml -->
+				<string>dyn.ah62d4rv4ge81k7drru</string> <!-- .ttml -->
 				<string>dyn.ah62d4rv4ge81k652</string> <!-- .tsx -->
 				<string>dyn.ah62d4rv4ge81k75mq6</string> <!-- .twig -->
 				<string>dyn.ah62d4rv4ge81k7dq</string> <!-- .ttl (Turtle) -->
@@ -231,6 +261,7 @@
 				<string>org.n8gray.bat</string> <!-- .bat, .cmd -->
 				<string>dyn.ah62d4rv4ge80e2py</string> <!-- .bat -->
 				<string>dyn.ah62d4rv4ge80g5pe</string> <!-- .cmd -->
+				<string>com.microsoft.ini</string> <!-- .ini -->
 				<string>org.n8gray.ini-source</string> <!-- .ini -->
 				<string>dyn.ah62d4rv4ge80w5xm</string> <!-- .ini -->
 				<string>org.n8gray.jsp-source</string> <!-- .jsp -->
@@ -283,10 +314,23 @@
 				<string>public.c-source</string> <!-- .c -->
 				<string>public.csh-script</string> <!-- .csh -->
 				<string>public.css</string> <!-- .css -->
-				<string>public.data</string> <!-- e.g. .gitignore, .editorconfig, README, ... -->
+				<string>public.data</string> <!-- e.g. .gitignore, .editorconfig, .dat, dotenv variants, README, ... -->
+				<string>dyn.ah62d4rv4ge81g4psq2</string> <!-- .sinf -->
+				<string>dyn.ah62d4rv4ge81s3dq</string> <!-- .wdl -->
+				<string>dyn.ah62d4rv4ge81g7u</string> <!-- .sv -->
+				<string>dyn.ah62d4rv4ge81g7xk</string> <!-- .svh -->
+				<string>dyn.ah62d4rv4ge81g5dzsm0u</string> <!-- .slurm -->
+				<string>dyn.ah62d4rv4ge80c65d</string> <!-- .asc -->
+				<string>dyn.ah62d4rv4ge81u8k</string> <!-- .xy -->
+				<string>dyn.ah62d4rv4ge81u8pf</string> <!-- .xye -->
+				<string>dyn.ah62d4rv4ge8087py</string> <!-- .out -->
+				<string>dyn.ah62d4rv4ge80w5xu</string> <!-- .inp -->
+				<string>dyn.ah62d4rv4ge80g4pg</string> <!-- .cif -->
+				<string>dyn.ah62d4rv4ge81u8p4</string> <!-- .xyz -->
+				<string>dyn.ah62d4rv4ge80s8xrqf4a</string> <!-- .gzmat -->
+				<string>dyn.ah62d4rv4ge80n5x0</string> <!-- .env -->
 				<string>public.fortran-90-source</string> <!-- .f90 (Fortran) -->
 				<string>public.fortran-source</string> <!-- .f, .for (Fortran) -->
-				<string>public.json</string> <!-- .json -->
 				<string>public.ksh-script</string> <!-- .ksh (KornShell) -->
 				<string>public.make-source</string> <!-- .mak (Makefile) -->
 				<string>public.module-map</string> <!-- .modulemap (Clang module map) -->
@@ -305,10 +349,10 @@
 				<string>public.shell-script</string> <!-- .sh -->
 				<string>public.source-code</string>
 				<string>public.swift-source</string> <!-- .swift -->
+				<string>public.toml</string> <!-- .toml -->
 				<string>public.tcsh-script</string> <!-- .tcsh -->
 				<string>public.tex</string> <!-- .tex -->
 				<string>public.text</string>
-				<string>public.toml</string> <!-- .toml (used by Xcode) -->
 				<string>public.yaml</string> <!-- .yaml, .yml -->
 				<string>public.zsh-script</string> <!-- .zsh -->
 				<string>tk.tcl.tcl-source</string> <!-- .tcl -->
@@ -323,6 +367,6 @@
 		<string>$(PRODUCT_MODULE_NAME).MainVC</string>
 	</dict>
 	<key>NSHumanReadableCopyright</key>
-	<string>Copyright © 2025 Han Cen. All rights reserved.</string>
+	<string>Copyright © 2020–2026 Glance contributors.</string>
 </dict>
 </plist>

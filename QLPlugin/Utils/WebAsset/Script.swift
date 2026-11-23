@@ -1,22 +1,43 @@
 import Foundation
+import GlanceKit
 
-class Script: WebAsset {
-	private var content: String?
-	private var url: URL?
+final class Script: WebAsset {
+	private enum Source {
+		case content(String)
+		case url(URL)
+	}
+
+	private let source: Source
+	private lazy var inlineContent: String = {
+		switch source {
+			case let .content(content):
+				return content
+			case let .url(url):
+				do {
+					return try String(contentsOf: url, encoding: .utf8)
+				} catch {
+					Log.render.error(
+						"Could not read script asset \(url.path, privacy: .private): \(error.localizedDescription, privacy: .private)",
+					)
+					return ""
+				}
+		}
+	}()
 
 	required init(content: String) {
-		self.content = content
+		source = .content(content)
 	}
 
 	required init(url: URL) {
-		self.url = url
+		source = .url(url)
 	}
 
-	func getHTML() -> String {
-		if let url = url {
-			return "<script src=\"\(url.path)\"></script>"
-		} else {
-			return "<script>\(content ?? "")</script>"
-		}
+	func getInlineHTML() -> String {
+		getInlineHTML(nonce: nil)
+	}
+
+	func getInlineHTML(nonce: String?) -> String {
+		let nonceAttribute = nonce.map { " nonce=\"\($0)\"" } ?? ""
+		return "<script\(nonceAttribute)>\(inlineContent)</script>"
 	}
 }
